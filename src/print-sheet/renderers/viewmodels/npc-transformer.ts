@@ -13,29 +13,7 @@ import type {
   FeatureSectionViewModel,
   FeatureEntryViewModel,
 } from "./npc-viewmodel";
-
-/* ── HTML Escaping ──────────────────────────────────────────── */
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/** Strip HTML tags for plain text */
-function stripHtml(html: string, maxLength?: number): string {
-  // Parse condition references like &Reference[Charmed]
-  let stripped = html.replace(/&(?:amp;)?Reference\[([^\s\]]+)[^\]]*\]/gi, "$1");
-  stripped = stripped.replace(/<[^>]*>/g, "").trim();
-  return maxLength ? stripped.slice(0, maxLength) : stripped;
-}
-
-/** Format signed modifier: 3 -> "+3", -1 -> "-1" */
-function signStr(n: number): string {
-  return n >= 0 ? `+${n}` : `${n}`;
-}
+import { esc, signStr, stripHtml } from "./character-transformer-common";
 
 /* ── Main Transformer ───────────────────────────────────────── */
 
@@ -398,4 +376,3 @@ function formatSpellcastingDesc(desc: string | undefined): string {
   text = text.replace(/\s*(At Will:|[123]\/Day( each)?:)/gi, "<br><br>$1");
   return text.trim().replace(/\s+/g, " ");
 }
-

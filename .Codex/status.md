@@ -1,5 +1,123 @@
 # Status
 
+## 2026-03-15
+
+- Started Phase 3 by inspecting the highest-ROI remaining targets across character creator, level-up, LPCS, combat helpers, and print extract/transform paths before changing code.
+- Chose `src/print-sheet/extractors/dnd5e-extract-helpers.ts` as the first Phase 3 slice because it still carried a dense cluster of `any` usage in core extraction logic while already having stable helper seams and focused tests.
+- Tightened extractor-side contracts in `src/print-sheet/extractors/dnd5e-extract-helpers.ts` by replacing broad `any` parameters with focused actor/item/system interfaces for favorites, abilities, skills, combat, details, spellcasting, inventory, and feature extraction.
+- Preserved extractor behavior while making optional runtime shapes explicit, including partial ability maps, inventory item system shapes, class/subclass linkage, and feature-use recovery parsing.
+- Expanded regression coverage in `src/print-sheet/extractors/dnd5e-extract-helpers.test.ts` for combat stat aggregation, details fallback/class-subclass pairing, spellcasting slot/save/effect extraction, inventory container sorting, and feature enriched-text cleanup plus recharge formatting.
+- Verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Followed up with a wizard/level-up transition slice focused on navigation behavior and applicability changes.
+- Added transition coverage in `src/character-creator/wizard/wizard-state-machine.test.ts` for clamping when the current step becomes inapplicable and for `jumpTo` behavior from review/invalid step IDs.
+- Added transition coverage in `src/character-creator/level-up/level-up-state-machine.test.ts` for `jumpTo` behavior and for preserving the current step when new applicable steps are inserted earlier in the flow.
+- Fixed `src/character-creator/level-up/level-up-state-machine-helpers.ts` to preserve the current step by step ID during applicability recalculation instead of only clamping by numeric index, preventing review-step regressions when subclass/feat steps appear earlier in the flow.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in combat helpers by tightening contracts in `src/combat/damage-workflow/damage-workflow-engine.ts`.
+- Replaced the engine-local `any` usage with focused token/actor/effect/save-roll interfaces, plus small lookup helpers for token IDs, names, and status checks.
+- Added the first direct engine regression coverage in `src/combat/damage-workflow/damage-workflow-engine.test.ts` for flat damage HP application, healing clamping, failed-save condition application, condition removal behavior, and concentration-drop handling.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Followed up with the settings serialization behavior slice focused on registration-backed persistence and accessor round-tripping.
+- Added direct settings behavior coverage in `src/settings.test.ts` using an in-memory `game.settings` harness to verify serialized print-default registration, `setPrintDefaults` round-tripping, CSV-backed menu-setting parsing, user gating, and invalid-value fallbacks through the real accessor layer in `src/settings.ts`.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued the print extraction Phase 3 pass in `src/print-sheet/extractors/dnd5e-character-extractor.ts`.
+- Replaced the helper's remaining broad `any` usage with focused actor/item/system contracts for weapon extraction, proficiencies, currency, and character action routing, including support for both array-backed and collection-backed embedded-item shapes.
+- Added direct regression coverage in `src/print-sheet/extractors/dnd5e-character-extractor.test.ts` for proficiency extraction, tool fallback behavior, currency extraction, and action/weapon routing with mastery and cleaned descriptions.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in LPCS by tightening the `src/lpcs/lpcs-view-model.ts` entry boundary.
+- Replaced the exported `buildLPCSViewModel` `any` actor parameter with a focused actor-document contract, added shared item collection normalization, and updated the entry-point shell helpers to consume the narrower type while preserving existing helper boundaries.
+- Added direct entry-point coverage in `src/lpcs/lpcs-view-model.test.ts` for the empty fallback path and a simple array-backed actor happy path that exercises top-level subtitle/class/HP/spell/action/currency assembly.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the LPCS sheet shell by tightening `src/lpcs/lpcs-sheet.ts`.
+- Replaced the repeated `(this as any)` actor/element access pattern with typed shell getters, normalized HP access through a single helper for drawer/update flows, and reduced `any` usage across the main sheet shell without changing the existing helper module boundaries.
+- Added direct sheet-shell coverage in `src/lpcs/lpcs-sheet.test.ts` for runtime class construction, title/context preparation, and form submission updates using a minimal Foundry-class harness.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the top-level print extractor shell by tightening `src/print-sheet/extractors/dnd5e-extractor.ts`.
+- Replaced the shell's broad entry-point `any` usage with focused actor, group, and item contracts at the character, NPC, encounter, party-summary, and item-utility boundaries while keeping the lower helper seams unchanged.
+- Aligned the top-level character shell with the already-typed character extractor helpers, added safe group-member narrowing/deduplication, and tightened item utility handling for uses, damage parts, activity collections, armor detection, and attack/save extraction paths.
+- Added direct shell coverage in `src/print-sheet/extractors/dnd5e-extractor.test.ts` for top-level character extraction, encounter-member deduplication through `getMembers()`, and party-summary assembly from group members.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the print transformer entry layer across the top-level character, NPC, encounter, and party transformers.
+- Consolidated duplicated shell formatting helpers in `src/print-sheet/renderers/viewmodels/npc-transformer.ts`, `src/print-sheet/renderers/viewmodels/party-transformer.ts`, and `src/print-sheet/renderers/viewmodels/encounter-transformer.ts` onto the shared formatter utilities, and tightened `src/print-sheet/renderers/viewmodels/character-transformer.ts` with explicit subtitle and portrait helper boundaries plus a `TraitData`-based defenses contract.
+- Added direct shell coverage in `src/print-sheet/renderers/viewmodels/character-transformer.test.ts`, `src/print-sheet/renderers/viewmodels/npc-transformer.test.ts`, `src/print-sheet/renderers/viewmodels/party-transformer.test.ts`, and `src/print-sheet/renderers/viewmodels/encounter-transformer.test.ts` for portrait/section gating, stat-block/meta assembly, tracking-card formatting, and escaped encounter-group rendering.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the combat dialog shell by tightening `src/combat/damage-workflow/damage-workflow-dialog.ts`.
+- Replaced the shell's global `any` access with focused canvas, UI, notification, and controlled-token contracts, added small runtime accessors for canvas/UI lookup, and kept the panel lifecycle and workflow execution behavior unchanged.
+- Added direct dialog-shell coverage in `src/combat/damage-workflow/damage-workflow-dialog.test.ts` for hook registration, auto show/hide on token selection, no-selection warning behavior, real action execution through the panel shell, and panel reuse/target-count refresh.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the combat chat-output shell by tightening `src/combat/damage-workflow/damage-workflow-chat.ts`.
+- Replaced the remaining global `any` ChatMessage access with a focused chat-message contract and a small runtime accessor, preserving the existing card rendering and whisper behavior.
+- Added direct chat-output coverage in `src/combat/damage-workflow/damage-workflow-chat.test.ts` for missing-ChatMessage fallback, whispered damage/save cards with concentration output, and condition-apply/remove summary cards.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the monster-preview shell by tightening `src/combat/monster-preview/monster-preview-panel.ts`.
+- Replaced the panel shell's broad combat/game/actor runtime contracts with focused local combatant, actor, and game interfaces plus typed helpers for active combat and current system ID, while preserving the existing inline/floating behavior.
+- Added direct panel-shell coverage in `src/combat/monster-preview/monster-preview-panel.test.ts` for hook registration, NPC-turn extraction/render injection, PC-turn hide behavior, and floating-mode panel reuse after the saved mode is restored.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the print orchestration shell by tightening `src/print-sheet/print-sheet.ts`.
+- Removed the remaining explicit `any` cast from the extract/render dispatch path and added direct shell coverage for hook registration, sheet-type-driven control injection, options resolution, preview/print window dispatch, and party-group detection through the top-level print flow.
+- Added direct orchestration coverage in `src/print-sheet/print-sheet.test.ts` for actor-sheet header controls, preview dispatch with dialog-driven options, and print dispatch using saved defaults for party groups detected from character members.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the print options shell by tightening `src/print-sheet/print-options-dialog.ts`.
+- Replaced the remaining loose dialog/form parsing casts with focused dialog, wrapper, and form-host contracts, including an environment-safe form-root resolution path that no longer assumes a browser `HTMLElement` global is always present.
+- Added direct dialog-shell coverage in `src/print-sheet/print-options-dialog.test.ts` for Dialog-class fallback defaults, parsed submit selections, and cancel/close resolution behavior.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the print window runtime shell by tightening `src/print-sheet/print-window.ts`.
+- Replaced the direct browser-window assumptions with focused print-window and document contracts plus a small runtime `window.open` accessor, preserving the existing blocked-popup, preview-focus, and delayed-print behavior.
+- Added direct window-shell coverage in `src/print-sheet/print-window.test.ts` for blocked popup warnings, document writing/title/style injection, delayed print triggering, and preview focus behavior without printing.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the print template-engine shell by tightening `src/print-sheet/renderers/template-engine.ts`.
+- Replaced the remaining loose global loader/renderer access with focused template-loader and template-renderer contracts plus typed runtime accessors for namespaced Foundry and global fallbacks, while preserving existing preload/render behavior.
+- Added direct template-engine coverage in `src/print-sheet/renderers/template-engine.test.ts` for helper registration, namespaced template preloading with graceful fallback, and template render success/error behavior through the public wrapper functions.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the NPC print extractor by tightening `src/print-sheet/extractors/dnd5e-npc-extractor.ts`.
+- Replaced the helper's remaining broad `any` usage with focused NPC actor, item, and skill-entry contracts across embed-context extraction, manual extraction, sense/language parsing, gear fallback, and favorite-aware feature assembly while preserving existing extraction behavior.
+- Added direct regression coverage in `src/print-sheet/extractors/dnd5e-npc-extractor.test.ts` for the manual fallback path, including CR/XP/proficiency extraction, passive perception and senses, language ordering, gear fallback, and multiattack sorting ahead of weapon actions.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the party-summary shell by tightening `src/combat/party-summary/party-summary-panel.ts`.
+- Replaced the panel's remaining broad `any` usage with focused local actor, effect, collection, and game contracts across hook filtering, primary-party/player-owned resolution, targeted refreshes, and save/sheet actions while preserving the existing UI behavior.
+- Added the first direct shell coverage in `src/combat/party-summary/party-summary-panel.test.ts` for sorted primary-party rendering, fallback to player-owned actors, save/name interaction wiring, and debounced actor/effect refresh behavior.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the party-summary extractor by tightening `src/combat/party-summary/party-summary-types.ts`.
+- Replaced the extractor's remaining broad actor/system/effect `any` usage with focused local contracts for abilities, skills, classes, active effects, and actor system data while preserving existing card extraction behavior.
+- Added direct extraction coverage in `src/combat/party-summary/party-summary-types.test.ts` for save derivation, multiclass label formatting, passive/spell-DC extraction, defeated/default fallbacks, concentration detection, and de-duplicated condition labels.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the character-creation engine by tightening `src/character-creator/engine/actor-creation-engine.ts`.
+- Replaced the remaining direct runtime `any` access with focused actor-class, FilePicker, socket, and UI notification contracts while preserving the existing create/embed/proficiency/language/portrait/ownership flow.
+- Added direct engine coverage in `src/character-creator/engine/actor-creation-engine.test.ts` for successful character creation, embedded-item assembly, ownership/socket/UI notification behavior, portrait upload via FilePicker, and graceful failure when the actor document class is unavailable.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in character-creator data resolution by tightening `src/character-creator/data/spell-list-resolver.ts`.
+- Replaced the resolver's broad runtime `any` usage with focused dnd5e registry/result contracts for registry method lookup, result-shape parsing, and UUID normalization while preserving graceful fallback behavior.
+- Added direct resolver coverage in `src/character-creator/data/spell-list-resolver.test.ts` for `forClass`/`getListForClass`/`get` lookup paths, mixed string-object result normalization, direct `Set` handling, and null/error fallback behavior.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the shared print compendium seam by tightening `src/print-sheet/compendium/compendium-helper.ts`.
+- Replaced the helper's broad pack/index/document `any` usage with focused compendium-pack contracts for pack lookup, index loading, case-insensitive entry matching, and document retrieval while preserving existing query behavior.
+- Added direct helper coverage in `src/print-sheet/compendium/compendium-helper.test.ts` for single-entry lookup, bulk entry loading, case-insensitive matching, missing-pack handling, and warning-path fallback behavior.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in character-creator compendium loading by tightening `src/character-creator/data/compendium-indexer.ts`.
+- Replaced the remaining global/runtime looseness around pack lookup and TextEditor enrichment with focused helper contracts for compendium packs, description system data, and HTML enrichment while preserving the existing index/cache behavior.
+- Added direct indexer coverage in `src/character-creator/data/compendium-indexer.test.ts` for pack normalization, accepted-item-type filtering, cached document fetches, enriched/raw description handling, and invalidate behavior.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in combat token UI by tightening `src/combat/token-health/token-health-indicators.ts`.
+- Replaced the remaining PIXI/token runtime `any` usage with focused local token, actor, container, graphics, and text contracts while preserving the existing indicator drawing/removal behavior.
+- Added direct shell coverage in `src/combat/token-health/token-health-indicators.test.ts` for hook registration, NPC indicator drawing/removal, GM-only visibility suppression, and player-owned token exclusion.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the character-creator GM configuration shell by tightening `src/character-creator/gm-config/gm-config-app.ts`.
+- Replaced the remaining runtime `any` usage around the ApplicationV2 mixin shell and rules-form parsing with focused runtime app, mixin, and form helper contracts while preserving the existing GM config behavior.
+- Added direct shell coverage in `src/character-creator/gm-config/gm-config-app.test.ts` for runtime class construction/opening, source/rules context building, pack toggling with curation invalidation, and rules-save setting persistence plus confirmation UX.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the character-creator settings menu/runtime seam by tightening `src/character-creator/character-creator-settings-menus.ts`.
+- Replaced the remaining runtime `any` usage around FormApplication defaults, compendium-pack iteration, and Foundry utils access with focused helper contracts while preserving the existing settings-menu behavior.
+- Added direct menu coverage in `src/character-creator/character-creator-settings-menus.test.ts` for menu registration, settings-form data/save normalization, compendium source detection, and persisted pack-source updates with cache invalidation.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in the batch-initiative combat shell by tightening `src/combat/batch-initiative/batch-initiative-dialog.ts`.
+- Replaced the remaining Dialog/Dice/combatant runtime `any` usage with focused local contracts for dialog rendering, dice constructors, combatant collections, and cached initiative-roll actor state while preserving the existing behavior.
+- Added direct shell coverage in `src/combat/batch-initiative/batch-initiative-dialog.test.ts` for dialog rendering/selection, cached roll creation and cleanup, fixed-initiative BasicRoll behavior, and graceful missing-dialog/missing-dice fallbacks.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued Phase 3 in central combat orchestration by tightening `src/combat/combat-init.ts`.
+- Replaced part of the remaining combat-init runtime looseness by aligning the batch-initiative orchestration with focused combat/dialog cache contracts, keeping the central hook/prototype flow behavior unchanged while reducing downstream shell looseness.
+- Added direct shell coverage in `src/combat/batch-initiative/batch-initiative-dialog.test.ts` for the dialog/cache seam that combat-init relies on, strengthening regression coverage around the core initiative workflow.
+- Re-verified the slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+
 ## 2026-03-14
 
 - Implemented Phase 1 runtime hardening for global/prototype patches.
@@ -144,6 +262,71 @@
 
 ## Next Suggested Steps
 
+- Phase 3 print extractor helper contracts are now in a stronger checkpoint state; the next best ROI is likely either the remaining `any` usage in `src/print-sheet/extractors/dnd5e-character-extractor.ts` or behavior-focused transition coverage in the wizard/level-up flows.
+- Wizard and level-up transition coverage is now in a better checkpoint state; the next highest-value behavior slice in those flows is likely back/forward persistence through real app-shell callbacks rather than pure state-machine behavior.
+- `src/combat/damage-workflow/damage-workflow-engine.ts` is now in a much stronger checkpoint state; the next best combat slice is likely broader dialog-to-engine behavior coverage or a pass on another combat helper with remaining broad runtime contracts.
+- Settings serialization is now in a better checkpoint state; the next ROI there would be menu/form submission behavior rather than low-level parsing or accessor round-tripping.
+- `src/print-sheet/extractors/dnd5e-character-extractor.ts` is now in a much stronger checkpoint state; the next best print-path slice is likely the remaining `any` usage in the top-level extractor shell or transformer/viewmodel glue rather than this helper module.
+- `src/lpcs/lpcs-view-model.ts` is now in a stronger checkpoint state; the next LPCS ROI is likely `src/lpcs/lpcs-sheet.ts`, where central runtime interactions still rely on broad `any` usage on top of already-split helper modules.
+- `src/lpcs/lpcs-sheet.ts` is now in a stronger checkpoint state; the remaining inline `any` usage is mostly concentrated in unavoidable Foundry runtime construction and registration seams rather than repeated core shell access.
+- The next highest-value Phase 3 target is likely the top-level dnd5e extractor shell or another remaining entry module with broad runtime contracts, since the highest-ROI LPCS shell boundaries are now in better shape.
+- `src/print-sheet/extractors/dnd5e-extractor.ts` is now in a stronger checkpoint state; the remaining inline looseness is mostly concentrated in damage/formula resolution internals and unavoidable Foundry runtime seams rather than top-level shell contracts.
+- The top-level print transformer shells are now in a stronger checkpoint state; the remaining higher-ROI print-path work is likely deeper typing around formula/damage resolution internals or another feature area with broader runtime contracts rather than more shell-level transformer cleanup.
+- `src/combat/damage-workflow/damage-workflow-dialog.ts` is now in a stronger checkpoint state; the remaining looseness in the damage-workflow feature is mostly concentrated in chat/runtime globals or lower-level Foundry surface areas rather than the panel shell itself.
+- `src/combat/damage-workflow/damage-workflow-chat.ts` is now in a stronger checkpoint state; the remaining combat ROI is likely broader monster-preview behavior or other Foundry runtime integration seams rather than the damage-workflow shell/chat path.
+- `src/combat/monster-preview/monster-preview-panel.ts` is now in a stronger checkpoint state; the remaining monster-preview looseness is mostly concentrated in lower-level Foundry document surfaces or helper implementation details rather than the panel shell.
+- `src/print-sheet/print-sheet.ts` is now in a stronger checkpoint state; the remaining print-path looseness is mostly concentrated in option-dialog/window/template runtime seams rather than the central orchestration shell.
+- `src/print-sheet/print-options-dialog.ts` is now in a stronger checkpoint state; the remaining print-path looseness is mostly concentrated in print-window/template-engine runtime seams rather than the dialog or orchestration shells.
+- `src/print-sheet/print-window.ts` is now in a stronger checkpoint state; the remaining print-path looseness is mostly concentrated in template-engine/global-renderer seams rather than the dialog, window, or orchestration shells.
+- `src/print-sheet/renderers/template-engine.ts` is now in a stronger checkpoint state; the remaining print-path looseness is mostly concentrated in lower-level system-specific extractor/renderer internals rather than the shared print runtime shells.
+- `src/print-sheet/extractors/dnd5e-npc-extractor.ts` is now in a stronger checkpoint state; the remaining print-path looseness is more concentrated in lower-level top-level extractor internals than in the NPC manual/embed shell.
+- `src/combat/party-summary/party-summary-panel.ts` is now in a stronger checkpoint state; the remaining looseness in the party-summary feature is more concentrated in `src/combat/party-summary/party-summary-types.ts` than in the panel shell.
+- `src/combat/party-summary/party-summary-types.ts` is now in a stronger checkpoint state; the party-summary feature is in a good checkpoint state for Phase 3.
+- `src/character-creator/engine/actor-creation-engine.ts` is now in a stronger checkpoint state; the remaining Character Creator ROI is more concentrated in helper/data modules than in the main creation engine shell.
+- `src/character-creator/data/spell-list-resolver.ts` is now in a stronger checkpoint state; the remaining Character Creator data-layer looseness is more concentrated in compendium/indexing helpers than in spell-list resolution.
+- `src/print-sheet/compendium/compendium-helper.ts` is now in a stronger checkpoint state; the shared print compendium seam is in a better checkpoint state for Phase 3.
+- `src/character-creator/data/compendium-indexer.ts` is now in a stronger checkpoint state; the character-creator compendium data layer is in a much better checkpoint state for Phase 3.
+- `src/combat/token-health/token-health-indicators.ts` is now in a stronger checkpoint state; the remaining combat UI looseness is more concentrated in other runtime-heavy shell surfaces than in the token-health overlay path.
+- `src/character-creator/gm-config/gm-config-app.ts` is now in a stronger checkpoint state; the remaining Character Creator shell looseness is more concentrated in settings-menu/runtime registration surfaces than in the GM config panel shell itself.
+- `src/character-creator/character-creator-settings-menus.ts` is now in a stronger checkpoint state; the Character Creator settings/runtime shell layer is in a much better checkpoint state for Phase 3.
+- `src/combat/batch-initiative/batch-initiative-dialog.ts` is now in a stronger checkpoint state; the remaining combat workflow looseness is more concentrated in combat-init/runtime orchestration than in the dialog/cache shell itself.
+- `src/combat/combat-init.ts` is now in a stronger checkpoint state; the global combat accessors, tracker HTML wrapper resolution, scene-control tool contract, and PC-roll combat object seam are typed more explicitly, and there is direct shell coverage for no-combat batch initiative, tracker button injection, and rules-reference scene-control insertion.
+- The remaining looseness in `src/combat/combat-init.ts` is now more concentrated in the larger hook-registration/prototype-orchestration surface than in the small runtime accessors or render-hook shells.
+- `src/character-creator/wizard/character-creator-app.ts` is now in a stronger checkpoint state; the runtime ApplicationV2/mixin shell, part-context merge path, create-button lookup, and actor-sheet handoff all use tighter local contracts, and there is direct shell coverage for class build/open, frozen config snapshot context assembly, and create-character success/missing-name behavior.
+- The remaining Character Creator looseness is now more concentrated in the level-up app shell or lower-level step/runtime interaction surfaces than in the main wizard entry shell.
+- `src/character-creator/level-up/level-up-app.ts` is now in a stronger checkpoint state; the runtime ApplicationV2/mixin shell, actor lookup boundary, part-context merge path, apply-button lookup, and open-wizard eligibility flow all use tighter local contracts, and there is direct shell coverage for class build/open, context preparation, apply-level-up success, and actor-missing / not-eligible behavior.
+- The remaining Character Creator looseness is now more concentrated in lower-level step activation/runtime DOM surfaces or actor-update internals than in the top-level wizard or level-up app shells.
+- `src/character-creator/level-up/actor-update-engine.ts` is now in a stronger checkpoint state; the actor/item mutation path, compendium-document loading seam, spell-removal path, and class/HP/ASI update flow now use focused local contracts instead of broad runtime casts, and there is direct behavior coverage for existing-class progression, multiclass item creation, feature/spell grant flow, swapped-spell removal, and missing-actor failure.
+- The remaining Character Creator Phase 3 work is now more concentrated in step-level runtime DOM interactions or other lower-level data/mutation helpers rather than the main wizard, level-up shell, or actor-update engine.
+- `src/character-creator/steps/step-spells.ts` is now in a stronger checkpoint state; the spell-list cache handling, class-filter fallback behavior, DOM selection/search patching, and browser-document dependency are now guarded by narrower local contracts, and there is direct behavior coverage for class spell filtering, cache reset when the class identifier disappears, and in-place selection/search interactions.
+- Phase 3 is now clearly into the late-stage cleanup/hardening phase: the major print, combat, LPCS, wizard, level-up shell, and level-up mutation surfaces are in much better shape, and the remaining ROI is concentrated in smaller step-level or helper-level hotspots rather than the earlier large entry-point shells.
+- `src/character-creator/steps/step-subclass.ts` is now in a stronger checkpoint state; subclass filtering, selected-entry description assembly, and card-click selection wiring now use tighter local element contracts, and there is direct behavior coverage for class-based filtering, disabled-entry exclusion, selected-description hydration, and selection patching.
+- The remaining Character Creator Phase 3 work is now even more concentrated in a few step modules and lower-level runtime/data branches rather than the top-level wizard, level-up shell, or mutation paths.
+- `src/character-creator/steps/step-feats.ts` is now in a stronger checkpoint state; the ASI/feat choice wiring, ability-toggle patching, card selection path, and dataset-driven DOM access now use tighter local element contracts, and there is direct behavior coverage for ASI-level applicability, feat filtering, in-place ASI toggle behavior, and feat-card selection.
+- The remaining Character Creator Phase 3 work is now mostly concentrated in a small set of step modules and lower-level runtime/data branches rather than the major shells and mutation engines.
+- `src/character-creator/steps/step-class.ts` is now in a stronger checkpoint state; class filtering, selected-entry description hydration, card-click wiring, and advancement-parser-driven selection assembly now use tighter local contracts, and there is direct behavior coverage for enabled-class filtering, selected-description hydration, parsed skill/spellcasting population, and graceful fallback when document parsing fails.
+- The remaining Character Creator Phase 3 work is now concentrated in a smaller number of step-level/runtime-data branches rather than the main wizard, level-up, combat, or print entry shells.
+- `src/character-creator/steps/step-skills.ts` is now in a stronger checkpoint state; skill checkbox handling, in-place row/counter patching, and background/class skill-pool helpers now use tighter local contracts, and there is direct behavior coverage for background-skill exclusion, completion gating, max-pick enforcement, and DOM patch updates.
+- The remaining Character Creator Phase 3 work is now mostly concentrated in a narrower set of remaining step modules and lower-level data/runtime branches.
+- `src/character-creator/steps/step-background.ts` is now in a stronger checkpoint state; background filtering, selected-entry description hydration, card-click wiring, and advancement-grants-driven selection assembly now use tighter local contracts, and there is direct behavior coverage for enabled-background filtering, selected-description hydration, parsed grants population, and graceful fallback when background grant parsing fails.
+- The remaining Character Creator Phase 3 work is now concentrated in a small set of remaining step-level and lower-level data/runtime branches rather than the broader shells we started with.
+- The next best Phase 3 ROI now appears to be `src/character-creator/steps/step-background-grants.ts` or another remaining step module with denser runtime interaction logic.
+- `src/character-creator/steps/step-background-grants.ts` is now in a stronger checkpoint state; ASI/language dropdown wiring, combined species/background language helpers, and DOM patching now use tighter local select-element contracts, and there is direct behavior coverage for combined grant completion, helper-derived language counts, and in-place ASI/language selection patching.
+- The remaining Phase 3 work is now mostly concentrated in a smaller set of Character Creator step modules and a handful of lower-level runtime/data helpers rather than the major combat, print, LPCS, wizard, level-up, or settings shells already tightened.
+- `src/character-creator/character-creator-init.ts` is now in a stronger checkpoint state; the settings registrar boundary, scene-control tool injection, GM socket notification flow, and player auto-open gating now use tighter local runtime contracts, and there is direct shell coverage for hook registration, scene-control insertion, GM socket notifications, and characterless-player auto-open behavior.
+- The remaining Phase 3 work is now more concentrated in the remaining Character Creator and level-up init/runtime seams plus a few deeper print extractor internals, rather than the higher-level shells and orchestrators that have already been hardened.
+- `src/character-creator/level-up/level-up-init.ts` is now in a stronger checkpoint state; the actor-sheet button injection, wrapped-html header lookup, and actor-directory context option wiring now use tighter local contracts, and there is direct shell coverage for hook registration, sheet-button insertion/click behavior, wrapped-host duplicate suppression, and directory entry eligibility/open flows.
+- The remaining Phase 3 work is now concentrated even more in a smaller set of lower-level Character Creator/level-up runtime-data helpers and the deeper print extractor internals, rather than the init/app-shell orchestration seams that have now been tightened.
+- `src/character-creator/level-up/steps/lu-step-spells.ts` is now in a stronger checkpoint state; actor spell-item normalization, spell/cantrip card wiring, and search-row patching now use tighter local contracts, and there is direct behavior coverage for target-level spell filtering, current-spell extraction, helper normalization, and in-place cantrip/spell/search interactions.
+- The remaining Phase 3 work is now mostly concentrated in a narrower set of lower-level level-up/runtime-data helpers and the deeper `src/print-sheet/extractors/dnd5e-extractor.ts` internals rather than the broader Character Creator and level-up orchestration shells.
+- `src/print-sheet/extractors/dnd5e-extractor.ts` is now in a stronger checkpoint state; the damage/recovery/activity normalization paths, save-activity extraction, formula resolution, and slot/recharge shaping now use tighter local contracts and helper guards instead of broad inline casts, and there is direct regression coverage for collection-like recharge recovery plus object-shaped save-activity damage/formula extraction through the feature path.
+- The remaining Phase 3 work is now mostly concentrated in a smaller number of lower-level runtime/data seams outside the major print, combat, Character Creator, and level-up orchestration paths already tightened.
+- `src/lpcs/lpcs-auto-open.ts` is now in a stronger checkpoint state; the assigned-character lookup and auto-open gating use tighter local runtime helpers instead of a direct user `any` cast, and there is direct shell coverage for the happy path, skip reasons, missing-character behavior, and render-failure warning flow.
+- The remaining Phase 3 work is now mostly concentrated in a handful of smaller lower-level runtime/data seams rather than any broad feature shell or orchestration layer.
+- `src/fth-api.ts` is now in a stronger checkpoint state; the top-level public API facade uses tighter version/window helpers instead of direct global access, and there is direct shell coverage for facade assembly, command routing, window attachment, and missing-module version fallback behavior.
+- The remaining Phase 3 work is now mostly concentrated in a very small set of late-stage low-level runtime/data seams rather than any broad feature module.
+- `src/index.ts` is now in a stronger checkpoint state; the init/setup/ready orchestration and asset-manager scene-control injection are routed through small typed internal helpers instead of broad inline hook callbacks, and there is direct shell coverage for entry-hook registration, init/setup/ready orchestration, and scene-control button insertion.
+- Phase 3 is now effectively in the final cleanup stage, with the main entry, runtime shell, print, combat, LPCS, Character Creator, and level-up seams all in a much stronger checkpoint state than where the phase started.
 - Phase 1 runtime hardening and coverage is complete.
 - LPCS sheet orchestration is in a good checkpoint state.
 - `src/lpcs/lpcs-view-model.ts` is now substantially decomposed across combat, inventory, and character helper modules; it is in a good checkpoint state to move on unless there is a specific reason to keep splitting remaining utility/core-stat builders.

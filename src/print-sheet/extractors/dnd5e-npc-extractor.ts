@@ -2,14 +2,76 @@ import { Log } from "../../logger";
 
 import { extractAbilities, extractSpellcasting, extractTraits, resolveTraitSet } from "./dnd5e-extract-helpers";
 import type { FeatureData, NPCData } from "./dnd5e-types";
-import type { Dnd5eEmbedAction, Dnd5eEmbedActionSections, Dnd5eEmbedContext } from "./dnd5e-system-types";
+import type { Dnd5eEmbedAction, Dnd5eEmbedActionSections, Dnd5eEmbedContext, Dnd5eTraitData } from "./dnd5e-system-types";
+
+interface NpcExtractorItem {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  system?: {
+    quantity?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface NpcExtractorSkillsEntry {
+  proficient?: number | boolean;
+  total?: number;
+  ability?: string;
+  passive?: number;
+}
+
+interface NpcExtractorActor {
+  id?: string;
+  name?: string;
+  img?: string;
+  type?: string;
+  prototypeToken?: {
+    texture?: {
+      src?: string;
+    };
+  };
+  items?: NpcExtractorItem[] | {
+    get?(id: string): NpcExtractorItem | null | undefined;
+    filter?(predicate: (item: NpcExtractorItem) => boolean): NpcExtractorItem[];
+  };
+  getRollData?(): Record<string, unknown>;
+  system?: {
+    details?: {
+      cr?: number;
+      alignment?: string;
+      type?: { value?: string };
+      legendary?: { description?: string };
+      lair?: { description?: string };
+    };
+    attributes?: {
+      prof?: number;
+      ac?: { value?: number; formula?: string };
+      hp?: { value?: number; max?: number; formula?: string };
+      init?: { total?: number };
+      movement?: Record<string, number | undefined>;
+      senses?: Record<string, number | string | undefined> & { special?: string };
+    };
+    abilities?: Record<string, { mod?: number } | undefined>;
+    skills?: Record<string, NpcExtractorSkillsEntry | undefined>;
+    traits?: {
+      size?: string;
+      languages?: Dnd5eTraitData;
+    };
+    getGear?(): NpcExtractorItem[];
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
 
 interface NpcExtractorOptions {
   stripEnrichedText(html: string, actorName?: string, rollData?: Record<string, unknown>): string;
   skillKeyToName(key: string): string;
-  extractGear(weaponItems: any[], equipmentItems: any[]): string[];
-  itemToFeatureData(item: any, favorites: Set<string>, actor?: any): FeatureData;
-  getActivationType(item: any): string;
+  extractGear(weaponItems: NpcExtractorItem[], equipmentItems: NpcExtractorItem[]): string[];
+  itemToFeatureData(item: NpcExtractorItem, favorites: Set<string>, actor?: NpcExtractorActor): FeatureData;
+  getActivationType(item: NpcExtractorItem): string;
   crToXP(cr: number): number;
   formatCR(cr: number): string;
   sizeCodeToName(code: string): string;
@@ -30,11 +92,13 @@ function sortNpcActions(actions: FeatureData[]): void {
 export function embedActionToFeatureData(
   action: Dnd5eEmbedAction,
   favorites: Set<string>,
-  actor: any,
+  actor: NpcExtractorActor,
   options: Pick<NpcExtractorOptions, "stripEnrichedText">,
 ): FeatureData {
   const itemId = action.dataset?.id;
-  const item = itemId && actor?.items?.get ? actor.items.get(itemId) : null;
+  const item = itemId && actor?.items && !Array.isArray(actor.items) && typeof actor.items.get === "function"
+    ? actor.items.get(itemId)
+    : null;
 
   const name = action.name ?? item?.name ?? "";
   let description = action.description ?? "";
@@ -52,7 +116,8 @@ export function embedActionToFeatureData(
     name,
     description,
     uses: null,
-    isFavorite: favorites.has(itemId) || favorites.has(item?.uuid),
+    isFavorite: (typeof itemId === "string" && favorites.has(itemId))
+      || (typeof item?.uuid === "string" && favorites.has(item.uuid)),
     attack: undefined,
     itemType: item?.type ?? "feat",
   };
@@ -60,7 +125,7 @@ export function embedActionToFeatureData(
 
 export function extractSkillsFromContext(
   ctx: Dnd5eEmbedContext,
-  actor: any,
+  actor: NpcExtractorActor,
   options: Pick<NpcExtractorOptions, "skillKeyToName">,
 ): { name: string; mod: number }[] {
   if (ctx.summary?.skills) {
@@ -75,35 +140,39 @@ export function extractSkillsFromContext(
   const skillsObj = actor.system?.skills ?? {};
   const skills: { name: string; mod: number }[] = [];
   for (const [key, skill] of Object.entries(skillsObj)) {
-    const entry = skill as any;
-    if (entry.proficient || entry.total !== (actor.system?.abilities?.[entry.ability]?.mod ?? 0)) {
+    const entry = skill;
+    if (!entry) continue;
+    const abilityMod = typeof entry.ability === "string"
+      ? (actor.system?.abilities?.[entry.ability]?.mod ?? 0)
+      : 0;
+    if (entry.proficient || entry.total !== abilityMod) {
       skills.push({ name: options.skillKeyToName(key), mod: entry.total ?? 0 });
     }
   }
   return skills;
 }
 
-export function extractSensesFromContext(_ctx: Dnd5eEmbedContext, actor: any): { key: string; value: number | string }[] {
+export function extractSensesFromContext(_ctx: Dnd5eEmbedContext, actor: NpcExtractorActor): { key: string; value: number | string }[] {
   const senses: { key: string; value: number | string }[] = [];
   const attrSenses = actor.system?.attributes?.senses ?? {};
 
   for (const key of ["darkvision", "blindsight", "tremorsense", "truesight"]) {
     const value = attrSenses[key];
-    if (value && value > 0) senses.push({ key, value });
+    if (typeof value === "number" && value > 0) senses.push({ key, value });
   }
-  if (attrSenses.special) senses.push({ key: "special", value: attrSenses.special });
+  if (typeof attrSenses.special === "string" && attrSenses.special) senses.push({ key: "special", value: attrSenses.special });
 
   return senses;
 }
 
-export function extractGearFromSystem(actor: any, options: Pick<NpcExtractorOptions, "extractGear">): string[] {
+export function extractGearFromSystem(actor: NpcExtractorActor, options: Pick<NpcExtractorOptions, "extractGear">): string[] {
   try {
     if (typeof actor.system?.getGear === "function") {
       const gearItems = actor.system.getGear();
       if (Array.isArray(gearItems)) {
-        return gearItems.map((item: any) => {
+        return gearItems.map((item) => {
           let name = item.name ?? "";
-          if (item.system?.quantity > 1) name += ` (${item.system.quantity})`;
+          if ((item.system?.quantity ?? 0) > 1) name += ` (${item.system?.quantity})`;
           return name;
         }).filter(Boolean);
       }
@@ -112,14 +181,14 @@ export function extractGearFromSystem(actor: any, options: Pick<NpcExtractorOpti
     Log.debug("getGear() failed, using manual extraction", { err: String(error) });
   }
 
-  const items = actor.items ?? [];
-  const weaponItems = items.filter?.((item: any) => item.type === "weapon") ?? [];
-  const equipmentItems = items.filter?.((item: any) => item.type === "equipment") ?? [];
+  const items = Array.isArray(actor.items) ? actor.items : (actor.items?.filter?.(() => true) ?? []);
+  const weaponItems = items.filter((item) => item.type === "weapon");
+  const equipmentItems = items.filter((item) => item.type === "equipment");
   return options.extractGear(weaponItems, equipmentItems);
 }
 
 export async function extractNPCFromEmbedContext(
-  actor: any,
+  actor: NpcExtractorActor,
   ctx: Dnd5eEmbedContext,
   favorites: Set<string>,
   options: NpcExtractorOptions,
@@ -198,10 +267,10 @@ export async function extractNPCFromEmbedContext(
     hp: { value: hp.value ?? 0, max: hp.max ?? 0, formula: hp.formula ?? "" },
     initiative: summary.initiative ? parseInt(summary.initiative, 10) || 0 : (attrs.init?.total ?? 0),
     speed,
-    abilities: extractAbilities(actor),
+    abilities: extractAbilities(actor as Parameters<typeof extractAbilities>[0]),
     skills,
     gear,
-    traits: extractTraits(actor),
+    traits: extractTraits(actor as Parameters<typeof extractTraits>[0]),
     senses,
     passivePerception,
     languages: resolveTraitSet(actor.system?.traits?.languages),
@@ -217,12 +286,12 @@ export async function extractNPCFromEmbedContext(
       description: details.lair?.description ?? "",
       actions: lairActionList,
     },
-    spellcasting: extractSpellcasting(actor, favorites),
+    spellcasting: extractSpellcasting(actor as Parameters<typeof extractSpellcasting>[0], favorites),
   };
 }
 
 export async function extractNPCManual(
-  actor: any,
+  actor: NpcExtractorActor,
   favorites: Set<string>,
   options: NpcExtractorOptions,
 ): Promise<NPCData> {
@@ -243,14 +312,20 @@ export async function extractNPCManual(
   const skillsObj = actor.system?.skills ?? {};
   const skills: { name: string; mod: number }[] = [];
   for (const [key, skill] of Object.entries(skillsObj)) {
-    const entry = skill as any;
-    if (entry.proficient || entry.total !== (actor.system?.abilities?.[entry.ability]?.mod ?? 0)) {
+    const entry = skill;
+    if (!entry) continue;
+    const abilityMod = typeof entry.ability === "string"
+      ? (actor.system?.abilities?.[entry.ability]?.mod ?? 0)
+      : 0;
+    if (entry.proficient || entry.total !== abilityMod) {
       skills.push({ name: options.skillKeyToName(key), mod: entry.total ?? 0 });
     }
   }
 
-  const prcSkill = skillsObj.prc as any;
-  const passivePerception = senses.passive ?? (10 + (prcSkill?.total ?? 0));
+  const prcSkill = skillsObj.prc;
+  const passivePerception = typeof senses.passive === "number"
+    ? senses.passive
+    : (10 + (prcSkill?.total ?? 0));
 
   const speed: { key: string; value: number }[] = [];
   for (const key of ["walk", "fly", "swim", "climb", "burrow"]) {
@@ -262,13 +337,13 @@ export async function extractNPCManual(
   const senseEntries: { key: string; value: number | string }[] = [];
   for (const key of ["darkvision", "blindsight", "tremorsense", "truesight"]) {
     const value = senses[key];
-    if (value && value > 0) senseEntries.push({ key, value });
+    if (typeof value === "number" && value > 0) senseEntries.push({ key, value });
   }
-  if (senses.special) senseEntries.push({ key: "special", value: senses.special });
+  if (typeof senses.special === "string" && senses.special) senseEntries.push({ key: "special", value: senses.special });
 
-  const featItems = items.filter?.((item: any) => item.type === "feat") ?? [];
-  const weaponItems = items.filter?.((item: any) => item.type === "weapon") ?? [];
-  const equipmentItems = items.filter?.((item: any) => item.type === "equipment") ?? [];
+  const featItems = items.filter?.((item) => item.type === "feat") ?? [];
+  const weaponItems = items.filter?.((item) => item.type === "weapon") ?? [];
+  const equipmentItems = items.filter?.((item) => item.type === "equipment") ?? [];
   const actionItems = [...featItems, ...weaponItems];
 
   const features: FeatureData[] = [];
@@ -310,10 +385,10 @@ export async function extractNPCManual(
     hp: { value: hp.value ?? 0, max: hp.max ?? 0, formula: hp.formula ?? "" },
     initiative,
     speed,
-    abilities: extractAbilities(actor),
+    abilities: extractAbilities(actor as Parameters<typeof extractAbilities>[0]),
     skills,
     gear: options.extractGear(weaponItems, equipmentItems),
-    traits: extractTraits(actor),
+    traits: extractTraits(actor as Parameters<typeof extractTraits>[0]),
     senses: senseEntries,
     passivePerception,
     languages: resolveTraitSet(actor.system?.traits?.languages),
@@ -329,6 +404,6 @@ export async function extractNPCManual(
       description: details.lair?.description ?? "",
       actions: lairActionList,
     },
-    spellcasting: extractSpellcasting(actor, favorites),
+    spellcasting: extractSpellcasting(actor as Parameters<typeof extractSpellcasting>[0], favorites),
   };
 }

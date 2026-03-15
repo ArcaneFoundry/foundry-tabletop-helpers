@@ -8,6 +8,14 @@
 
 import { Log } from "../../logger";
 import { getGame } from "../../types";
+import type { FoundryCompendiumCollection, FoundryDocument, FoundryIndexEntry } from "../../types";
+
+interface CompendiumPackLike extends FoundryCompendiumCollection {
+  index?: FoundryIndexEntry[];
+  getDocument?(id: string): Promise<FoundryDocument | null>;
+}
+
+type CompendiumLookupResult = FoundryDocument | null;
 
 /**
  * Query a Foundry compendium pack by collection id and entry name.
@@ -16,22 +24,20 @@ import { getGame } from "../../types";
 export async function getCompendiumEntry(
   packId: string,
   entryName: string,
-): Promise<any | null> {
+): Promise<CompendiumLookupResult> {
   try {
-    const pack: any = getGame()?.packs?.get?.(packId);
+    const pack = getCompendiumPack(packId);
     if (!pack) {
       Log.debug(`compendium pack not found: ${packId}`);
       return null;
     }
-    await pack.getIndex();
-    const entry = pack.index.find(
-      (e: any) => e.name?.toLowerCase() === entryName.toLowerCase(),
-    );
+    const index = await ensurePackIndex(pack);
+    const entry = findEntryByName(index, entryName);
     if (!entry) {
       Log.debug(`compendium entry not found: ${entryName} in ${packId}`);
       return null;
     }
-    return pack.getDocument(entry._id);
+    return pack.getDocument?.(entry._id) ?? null;
   } catch (err) {
     Log.warn("compendium query failed", { packId, entryName, err });
     return null;
@@ -44,18 +50,16 @@ export async function getCompendiumEntry(
 export async function getCompendiumEntries(
   packId: string,
   entryNames: string[],
-): Promise<Map<string, any>> {
-  const results = new Map<string, any>();
+): Promise<Map<string, FoundryDocument>> {
+  const results = new Map<string, FoundryDocument>();
   try {
-    const pack: any = getGame()?.packs?.get?.(packId);
+    const pack = getCompendiumPack(packId);
     if (!pack) return results;
-    await pack.getIndex();
+    const index = await ensurePackIndex(pack);
     for (const name of entryNames) {
-      const entry = pack.index.find(
-        (e: any) => e.name?.toLowerCase() === name.toLowerCase(),
-      );
+      const entry = findEntryByName(index, name);
       if (entry) {
-        const doc = await pack.getDocument(entry._id);
+        const doc = await pack.getDocument?.(entry._id);
         if (doc) results.set(name, doc);
       }
     }
@@ -65,3 +69,22 @@ export async function getCompendiumEntries(
   return results;
 }
 
+function getCompendiumPack(packId: string): CompendiumPackLike | undefined {
+  const pack = getGame()?.packs?.get?.(packId);
+  return isCompendiumPack(pack) ? pack : undefined;
+}
+
+function isCompendiumPack(value: unknown): value is CompendiumPackLike {
+  return typeof value === "object" && value !== null && typeof (value as FoundryCompendiumCollection).getIndex === "function";
+}
+
+async function ensurePackIndex(pack: CompendiumPackLike): Promise<FoundryIndexEntry[]> {
+  const index = await pack.getIndex();
+  pack.index = Array.isArray(index) ? index : [];
+  return pack.index;
+}
+
+function findEntryByName(index: FoundryIndexEntry[], entryName: string): FoundryIndexEntry | undefined {
+  const normalizedName = entryName.toLowerCase();
+  return index.find((entry) => entry.name?.toLowerCase() === normalizedName);
+}

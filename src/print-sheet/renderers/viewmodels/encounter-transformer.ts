@@ -7,16 +7,7 @@
 import type { EncounterGroupData } from "../../extractors/dnd5e-types";
 import type { PrintOptions } from "../../types";
 import type { EncounterGroupViewModel } from "./encounter-viewmodel";
-
-/* ── HTML Helpers ──────────────────────────────────────────── */
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { esc } from "./character-transformer-common";
 
 /* ── Main Transformer ───────────────────────────────────────── */
 
@@ -31,4 +22,3 @@ export function transformEncounterGroupToViewModel(
     paperClass: `fth-paper-${options.paperSize}`,
   };
 }
-

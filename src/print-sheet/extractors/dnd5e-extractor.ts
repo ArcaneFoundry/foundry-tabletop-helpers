@@ -15,7 +15,7 @@ import type {
 } from "./dnd5e-types";
 import type {
   Dnd5eDamageData, Dnd5eRecoveryData, Dnd5eUsesData,
-  Dnd5eSaveActivityData, Dnd5eAnyActivityData, Dnd5eRangeData,
+  Dnd5eSaveActivityData, Dnd5eAnyActivityData, Dnd5eRangeData, Dnd5eEmbedContext, Dnd5eActorAttributesData,
 } from "./dnd5e-system-types";
 import { getFirstFromSetOrArray, getActivityValues } from "./dnd5e-system-types";
 import {
@@ -33,6 +33,181 @@ import {
   extractNPCManual,
 } from "./dnd5e-npc-extractor";
 
+type CharacterShellActor = Parameters<typeof extractCharacterActions>[0];
+
+interface Dnd5eExtractorActor {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  img?: string;
+  prototypeToken?: {
+    texture?: {
+      src?: string;
+    };
+  };
+  system?: {
+    details?: Record<string, unknown> & {
+      biography?: {
+        value?: string;
+      };
+    };
+    members?: Array<{ actor?: unknown } | unknown>;
+    getMembers?(): Promise<Array<{ actor?: Dnd5eExtractorActor | null; quantity?: number }>>;
+    _prepareEmbedContext?(rulesVersion: "2024" | "2014"): Promise<Dnd5eEmbedContext>;
+    abilities?: Record<string, { mod?: number } | undefined>;
+    attributes?: Dnd5eActorAttributesData & Record<string, unknown>;
+    spells?: Record<string, { value?: number; max?: number; level?: number }>;
+    [key: string]: unknown;
+  };
+  items?: Dnd5eExtractorItem[];
+  getRollData?(): Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+interface Dnd5eGroupMemberRef {
+  actor?: Dnd5eExtractorActor | string;
+}
+
+interface Dnd5eExtractorGroup {
+  name?: string;
+  type?: string;
+  system?: {
+    type?: {
+      value?: string;
+    };
+    members?: Array<Dnd5eGroupMemberRef | Dnd5eExtractorActor | string>;
+    getMembers?(): Promise<Array<{ actor?: Dnd5eExtractorActor | null; quantity?: number }>>;
+  };
+  [key: string]: unknown;
+}
+
+interface RecoveryCollectionLike {
+  forEach(callback: (value: Dnd5eRecoveryData) => void): void;
+}
+
+interface Dnd5eExtractorItemSystem {
+  uses?: Partial<Dnd5eUsesData>;
+  activities?: Parameters<typeof getActivityValues>[0];
+  damage?: {
+    parts?: Array<[string, string] | { types?: Set<string> | string[] }>;
+    base?: {
+      number?: number;
+      denomination?: number;
+      bonus?: string;
+      types?: Set<string> | string[];
+      damageType?: string;
+    };
+  };
+  type?: {
+    value?: string;
+  };
+  armor?: {
+    value?: number;
+  };
+  properties?: Set<string> | Record<string, unknown>;
+  actionType?: string;
+  weaponType?: string;
+  range?: Partial<Dnd5eRangeData>;
+  description?: {
+    value?: string;
+  };
+  activation?: {
+    type?: string;
+  };
+  [key: string]: unknown;
+}
+
+interface Dnd5eExtractorItem {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  system?: Dnd5eExtractorItemSystem;
+  [key: string]: unknown;
+}
+
+function isExtractorActor(value: unknown): value is Dnd5eExtractorActor {
+  return typeof value === "object" && value !== null;
+}
+
+type DamagePartLike =
+  | Partial<Dnd5eDamageData>
+  | [string?, string?]
+  | {
+    formula?: string;
+    type?: string;
+    number?: number;
+    denomination?: number;
+    bonus?: string;
+    custom?: {
+      enabled?: boolean;
+      formula?: string;
+    };
+    types?: Set<string> | string[];
+  };
+
+interface RecoveryIterableLike {
+  forEach(callback: (value: Dnd5eRecoveryData) => void): void;
+}
+
+interface FormulaActorLike {
+  name?: string;
+  system?: {
+    abilities?: Record<string, { mod?: number } | undefined>;
+    attributes?: {
+      prof?: number;
+    };
+  };
+  getRollData?(): Record<string, unknown>;
+}
+
+function isRecoveryIterableLike(value: unknown): value is RecoveryIterableLike {
+  return typeof value === "object"
+    && value !== null
+    && typeof (value as { forEach?: unknown }).forEach === "function";
+}
+
+function isRecoveryData(value: unknown): value is Dnd5eRecoveryData {
+  return typeof value === "object"
+    && value !== null
+    && "period" in value;
+}
+
+function hasPropertyFlag(
+  properties: Set<string> | Record<string, unknown> | undefined,
+  key: string,
+): boolean {
+  if (!properties) return false;
+  if (properties instanceof Set) return properties.has(key);
+  return Boolean(properties[key]);
+}
+
+function getLegacyDamageFormula(part: unknown): string {
+  if (typeof part !== "object" || part === null) return "";
+  const formula = (part as { formula?: unknown }).formula;
+  return typeof formula === "string" ? formula : "";
+}
+
+function getLegacyDamageType(part: unknown): string | undefined {
+  if (typeof part !== "object" || part === null) return undefined;
+  const type = (part as { type?: unknown }).type;
+  return typeof type === "string" ? type : undefined;
+}
+
+function getDamageParts(rawParts: unknown): DamagePartLike[] {
+  if (Array.isArray(rawParts)) return rawParts as DamagePartLike[];
+  if (isRecoveryIterableLike(rawParts)) {
+    const parts: DamagePartLike[] = [];
+    rawParts.forEach((part) => parts.push(part as unknown as DamagePartLike));
+    return parts;
+  }
+  if (typeof rawParts === "object" && rawParts !== null) {
+    return Object.values(rawParts) as DamagePartLike[];
+  }
+  return [];
+}
+
 export class Dnd5eExtractor extends BaseExtractor {
   readonly systemId = "dnd5e";
 
@@ -42,12 +217,12 @@ export class Dnd5eExtractor extends BaseExtractor {
 
   /* ── Character ──────────────────────────────────────────── */
 
-  async extractCharacter(actor: any, _options: PrintOptions): Promise<CharacterData> {
+  async extractCharacter(actor: Dnd5eExtractorActor, _options: PrintOptions): Promise<CharacterData> {
     Log.info("dnd5e: extracting character", { name: actor?.name });
     const favorites = buildFavoritesSet(actor);
 
     // Try to use embed context for actions (same approach as NPCs)
-    const actions = await extractCharacterActions(actor, favorites, {
+    const actions = await extractCharacterActions(actor as CharacterShellActor, favorites, {
       stripEnrichedText: this.stripEnrichedText.bind(this),
       extractItemUses: this.extractItemUses.bind(this),
     });
@@ -56,36 +231,36 @@ export class Dnd5eExtractor extends BaseExtractor {
       name: actor.name ?? "Unknown",
       img: actor.img ?? "",
       tokenImg: actor.prototypeToken?.texture?.src ?? "",
-      details: extractDetails(actor),
-      abilities: extractAbilities(actor),
-      skills: extractSkills(actor),
-      combat: extractCombat(actor),
+      details: extractDetails(actor as Parameters<typeof extractDetails>[0]),
+      abilities: extractAbilities(actor as Parameters<typeof extractAbilities>[0]),
+      skills: extractSkills(actor as Parameters<typeof extractSkills>[0]),
+      combat: extractCombat(actor as Parameters<typeof extractCombat>[0]),
       actions,
-      spellcasting: extractSpellcasting(actor, favorites),
-      inventory: extractInventory(actor, favorites),
-      features: extractFeatures(actor, favorites),
-      proficiencies: extractCharacterProficiencies(actor),
+      spellcasting: extractSpellcasting(actor as Parameters<typeof extractSpellcasting>[0], favorites),
+      inventory: extractInventory(actor as Parameters<typeof extractInventory>[0], favorites),
+      features: extractFeatures(actor as Parameters<typeof extractFeatures>[0], favorites),
+      proficiencies: extractCharacterProficiencies(actor as CharacterShellActor),
       favorites,
       backstory: actor.system?.details?.biography?.value ?? "",
-      traits: extractTraits(actor),
-      currency: extractCurrency(actor),
+      traits: extractTraits(actor as Parameters<typeof extractTraits>[0]),
+      currency: extractCurrency(actor as CharacterShellActor),
     };
   }
 
   /* ── NPC ────────────────────────────────────────────────── */
 
-  async extractNPC(actor: any, _options: PrintOptions): Promise<NPCData> {
+  async extractNPC(actor: Dnd5eExtractorActor, _options: PrintOptions): Promise<NPCData> {
     Log.info("dnd5e: extracting NPC", { name: actor?.name });
     const favorites = buildFavoritesSet(actor);
 
     // Use the dnd5e system's built-in embed context preparation
     // This gives us properly formatted descriptions with resolved formulas
-    let embedContext: any = null;
+    let embedContext: Dnd5eEmbedContext | null = null;
     const hasEmbedMethod = typeof actor.system?._prepareEmbedContext === "function";
 
     if (hasEmbedMethod) {
       try {
-        embedContext = await actor.system._prepareEmbedContext("2024");
+        embedContext = await actor.system?._prepareEmbedContext?.("2024") ?? null;
         Log.debug("Using _prepareEmbedContext for NPC", { name: actor.name });
       } catch (err) {
         Log.warn("Failed to get embed context, using manual extraction", { name: actor.name, err: String(err) });
@@ -94,22 +269,26 @@ export class Dnd5eExtractor extends BaseExtractor {
 
     // If we have embed context, use it for actions; otherwise fall back to manual extraction
     if (embedContext) {
-      return extractNPCFromEmbedContext(actor, embedContext, favorites, {
+      const itemToFeatureData = this.itemToFeatureData.bind(this) as unknown as
+        Parameters<typeof extractNPCFromEmbedContext>[3]["itemToFeatureData"];
+      return extractNPCFromEmbedContext(actor as Parameters<typeof extractNPCFromEmbedContext>[0], embedContext, favorites, {
         stripEnrichedText: this.stripEnrichedText.bind(this),
         skillKeyToName: this.skillKeyToName.bind(this),
         extractGear: this.extractGear.bind(this),
-        itemToFeatureData: this.itemToFeatureData.bind(this),
+        itemToFeatureData,
         getActivationType: this.getActivationType.bind(this),
         crToXP: this.crToXP.bind(this),
         formatCR: this.formatCR.bind(this),
         sizeCodeToName: this.sizeCodeToName.bind(this),
       });
     } else {
-      return extractNPCManual(actor, favorites, {
+      const itemToFeatureData = this.itemToFeatureData.bind(this) as unknown as
+        Parameters<typeof extractNPCManual>[2]["itemToFeatureData"];
+      return extractNPCManual(actor as Parameters<typeof extractNPCManual>[0], favorites, {
         stripEnrichedText: this.stripEnrichedText.bind(this),
         skillKeyToName: this.skillKeyToName.bind(this),
         extractGear: this.extractGear.bind(this),
-        itemToFeatureData: this.itemToFeatureData.bind(this),
+        itemToFeatureData,
         getActivationType: this.getActivationType.bind(this),
         crToXP: this.crToXP.bind(this),
         formatCR: this.formatCR.bind(this),
@@ -125,23 +304,23 @@ export class Dnd5eExtractor extends BaseExtractor {
    * - uses.recovery as Collection (Map-like)
    * - uses.per as legacy string ("sr", "lr", "day")
    */
-  private extractItemUses(item: any): FeatureData["uses"] | null {
-    const uses = item?.system?.uses;
+  private extractItemUses(item: Dnd5eExtractorItem): FeatureData["uses"] | null {
+    const uses = item.system?.uses;
     if (!uses?.max) return null;
 
     let recovery = "";
 
     // Try to get recovery from the recovery array/collection (dnd5e 5.x)
-    let recoveryArr: any[] = [];
+    let recoveryArr: Dnd5eRecoveryData[] = [];
     if (uses.recovery) {
       if (Array.isArray(uses.recovery)) {
         recoveryArr = uses.recovery;
-      } else if (typeof uses.recovery.forEach === "function") {
+      } else if (typeof (uses.recovery as RecoveryCollectionLike).forEach === "function") {
         // Handle Collection/Map-like objects
-        uses.recovery.forEach((r: any) => recoveryArr.push(r));
-      } else if (typeof uses.recovery === "object" && uses.recovery.period) {
+        (uses.recovery as RecoveryCollectionLike).forEach((r) => recoveryArr.push(r));
+      } else if (typeof uses.recovery === "object" && uses.recovery !== null && "period" in uses.recovery) {
         // Single recovery object
-        recoveryArr = [uses.recovery];
+        recoveryArr = [uses.recovery as Dnd5eRecoveryData];
       } else if (typeof uses.recovery === "string") {
         // Legacy string format
         recovery = uses.recovery;
@@ -214,7 +393,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   }
 
   /** Extract gear names: physical weapons and armor */
-  private extractGear(weaponItems: any[], equipmentItems: any[]): string[] {
+  private extractGear(weaponItems: Dnd5eExtractorItem[], equipmentItems: Dnd5eExtractorItem[]): string[] {
     const gearNames: string[] = [];
 
     // Add physical weapons (exclude spell-like abilities that only do magical damage)
@@ -244,7 +423,7 @@ export class Dnd5eExtractor extends BaseExtractor {
       // Fallback: check item.system.damage if no activities
       if (!hasPhysicalDamage && item.system?.damage?.parts) {
         for (const part of item.system.damage.parts) {
-          const damageType = Array.isArray(part) ? part[1] : part.types?.[0];
+          const damageType = Array.isArray(part) ? part[1] : getFirstFromSetOrArray(part.types);
           if (damageType && physicalDamageTypes.has(damageType.toLowerCase())) {
             hasPhysicalDamage = true;
             break;
@@ -261,7 +440,7 @@ export class Dnd5eExtractor extends BaseExtractor {
     const armorTypes = new Set(["light", "medium", "heavy", "shield", "natural", "bonus"]);
     for (const item of equipmentItems) {
       const equipType = item.system?.type?.value?.toLowerCase() ?? "";
-      const hasArmor = item.system?.armor?.value > 0;
+      const hasArmor = (item.system?.armor?.value ?? 0) > 0;
 
       if ((armorTypes.has(equipType) || hasArmor) && item.name) {
         gearNames.push(item.name);
@@ -273,7 +452,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
   /* ── Encounter Group ────────────────────────────────────── */
 
-  async extractEncounterGroup(group: any, options: PrintOptions): Promise<EncounterGroupData> {
+  async extractEncounterGroup(group: Dnd5eExtractorGroup, options: PrintOptions): Promise<EncounterGroupData> {
     Log.info("dnd5e: extracting encounter group", { name: group?.name, type: group?.type });
 
     // dnd5e 5.x has TWO actor types that can be encounter groups:
@@ -293,7 +472,8 @@ export class Dnd5eExtractor extends BaseExtractor {
           if (!actor) continue;
 
           // Deduplicate by UUID - we only want one stat block per creature type
-          const uuid = actor.uuid ?? actor.id ?? actor.name;
+          const uuid = actor.uuid ?? actor.id ?? actor.name ?? "";
+          if (!uuid) continue;
           if (seenUUIDs.has(uuid)) {
             Log.debug("skipping duplicate actor", { name: actor.name, uuid });
             continue;
@@ -316,7 +496,8 @@ export class Dnd5eExtractor extends BaseExtractor {
       const members = this.getGroupMembers(group);
       for (const member of members) {
         // Deduplicate by UUID or name
-        const uuid = member.uuid ?? member.id ?? member.name;
+        const uuid = member.uuid ?? member.id ?? member.name ?? "";
+        if (!uuid) continue;
         if (seenUUIDs.has(uuid)) continue;
         seenUUIDs.add(uuid);
 
@@ -333,7 +514,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
   /* ── Party Summary ──────────────────────────────────────── */
 
-  async extractPartySummary(group: any, _options: PrintOptions): Promise<PartySummaryData> {
+  async extractPartySummary(group: Dnd5eExtractorGroup, _options: PrintOptions): Promise<PartySummaryData> {
     Log.info("dnd5e: extracting party summary", { name: group?.name });
 
     const members = this.getGroupMembers(group);
@@ -403,16 +584,18 @@ export class Dnd5eExtractor extends BaseExtractor {
         const spellSlots: { level: number; max: number }[] = [];
         for (let lvl = 1; lvl <= 9; lvl++) {
           const slotData = spellsData[`spell${lvl}`];
-          if (slotData?.max > 0) {
-            spellSlots.push({ level: lvl, max: slotData.max });
+          const max = slotData?.max ?? 0;
+          if (max > 0) {
+            spellSlots.push({ level: lvl, max });
           }
         }
 
         // Pact magic (warlock)
         let pactSlots: { max: number; level: number } | null = null;
         const pactData = spellsData.pact;
-        if (pactData?.max > 0) {
-          pactSlots = { max: pactData.max, level: pactData.level ?? 1 };
+        const pactMax = pactData?.max ?? 0;
+        if (pactMax > 0) {
+          pactSlots = { max: pactMax, level: pactData?.level ?? 1 };
         }
 
         summaries.push({
@@ -444,16 +627,16 @@ export class Dnd5eExtractor extends BaseExtractor {
   /* ── Private helpers ────────────────────────────────────── */
 
   /** Retrieve actual Actor documents from a dnd5e Group actor */
-  private getGroupMembers(group: any): any[] {
+  private getGroupMembers(group: Dnd5eExtractorGroup): Dnd5eExtractorActor[] {
     // dnd5e groups store members in system.members as an array of { actor } references
     const membersData = group.system?.members ?? [];
-    const actors: any[] = [];
+    const actors: Dnd5eExtractorActor[] = [];
 
     if (Array.isArray(membersData)) {
       for (const m of membersData) {
         // Each member entry may be { actor: ActorDocument } or just an actor reference
-        const actor = m.actor ?? m;
-        if (actor && actor.name) actors.push(actor);
+        const actor = ("actor" in (m as Dnd5eGroupMemberRef) ? (m as Dnd5eGroupMemberRef).actor : m);
+        if (isExtractorActor(actor) && actor.name) actors.push(actor);
       }
     }
 
@@ -462,7 +645,9 @@ export class Dnd5eExtractor extends BaseExtractor {
       const game = getGame();
       if (Array.isArray(group.system.members)) {
         for (const ref of group.system.members) {
-          const id = ref.actor ?? ref;
+          const id = (typeof ref === "object" && ref !== null && "actor" in ref)
+            ? (ref as Dnd5eGroupMemberRef).actor
+            : ref;
           if (typeof id === "string") {
             const actor = game?.actors?.get?.(id);
             if (actor) actors.push(actor);
@@ -475,7 +660,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   }
 
   /** Convert an item to a FeatureData entry (for NPC stat blocks) */
-  private itemToFeatureData(item: any, favorites: Set<string>, actor?: any): FeatureData {
+  private itemToFeatureData(item: Dnd5eExtractorItem, favorites: Set<string>, actor?: FormulaActorLike): FeatureData {
     const uses = item.system?.uses;
     const attack = this.extractAttackData(item, actor);
 
@@ -511,8 +696,9 @@ export class Dnd5eExtractor extends BaseExtractor {
         activitiesType: item.system?.activities ? typeof item.system.activities : "none",
         activitiesKeys: item.system?.activities ?
           (item.system.activities instanceof Map ? [...item.system.activities.keys()] :
-           typeof item.system.activities.keys === "function" ? [...item.system.activities.keys()] :
-           Object.keys(item.system.activities)) : [],
+           typeof (item.system.activities as { keys?: unknown }).keys === "function"
+             ? [...((item.system.activities as unknown) as { keys(): IterableIterator<string> }).keys()] :
+            Object.keys(item.system.activities)) : [],
         dmgInfoFound: !!dmgInfo,
         dmgInfo: dmgInfo ? JSON.stringify(dmgInfo) : null,
         itemSystemKeys: item.system ? Object.keys(item.system) : [],
@@ -529,7 +715,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
     // Build uses/recovery string using Dnd5eUsesData types
     let usesData: { value: number; max: number; recovery: string } | null = null;
-    const typedUses = uses as Partial<Dnd5eUsesData> | undefined;
+    const typedUses = uses as (Partial<Dnd5eUsesData> & { recovery?: unknown }) | undefined;
     if (typedUses && typedUses.max) {
       // dnd5e 5.x: uses.recovery is array of Dnd5eRecoveryData
       // {period: "recharge", formula: "5", type: "recoverAll"}
@@ -537,13 +723,14 @@ export class Dnd5eExtractor extends BaseExtractor {
 
       // Handle uses.recovery as Collection, Array, or object
       let recoveryArr: Partial<Dnd5eRecoveryData>[] = [];
-      if (typedUses.recovery) {
-        if (Array.isArray(typedUses.recovery)) {
-          recoveryArr = typedUses.recovery;
-        } else if (typeof (typedUses.recovery as any).forEach === "function") {
-          (typedUses.recovery as any).forEach((r: any) => recoveryArr.push(r));
-        } else if (typeof typedUses.recovery === "object" && (typedUses.recovery as any).period) {
-          recoveryArr = [typedUses.recovery as any];
+      const recoveryValue: unknown = typedUses.recovery;
+      if (recoveryValue) {
+        if (Array.isArray(recoveryValue)) {
+          recoveryArr = recoveryValue;
+        } else if (isRecoveryIterableLike(recoveryValue)) {
+          recoveryValue.forEach((r) => recoveryArr.push(r));
+        } else if (isRecoveryData(recoveryValue)) {
+          recoveryArr = [recoveryValue];
         }
       }
 
@@ -603,14 +790,14 @@ export class Dnd5eExtractor extends BaseExtractor {
       name: item.name ?? "",
       description,
       uses: usesData,
-      isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
+      isFavorite: favorites.has(String(item.id ?? "")) || favorites.has(String(item.uuid ?? "")),
       attack,
       itemType: item.type ?? "feat",
     };
   }
 
   /** Extract attack/damage data from an item's activities */
-  private extractAttackData(item: any, actor?: any): FeatureData["attack"] | undefined {
+  private extractAttackData(item: Dnd5eExtractorItem, actor?: FormulaActorLike): FeatureData["attack"] | undefined {
     // Handle weapons and feats with damage activities
     const activityValues = getActivityValues(item.system?.activities);
     if (activityValues.length === 0) return undefined;
@@ -639,8 +826,8 @@ export class Dnd5eExtractor extends BaseExtractor {
 
       // Determine attack type - check multiple possible locations
       // In dnd5e 5.x, properties is a Set<string>
-      const weaponProps = item.system?.properties as Set<string> | undefined ?? new Set<string>();
-      const hasThrown = weaponProps.has?.("thr") || (weaponProps as any).thr;
+      const weaponProps = item.system?.properties;
+      const hasThrown = hasPropertyFlag(weaponProps, "thr");
 
       // Get action type from item or activity
       let actionType = item.system?.actionType ??
@@ -665,7 +852,7 @@ export class Dnd5eExtractor extends BaseExtractor {
       if (!abilityKey) {
         // Default: STR for melee, DEX for ranged
         // Finesse weapons can use either (NPCs typically use the higher)
-        const hasFinesse = weaponProps.has?.("fin") || (weaponProps as any).fin;
+        const hasFinesse = hasPropertyFlag(weaponProps, "fin");
         if (hasFinesse) {
           const strMod = actor?.system?.abilities?.str?.mod ?? 0;
           const dexMod = actor?.system?.abilities?.dex?.mod ?? 0;
@@ -709,7 +896,7 @@ export class Dnd5eExtractor extends BaseExtractor {
       const baseDamageTypes = item.system?.damage?.base?.types;
       const weaponDamageType = getFirstFromSetOrArray(baseDamageTypes) ??
                                item.system?.damage?.base?.damageType ??
-                               item.system?.damage?.parts?.[0]?.[1] ??
+                               (Array.isArray(item.system?.damage?.parts?.[0]) ? item.system.damage.parts[0][1] : "") ??
                                "";
 
       // Get damage - try multiple sources
@@ -731,7 +918,7 @@ export class Dnd5eExtractor extends BaseExtractor {
         if (baseDamage) {
           const baseDice = baseDamage.number ?? 1;
           const baseDie = baseDamage.denomination ?? 8;
-          const baseType = baseDamage.types?.[0] ?? baseDamage.damageType ?? weaponDamageType;
+          const baseType = getFirstFromSetOrArray(baseDamage.types) ?? baseDamage.damageType ?? weaponDamageType;
           damageData = [{ number: baseDice, denomination: baseDie, bonus: "@mod", types: new Set([baseType]) }];
         }
       }
@@ -765,10 +952,10 @@ export class Dnd5eExtractor extends BaseExtractor {
           } else if (dmgPart.custom?.enabled && dmgPart.custom.formula) {
             formula = dmgPart.custom.formula;
           } else {
-            formula = (part as any).formula ?? "";
+            formula = getLegacyDamageFormula(part);
           }
           // Use helper to get first damage type from Set or Array
-          dmgType = getFirstFromSetOrArray(dmgPart.types) ?? (part as any).type ?? "";
+          dmgType = getFirstFromSetOrArray(dmgPart.types) ?? getLegacyDamageType(part) ?? "";
         }
 
         // If no damage type specified, use the weapon's base damage type for first entry
@@ -794,7 +981,7 @@ export class Dnd5eExtractor extends BaseExtractor {
       }
 
       return {
-        type: actionType,
+        type: typeof actionType === "string" ? actionType : "",
         toHit,
         reach,
         damage,
@@ -811,21 +998,13 @@ export class Dnd5eExtractor extends BaseExtractor {
    * Extract data from a save-based activity (like breath weapons).
    * Uses Dnd5eSaveActivityData types for proper handling of dnd5e 5.x structures.
    */
-  private extractSaveActivityData(activity: Partial<Dnd5eSaveActivityData>, actor?: any): FeatureData["attack"] | undefined {
+  private extractSaveActivityData(activity: Partial<Dnd5eSaveActivityData>, actor?: FormulaActorLike): FeatureData["attack"] | undefined {
     try {
       const damage: { avg: number; formula: string; type: string }[] = [];
       const rawParts = activity.damage?.parts;
 
       // Convert to array safely - rawParts can be Array, Collection, or object
-      let damageParts: Partial<Dnd5eDamageData>[] = [];
-      if (Array.isArray(rawParts)) {
-        damageParts = rawParts;
-      } else if (rawParts && typeof (rawParts as any).forEach === "function") {
-        // Handle Collection/Map-like objects
-        (rawParts as any).forEach((part: any) => damageParts.push(part));
-      } else if (rawParts && typeof rawParts === "object") {
-        damageParts = Object.values(rawParts);
-      }
+      const damageParts = getDamageParts(rawParts);
 
       for (const part of damageParts) {
         let formula = "";
@@ -833,8 +1012,8 @@ export class Dnd5eExtractor extends BaseExtractor {
 
         if (Array.isArray(part)) {
           // Legacy array format
-          formula = (part as any)[0] ?? "";
-          dmgType = (part as any)[1] ?? "";
+          formula = part[0] ?? "";
+          dmgType = part[1] ?? "";
         } else if (typeof part === "object" && part !== null) {
           // dnd5e 5.x format: Dnd5eDamageData
           // {number: 4, denomination: 10, bonus: "", types: Set(["lightning"])}
@@ -844,10 +1023,10 @@ export class Dnd5eExtractor extends BaseExtractor {
           } else if (part.custom?.enabled && part.custom.formula) {
             formula = part.custom.formula;
           } else {
-            formula = (part as any).formula ?? "";
+            formula = getLegacyDamageFormula(part);
           }
           // Use helper to get first damage type from Set or Array
-          dmgType = getFirstFromSetOrArray(part.types) ?? (part as any).type ?? "";
+          dmgType = getFirstFromSetOrArray(part.types) ?? getLegacyDamageType(part) ?? "";
         }
 
         if (formula && typeof formula === "string") {
@@ -884,7 +1063,7 @@ export class Dnd5eExtractor extends BaseExtractor {
    * This is used for passive features like "Fanatic Advantage" where the description
    * has "7 ()" but the damage formula is stored in an activity.
    */
-  private extractAnyDamageFromActivities(item: any, actor?: any): { formula: string; avg: number } | null {
+  private extractAnyDamageFromActivities(item: Dnd5eExtractorItem, actor?: FormulaActorLike): { formula: string; avg: number } | null {
     const activityValues = getActivityValues(item.system?.activities);
     if (activityValues.length === 0) return null;
 
@@ -893,9 +1072,8 @@ export class Dnd5eExtractor extends BaseExtractor {
       Log.debug("extractAnyDamageFromActivities - activities found", {
         itemName: item.name,
         activityCount: activityValues.length,
-        activities: activityValues.map((a: any) => ({
+        activities: activityValues.map((a) => ({
           type: a.type,
-          name: a.name,
           hasDamage: !!a.damage,
           damageKeys: a.damage ? Object.keys(a.damage) : [],
           damageParts: a.damage?.parts ?
@@ -911,21 +1089,13 @@ export class Dnd5eExtractor extends BaseExtractor {
         const rawParts = activity.damage?.parts;
         if (!rawParts) continue;
 
-        // Convert to array safely
-        let damageParts: any[] = [];
-        if (Array.isArray(rawParts)) {
-          damageParts = rawParts;
-        } else if (typeof (rawParts as any).forEach === "function") {
-          (rawParts as any).forEach((part: any) => damageParts.push(part));
-        } else if (typeof rawParts === "object") {
-          damageParts = Object.values(rawParts);
-        }
+        const damageParts = getDamageParts(rawParts);
 
         Log.debug("extractAnyDamageFromActivities - damage parts", {
           itemName: item.name,
           activityType: activity.type,
           partsCount: damageParts.length,
-          parts: damageParts.map((p: any) => JSON.stringify(p).slice(0, 200)),
+          parts: damageParts.map((p) => JSON.stringify(p).slice(0, 200)),
         });
 
         // Extract the first damage formula
@@ -940,7 +1110,7 @@ export class Dnd5eExtractor extends BaseExtractor {
             } else if (part.custom?.enabled && part.custom.formula) {
               formula = part.custom.formula;
             } else {
-              formula = part.formula ?? "";
+              formula = getLegacyDamageFormula(part);
             }
           }
 
@@ -965,7 +1135,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   }
 
   /** Estimate average damage from a formula like "1d8 + @mod" */
-  private estimateDamageAverage(formula: string, actor?: any, abilityKey?: string): number {
+  private estimateDamageAverage(formula: string, actor?: FormulaActorLike, abilityKey?: string): number {
     try {
       // First resolve the formula to get actual numbers
       const resolved = this.resolveFormula(formula, actor, abilityKey);
@@ -988,7 +1158,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   }
 
   /** Resolve @mod and similar placeholders in a formula */
-  private resolveFormula(formula: string, actor?: any, abilityKey?: string): string {
+  private resolveFormula(formula: string, actor?: FormulaActorLike, abilityKey?: string): string {
     if (!actor) return formula;
 
     let resolved = formula;
@@ -1056,7 +1226,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   }
 
   /** Determine the activation type category for an NPC item */
-  private getActivationType(item: any): string {
+  private getActivationType(item: Dnd5eExtractorItem): string {
     // Check activities first (dnd5e 2024 style)
     try {
       for (const activity of getActivityValues(item.system?.activities)) {

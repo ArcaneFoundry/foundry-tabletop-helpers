@@ -11,7 +11,9 @@ import type {
 } from "./dnd5e-types";
 import type {
   Dnd5eAbilityData, Dnd5eAbilitiesData, Dnd5eAbilitySaveData,
-  Dnd5eTraitData,
+  Dnd5eActorAttributesData, Dnd5eActorDetailsData,
+  Dnd5eItemSystemData, Dnd5eRecoveryData, Dnd5eSkillData, Dnd5eTraitData,
+  Dnd5eTraitsData,
 } from "./dnd5e-system-types";
 import { getActivityValues } from "./dnd5e-system-types";
 import { toArray } from "./dnd5e-system-types";
@@ -39,6 +41,119 @@ const FEAT_CATEGORY_LABELS: Record<string, string> = {
   supernaturalGift: "Supernatural Gift",
 };
 
+type SkillMap = Record<string, Partial<Dnd5eSkillData> & { mod?: number }>;
+
+interface FavoriteReference {
+  id?: string;
+  source?: string;
+}
+
+interface ExtractorClassItemSystem extends Partial<Dnd5eItemSystemData> {
+  levels?: number;
+  identifier?: string;
+  classIdentifier?: string;
+  hd?: {
+    denomination?: string;
+    value?: number;
+    max?: number;
+  };
+}
+
+interface ExtractorInventoryItemSystem extends Partial<Dnd5eItemSystemData> {
+  quantity?: number;
+  weight?: number | { value?: number };
+  equipped?: boolean;
+  rarity?: string;
+  attunement?: boolean | number;
+  container?: string | null;
+  price?: {
+    value?: number;
+    denomination?: string;
+  };
+}
+
+interface ExtractorSpellItemSystem extends Partial<Dnd5eItemSystemData> {
+  level?: number;
+  school?: string;
+  properties?: Set<string> | string[];
+  prepared?: boolean;
+  preparation?: {
+    prepared?: boolean;
+  };
+  activation?: {
+    type?: string;
+    value?: number;
+  };
+  range?: {
+    value?: number;
+    units?: string;
+  };
+  duration?: {
+    value?: string | number;
+    units?: string;
+  };
+  materials?: {
+    value?: string;
+  };
+  sourceClass?: string;
+}
+
+interface ExtractorFeatureItemSystem extends Partial<Dnd5eItemSystemData> {
+  type?: {
+    value?: string;
+  };
+}
+
+interface ExtractorItem<TSystem = unknown> {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  img?: string;
+  system?: TSystem;
+  flags?: {
+    dnd5e?: {
+      sourceClass?: string;
+    };
+  };
+}
+
+interface ExtractorActorSystem {
+  abilities?: Partial<Record<keyof Dnd5eAbilitiesData, Partial<Dnd5eAbilityData>>>;
+  attributes?: Dnd5eActorAttributesData & {
+    death?: {
+      success?: number;
+      failure?: number;
+    };
+    inspiration?: boolean;
+  };
+  details?: Dnd5eActorDetailsData;
+  traits?: Dnd5eTraitsData;
+  skills?: SkillMap;
+  spells?: Record<string, { value?: number; max?: number; level?: number }>;
+}
+
+interface ExtractorActor {
+  system?: ExtractorActorSystem;
+  items?: Array<ExtractorItem>;
+  favorites?: FavoriteReference[];
+  getRollData?(): Record<string, unknown>;
+}
+
+function isItemType<TSystem>(
+  item: ExtractorItem,
+  type: string,
+): item is ExtractorItem<TSystem> & { type: string } {
+  return item.type === type;
+}
+
+function getItemsByType<TSystem>(
+  actor: ExtractorActor,
+  type: string,
+): Array<ExtractorItem<TSystem> & { type: string }> {
+  return (actor.items ?? []).filter((item): item is ExtractorItem<TSystem> & { type: string } => isItemType(item, type));
+}
+
 /* ── Label helpers ────────────────────────────────────────── */
 
 export function abilityLabel(key: string): string {
@@ -55,7 +170,7 @@ function skillLabel(key: string): string {
 
 /* ── Favorites ────────────────────────────────────────────── */
 
-export function buildFavoritesSet(actor: any): Set<string> {
+export function buildFavoritesSet(actor: ExtractorActor): Set<string> {
   const favs = new Set<string>();
   const favorites = actor.favorites;
   if (Array.isArray(favorites)) {
@@ -106,7 +221,7 @@ export function resolveTraitSet(traitObj: Dnd5eTraitData | null | undefined): st
  * Extract ability score data from a dnd5e actor.
  * Handles the dnd5e 5.x format where save can be a number or an object with .value property.
  */
-export function extractAbilities(actor: any): AbilityData[] {
+export function extractAbilities(actor: ExtractorActor): AbilityData[] {
   const abilities = (actor.system?.abilities ?? {}) as Partial<Dnd5eAbilitiesData>;
   const prof = (actor.system?.attributes?.prof ?? 2) as number;
 
@@ -142,10 +257,10 @@ export function extractAbilities(actor: any): AbilityData[] {
 
 /* ── Skills ───────────────────────────────────────────────── */
 
-export function extractSkills(actor: any): SkillData[] {
+export function extractSkills(actor: ExtractorActor): SkillData[] {
   const skills = actor.system?.skills ?? {};
   return Object.entries(skills)
-    .map(([key, s]: [string, any]) => ({
+    .map(([key, s]: [string, SkillMap[string]]) => ({
       key,
       label: skillLabel(key),
       total: s.total ?? s.mod ?? 0,
@@ -158,7 +273,7 @@ export function extractSkills(actor: any): SkillData[] {
 
 /* ── Combat stats ─────────────────────────────────────────── */
 
-export function extractCombat(actor: any): CombatData {
+export function extractCombat(actor: ExtractorActor): CombatData {
   const attrs = actor.system?.attributes ?? {};
   const hp = attrs.hp ?? {};
   const death = attrs.death ?? {};
@@ -166,14 +281,14 @@ export function extractCombat(actor: any): CombatData {
   const senses = attrs.senses ?? {};
 
   const speedEntries: { key: string; value: number }[] = [];
-  for (const key of ["walk", "fly", "swim", "climb", "burrow"]) {
+  for (const key of ["walk", "fly", "swim", "climb", "burrow"] as const) {
     const val = movement[key];
     if (val && val > 0) speedEntries.push({ key, value: val });
   }
   if (speedEntries.length === 0) speedEntries.push({ key: "walk", value: 30 });
 
   const senseEntries: { key: string; value: number | string }[] = [];
-  for (const key of ["darkvision", "blindsight", "tremorsense", "truesight"]) {
+  for (const key of ["darkvision", "blindsight", "tremorsense", "truesight"] as const) {
     const val = senses[key];
     if (val && val > 0) senseEntries.push({ key, value: val });
   }
@@ -182,7 +297,7 @@ export function extractCombat(actor: any): CombatData {
   // Extract hit dice from class items
   // dnd5e 5.x: class items have system.hd.denomination (e.g., "d10") and system.hd.value/max
   const hitDice: Record<string, { value: number; max: number }> = {};
-  const classItems = actor.items?.filter?.((i: any) => i.type === "class") ?? [];
+  const classItems = getItemsByType<ExtractorClassItemSystem>(actor, "class");
   for (const cls of classItems) {
     const hd = cls.system?.hd;
     if (hd?.denomination) {
@@ -210,16 +325,16 @@ export function extractCombat(actor: any): CombatData {
 
 /* ── Character details ────────────────────────────────────── */
 
-export function extractDetails(actor: any): CharacterDetails {
+export function extractDetails(actor: ExtractorActor): CharacterDetails {
   const details = actor.system?.details ?? {};
-  const items = actor.items;
+  const items = actor.items ?? [];
 
   // Race / species — might be a string, an object with .name, or a linked item
   let race = "";
   if (typeof details.race === "string") race = details.race;
   else if (details.race?.name) race = details.race.name;
   if (!race) {
-    const raceItem = items?.find?.((i: any) => i.type === "race");
+    const raceItem = items.find((item) => isItemType(item, "race"));
     race = raceItem?.name ?? "";
   }
 
@@ -228,18 +343,19 @@ export function extractDetails(actor: any): CharacterDetails {
   if (typeof details.background === "string") background = details.background;
   else if (details.background?.name) background = details.background.name;
   if (!background) {
-    const bgItem = items?.find?.((i: any) => i.type === "background");
+    const bgItem = items.find((item) => isItemType(item, "background"));
     background = bgItem?.name ?? "";
   }
 
   // Classes
-  const classItems = items?.filter?.((i: any) => i.type === "class") ?? [];
-  const classes: ClassInfo[] = classItems.map((c: any) => {
+  const classItems = items.filter((item): item is ExtractorItem<ExtractorClassItemSystem> & { type: string } => isItemType<ExtractorClassItemSystem>(item, "class"));
+  const classes: ClassInfo[] = classItems.map((c) => {
     let subclass = "";
-    const subclassItem = items?.find?.((i: any) =>
-      i.type === "subclass" && i.system?.classIdentifier === c.system?.identifier,
+    const subclassItem = items.find((i) =>
+      i.type === "subclass"
+      && (i.system as ExtractorClassItemSystem | undefined)?.classIdentifier === c.system?.identifier,
     );
-    if (subclassItem) subclass = subclassItem.name;
+    if (subclassItem?.name) subclass = subclassItem.name;
     return {
       name: c.name ?? "Unknown",
       level: c.system?.levels ?? 1,
@@ -258,7 +374,7 @@ export function extractDetails(actor: any): CharacterDetails {
 
 /* ── Traits ───────────────────────────────────────────────── */
 
-export function extractTraits(actor: any): TraitData {
+export function extractTraits(actor: ExtractorActor): TraitData {
   const traits = actor.system?.traits ?? {};
   return {
     size: traits.size ?? "med",
@@ -274,34 +390,34 @@ export function extractTraits(actor: any): TraitData {
 
 /* ── Spellcasting ─────────────────────────────────────────── */
 
-function hasProperty(set: any, prop: string): boolean {
+function hasProperty(set: Set<string> | string[] | undefined, prop: string): boolean {
   if (set instanceof Set) return set.has(prop);
   if (Array.isArray(set)) return set.includes(prop);
   return false;
 }
 
-export function extractSpellcasting(actor: any, favorites: Set<string>): SpellcastingData | null {
+export function extractSpellcasting(actor: ExtractorActor, favorites: Set<string>): SpellcastingData | null {
   const spellcastingAbility = actor.system?.attributes?.spellcasting;
   if (!spellcastingAbility) return null;
 
-  const spellItems = actor.items?.filter?.((i: any) => i.type === "spell") ?? [];
+  const spellItems = getItemsByType<ExtractorSpellItemSystem>(actor, "spell");
   if (spellItems.length === 0) return null;
 
   const prof = actor.system?.attributes?.prof ?? 0;
-  const abilityMod = actor.system?.abilities?.[spellcastingAbility]?.mod ?? 0;
+  const abilityMod = actor.system?.abilities?.[spellcastingAbility as keyof Dnd5eAbilitiesData]?.mod ?? 0;
 
   // Spell slots
   const slotsData = actor.system?.spells ?? {};
   const slots: SpellSlotData[] = [];
   for (let level = 1; level <= 9; level++) {
     const slot = slotsData[`spell${level}`];
-    if (slot && slot.max > 0) {
+    if (slot?.max && slot.max > 0) {
       slots.push({ level, max: slot.max ?? 0, value: slot.value ?? 0, label: `Level ${level}` });
     }
   }
   // Pact slots
   const pact = slotsData.pact;
-  if (pact && pact.max > 0) {
+  if (pact?.max && pact.max > 0) {
     slots.push({ level: pact.level ?? 1, max: pact.max ?? 0, value: pact.value ?? 0, label: `Pact (Level ${pact.level ?? 1})` });
   }
 
@@ -447,7 +563,7 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
       ritual: !!(props && hasProperty(props, "ritual")),
       prepared: sys?.prepared ?? sys?.preparation?.prepared ?? false,
       description: sys?.description?.value ?? "",
-      isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
+      isFavorite: favorites.has(item.id ?? "") || favorites.has(item.uuid ?? ""),
       castingTime,
       range,
       duration,
@@ -481,9 +597,12 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
 
 /* ── Inventory ────────────────────────────────────────────── */
 
-export function extractInventory(actor: any, favorites: Set<string>): InventoryItem[] {
+export function extractInventory(actor: ExtractorActor, favorites: Set<string>): InventoryItem[] {
   const inventoryTypes = new Set(["weapon", "equipment", "consumable", "tool", "loot", "container"]);
-  const items = actor.items?.filter?.((i: any) => inventoryTypes.has(i.type)) ?? [];
+  const items = (actor.items ?? []).filter(
+    (item): item is ExtractorItem<ExtractorInventoryItemSystem> & { type: string } =>
+      typeof item.type === "string" && inventoryTypes.has(item.type),
+  );
 
   // Build a map of all items by ID
   const itemsById = new Map<string, InventoryItem>();
@@ -506,12 +625,12 @@ export function extractInventory(actor: any, favorites: Set<string>): InventoryI
       type: item.type ?? "",
       img: item.img ?? "",
       quantity: item.system?.quantity ?? 1,
-      weight: item.system?.weight?.value ?? item.system?.weight ?? 0,
+      weight: typeof item.system?.weight === "number" ? item.system.weight : (item.system?.weight?.value ?? 0),
       equipped: !!item.system?.equipped,
       rarity: item.system?.rarity ?? "",
       attunement: !!(item.system?.attunement),
       uses: (uses && uses.max) ? { value: uses.value ?? 0, max: uses.max ?? 0 } : null,
-      isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
+      isFavorite: favorites.has(item.id ?? "") || favorites.has(item.uuid ?? ""),
       containerId,
       contents: [],
       price,
@@ -629,23 +748,27 @@ function stripEnrichedText(html: string, rollData?: Record<string, unknown>): st
  * - uses.recovery as string "lr"
  * - uses.per as legacy string ("sr", "lr", "day")
  */
-function extractItemUses(item: any): FeatureData["uses"] | null {
-  const uses = item?.system?.uses;
+function extractItemUses(item: ExtractorItem): FeatureData["uses"] | null {
+  const uses = (item.system as Partial<Dnd5eItemSystemData> | undefined)?.uses;
   if (!uses?.max) return null;
 
   let recovery = "";
 
   // Try to get recovery from the recovery array/collection (dnd5e 5.x)
-  let recoveryArr: any[] = [];
+  let recoveryArr: Dnd5eRecoveryData[] = [];
   if (uses.recovery) {
     if (Array.isArray(uses.recovery)) {
       recoveryArr = uses.recovery;
-    } else if (typeof uses.recovery.forEach === "function") {
+    } else if (typeof (uses.recovery as { forEach?: unknown }).forEach === "function") {
       // Handle Collection/Map-like objects
-      uses.recovery.forEach((r: any) => recoveryArr.push(r));
-    } else if (typeof uses.recovery === "object" && uses.recovery.period) {
+      (uses.recovery as { forEach(callback: (value: Dnd5eRecoveryData) => void): void }).forEach((r) => recoveryArr.push(r));
+    } else if (
+      typeof uses.recovery === "object"
+      && uses.recovery !== null
+      && "period" in uses.recovery
+    ) {
       // Single recovery object
-      recoveryArr = [uses.recovery];
+      recoveryArr = [uses.recovery as Dnd5eRecoveryData];
     } else if (typeof uses.recovery === "string") {
       // Legacy string format
       recovery = uses.recovery;
@@ -675,8 +798,8 @@ function extractItemUses(item: any): FeatureData["uses"] | null {
   };
 }
 
-export function extractFeatures(actor: any, favorites: Set<string>): FeatureGroup[] {
-  const featItems = actor.items?.filter?.((i: any) => i.type === "feat") ?? [];
+export function extractFeatures(actor: ExtractorActor, favorites: Set<string>): FeatureGroup[] {
+  const featItems = getItemsByType<ExtractorFeatureItemSystem>(actor, "feat");
   const groups = new Map<string, FeatureData[]>();
 
   // Resolve actor roll data once so [[lookup @variable]] placeholders in feature
@@ -697,7 +820,7 @@ export function extractFeatures(actor: any, favorites: Set<string>): FeatureGrou
       name: item.name ?? "",
       description: cleanDescription,
       uses: extractItemUses(item),
-      isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
+      isFavorite: favorites.has(item.id ?? "") || favorites.has(item.uuid ?? ""),
     };
 
     if (!groups.has(categoryLabel)) groups.set(categoryLabel, []);

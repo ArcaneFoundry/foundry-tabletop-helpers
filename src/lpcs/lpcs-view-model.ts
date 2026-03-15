@@ -23,6 +23,24 @@ import { buildCombatGroups, getItemActivationType } from "./lpcs-view-model-comb
 import { buildEncumbrance, buildInventory } from "./lpcs-view-model-inventory";
 import { buildFeatures, buildProficiencies, buildTraits } from "./lpcs-view-model-character";
 
+interface LPCSActorDocument {
+  name?: string;
+  img?: string;
+  system?: Record<string, unknown>;
+  items?: Array<Record<string, unknown>> | {
+    contents?: Array<Record<string, unknown>>;
+    get?(id: string): Record<string, unknown> | undefined;
+    find?(predicate: (item: Record<string, unknown>) => boolean): Record<string, unknown> | undefined;
+    filter?(predicate: (item: Record<string, unknown>) => boolean): Array<Record<string, unknown>>;
+  };
+  allApplicableEffects?(): Iterable<Record<string, unknown>>;
+}
+
+function getActorItems(actor: LPCSActorDocument): Array<Record<string, unknown>> {
+  if (Array.isArray(actor.items)) return actor.items;
+  return actor.items?.contents ?? [];
+}
+
 /* ── Utility ──────────────────────────────────────────────── */
 
 function formatMod(n: number): string {
@@ -133,13 +151,13 @@ interface ParsedEffectData {
  * Parse all active effects from the actor into structured annotation data.
  * Called once per render, results shared across weapons, spells, and features.
  */
-function parseAllEffects(actor: Record<string, unknown>): ParsedEffectData {
+function parseAllEffects(actor: LPCSActorDocument): ParsedEffectData {
   const byCategory: ParsedEffectData["byCategory"] = { melee: [], ranged: [], spell: [], all: [] };
   const bySourceItem = new Map<string, LPCSEffectAnnotation[]>();
   const effects: ParsedEffect[] = [];
 
-  const allEffects = typeof (actor as Record<string, unknown>).allApplicableEffects === "function"
-    ? (actor as { allApplicableEffects(): Iterable<Record<string, unknown>> }).allApplicableEffects()
+  const allEffects = typeof actor.allApplicableEffects === "function"
+    ? actor.allApplicableEffects()
     : [];
 
   for (const effect of allEffects) {
@@ -158,7 +176,7 @@ function parseAllEffects(actor: Record<string, unknown>): ParsedEffectData {
     const sourceItemId = originStr.split(".").pop() ?? "";
 
     const originItem = sourceItemId
-      ? (actor as { items?: { get?(id: string): Record<string, unknown> | undefined } }).items?.get?.(sourceItemId)
+      ? (!Array.isArray(actor.items) ? actor.items?.get?.(sourceItemId) : undefined)
       : undefined;
     if (originItem?.name) sourceName = String(originItem.name);
 
@@ -355,9 +373,9 @@ function buildSenses(system: Record<string, unknown>): LPCSSense[] {
   return result;
 }
 
-function buildWeapons(actor: Record<string, unknown>, effectData?: ParsedEffectData): LPCSWeapon[] {
+function buildWeapons(actor: LPCSActorDocument, effectData?: ParsedEffectData): LPCSWeapon[] {
   const annotations = effectData ?? parseAllEffects(actor);
-  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const items = getActorItems(actor);
   const prof = ((actor.system as Record<string, unknown> | undefined)
     ?.attributes as Record<string, unknown> | undefined)?.prof as number ?? 2;
 
@@ -540,8 +558,8 @@ function buildWeapons(actor: Record<string, unknown>, effectData?: ParsedEffectD
   return weapons;
 }
 
-function buildActions(actor: Record<string, unknown>, actionType: string): LPCSAction[] {
-  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+function buildActions(actor: LPCSActorDocument, actionType: string): LPCSAction[] {
+  const items = getActorItems(actor);
   const EXCLUDED_TYPES = new Set(["spell", "weapon", "class", "subclass", "background", "race"]);
 
   return items
@@ -613,8 +631,8 @@ function buildSpellSlots(system: Record<string, unknown>): LPCSSpellSlotLevel[] 
   return result;
 }
 
-function buildSpellLevels(actor: Record<string, unknown>): LPCSSpellLevel[] {
-  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+function buildSpellLevels(actor: LPCSActorDocument): LPCSSpellLevel[] {
+  const items = getActorItems(actor);
   const ORDINALS = ["Cantrips", "1st Level", "2nd Level", "3rd Level", "4th Level",
     "5th Level", "6th Level", "7th Level", "8th Level", "9th Level"];
   const byLevel = new Map<number, LPCSSpell[]>();
@@ -663,8 +681,8 @@ function buildSpellLevels(actor: Record<string, unknown>): LPCSSpellLevel[] {
     }));
 }
 
-function buildHitDice(actor: Record<string, unknown>): LPCSHitDice[] {
-  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+function buildHitDice(actor: LPCSActorDocument): LPCSHitDice[] {
+  const items = getActorItems(actor);
   return items
     .filter((i) => i.type === "class")
     .map((cls) => {
@@ -678,7 +696,7 @@ function buildHitDice(actor: Record<string, unknown>): LPCSHitDice[] {
     });
 }
 
-function buildHitDiceSummary(actor: Record<string, unknown>): LPCSHitDiceSummary {
+function buildHitDiceSummary(actor: LPCSActorDocument): LPCSHitDiceSummary {
   const dice = buildHitDice(actor);
   if (dice.length === 0) return { die: "d8", current: 0, max: 0 };
   // Primary die: from the first (highest-level) class entry
@@ -688,8 +706,8 @@ function buildHitDiceSummary(actor: Record<string, unknown>): LPCSHitDiceSummary
   return { die, current, max } satisfies LPCSHitDiceSummary;
 }
 
-function buildClassLabel(actor: Record<string, unknown>): string {
-  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+function buildClassLabel(actor: LPCSActorDocument): string {
+  const items = getActorItems(actor);
   const classes = items.filter((i) => i.type === "class");
   if (classes.length === 0) return "No Class";
   return classes
@@ -697,7 +715,7 @@ function buildClassLabel(actor: Record<string, unknown>): string {
     .join(" / ");
 }
 
-function buildSubtitle(actor: Record<string, unknown>): string {
+function buildSubtitle(actor: LPCSActorDocument): string {
   const sys = actor.system as Record<string, unknown> ?? {};
   const details = sys.details as Record<string, unknown> | undefined ?? {};
 
@@ -706,12 +724,12 @@ function buildSubtitle(actor: Record<string, unknown>): string {
   else if ((details.race as Record<string, string> | undefined)?.name) {
     race = (details.race as Record<string, string>).name;
   } else {
-    const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+    const items = getActorItems(actor);
     race = String(items.find((i) => i.type === "race")?.name ?? "");
   }
 
   // Class names only — level is already shown in the hex badge
-  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const items = getActorItems(actor);
   const classNames = items
     .filter((i) => i.type === "class")
     .map((c) => String(c.name ?? ""))
@@ -785,13 +803,13 @@ function createEmptyViewModel(name: string): LPCSViewModel {
  *
  * @param actor - A dnd5e character Actor document (typed as unknown; accessed defensively)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildLPCSViewModel(actor: any): LPCSViewModel {
+export function buildLPCSViewModel(actor: LPCSActorDocument): LPCSViewModel {
   const system = actor?.system as Record<string, unknown> | undefined;
   if (!system) {
     Log.warn("buildLPCSViewModel: actor has no system data");
     return createEmptyViewModel(String(actor?.name ?? "Unknown"));
   }
+  const actorRecord = actor as unknown as Record<string, unknown>;
 
   const attrs = system.attributes as Record<string, unknown> | undefined ?? {};
   const prof = (attrs.prof as number) ?? 2;
@@ -840,14 +858,14 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
     actions: buildActions(actor, "action"),
     bonusActions: buildActions(actor, "bonus"),
     reactions: buildActions(actor, "reaction"),
-    combatGroups: buildCombatGroups(actor, { weapons, spellsFirst, buildActions, formatMod, shortDesc, spellAnnotations }),
+    combatGroups: buildCombatGroups(actorRecord, { weapons, spellsFirst, buildActions, formatMod, shortDesc, spellAnnotations }),
 
     spellcasting: buildSpellcasting(system),
     spellSlots: buildSpellSlots(system),
     spells: buildSpellLevels(actor),
 
     ...(() => {
-      const inv = buildInventory(actor, { capitalize, drawerDesc });
+      const inv = buildInventory(actorRecord, { capitalize, drawerDesc });
       return { inventory: inv.looseItems, containers: inv.containers };
     })(),
     currency: ((): import("./lpcs-types").LPCSCurrencyEntry[] => {
@@ -863,14 +881,14 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
     encumbrance: buildEncumbrance(system),
 
     ...(() => {
-      const { mainGroups, speciesGroup } = buildFeatures(actor, {
+      const { mainGroups, speciesGroup } = buildFeatures(actorRecord, {
         stripFoundryRefs,
         getFeatureAnnotations: (itemId) => getFeatureAnnotations(itemId, effectData),
       });
       return { features: mainGroups, speciesTraits: speciesGroup };
     })(),
     traits: buildTraits(system),
-    proficiencies: buildProficiencies(actor, { capitalize }),
+    proficiencies: buildProficiencies(actorRecord, { capitalize }),
 
     deathSaves: (() => {
       const death = attrs.death as Record<string, number> | undefined;

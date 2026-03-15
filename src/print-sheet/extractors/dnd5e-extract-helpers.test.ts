@@ -19,7 +19,12 @@ import {
   resolveTraitSet,
   buildFavoritesSet,
   extractAbilities,
+  extractCombat,
+  extractDetails,
+  extractFeatures,
+  extractInventory,
   extractSkills,
+  extractSpellcasting,
 } from "./dnd5e-extract-helpers";
 
 /* ── Foundry global stubs ─────────────────────────────────── */
@@ -170,3 +175,190 @@ describe("extractSkills", () => {
   });
 });
 
+describe("extractCombat", () => {
+  it("builds default movement and aggregates hit dice by denomination", () => {
+    const actor = {
+      system: {
+        attributes: {
+          ac: { value: 16 },
+          hp: { value: 21, max: 30, temp: 4 },
+          death: { success: 1, failure: 2 },
+          init: { total: 3 },
+          prof: 3,
+          inspiration: true,
+          senses: { darkvision: 60, special: "Keen smell" },
+        },
+      },
+      items: [
+        { type: "class", system: { levels: 3, hd: { denomination: "d10", value: 2, max: 3 } } },
+        { type: "class", system: { levels: 2, hd: { denomination: "d10", value: 1, max: 2 } } },
+      ],
+    };
+
+    expect(extractCombat(actor)).toEqual({
+      ac: 16,
+      hp: { value: 21, max: 30, temp: 4, tempmax: 0 },
+      death: { success: 1, failure: 2 },
+      initiative: 3,
+      speed: [{ key: "walk", value: 30 }],
+      proficiency: 3,
+      inspiration: true,
+      senses: [
+        { key: "darkvision", value: 60 },
+        { key: "special", value: "Keen smell" },
+      ],
+      hitDice: { d10: { value: 3, max: 5 } },
+    });
+  });
+});
+
+describe("extractDetails", () => {
+  it("falls back to linked race/background items and pairs subclasses to classes", () => {
+    const actor = {
+      system: {
+        details: {
+          alignment: "Neutral Good",
+        },
+      },
+      items: [
+        { type: "race", name: "Elf" },
+        { type: "background", name: "Sage" },
+        { type: "class", name: "Wizard", system: { identifier: "wizard", levels: 3 } },
+        { type: "subclass", name: "Evoker", system: { classIdentifier: "wizard" } },
+      ],
+    };
+
+    expect(extractDetails(actor)).toEqual({
+      race: "Elf",
+      background: "Sage",
+      alignment: "Neutral Good",
+      level: 3,
+      classes: [{ name: "Wizard", level: 3, subclass: "Evoker" }],
+    });
+  });
+});
+
+describe("extractSpellcasting", () => {
+  it("extracts spell rows, save metadata, slots, and higher-level text", () => {
+    const favorites = new Set(["spell-1"]);
+    const actor = {
+      system: {
+        attributes: { spellcasting: "int", prof: 3 },
+        abilities: { int: { mod: 4 } },
+        spells: {
+          spell1: { value: 2, max: 4 },
+          pact: { value: 1, max: 2, level: 3 },
+        },
+      },
+      items: [
+        {
+          id: "spell-1",
+          type: "spell",
+          name: "Burning Hands",
+          img: "burning-hands.webp",
+          system: {
+            level: 1,
+            school: "evo",
+            properties: new Set(["vocal", "somatic", "material", "concentration", "ritual"]),
+            activation: { type: "action", value: 1 },
+            range: { value: 15 },
+            duration: { value: 1, units: "minute" },
+            materials: { value: "A tiny ball of bat guano and sulfur" },
+            sourceClass: "Wizard",
+            description: {
+              value: "<p><strong>At Higher Levels.</strong> Add 1d6 per slot above 1st.</p>",
+            },
+            activities: {
+              cast1: {
+                _id: "cast1",
+                type: "save",
+                damage: { parts: [{ types: new Set(["fire"]), bonus: "@mod" }] },
+                save: { ability: new Set(["dex"]), dc: { calculation: "spellcasting" } },
+              },
+            },
+            prepared: true,
+          },
+        },
+      ],
+    };
+
+    const result = extractSpellcasting(actor, favorites);
+    expect(result?.ability).toBe("Intelligence");
+    expect(result?.attackMod).toBe(7);
+    expect(result?.dc).toBe(15);
+    expect(result?.slots).toEqual([
+      { level: 1, max: 4, value: 2, label: "Level 1" },
+      { level: 3, max: 2, value: 1, label: "Pact (Level 3)" },
+    ]);
+    expect(result?.spellsByLevel.get(1)).toEqual([
+      expect.objectContaining({
+        name: "Burning Hands",
+        components: "V/S/M",
+        concentration: true,
+        ritual: true,
+        attackSave: "DC 15 DEX",
+        effect: "4",
+        source: "Wizard",
+        higherLevel: "Add 1d6 per slot above 1st.",
+        isFavorite: true,
+      }),
+    ]);
+  });
+});
+
+describe("extractInventory", () => {
+  it("sorts equipped favorites first and nests contained items", () => {
+    const result = extractInventory({
+      items: [
+        { id: "2", type: "loot", name: "Torch", system: { quantity: 2 } },
+        { id: "1", uuid: "fav-1", type: "weapon", name: "Longsword", system: { equipped: true } },
+        { id: "bag", type: "container", name: "Backpack", system: {} },
+        { id: "3", type: "loot", name: "Rope", system: { container: "bag" } },
+      ],
+    }, new Set(["fav-1"]));
+
+    expect(result.map((item) => item.name)).toEqual(["Longsword", "Torch", "Backpack"]);
+    expect(result[2].contents.map((item) => item.name)).toEqual(["Rope"]);
+  });
+});
+
+describe("extractFeatures", () => {
+  it("cleans enriched text, resolves roll data placeholders, and formats recovery", () => {
+    const actor = {
+      getRollData: () => ({ prof: 4 }),
+      items: [
+        {
+          id: "feat-1",
+          uuid: "feat-uuid",
+          type: "feat",
+          name: "Breath Weapon",
+          system: {
+            type: { value: "feat" },
+            description: {
+              value: "<p>@UUID[Compendium.test]{Dragon Breath} deals [[lookup @prof]]d6 damage.</p>",
+            },
+            uses: {
+              value: 1,
+              max: 1,
+              recovery: [{ period: "recharge", formula: "5" }],
+            },
+          },
+        },
+      ],
+    };
+
+    expect(extractFeatures(actor, new Set(["feat-uuid"]))).toEqual([
+      {
+        category: "Feat",
+        features: [
+          {
+            name: "Breath Weapon",
+            description: "Dragon Breath deals 4d6 damage.",
+            uses: { value: 1, max: 1, recovery: "Recharge 5–6" },
+            isFavorite: true,
+          },
+        ],
+      },
+    ]);
+  });
+});

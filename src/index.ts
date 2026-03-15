@@ -29,15 +29,44 @@ import {
   initCharacterCreatorReady,
 } from "./character-creator/character-creator-init";
 
+interface SceneControlTool {
+  name: string;
+  title: string;
+  icon: string;
+  order: number;
+  button: boolean;
+  visible: boolean;
+  onChange: () => void;
+}
+
+interface SceneControls {
+  tokens?: {
+    tools?: Record<string, SceneControlTool>;
+  };
+}
+
 /* ── Hook Registration ─────────────────────────────────────── */
 
 getHooks()?.on?.("init", () => {
+  onInit();
+});
+
+getHooks()?.on?.("setup", () => {
+  onSetup();
+});
+
+getHooks()?.on?.("ready", () => {
+  onReady();
+});
+
+function onInit(): void {
   registerSettings();
   registerWindowRotationHooks();
   registerPrintSheetHooks();
 
-  // LPCS — Live Play Character Sheet
   const settings = getGame()?.settings;
+
+  // LPCS — Live Play Character Sheet
   if (settings) registerLPCSSettings(settings);
   registerLPCSSheet();
   void preloadLPCSTemplates();
@@ -57,35 +86,20 @@ getHooks()?.on?.("init", () => {
   if (settings) registerCharacterCreatorSettings(settings);
   registerCharacterCreatorHooks();
 
-  // Asset Manager — Scene Control button (token controls layer)
-  // V13: controls is an object keyed by name, tools is also an object
-  getHooks()?.on?.("getSceneControlButtons", (controls: Record<string, any>) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    if (!isAssetManagerEnabled() || !isGM()) return;
-    if (!controls.tokens?.tools) return;
-    controls.tokens.tools["fth-asset-manager"] = {
-      name: "fth-asset-manager",
-      title: "Asset Manager",
-      icon: "fa-solid fa-folder-open",
-      order: Object.keys(controls.tokens.tools).length,
-      button: true,
-      visible: true,
-      onChange: () => openAssetManager(),
-    };
-  });
+  registerAssetManagerSceneControlHook();
 
   const logLevel = getSetting<string>(MOD, "logLevel");
   if (logLevel) Log.setLevel(logLevel as Level);
   Log.info("init");
-});
+}
 
-getHooks()?.on?.("setup", () => {
+function onSetup(): void {
   // Asset Manager — FilePicker override (needs game.user + settings, available at setup)
   registerAssetManagerPicker();
-
   initKioskSetup();
-});
+}
 
-getHooks()?.on?.("ready", () => {
+function onReady(): void {
   Log.info("ready", {
     core: getGame()?.version,
     system: getGame()?.system?.id,
@@ -114,4 +128,30 @@ getHooks()?.on?.("ready", () => {
   attachFthApi();
 
   Log.debug("window.fth API attached");
-});
+}
+
+function registerAssetManagerSceneControlHook(): void {
+  getHooks()?.on?.("getSceneControlButtons", onGetSceneControlButtonsAssetManager);
+}
+
+function onGetSceneControlButtonsAssetManager(controls: SceneControls): void {
+  if (!isAssetManagerEnabled() || !isGM()) return;
+  if (!controls.tokens?.tools) return;
+
+  controls.tokens.tools["fth-asset-manager"] = {
+    name: "fth-asset-manager",
+    title: "Asset Manager",
+    icon: "fa-solid fa-folder-open",
+    order: Object.keys(controls.tokens.tools).length,
+    button: true,
+    visible: true,
+    onChange: () => openAssetManager(),
+  };
+}
+
+export const __indexInternals = {
+  onInit,
+  onSetup,
+  onReady,
+  onGetSceneControlButtonsAssetManager,
+};

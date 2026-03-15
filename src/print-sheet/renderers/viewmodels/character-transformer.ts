@@ -6,6 +6,8 @@
 import type {
   CharacterData,
   AbilityData,
+  CharacterDetails,
+  TraitData,
 } from "../../extractors/dnd5e-types";
 import type { PrintOptions } from "../../types";
 import type {
@@ -43,26 +45,8 @@ export function transformCharacterToViewModel(
   options: PrintOptions,
 ): CharacterViewModel {
   const sec = options.sections;
-
-  // Select portrait
-  let portraitUrl = "";
-  if (options.portrait === "portrait" && data.img) {
-    portraitUrl = data.img;
-  } else if (options.portrait === "token" && data.tokenImg) {
-    portraitUrl = data.tokenImg;
-  }
-
-  // Build subtitle
-  const classStr = data.details.classes
-    .map(c => `${c.name} ${c.level}${c.subclass ? ` (${c.subclass})` : ""}`)
-    .join(" / ") || "Adventurer";
-  const subtitleParts = [
-    `Level ${data.details.level} ${classStr}`,
-    data.details.race,
-    data.details.background,
-    data.details.alignment,
-  ].filter(Boolean);
-  const subtitle = subtitleParts.join(" • ");
+  const portraitUrl = selectPortraitUrl(data, options);
+  const subtitle = buildSubtitle(data.details);
 
   // Build passives
   const passives = buildPassives(data.skills);
@@ -163,7 +147,7 @@ function buildSensesLine(senses: { key: string; value: number | string }[]): str
     .join(", ");
 }
 
-function buildDefensesLine(traits: { resistances: string[]; immunities: string[]; vulnerabilities: string[]; conditionImmunities: string[] }): string {
+function buildDefensesLine(traits: TraitData): string {
   const parts: string[] = [];
   if (traits.resistances.length) parts.push(`<strong>Resist:</strong> ${traits.resistances.map(esc).join(", ")}`);
   if (traits.immunities.length) parts.push(`<strong>Immune:</strong> ${traits.immunities.map(esc).join(", ")}`);
@@ -173,6 +157,24 @@ function buildDefensesLine(traits: { resistances: string[]; immunities: string[]
 }
 
 /* ── Abilities ──────────────────────────────────────────────── */
+
+function selectPortraitUrl(data: CharacterData, options: PrintOptions): string {
+  if (options.portrait === "portrait" && data.img) return data.img;
+  if (options.portrait === "token" && data.tokenImg) return data.tokenImg;
+  return "";
+}
+
+function buildSubtitle(details: CharacterDetails): string {
+  const classStr = details.classes
+    .map((c) => `${c.name} ${c.level}${c.subclass ? ` (${c.subclass})` : ""}`)
+    .join(" / ") || "Adventurer";
+  return [
+    `Level ${details.level} ${classStr}`,
+    details.race,
+    details.background,
+    details.alignment,
+  ].filter(Boolean).join(" • ");
+}
 
 function buildAbilities(abilities: AbilityData[]): AbilityViewModel[] {
   return abilities.map(a => ({

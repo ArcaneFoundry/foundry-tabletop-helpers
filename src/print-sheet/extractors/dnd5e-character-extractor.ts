@@ -1,7 +1,106 @@
 import { Log } from "../../logger";
 
 import type { CharacterActions, FeatureData, WeaponActionData } from "./dnd5e-types";
-import { getActivityValues } from "./dnd5e-system-types";
+import {
+  type Dnd5eAbilitiesData,
+  type Dnd5eItemSystemData,
+  getActivityValues,
+} from "./dnd5e-system-types";
+
+interface ExtractorLabels {
+  modifier?: string;
+  toHit?: string;
+  damage?: string;
+  damageTypes?: string;
+}
+
+interface CharacterExtractorTraitData {
+  custom?: string;
+  value?: Set<string> | string[];
+  mastery?: {
+    value?: Set<string> | string[];
+  };
+}
+
+interface CharacterExtractorItem<TSystem = unknown> {
+  id?: string;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  labels?: ExtractorLabels;
+  system?: TSystem;
+}
+
+interface CharacterExtractorWeaponSystem extends Partial<Dnd5eItemSystemData> {
+  attackType?: string;
+  mastery?: string;
+  type?: {
+    value?: string;
+    baseItem?: string;
+  };
+  range?: {
+    reach?: number;
+    value?: number;
+    long?: number;
+  };
+  properties?: Set<string> | string[];
+  damage?: {
+    base?: {
+      formula?: string;
+      types?: Iterable<string>;
+    };
+  };
+  proficient?: number;
+  prof?: {
+    hasProficiency?: boolean;
+  };
+}
+
+interface CharacterExtractorActor {
+  name?: string;
+  system?: {
+    abilities?: Partial<Record<keyof Dnd5eAbilitiesData, { mod?: number }>>;
+    traits?: {
+      armorProf?: CharacterExtractorTraitData;
+      weaponProf?: CharacterExtractorTraitData;
+      toolProf?: CharacterExtractorTraitData;
+    };
+    tools?: Record<string, { value?: number }>;
+    currency?: Record<string, unknown>;
+  };
+  items?: {
+    contents?: CharacterExtractorItem[];
+    filter?(predicate: (item: CharacterExtractorItem) => boolean): CharacterExtractorItem[];
+  } | CharacterExtractorItem[];
+  getRollData?(): Record<string, unknown>;
+}
+
+interface CharacterActionItemSystem extends Partial<Dnd5eItemSystemData> {
+  activation?: {
+    type?: string;
+  };
+  uses?: {
+    max?: number;
+  };
+  type?: {
+    value?: string;
+  };
+}
+
+interface CharacterActionOptions {
+  stripEnrichedText(html: string, actorName?: string, rollData?: Record<string, unknown>): string;
+  extractItemUses(item: CharacterExtractorItem): FeatureData["uses"] | null;
+}
+
+function isFavorite(item: CharacterExtractorItem, favorites: Set<string>): boolean {
+  return favorites.has(item.id ?? "") || favorites.has(item.uuid ?? "");
+}
+
+function hasPropertyValue(values: Set<string> | string[] | undefined, property: string): boolean {
+  if (values instanceof Set) return values.has(property);
+  if (Array.isArray(values)) return values.includes(property);
+  return false;
+}
 
 function capitalizeFirst(value: string): string {
   if (!value) return "";
@@ -117,13 +216,17 @@ function extractWeaponProperties(sys: Record<string, unknown>): string {
   return props.join(", ");
 }
 
-function extractWeaponActionData(item: any, actor: any, favorites: Set<string>): WeaponActionData | null {
+function extractWeaponActionData(
+  item: CharacterExtractorItem<CharacterExtractorWeaponSystem>,
+  actor: CharacterExtractorActor,
+  favorites: Set<string>,
+): WeaponActionData | null {
   try {
     const sys = item.system ?? {};
     const labels = item.labels ?? {};
 
     const attackType = sys.attackType ?? "melee";
-    const isThrown = sys.properties?.has?.("thr") ?? false;
+    const isThrown = hasPropertyValue(sys.properties, "thr");
     let weaponType = attackType === "melee" ? "Melee Weapon" : "Ranged Weapon";
     if (isThrown && attackType === "melee") weaponType = "Melee or Ranged Weapon";
 
@@ -132,7 +235,7 @@ function extractWeaponActionData(item: any, actor: any, favorites: Set<string>):
     let hasMastery = false;
     if (mastery) {
       const baseItem = String(sys.type?.baseItem ?? "");
-      const masterySet = actor?.system?.traits?.weaponProf?.mastery?.value;
+      const masterySet = actor.system?.traits?.weaponProf?.mastery?.value;
       const masteryArr = masterySet instanceof Set ? [...masterySet] : Array.isArray(masterySet) ? masterySet : [];
       hasMastery = masteryArr.some((weaponId: string) =>
         weaponId.toLowerCase() === baseItem.toLowerCase()
@@ -230,9 +333,9 @@ function extractWeaponActionData(item: any, actor: any, favorites: Set<string>):
       damageTypes = labels.damageTypes ?? typesArray.map(capitalizeFirst).join(", ") ?? "";
     }
 
-    const str = actor?.system?.abilities?.str?.mod ?? 0;
-    const dex = actor?.system?.abilities?.dex?.mod ?? 0;
-    const isFinesse = sys.properties?.has?.("fin") ?? false;
+    const str = actor.system?.abilities?.str?.mod ?? 0;
+    const dex = actor.system?.abilities?.dex?.mod ?? 0;
+    const isFinesse = hasPropertyValue(sys.properties, "fin");
     const abilityMod = isFinesse ? Math.max(str, dex) : (attackType === "melee" ? str : dex);
 
     if (!hasAbilityMod && damageFormula && abilityMod !== 0) {
@@ -262,8 +365,8 @@ function extractWeaponActionData(item: any, actor: any, favorites: Set<string>):
       toHit: String(toHit),
       damage: damageFormula,
       damageType: damageTypes,
-      properties: extractWeaponProperties(sys),
-      isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
+      properties: extractWeaponProperties(sys as Record<string, unknown>),
+      isFavorite: isFavorite(item, favorites),
     };
   } catch (error) {
     Log.warn("Failed to extract weapon action data", { item: item?.name, err: String(error) });
@@ -271,7 +374,7 @@ function extractWeaponActionData(item: any, actor: any, favorites: Set<string>):
   }
 }
 
-export function extractCharacterProficiencies(actor: any): {
+export function extractCharacterProficiencies(actor: CharacterExtractorActor): {
   armor: string[];
   weapons: string[];
   tools: string[];
@@ -293,10 +396,11 @@ export function extractCharacterProficiencies(actor: any): {
   }
 
   if (toolProfs.length === 0) {
-    const toolItems = actor.items?.filter?.((item: any) => item.type === "tool") ?? [];
+    const toolItems = actor.items?.filter?.((item) => item.type === "tool") ?? [];
     for (const item of toolItems) {
-      if (item.system?.proficient >= 1 || item.system?.prof?.hasProficiency) {
-        toolProfs.push(item.name);
+      const system = item.system as CharacterExtractorWeaponSystem | undefined;
+      if ((system?.proficient ?? 0) >= 1 || system?.prof?.hasProficiency) {
+        toolProfs.push(item.name ?? "");
       }
     }
   }
@@ -325,12 +429,9 @@ export function extractCurrency(actor: unknown): { pp: number; gp: number; ep: n
 }
 
 export async function extractCharacterActions(
-  actor: any,
+  actor: CharacterExtractorActor,
   favorites: Set<string>,
-  options: {
-    stripEnrichedText(html: string, actorName?: string, rollData?: Record<string, unknown>): string;
-    extractItemUses(item: any): FeatureData["uses"] | null;
-  },
+  options: CharacterActionOptions,
 ): Promise<CharacterActions> {
   const result: CharacterActions = {
     weapons: [],
@@ -340,15 +441,17 @@ export async function extractCharacterActions(
     other: [],
   };
 
-  const items = actor.items?.contents ?? [];
+  const items = Array.isArray(actor.items) ? actor.items : (actor.items?.contents ?? []);
   Log.debug("Character actions extraction", {
     name: actor.name,
     itemCount: items.length,
   });
 
   for (const item of items) {
+    const system = (item.system ?? {}) as CharacterActionItemSystem;
+
     if (item.type === "weapon") {
-      const weaponData = extractWeaponActionData(item, actor, favorites);
+      const weaponData = extractWeaponActionData(item as CharacterExtractorItem<CharacterExtractorWeaponSystem>, actor, favorites);
       if (weaponData) result.weapons.push(weaponData);
       continue;
     }
@@ -358,8 +461,8 @@ export async function extractCharacterActions(
       continue;
     }
 
-    const actValues = getActivityValues(item.system?.activities);
-    const activation = item.system?.activation?.type;
+    const actValues = getActivityValues(system.activities);
+    const activation = system.activation?.type;
     if (actValues.length === 0 && !activation) continue;
 
     let activationType = "action";
@@ -369,21 +472,21 @@ export async function extractCharacterActions(
     const featureData: FeatureData = {
       name: item.name ?? "",
       description: options.stripEnrichedText(
-        item.system?.description?.value ?? "",
+        system.description?.value ?? "",
         actor.name,
         typeof actor.getRollData === "function" ? actor.getRollData() : undefined,
       ),
       uses: null,
-      isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
+      isFavorite: isFavorite(item, favorites),
       itemType: item.type,
     };
 
-    if (item.system?.uses?.max) {
+    if (system.uses?.max) {
       featureData.uses = options.extractItemUses(item);
     }
 
     const isOther = item.type === "feat" && !activation &&
-      (item.name.toLowerCase().includes("sneak attack") || item.system?.type?.value === "class");
+      ((item.name ?? "").toLowerCase().includes("sneak attack") || system.type?.value === "class");
 
     if (isOther) result.other.push(featureData);
     else if (activationType === "action" || activationType === "attack") result.actions.push(featureData);

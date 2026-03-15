@@ -7,6 +7,24 @@
 import { Log } from "../logger";
 import { getUI } from "../types";
 
+interface PrintWindowDocument {
+  open(): void;
+  write(html: string): void;
+  close(): void;
+}
+
+interface PrintWindowHandle {
+  document: PrintWindowDocument;
+  setTimeout(callback: () => void, delay: number): unknown;
+  focus(): void;
+  print(): void;
+}
+
+function getWindowOpen(): ((url?: string, target?: string) => PrintWindowHandle | null) | undefined {
+  if (typeof window === "undefined") return undefined;
+  return window.open.bind(window) as (url?: string, target?: string) => PrintWindowHandle | null;
+}
+
 /**
  * Build the full HTML document for the print/preview window.
  */
@@ -29,10 +47,11 @@ function buildDocument(bodyHtml: string, css: string, title: string): string {
  * Open a new browser window containing the rendered HTML and CSS.
  * Returns the window reference or null if blocked.
  */
-function openWindow(bodyHtml: string, css: string, title: string): Window | null {
+function openWindow(bodyHtml: string, css: string, title: string): PrintWindowHandle | null {
   const html = buildDocument(bodyHtml, css, title);
 
-  const win = window.open("", "_blank");
+  const open = getWindowOpen();
+  const win = open?.("", "_blank") ?? null;
   if (!win) {
     Log.warn("window blocked by browser popup blocker");
     getUI()?.notifications?.warn?.(

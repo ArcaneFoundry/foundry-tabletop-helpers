@@ -18,12 +18,14 @@ export interface FthApi extends FthRotationApi, FthCombatApi {
   levelUp: (actorId: string) => void;
 }
 
-export function buildFthApi(): FthApi {
-  const game = getGame();
+interface WindowWithFth extends Window {
+  fth?: FthApi;
+}
 
+export function buildFthApi(): FthApi {
   return {
     setLevel: (level: Level) => Log.setLevel(level),
-    version: game?.modules?.get(MOD)?.version,
+    version: getFthVersion(),
     ...buildRotationApi(),
     ...buildCombatApi(),
     assetManager: () => openAssetManager(),
@@ -35,6 +37,20 @@ export function buildFthApi(): FthApi {
 
 export function attachFthApi(): FthApi {
   const api = buildFthApi();
-  globalThis.window.fth = api;
+  const win = getWindow();
+  if (win) win.fth = api;
   return api;
 }
+
+function getFthVersion(): string | undefined {
+  return getGame()?.modules?.get(MOD)?.version;
+}
+
+function getWindow(): WindowWithFth | undefined {
+  return "window" in globalThis ? globalThis.window as WindowWithFth : undefined;
+}
+
+export const __fthApiInternals = {
+  getFthVersion,
+  getWindow,
+};

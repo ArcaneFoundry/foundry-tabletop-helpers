@@ -36,6 +36,43 @@ import {
   updateCurrencyEditorDisplayValue,
 } from "./lpcs-sheet-modal-content";
 
+interface LPCSSheetActorLike {
+  name?: string;
+  system?: {
+    attributes?: {
+      hp?: {
+        value?: number;
+        max?: number;
+        temp?: number;
+      };
+      exhaustion?: number;
+    };
+    currency?: Record<string, number>;
+  };
+  items?: {
+    get(id: string): Record<string, unknown> | undefined;
+  };
+  update(data: Record<string, unknown>): Promise<unknown>;
+  rollHitDie?(options: { denomination: string }): Promise<unknown>;
+  longRest?(options: { dialog: boolean }): Promise<unknown>;
+}
+
+interface LPCSShellInstance {
+  actor?: LPCSSheetActorLike;
+  element?: HTMLElement | null;
+  isEditable?: boolean;
+}
+
+interface LPCSCombatVMShape {
+  [key: string]: unknown;
+}
+
+interface LPCSHPLike {
+  value: number;
+  max: number;
+  temp?: number;
+}
+
 /* ── Runtime access to Foundry globals ────────────────────── */
 // These are resolved at runtime inside the init hook after Foundry has loaded.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,10 +105,34 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Base = (HandlebarsApplicationMixin as any)(ActorSheetV2);
 
   class LPCSSheet extends Base {
+    private get _shell(): LPCSShellInstance {
+      return this as unknown as LPCSShellInstance;
+    }
+
+    private get _actor(): LPCSSheetActorLike | undefined {
+      return this._shell.actor;
+    }
+
+    private get _element(): HTMLElement | null {
+      return this._shell.element ?? null;
+    }
+
+    private get _isEditable(): boolean {
+      return this._shell.isEditable ?? false;
+    }
+
+    private get _hpState(): LPCSHPLike | null {
+      const hp = this._actor?.system?.attributes?.hp;
+      if (!hp) return null;
+      return {
+        value: hp.value ?? 0,
+        max: hp.max ?? 0,
+        temp: hp.temp ?? 0,
+      };
+    }
 
     /* ── Static Configuration ──────────────────────────────── */
 
@@ -80,9 +141,8 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       classes: ["lpcs-sheet", "fth-lpcs"],
       tag: "form",
       form: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handler: async function (this: any, _event: Event, _form: HTMLFormElement, formData: Record<string, unknown>) {
-          await this.actor.update(formData);
+        handler: async function (this: LPCSShellInstance, _event: Event, _form: HTMLFormElement, formData: Record<string, unknown>) {
+          await this.actor?.update(formData);
         },
         submitOnChange: true,
       },
@@ -193,8 +253,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     /** AbortController for combat info modal DOM listeners. */
     private _combatInfoModalAbortCtrl: AbortController | null = null;
     /** Cached view model for combat action lookups in the action handler. */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private _lastCombatVM: any = null;
+    private _lastCombatVM: LPCSCombatVMShape | null = null;
 
     /** Whether the rest modal is currently open. */
     private _restModalOpen = false;
@@ -247,21 +306,18 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     /* ── Title ───────────────────────────────────────────────── */
 
     get title(): string {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return `${(this as any).actor?.name ?? "Character"} — Live Sheet`;
+      return `${this._actor?.name ?? "Character"} — Live Sheet`;
     }
 
     /* ── Context ─────────────────────────────────────────────── */
 
     async _prepareContext(options: Record<string, unknown>): Promise<Record<string, unknown>> {
       const baseContext = await super._prepareContext(options);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const vm = buildLPCSViewModel((this as any).actor);
+      const vm = buildLPCSViewModel(this._actor ?? {});
       return {
         ...baseContext,
         vm,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        editable: (this as any).isEditable,
+        editable: this._isEditable,
         expandedDrawers: this._expandedDrawers,
       };
     }
@@ -308,8 +364,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
     async _onRender(context: Record<string, unknown>, options: Record<string, unknown>): Promise<void> {
       await super._onRender(context, options);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | undefined;
+      const el = this._element;
       if (!el) return;
 
       attachLPCSBaseRenderListeners({
@@ -323,7 +378,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         previousAbortController: this._hpDrawerAbortCtrl,
         drawerOpen: this._hpDrawerOpen,
         getMode: () => this._hpDrawerMode,
-        hp: this.actor?.system?.attributes?.hp,
+        hp: this._hpState,
         setMode: (mode) => { this._hpDrawerMode = mode; },
         applyHPChange: (mode, amount) => this._applyHPChange(mode, amount),
         closeHPDrawer: () => this._closeHPDrawer(),
@@ -349,10 +404,8 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
           window.setTimeout(() => {
             if (!this._deathSaveAnimating) return; // aborted by a re-render
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const sheetEl = (this as any).element as HTMLElement | null;
-            const hv = sheetEl?.querySelector<HTMLElement>("[data-vitals='hp']");
-            const dv = sheetEl?.querySelector<HTMLElement>("[data-vitals='ds']");
+            const hv = this._element?.querySelector<HTMLElement>("[data-vitals='hp']");
+            const dv = this._element?.querySelector<HTMLElement>("[data-vitals='ds']");
             if (!hv || !dv) { this._deathSaveAnimating = false; return; }
 
             // Cross-fade to HP view and play healing-surge glow.
@@ -383,8 +436,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       // Both effects use the Web Animations API so they run on isolated tracks and
       // never interfere with each other or with CSS class-driven style recalculations.
       const hpFill = el.querySelector<HTMLElement>(".lpcs-hp-fill");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newHPValue = (this as any).actor?.system?.attributes?.hp?.value ?? 0;
+      const newHPValue = this._actor?.system?.attributes?.hp?.value ?? 0;
       const newHPPct = (context as { vm?: { hp?: { pct?: number } } }).vm?.hp?.pct ?? 0;
 
       // Width animation — animates the crimson fill from old % to new %.
@@ -453,7 +505,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         closeDialog: () => this._closeExhaustionDialog(),
         confirmLevel: async (level) => {
           this._closeExhaustionDialog();
-          await this.actor?.update({ "system.attributes.exhaustion": level });
+          await this._actor?.update({ "system.attributes.exhaustion": level });
         },
       });
 
@@ -465,14 +517,14 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         setLongRestHoldTimer: (timer) => { this._longRestHoldTimer = timer; },
         closeModal: () => this._closeRestModal(),
         rollHitDie: async (denomination) => {
-          await this.actor?.rollHitDie?.({ denomination });
+          await this._actor?.rollHitDie?.({ denomination });
         },
         doLongRest: () => this._doLongRest(),
       });
 
       // ── Combat info modal ──────────────────────────────────────────
       // Cache VM for action handler lookup (also satisfies TS unused-local check).
-      this._lastCombatVM = (context as { vm?: unknown }).vm;
+      this._lastCombatVM = ((context as { vm?: unknown }).vm as LPCSCombatVMShape | undefined) ?? null;
       this._combatInfoModalAbortCtrl = setupClosableModalRender({
         el,
         previousAbortController: this._combatInfoModalAbortCtrl,
@@ -493,8 +545,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       });
 
       // ── Item detail modal ──────────────────────────────────────────
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const vmData = (context as { vm?: any }).vm;
+      const vmData = (context as { vm?: Record<string, unknown> }).vm;
       this._lastInventoryVM = buildInventoryModalItems(vmData) as LPCSInventoryItem[];
       this._itemDetailModalAbortCtrl = setupItemDetailModalRender({
         el,
@@ -531,8 +582,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     private _onHPInputChange(event: Event): void {
       const input = event.target as HTMLInputElement;
       const raw = input.value.trim();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hp = (this as any).actor?.system?.attributes?.hp;
+      const hp = this._hpState;
       if (!hp) return;
       let newValue: number;
       if (raw.startsWith("+") || raw.startsWith("-")) {
@@ -542,8 +592,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       }
       if (Number.isFinite(newValue)) {
         const clamped = Math.max(0, Math.min(newValue, hp.max));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this as any).actor.update({ "system.attributes.hp.value": clamped });
+        void this._actor?.update({ "system.attributes.hp.value": clamped });
       }
     }
 
@@ -554,8 +603,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * fire automatically because we use the standard actor.update() path.
      */
     private async _applyHPChange(mode: "damage" | "heal" | "temp", amount: number): Promise<void> {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hp = (this as any).actor?.system?.attributes?.hp;
+      const hp = this._hpState;
       if (!hp || !Number.isFinite(amount) || amount <= 0) return;
 
       const update: Record<string, number> = {};
@@ -572,12 +620,10 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         update["system.attributes.hp.temp"] = Math.max(hp.temp ?? 0, amount);
       }
 
-      const applyEl  = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
-      const applyBtn = applyEl?.querySelector<HTMLButtonElement>("[data-apply]");
+      const applyBtn = this._element?.querySelector<HTMLButtonElement>("[data-apply]");
       if (applyBtn) applyBtn.disabled = true;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (this as any).actor.update(update);
+        await this._actor?.update(update);
         // Close immediately; _onRender will restore _hpDrawerOpen = false on re-render.
         this._closeHPDrawer();
       } catch (err) {
@@ -593,8 +639,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      */
     private _closeHPDrawer(): void {
       this._hpDrawerOpen = false;
-      const closeEl = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
-      const drawer  = closeEl?.querySelector<HTMLElement>("[data-hp-drawer]");
+      const drawer  = this._element?.querySelector<HTMLElement>("[data-hp-drawer]");
       if (!drawer) return;
       drawer.classList.remove("open");
       drawer.setAttribute("aria-hidden", "true");
@@ -622,8 +667,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     /** Close the exhaustion dialog immediately (DOM + state). */
     private _closeExhaustionDialog(): void {
       this._exhaustionDialogOpen = false;
-      const closeEl = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
-      const dialog = closeEl?.querySelector<HTMLElement>("[data-exhaustion-dialog]");
+      const dialog = this._element?.querySelector<HTMLElement>("[data-exhaustion-dialog]");
       if (!dialog) return;
       dialog.classList.remove("open");
       dialog.setAttribute("aria-hidden", "true");
@@ -638,8 +682,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         clearTimeout(this._longRestHoldTimer);
         this._longRestHoldTimer = null;
       }
-      const closeEl = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
-      const modal = closeEl?.querySelector<HTMLElement>("[data-rest-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-rest-modal]");
       if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
@@ -650,9 +693,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     /** Open the combat info modal with the given title and description. */
     private _openCombatInfoModal(title: string, description: string): void {
       this._combatInfoModalOpen = true;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-combat-info-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-combat-info-modal]");
       if (!modal) return;
       const titleEl = modal.querySelector<HTMLElement>("[data-combat-info-title]");
       const descEl = modal.querySelector<HTMLElement>("[data-combat-info-desc]");
@@ -665,9 +706,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     /** Close the combat info modal immediately (DOM + state). */
     private _closeCombatInfoModal(): void {
       this._combatInfoModalOpen = false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-combat-info-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-combat-info-modal]");
       if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
@@ -677,9 +716,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
     private _openSkillInfoModal(skill: LPCSSkill): void {
       this._skillInfoModalOpen = true;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-skill-info-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-skill-info-modal]");
       if (!modal) return;
       const titleEl = modal.querySelector<HTMLElement>("[data-skill-info-title]");
       const descEl = modal.querySelector<HTMLElement>("[data-skill-info-desc]");
@@ -700,9 +737,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
     private _closeSkillInfoModal(): void {
       this._skillInfoModalOpen = false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-skill-info-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-skill-info-modal]");
       if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
@@ -710,14 +745,10 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
     /* ── Item Detail Modal ────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private _openItemDetailModal(item: LPCSInventoryItem): void {
       this._itemDetailModalOpen = true;
       this._itemDetailModalItemId = item.id ?? null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-item-detail-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-item-detail-modal]");
       if (!modal) return;
 
       populateItemDetailModal(modal, item, {
@@ -735,14 +766,12 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * Persists via Foundry's item update (synced to all clients).
      */
     private async _toggleEquipItem(itemId: string, equip: boolean): Promise<void> {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const actor = (this as any).actor as Record<string, unknown> | undefined;
+      const actor = this._actor as (LPCSSheetActorLike & { items?: { get(id: string): Record<string, unknown> | undefined } }) | undefined;
       if (!actor) return;
       const items = actor.items as { get(id: string): Record<string, unknown> | undefined } | undefined;
       const item = items?.get(itemId);
       if (!item) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const update = (item as any).update as ((data: Record<string, unknown>) => Promise<void>) | undefined;
+      const update = (item as { update?: (data: Record<string, unknown>) => Promise<void> }).update;
       if (update) {
         await update.call(item, { "system.equipped": equip });
       }
@@ -751,9 +780,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     private _closeItemDetailModal(): void {
       this._itemDetailModalOpen = false;
       this._itemDetailModalItemId = null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-item-detail-modal]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-item-detail-modal]");
       if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
@@ -764,9 +791,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     private _openCurrencyEditor(key: string): void {
       this._currencyEditorOpen = true;
       this._currencyEditorKey = key;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-currency-editor]");
       if (!modal) return;
 
       populateCurrencyEditorModal(modal, key, this._getCurrencyValue());
@@ -776,24 +801,19 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
     private _closeCurrencyEditor(): void {
       this._currencyEditorOpen = false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]");
+      const modal = this._element?.querySelector<HTMLElement>("[data-currency-editor]");
       if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
     }
 
     private _getCurrencyValue(): number {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const currency = (this as any).actor?.system?.currency as Record<string, number> | undefined;
+      const currency = this._actor?.system?.currency;
       return (currency?.[this._currencyEditorKey] as number) ?? 0;
     }
 
     private _updateCurrencyEditorDisplay(): void {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]") ?? null;
+      const modal = this._element?.querySelector<HTMLElement>("[data-currency-editor]") ?? null;
       updateCurrencyEditorDisplayValue(modal, this._getCurrencyValue());
     }
 
@@ -806,20 +826,16 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     private _setCurrency(value: number): void {
       const key = this._currencyEditorKey;
       if (!key) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this as any).actor?.update({ [`system.currency.${key}`]: value });
+      void this._actor?.update({ [`system.currency.${key}`]: value });
       // Optimistic UI update
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const el = (this as any).element as HTMLElement | null;
-      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]") ?? null;
+      const modal = this._element?.querySelector<HTMLElement>("[data-currency-editor]") ?? null;
       updateCurrencyEditorDisplayValue(modal, value);
     }
 
     /** Execute a long rest via the dnd5e actor method, bypassing dnd5e's own dialog. */
     private async _doLongRest(): Promise<void> {
       this._closeRestModal();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this as any).actor?.longRest?.({ dialog: false });
+      await this._actor?.longRest?.({ dialog: false });
     }
   }
 
