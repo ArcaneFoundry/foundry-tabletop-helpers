@@ -9,6 +9,7 @@ export function recalculateLevelUpApplicableSteps(
   state: LevelUpState,
   allowMulticlass: boolean,
 ): void {
+  const previousId = state.applicableSteps[state.currentStep] ?? "";
   const steps: string[] = [];
   const selections = state.selections;
   const classItems = state.classItems;
@@ -36,6 +37,15 @@ export function recalculateLevelUpApplicableSteps(
   steps.push("review");
 
   state.applicableSteps = steps;
+  if (previousId) {
+    const newIndex = steps.indexOf(previousId);
+    if (newIndex >= 0) {
+      state.currentStep = newIndex;
+      void allowMulticlass;
+      return;
+    }
+  }
+
   state.currentStep = Math.min(state.currentStep, Math.max(0, steps.length - 1));
 
   void allowMulticlass;

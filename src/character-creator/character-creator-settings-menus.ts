@@ -17,6 +17,41 @@ import {
 } from "./character-creator-settings-accessors";
 import { CC_SETTINGS } from "./character-creator-settings-shared";
 
+interface FormAppLike {
+  getData?(): Promise<Record<string, unknown>> | Record<string, unknown>;
+  _updateObject?(event: Event, formData: Record<string, unknown>): Promise<void> | void;
+}
+
+interface FormAppConstructor {
+  new (...args: unknown[]): FormAppLike;
+  defaultOptions?: Record<string, unknown>;
+}
+
+interface SettingsMenuRegistration {
+  registerMenu(module: string, key: string, data: Record<string, unknown>): void;
+}
+
+interface CompendiumPackLike {
+  collection?: string;
+  documentName?: string;
+  metadata?: {
+    id?: string;
+    label?: string;
+    packageName?: string;
+    package?: string;
+  };
+  size?: number;
+  getIndex(options?: { fields?: string[] }): Promise<Array<{ type?: string }>>;
+}
+
+interface FoundryUtilsLike {
+  mergeObject?(
+    original: Record<string, unknown>,
+    other: Record<string, unknown>,
+    options?: { inplace?: boolean },
+  ): Record<string, unknown>;
+}
+
 const CONTENT_TYPE_ITEM_TYPES: Record<string, { types: Set<string>; label: string }> = {
   classes: { types: new Set(["class"]), label: "Classes" },
   subclasses: { types: new Set(["subclass"]), label: "Subclasses" },
@@ -45,8 +80,7 @@ async function detectPacks(sourceKey: string, currentSources: string[]): Promise
   const enabledSet = new Set(currentSources);
   const results: DetectedPack[] = [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const pack of game.packs as any) {
+  for (const pack of getPackIterable(game.packs)) {
     if (pack.documentName !== "Item") continue;
 
     try {
@@ -73,31 +107,26 @@ async function detectPacks(sourceKey: string, currentSources: string[]): Promise
   return results;
 }
 
-export function registerCharacterCreatorSettingsMenus(settings: {
-  registerMenu(module: string, key: string, data: Record<string, unknown>): void;
-}): void {
+export function registerCharacterCreatorSettingsMenus(settings: SettingsMenuRegistration): void {
   registerSettingsMenu(settings);
   registerCompendiumSelectMenu(settings);
 }
 
-function registerSettingsMenu(settings: {
-  registerMenu(module: string, key: string, data: Record<string, unknown>): void;
-}): void {
+function registerSettingsMenu(settings: SettingsMenuRegistration): void {
   try {
-    const FormAppBase = getFormApplicationClass() ?? class {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const BaseWithDefaults = FormAppBase as any;
+    const FormAppBase = getFormApplicationClass();
+    const BaseWithDefaults = getFormAppBase(FormAppBase);
 
     class CharacterCreatorSettingsForm extends BaseWithDefaults {
       static get defaultOptions() {
         const base = BaseWithDefaults.defaultOptions ?? {};
-        return foundry.utils.mergeObject(base, {
+        return mergeDefaultOptions(base, {
           id: `${MOD}-cc-settings`,
           title: "Character Creator Settings",
           template: `modules/${MOD}/templates/character-creator/cc-settings.hbs`,
           width: 480,
           height: "auto",
-        }, { inplace: false });
+        });
       }
 
       async getData() {
@@ -162,24 +191,21 @@ function registerSettingsMenu(settings: {
   }
 }
 
-function registerCompendiumSelectMenu(settings: {
-  registerMenu(module: string, key: string, data: Record<string, unknown>): void;
-}): void {
+function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void {
   try {
-    const FormAppBase = getFormApplicationClass() ?? class {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const BaseWithDefaults = FormAppBase as any;
+    const FormAppBase = getFormApplicationClass();
+    const BaseWithDefaults = getFormAppBase(FormAppBase);
 
     class CompendiumSelectForm extends BaseWithDefaults {
       static get defaultOptions() {
         const base = BaseWithDefaults.defaultOptions ?? {};
-        return foundry.utils.mergeObject(base, {
+        return mergeDefaultOptions(base, {
           id: `${MOD}-cc-compendium-select`,
           title: "Character Creator — Compendium Sources",
           template: `modules/${MOD}/templates/character-creator/cc-compendium-select.hbs`,
           width: 560,
           height: "auto",
-        }, { inplace: false });
+        });
       }
 
       async getData() {
@@ -232,4 +258,34 @@ function registerCompendiumSelectMenu(settings: {
   } catch (error) {
     Log.warn("Character Creator: failed to register compendium select menu", error);
   }
+}
+
+function getFormAppBase(FormAppBase: unknown): FormAppConstructor {
+  return typeof FormAppBase === "function" ? (FormAppBase as FormAppConstructor) : class {} as FormAppConstructor;
+}
+
+function getPackIterable(packs: unknown): CompendiumPackLike[] {
+  if (!packs || typeof packs !== "object" || !(Symbol.iterator in packs)) return [];
+  return Array.from(packs as Iterable<unknown>).filter(isCompendiumPackLike);
+}
+
+function isCompendiumPackLike(value: unknown): value is CompendiumPackLike {
+  return typeof value === "object" && value !== null && typeof (value as CompendiumPackLike).getIndex === "function";
+}
+
+function mergeDefaultOptions(
+  base: Record<string, unknown>,
+  extra: Record<string, unknown>,
+): Record<string, unknown> {
+  const utils = getFoundryUtils();
+  if (utils?.mergeObject) return utils.mergeObject(base, extra, { inplace: false });
+  return { ...base, ...extra };
+}
+
+function getFoundryUtils(): FoundryUtilsLike | undefined {
+  const g = globalThis as Record<string, unknown>;
+  const foundryNs = g.foundry;
+  if (!foundryNs || typeof foundryNs !== "object") return undefined;
+  const utils = (foundryNs as { utils?: unknown }).utils;
+  return utils && typeof utils === "object" ? (utils as FoundryUtilsLike) : undefined;
 }

@@ -34,22 +34,49 @@ import {
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
 
+interface RuntimeApplicationBase {
+  element?: Element | null;
+  render(options?: Record<string, unknown>): void;
+  close(options?: unknown): Promise<void>;
+  _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
+}
+
+interface RuntimeApplicationClass {
+  new (): RuntimeApplicationBase;
+}
+
+type RuntimeHandlebarsApplicationMixin = (base: RuntimeApplicationClass) => RuntimeApplicationClass;
+
+interface RuntimeFoundryAppClasses {
+  HandlebarsApplicationMixin?: RuntimeHandlebarsApplicationMixin;
+  ApplicationV2?: RuntimeApplicationClass;
+}
+
+interface RenderableActorLike {
+  sheet?: {
+    render(options?: Record<string, unknown>): void;
+  };
+}
+
+interface CreateCharacterButtonLike extends Element {
+  disabled: boolean;
+  innerHTML: string;
+}
+
 const getFoundryAppClasses = () => {
   const g = globalThis as Record<string, unknown>;
   const api = (g.foundry as Record<string, unknown> | undefined)
     ?.applications as Record<string, unknown> | undefined;
+  const appApi = api?.api as Record<string, unknown> | undefined;
   return {
-    HandlebarsApplicationMixin: (api?.api as Record<string, unknown> | undefined)
-      ?.HandlebarsApplicationMixin as ((...args: unknown[]) => unknown) | undefined,
-    ApplicationV2: (api?.api as Record<string, unknown> | undefined)
-      ?.ApplicationV2 as (new (...args: unknown[]) => unknown) | undefined,
-  };
+    HandlebarsApplicationMixin: appApi?.HandlebarsApplicationMixin as RuntimeHandlebarsApplicationMixin | undefined,
+    ApplicationV2: appApi?.ApplicationV2 as RuntimeApplicationClass | undefined,
+  } satisfies RuntimeFoundryAppClasses;
 };
 
 /* ── Module-Level State ──────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _CharacterCreatorAppClass: (new () => any) | null = null;
+let _CharacterCreatorAppClass: RuntimeApplicationClass | null = null;
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -65,8 +92,7 @@ export function buildCharacterCreatorAppClass(): void {
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Base = (HandlebarsApplicationMixin as any)(ApplicationV2);
+  const Base = HandlebarsApplicationMixin(ApplicationV2);
 
   class CharacterCreatorApp extends Base {
 
@@ -137,8 +163,7 @@ export function buildCharacterCreatorAppClass(): void {
 
     /* ── Rendering ─────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _prepareContext(_options: any): Promise<WizardShellContext> {
+    async _prepareContext(_options: unknown): Promise<WizardShellContext> {
       const machine = this._ensureMachine();
       return buildWizardShellContext(
         machine,
@@ -148,14 +173,12 @@ export function buildCharacterCreatorAppClass(): void {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _preparePartContext(partId: string, context: any, options: any): Promise<any> {
-      const base = await super._preparePartContext(partId, context, options);
+    async _preparePartContext(partId: string, context: WizardShellContext, options: unknown): Promise<unknown> {
+      const base = await super._preparePartContext?.(partId, context, options) ?? {};
       return { ...base, ...context };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _onRender(_context: any, _options: any): Promise<void> {
+    async _onRender(_context: WizardShellContext, _options: unknown): Promise<void> {
       const machine = this._ensureMachine();
       const stepDef = machine.currentStepDef;
 
@@ -177,9 +200,9 @@ export function buildCharacterCreatorAppClass(): void {
 
       // Call onActivate for the current step
       if (stepDef?.onActivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
+        const stepEl = getStepContentElement(this.element);
         if (stepEl) {
-          stepDef.onActivate(machine.state, stepEl as HTMLElement, callbacks);
+          stepDef.onActivate(machine.state, stepEl, callbacks);
         }
       }
 
@@ -237,7 +260,7 @@ export function buildCharacterCreatorAppClass(): void {
       }
 
       // Disable button to prevent double-click
-      const btn = this.element?.querySelector("[data-action='createCharacter']") as HTMLButtonElement | null;
+      const btn = getCreateCharacterButton(this.element);
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Creating...</span>';
@@ -248,7 +271,7 @@ export function buildCharacterCreatorAppClass(): void {
         if (actor) {
           Log.info(`Character Creator: Successfully created "${name}"`);
           // Show the actor sheet
-          actor.sheet?.render({ force: true });
+          (actor as RenderableActorLike).sheet?.render({ force: true });
           // Close the wizard
           await this.close();
         } else {
@@ -269,8 +292,7 @@ export function buildCharacterCreatorAppClass(): void {
 
     /* ── Close Guard ───────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async close(options?: any): Promise<void> {
+    async close(options?: unknown): Promise<void> {
       // Reset state machine on close
       this._machine = null;
       return super.close(options);
@@ -291,4 +313,25 @@ export function openCharacterCreatorWizard(): void {
     return;
   }
   new _CharacterCreatorAppClass().render({ force: true });
+}
+
+export function getCharacterCreatorAppClass(): RuntimeApplicationClass | null {
+  return _CharacterCreatorAppClass;
+}
+
+function getStepContentElement(root: Element | null | undefined): HTMLElement | null {
+  const stepEl = root?.querySelector(".cc-step-content");
+  return typeof HTMLElement !== "undefined" && stepEl instanceof HTMLElement ? stepEl : null;
+}
+
+function getCreateCharacterButton(root: Element | null | undefined): CreateCharacterButtonLike | null {
+  const button = root?.querySelector("[data-action='createCharacter']");
+  return isCreateCharacterButtonLike(button) ? button : null;
+}
+
+function isCreateCharacterButtonLike(value: unknown): value is CreateCharacterButtonLike {
+  return typeof Element !== "undefined"
+    && value instanceof Element
+    && "disabled" in value
+    && "innerHTML" in value;
 }

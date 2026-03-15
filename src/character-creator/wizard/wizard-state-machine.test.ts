@@ -132,4 +132,44 @@ describe("wizard state machine", () => {
       },
     ]);
   });
+
+  it("clamps to the last available step when the current step becomes inapplicable", () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("class", { isComplete: (state) => !!state.selections.class }),
+      makeStep("subclass", {
+        dependencies: ["class"],
+        isApplicable: (state) => !!state.selections.class,
+        isComplete: (state) => !!state.selections.subclass,
+      }),
+      makeStep("review", { isComplete: () => true }),
+    ]);
+
+    machine.updateSelection("class", { className: "Wizard" });
+    machine.goNext();
+    expect(machine.currentStepId).toBe("subclass");
+
+    machine.setStepData("class", undefined);
+
+    expect(machine.state.applicableSteps).toEqual(["class", "review"]);
+    expect(machine.currentStepId).toBe("review");
+  });
+
+  it("supports jump navigation from review and rejects unknown step ids", () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("species", { isComplete: () => true }),
+      makeStep("background", { isComplete: () => true }),
+      makeStep("review", { isComplete: () => true }),
+    ]);
+
+    machine.markComplete("species");
+    machine.goNext();
+    machine.markComplete("background");
+    machine.goNext();
+
+    expect(machine.currentStepId).toBe("review");
+    expect(machine.jumpTo("species")).toBe(true);
+    expect(machine.currentStepId).toBe("species");
+    expect(machine.jumpTo("does-not-exist")).toBe(false);
+    expect(machine.currentStepId).toBe("species");
+  });
 });

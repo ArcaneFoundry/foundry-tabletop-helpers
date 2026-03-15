@@ -193,4 +193,67 @@ describe("level-up state machine", () => {
       },
     ]);
   });
+
+  it("keeps the current step by id when new applicable steps are inserted earlier", () => {
+    const actor = makeActor({
+      items: [
+        {
+          id: "rogue-1",
+          type: "class",
+          name: "Rogue",
+          system: {
+            identifier: "rogue",
+            levels: 2,
+            hd: { denomination: "d8", value: 3, max: 3 },
+            advancement: [],
+          },
+        },
+        {
+          id: "fighter-1",
+          type: "class",
+          name: "Fighter",
+          system: {
+            identifier: "fighter",
+            levels: 1,
+            hd: { denomination: "d10", value: 2, max: 2 },
+            advancement: [],
+          },
+        },
+      ],
+      system: {
+        details: { level: 3 },
+      },
+    });
+
+    const machine = new LevelUpStateMachine(actor as never, true);
+    machine.jumpTo("review");
+    expect(machine.currentStepId).toBe("review");
+
+    machine.setStepData("classChoice", {
+      mode: "existing",
+      classItemId: "rogue-1",
+      className: "Rogue",
+      classIdentifier: "rogue",
+    });
+    recalculateLevelUpApplicableSteps(machine.state, true);
+
+    expect(machine.state.applicableSteps).toEqual([
+      "classChoice",
+      "hp",
+      "features",
+      "subclass",
+      "spells",
+      "review",
+    ]);
+    expect(machine.currentStepId).toBe("review");
+  });
+
+  it("supports jump navigation for valid steps and ignores missing ones", () => {
+    const machine = new LevelUpStateMachine(makeActor() as never, false);
+
+    expect(machine.jumpTo("spells")).toBe(true);
+    expect(machine.currentStepId).toBe("spells");
+    expect(machine.jumpTo("subclass")).toBe(false);
+    expect(machine.currentStepId).toBe("spells");
+  });
 });

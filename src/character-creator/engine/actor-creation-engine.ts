@@ -9,11 +9,34 @@
  */
 
 import { Log, MOD } from "../../logger";
-import { getGame, fromUuid } from "../../types";
+import { getGame, getUI, fromUuid } from "../../types";
 import type { FoundryDocument } from "../../types";
 import type { WizardState, PortraitSelection } from "../character-creator-types";
 import { ABILITY_KEYS } from "../data/dnd5e-constants";
 import type { AbilityKey } from "../character-creator-types";
+
+interface ActorCollectionWithClass {
+  documentClass?: {
+    create(data: Record<string, unknown>): Promise<FoundryDocument | null>;
+  };
+}
+
+interface FilePickerUploadResult {
+  path?: string;
+}
+
+interface FilePickerLike {
+  upload?(
+    source: string,
+    target: string,
+    file: File,
+    options: Record<string, unknown>,
+  ): Promise<FilePickerUploadResult | null | undefined>;
+}
+
+interface GameSocketLike {
+  emit?(event: string, data: Record<string, unknown>): void;
+}
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -37,10 +60,7 @@ export async function createCharacterFromWizard(
       system: {},
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ActorClass = (getGame()?.actors as any)?.documentClass as
-      | { create(data: Record<string, unknown>): Promise<FoundryDocument | null> }
-      | undefined;
+    const ActorClass = getActorDocumentClass(getGame()?.actors);
     if (!ActorClass) {
       Log.error("ActorCreationEngine: Actor document class not available");
       return null;
@@ -215,8 +235,7 @@ async function applyPortrait(
     const file = new File([blob], fileName, { type: "image/webp" });
 
     // Upload via Foundry's FilePicker
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const FP = (globalThis as any).FilePicker;
+    const FP = getFilePicker();
     if (!FP?.upload) {
       Log.warn("ActorCreationEngine: FilePicker.upload not available");
       return;
@@ -257,8 +276,7 @@ function notifyGMCharacterCreated(characterName: string, actorId: string): void 
     const userName = game.user?.name ?? "A player";
 
     // Socket emit for GM notification
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const socket = (game as any).socket;
+    const socket = getGameSocket(game);
     socket?.emit?.(`module.${MOD}`, {
       action: "characterCreated",
       characterName,
@@ -267,8 +285,7 @@ function notifyGMCharacterCreated(characterName: string, actorId: string): void 
     });
 
     // Also show a local notification (for the creating player)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ui = (globalThis as any).ui;
+    const ui = getUI();
     ui?.notifications?.info?.(`${characterName} has been created!`);
   } catch {
     // Non-critical — don't let notification failure block creation
@@ -292,4 +309,23 @@ function dataUrlToBlob(dataUrl: string): Blob | null {
   } catch {
     return null;
   }
+}
+
+function getActorDocumentClass(
+  actors: unknown,
+): ActorCollectionWithClass["documentClass"] | undefined {
+  if (!actors || typeof actors !== "object") return undefined;
+  return (actors as ActorCollectionWithClass).documentClass;
+}
+
+function getFilePicker(): FilePickerLike | undefined {
+  const g = globalThis as Record<string, unknown>;
+  const filePicker = g.FilePicker;
+  if (!filePicker || typeof filePicker !== "object") return undefined;
+  return filePicker as FilePickerLike;
+}
+
+function getGameSocket(game: unknown): GameSocketLike | undefined {
+  if (!game || typeof game !== "object") return undefined;
+  return (game as { socket?: GameSocketLike }).socket;
 }

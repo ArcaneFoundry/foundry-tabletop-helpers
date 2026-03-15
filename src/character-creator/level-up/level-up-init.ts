@@ -5,12 +5,69 @@
  */
 
 import { MOD } from "../../logger";
+import type { FoundryDocument, FoundryHooks } from "../../types";
 import { getGame, getHooks, isDnd5eWorld, loadTemplates } from "../../types";
 import { ccEnabled } from "../character-creator-settings";
 import { buildLevelUpAppClass, openLevelUpWizard } from "./level-up-app";
 import { shouldShowLevelUp } from "./level-up-detection";
 
 export { openLevelUpWizard } from "./level-up-app";
+
+interface ActorLike extends FoundryDocument {
+  type?: string;
+}
+
+interface ActorSheetLike {
+  document?: ActorLike;
+  actor?: ActorLike;
+}
+
+interface HeaderHost {
+  querySelector(selector: string): ElementLike | null;
+  appendChild(child: ElementLike): void;
+  insertBefore(child: ElementLike, reference: ElementLike | null): void;
+}
+
+interface ElementLike {
+  className?: string;
+  type?: string;
+  title?: string;
+  innerHTML?: string;
+  querySelector(selector: string): ElementLike | null;
+  appendChild?(child: ElementLike): void;
+  insertBefore?(child: ElementLike, reference: ElementLike | null): void;
+  addEventListener(event: string, listener: (event: EventLike) => void): void;
+}
+
+interface EventLike {
+  preventDefault(): void;
+  stopPropagation(): void;
+}
+
+interface HtmlWrapperLike {
+  querySelector?(selector: string): HeaderHost | null;
+  0?: {
+    querySelector?(selector: string): HeaderHost | null;
+  };
+}
+
+interface DirectoryEntryLike {
+  dataset?: {
+    documentId?: string;
+  };
+  0?: {
+    dataset?: {
+      documentId?: string;
+    };
+  };
+}
+
+interface DirectoryContextOption {
+  name: string;
+  icon: string;
+  condition: (li: DirectoryEntryLike) => boolean;
+  callback: (li: DirectoryEntryLike) => void;
+}
 
 /* ── Hook Registration ───────────────────────────────────── */
 
@@ -27,69 +84,8 @@ export function registerLevelUpHooks(): void {
     `modules/${MOD}/templates/character-creator/lu-step-review.hbs`,
   ]);
 
-  // Inject level-up button into dnd5e default character sheets
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getHooks()?.on?.("renderActorSheet", (app: any, html: any) => {
-    if (!ccEnabled() || !isDnd5eWorld()) return;
-
-    const actor = app?.document ?? app?.actor;
-    if (!actor || actor.type !== "character") return;
-    if (!shouldShowLevelUp(actor)) return;
-
-    // Inject level-up button into the sheet header
-    const header = typeof html?.querySelector === "function"
-      ? html.querySelector(".window-header, header")
-      : html?.[0]?.querySelector?.(".window-header, header");
-
-    if (!header) return;
-
-    // Don't inject if already present
-    if (header.querySelector(".fth-level-up-btn")) return;
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "fth-level-up-btn";
-    btn.title = "Level Up!";
-    btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i> Level Up!';
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openLevelUpWizard(actor.id);
-    });
-
-    // Insert before the close button
-    const closeBtn = header.querySelector(".header-control.close, [data-action='close']");
-    if (closeBtn) {
-      header.insertBefore(btn, closeBtn);
-    } else {
-      header.appendChild(btn);
-    }
-  });
-
-  // Actor directory context menu entry (GM only)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getHooks()?.on?.("getActorDirectoryEntryContext", (_html: any, options: any[]) => {
-    if (!ccEnabled() || !isDnd5eWorld()) return;
-
-    options.push({
-      name: "Level Up",
-      icon: '<i class="fa-solid fa-arrow-up"></i>',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      condition: (li: any) => {
-        const actorId = li?.dataset?.documentId ?? li?.[0]?.dataset?.documentId;
-        if (!actorId) return false;
-        const game = getGame();
-        const actor = game?.actors?.get(actorId);
-        if (!actor) return false;
-        return shouldShowLevelUp(actor);
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      callback: (li: any) => {
-        const actorId = li?.dataset?.documentId ?? li?.[0]?.dataset?.documentId;
-        if (actorId) openLevelUpWizard(actorId);
-      },
-    });
-  });
+  registerLevelUpSheetHook(getHooks());
+  registerLevelUpDirectoryHook(getHooks());
 }
 
 /* ── Ready Phase ─────────────────────────────────────────── */
@@ -97,3 +93,81 @@ export function registerLevelUpHooks(): void {
 export function initLevelUpReady(): void {
   // Nothing needed at ready time currently
 }
+
+function registerLevelUpSheetHook(hooks: FoundryHooks | undefined): void {
+  hooks?.on?.("renderActorSheet", onRenderActorSheet);
+}
+
+function registerLevelUpDirectoryHook(hooks: FoundryHooks | undefined): void {
+  hooks?.on?.("getActorDirectoryEntryContext", onGetActorDirectoryEntryContext);
+}
+
+function onRenderActorSheet(app: ActorSheetLike, html: HtmlWrapperLike): void {
+  if (!ccEnabled() || !isDnd5eWorld()) return;
+
+  const actor = app.document ?? app.actor;
+  if (!actor || actor.type !== "character") return;
+  if (!shouldShowLevelUp(actor)) return;
+
+  const header = getSheetHeader(html);
+  if (!header) return;
+  if (header.querySelector(".fth-level-up-btn")) return;
+
+  const button = createLevelUpButton(actor);
+  const closeBtn = header.querySelector(".header-control.close, [data-action='close']");
+  if (closeBtn) {
+    header.insertBefore(button, closeBtn);
+  } else {
+    header.appendChild(button);
+  }
+}
+
+function onGetActorDirectoryEntryContext(_html: unknown, options: DirectoryContextOption[]): void {
+  if (!ccEnabled() || !isDnd5eWorld()) return;
+
+  options.push({
+    name: "Level Up",
+    icon: '<i class="fa-solid fa-arrow-up"></i>',
+    condition: (li) => {
+      const actorId = getDirectoryEntryActorId(li);
+      if (!actorId) return false;
+      const actor = getGame()?.actors?.get(actorId);
+      if (!actor) return false;
+      return shouldShowLevelUp(actor);
+    },
+    callback: (li) => {
+      const actorId = getDirectoryEntryActorId(li);
+      if (actorId) openLevelUpWizard(actorId);
+    },
+  });
+}
+
+function getSheetHeader(html: HtmlWrapperLike): HeaderHost | null {
+  if (typeof html?.querySelector === "function") {
+    return html.querySelector(".window-header, header");
+  }
+  return html?.[0]?.querySelector?.(".window-header, header") ?? null;
+}
+
+function createLevelUpButton(actor: ActorLike): ElementLike {
+  const btn = document.createElement("button") as unknown as ElementLike;
+  btn.type = "button";
+  btn.className = "fth-level-up-btn";
+  btn.title = "Level Up!";
+  btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i> Level Up!';
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openLevelUpWizard(actor.id);
+  });
+  return btn;
+}
+
+function getDirectoryEntryActorId(li: DirectoryEntryLike): string | undefined {
+  return li?.dataset?.documentId ?? li?.[0]?.dataset?.documentId;
+}
+
+export const __levelUpInitInternals = {
+  onRenderActorSheet,
+  onGetActorDirectoryEntryContext,
+};

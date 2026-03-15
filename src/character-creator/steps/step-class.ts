@@ -18,6 +18,10 @@ import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseClassSkillAdvancement, parseClassSpellcasting } from "../data/advancement-parser";
 import { patchCardSelection } from "./card-select-utils";
 
+interface DatasetElementLike extends Element {
+  dataset: DOMStringMap;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function getAvailableClasses(state: WizardState): CreatorIndexEntry[] {
@@ -44,6 +48,9 @@ export function createClassStep(): WizardStepDefinition {
       await compendiumIndexer.loadPacks(state.config.packSources);
       const entries = getAvailableClasses(state);
       const selected = state.selections.class;
+      const selectedEntry = selected
+        ? entries.find((e) => e.uuid === selected.uuid) ?? null
+        : null;
 
       return {
         stepId: "class",
@@ -56,8 +63,8 @@ export function createClassStep(): WizardStepDefinition {
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
-        selectedEntry: selected
-          ? { ...entries.find((e) => e.uuid === selected.uuid), description: await compendiumIndexer.getCachedDescription(selected.uuid) }
+        selectedEntry: selectedEntry
+          ? { ...selectedEntry, description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid) }
           : null,
         hasEntries: entries.length > 0,
         emptyMessage: "No classes available. Check your GM configuration.",
@@ -65,9 +72,9 @@ export function createClassStep(): WizardStepDefinition {
     },
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
-      el.querySelectorAll("[data-card-uuid]").forEach((card) => {
+      getCardElements(el).forEach((card) => {
         card.addEventListener("click", async () => {
-          const uuid = (card as HTMLElement).dataset.cardUuid;
+          const uuid = card.dataset.cardUuid;
           if (!uuid) return;
           const entries = getAvailableClasses(state);
           const entry = entries.find((e) => e.uuid === uuid);
@@ -110,3 +117,15 @@ export function createClassStep(): WizardStepDefinition {
     },
   };
 }
+
+function getCardElements(root: ParentNode): DatasetElementLike[] {
+  return Array.from(root.querySelectorAll("[data-card-uuid]")).filter(isDatasetElementLike);
+}
+
+function isDatasetElementLike(value: unknown): value is DatasetElementLike {
+  return value instanceof Element && "dataset" in value;
+}
+
+export const __classStepInternals = {
+  getAvailableClasses,
+};

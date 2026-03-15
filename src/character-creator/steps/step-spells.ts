@@ -31,6 +31,31 @@ const SCHOOL_LABELS: Record<string, string> = {
   trs: "Transmutation",
 };
 
+interface DatasetElementLike extends Element {
+  dataset: DOMStringMap;
+}
+
+interface SearchInputLike extends Element {
+  value: string;
+}
+
+interface SpellNameRowLike extends DatasetElementLike {
+  style: {
+    display: string;
+  };
+}
+
+interface SpellCardLike extends DatasetElementLike {
+  classList: DOMTokenList;
+  appendChild<TNode extends Node>(node: TNode): TNode;
+  querySelector(selector: string): Element | null;
+  setAttribute(qualifiedName: string, value: string): void;
+}
+
+interface DocumentLike {
+  createElement(tagName: string): HTMLElement;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function getAllSpells(state: WizardState): CreatorIndexEntry[] {
@@ -110,7 +135,10 @@ export function createSpellsStep(): WizardStepDefinition {
       const maxLevel = getMaxSpellLevel(state.config.startingLevel, progression);
 
       // Resolve class spell list (cached per class identifier)
-      if (classIdentifier && classIdentifier !== cachedClassId) {
+      if (!classIdentifier) {
+        cachedClassId = "";
+        cachedSpellUuids = null;
+      } else if (classIdentifier !== cachedClassId) {
         cachedClassId = classIdentifier;
         cachedSpellUuids = await resolveClassSpellUuids(classIdentifier);
         if (cachedSpellUuids) {
@@ -122,8 +150,9 @@ export function createSpellsStep(): WizardStepDefinition {
 
       // Get and filter spells
       let allSpells = getAllSpells(state);
-      if (cachedSpellUuids) {
-        allSpells = allSpells.filter((s) => cachedSpellUuids!.has(s.uuid));
+      const classSpellUuids = cachedSpellUuids;
+      if (classSpellUuids) {
+        allSpells = allSpells.filter((s) => classSpellUuids.has(s.uuid));
       }
 
       Log.debug(`Spells step: ${allSpells.length} total spells available for "${className}"`, {
@@ -184,9 +213,9 @@ export function createSpellsStep(): WizardStepDefinition {
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
       // Cantrip selection
-      el.querySelectorAll("[data-cantrip-uuid]").forEach((card) => {
+      getElementsWithDataset(el, "[data-cantrip-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
-          const uuid = (card as HTMLElement).dataset.cantripUuid;
+          const uuid = card.dataset.cantripUuid;
           if (!uuid) return;
           const current = state.selections.spells ?? { cantrips: [], spells: [] };
           const cantrips = new Set(current.cantrips);
@@ -198,16 +227,16 @@ export function createSpellsStep(): WizardStepDefinition {
           }
 
           const newData: SpellSelection = { cantrips: [...cantrips], spells: current.spells };
-          patchSpellCard(card as HTMLElement, cantrips.has(uuid));
+          patchSpellCard(card, cantrips.has(uuid));
           patchSpellCounter(el, "cantrip", cantrips.size);
           callbacks.setDataSilent(newData);
         });
       });
 
       // Spell selection
-      el.querySelectorAll("[data-spell-uuid]").forEach((card) => {
+      getElementsWithDataset(el, "[data-spell-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
-          const uuid = (card as HTMLElement).dataset.spellUuid;
+          const uuid = card.dataset.spellUuid;
           if (!uuid) return;
           const current = state.selections.spells ?? { cantrips: [], spells: [] };
           const spells = new Set(current.spells);
@@ -219,20 +248,20 @@ export function createSpellsStep(): WizardStepDefinition {
           }
 
           const newData: SpellSelection = { cantrips: current.cantrips, spells: [...spells] };
-          patchSpellCard(card as HTMLElement, spells.has(uuid));
+          patchSpellCard(card, spells.has(uuid));
           patchSpellCounter(el, "spell", spells.size);
           callbacks.setDataSilent(newData);
         });
       });
 
       // Search filter
-      const searchInput = el.querySelector("[data-spell-search]") as HTMLInputElement | null;
+      const searchInput = getSearchInput(el);
       if (searchInput) {
         searchInput.addEventListener("input", () => {
           const query = searchInput.value.toLowerCase().trim();
-          el.querySelectorAll("[data-spell-name]").forEach((row) => {
-            const name = ((row as HTMLElement).dataset.spellName ?? "").toLowerCase();
-            (row as HTMLElement).style.display = !query || name.includes(query) ? "" : "none";
+          getSpellNameRows(el).forEach((row) => {
+            const name = (row.dataset.spellName ?? "").toLowerCase();
+            row.style.display = !query || name.includes(query) ? "" : "none";
           });
         });
       }
@@ -243,15 +272,17 @@ export function createSpellsStep(): WizardStepDefinition {
 /* ── DOM Patching ────────────────────────────────────────── */
 
 /** Toggle a spell card's selected state without re-rendering. */
-function patchSpellCard(card: HTMLElement, selected: boolean): void {
+function patchSpellCard(card: SpellCardLike, selected: boolean): void {
   card.classList.toggle("cc-spell-card--selected", selected);
   card.setAttribute("aria-selected", String(selected));
   // Toggle check icon
   let check = card.querySelector(".cc-spell-card__check");
   if (selected && !check) {
-    check = document.createElement("div");
+    const documentRef = getDocumentRef();
+    if (!documentRef) return;
+    check = documentRef.createElement("div");
     check.className = "cc-spell-card__check";
-    const icon = document.createElement("i");
+    const icon = documentRef.createElement("i");
     icon.className = "fa-solid fa-check";
     check.appendChild(icon);
     card.appendChild(check);
@@ -275,3 +306,46 @@ function patchSpellCounter(el: HTMLElement, type: "cantrip" | "spell", count: nu
     summary.textContent = `${cantripCount} cantrips, ${spellCount} spells`;
   }
 }
+
+function getDocumentRef(): DocumentLike | null {
+  const doc = Reflect.get(globalThis as object, "document");
+  return isDocumentLike(doc) ? doc : null;
+}
+
+function getElementsWithDataset(root: ParentNode, selector: string): DatasetElementLike[] {
+  return Array.from(root.querySelectorAll(selector)).filter(isDatasetElementLike);
+}
+
+function getSearchInput(root: ParentNode): SearchInputLike | null {
+  const input = root.querySelector("[data-spell-search]");
+  return isSearchInputLike(input) ? input : null;
+}
+
+function getSpellNameRows(root: ParentNode): SpellNameRowLike[] {
+  return Array.from(root.querySelectorAll("[data-spell-name]")).filter(isSpellNameRowLike);
+}
+
+function isDatasetElementLike(value: unknown): value is DatasetElementLike {
+  return value instanceof Element && "dataset" in value;
+}
+
+function isSearchInputLike(value: unknown): value is SearchInputLike {
+  return value instanceof Element && "value" in value;
+}
+
+function isSpellNameRowLike(value: unknown): value is SpellNameRowLike {
+  return value instanceof Element && "dataset" in value && "style" in value;
+}
+
+function isDocumentLike(value: unknown): value is DocumentLike {
+  return typeof value === "object"
+    && value !== null
+    && "createElement" in value
+    && typeof (value as { createElement?: unknown }).createElement === "function";
+}
+
+export const __spellsStepInternals = {
+  getMaxSpellLevel,
+  patchSpellCard,
+  patchSpellCounter,
+};

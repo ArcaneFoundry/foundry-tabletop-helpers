@@ -41,22 +41,44 @@ import { ContentFilter } from "../data/content-filter";
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
 
+interface RuntimeApplicationBase {
+  element?: Element | null;
+  render(options?: Record<string, unknown>): void;
+  _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
+}
+
+interface RuntimeApplicationClass {
+  new (): RuntimeApplicationBase;
+}
+
+type RuntimeHandlebarsApplicationMixin = (base: RuntimeApplicationClass) => RuntimeApplicationClass;
+
+interface GMConfigAppInstance extends RuntimeApplicationBase {
+  tabGroups: Record<string, string>;
+  _curationLoaded: boolean;
+  _filter: ContentFilter | null;
+  _searchText: string;
+}
+
+interface RulesFormLike {
+  querySelector(selector: string): Element | null;
+}
+
 const getFoundryAppClasses = () => {
   const g = globalThis as Record<string, unknown>;
   const api = (g.foundry as Record<string, unknown> | undefined)
     ?.applications as Record<string, unknown> | undefined;
   return {
     HandlebarsApplicationMixin: (api?.api as Record<string, unknown> | undefined)
-      ?.HandlebarsApplicationMixin as ((...args: unknown[]) => unknown) | undefined,
+      ?.HandlebarsApplicationMixin as RuntimeHandlebarsApplicationMixin | undefined,
     ApplicationV2: (api?.api as Record<string, unknown> | undefined)
-      ?.ApplicationV2 as (new (...args: unknown[]) => unknown) | undefined,
+      ?.ApplicationV2 as RuntimeApplicationClass | undefined,
   };
 };
 
 /* ── Module-Level State ──────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _GMConfigAppClass: (new () => any) | null = null;
+let _GMConfigAppClass: RuntimeApplicationClass | null = null;
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -72,8 +94,7 @@ export function buildGMConfigAppClass(): void {
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Base = (HandlebarsApplicationMixin as any)(ApplicationV2);
+  const Base = HandlebarsApplicationMixin(ApplicationV2);
 
   class GMConfigApp extends Base {
 
@@ -121,8 +142,7 @@ export function buildGMConfigAppClass(): void {
 
     /* ── Rendering ─────────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _prepareContext(_options: any): Promise<GMConfigAppContext> {
+    async _prepareContext(_options: unknown): Promise<GMConfigAppContext> {
       const activeTab = this.tabGroups["main"] ?? "sources";
 
       const tabs: GMConfigAppContext["tabs"] = {
@@ -160,9 +180,8 @@ export function buildGMConfigAppClass(): void {
       return context;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _preparePartContext(partId: string, context: any, options: any): Promise<any> {
-      const base = await super._preparePartContext(partId, context, options);
+    async _preparePartContext(partId: string, context: GMConfigAppContext, options: unknown): Promise<unknown> {
+      const base = await super._preparePartContext?.(partId, context, options) ?? {};
       const activeTab = context.activeTab;
 
       // Only pass data for the active tab's part
@@ -174,8 +193,7 @@ export function buildGMConfigAppClass(): void {
       return base;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _onRender(_context: any, _options: any): Promise<void> {
+    async _onRender(_context: unknown, _options: unknown): Promise<void> {
       // Bind tab click handlers
       const tabButtons = this.element?.querySelectorAll("[data-tab]");
       tabButtons?.forEach((btn: Element) => {
@@ -343,7 +361,7 @@ export function buildGMConfigAppClass(): void {
 
     /* ── Action Handlers ───────────────────────────────────── */
 
-    static async _onTogglePack(this: InstanceType<typeof GMConfigApp>, _event: Event, target: HTMLElement): Promise<void> {
+    static async _onTogglePack(this: GMConfigAppInstance, _event: Event, target: HTMLElement): Promise<void> {
       const packId = target.dataset.packId;
       const typeKey = target.dataset.typeKey as keyof PackSourceConfig | undefined;
       if (!packId || !typeKey) return;
@@ -364,7 +382,7 @@ export function buildGMConfigAppClass(): void {
       this.render({ force: false });
     }
 
-    static async _onToggleContent(this: InstanceType<typeof GMConfigApp>, _event: Event, target: HTMLElement): Promise<void> {
+    static async _onToggleContent(this: GMConfigAppInstance, _event: Event, target: HTMLElement): Promise<void> {
       const uuid = target.dataset.uuid;
       if (!uuid || !this._filter) return;
 
@@ -374,7 +392,7 @@ export function buildGMConfigAppClass(): void {
       this.render({ parts: ["curation"] });
     }
 
-    static async _onEnableAll(this: InstanceType<typeof GMConfigApp>, _event: Event, target: HTMLElement): Promise<void> {
+    static async _onEnableAll(this: GMConfigAppInstance, _event: Event, target: HTMLElement): Promise<void> {
       const type = target.dataset.type as CreatorContentType | undefined;
       if (!type || !this._filter) return;
 
@@ -385,7 +403,7 @@ export function buildGMConfigAppClass(): void {
       this.render({ parts: ["curation"] });
     }
 
-    static async _onDisableAll(this: InstanceType<typeof GMConfigApp>, _event: Event, target: HTMLElement): Promise<void> {
+    static async _onDisableAll(this: GMConfigAppInstance, _event: Event, target: HTMLElement): Promise<void> {
       const type = target.dataset.type as CreatorContentType | undefined;
       if (!type || !this._filter) return;
 
@@ -396,39 +414,38 @@ export function buildGMConfigAppClass(): void {
       this.render({ parts: ["curation"] });
     }
 
-    static async _onSaveRules(this: InstanceType<typeof GMConfigApp>, _event: Event, _target: HTMLElement): Promise<void> {
-      const form = this.element?.querySelector(".cc-rules-form") as HTMLFormElement | null;
+    static async _onSaveRules(this: GMConfigAppInstance, _event: Event, _target: HTMLElement): Promise<void> {
+      const form = getRulesForm(this.element);
       if (!form) return;
 
       // Ability methods
       const methods: string[] = [];
-      if ((form.querySelector('[name="method-4d6"]') as HTMLInputElement)?.checked) methods.push("4d6");
-      if ((form.querySelector('[name="method-pointBuy"]') as HTMLInputElement)?.checked) methods.push("pointBuy");
-      if ((form.querySelector('[name="method-standardArray"]') as HTMLInputElement)?.checked) methods.push("standardArray");
+      if (getChecked(form, '[name="method-4d6"]')) methods.push("4d6");
+      if (getChecked(form, '[name="method-pointBuy"]')) methods.push("pointBuy");
+      if (getChecked(form, '[name="method-standardArray"]')) methods.push("standardArray");
       await setAllowedAbilityMethods(methods as import("../character-creator-types").AbilityScoreMethod[]);
 
       // Scalar settings
-      const level = Number((form.querySelector('[name="startingLevel"]') as HTMLInputElement)?.value) || 1;
+      const level = Number(getInputValue(form, '[name="startingLevel"]')) || 1;
       await setSetting(MOD, CC_SETTINGS.STARTING_LEVEL, Math.max(1, Math.min(20, level)));
 
-      const multiclass = (form.querySelector('[name="allowMulticlass"]') as HTMLInputElement)?.checked ?? false;
+      const multiclass = getChecked(form, '[name="allowMulticlass"]');
       await setSetting(MOD, CC_SETTINGS.ALLOW_MULTICLASS, multiclass);
 
-      const equipMethod = (form.querySelector('[name="equipmentMethod"]:checked') as HTMLInputElement)?.value ?? "both";
+      const equipMethod = getInputValue(form, '[name="equipmentMethod"]:checked') ?? "both";
       await setSetting(MOD, CC_SETTINGS.EQUIPMENT_METHOD, equipMethod);
 
-      const hpMethod = (form.querySelector('[name="level1HpMethod"]:checked') as HTMLInputElement)?.value ?? "max";
+      const hpMethod = getInputValue(form, '[name="level1HpMethod"]:checked') ?? "max";
       await setSetting(MOD, CC_SETTINGS.LEVEL1_HP_METHOD, hpMethod);
 
-      const customBg = (form.querySelector('[name="allowCustomBackgrounds"]') as HTMLInputElement)?.checked ?? false;
+      const customBg = getChecked(form, '[name="allowCustomBackgrounds"]');
       await setSetting(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS, customBg);
 
       getUI()?.notifications?.info("Character Creator configuration saved.");
     }
 
-    static _onSearchContent(this: InstanceType<typeof GMConfigApp>, _event: Event, target: HTMLElement): void {
-      const input = target as HTMLInputElement;
-      this._searchText = input.value ?? "";
+    static _onSearchContent(this: GMConfigAppInstance, _event: Event, target: HTMLElement): void {
+      this._searchText = getElementValue(target) ?? "";
       this.render({ parts: ["curation"] });
     }
   }
@@ -447,4 +464,38 @@ export function openGMConfigApp(): void {
     return;
   }
   new _GMConfigAppClass().render({ force: true });
+}
+
+export function getGMConfigAppClass(): RuntimeApplicationClass | null {
+  return _GMConfigAppClass;
+}
+
+function getRulesForm(element: Element | null | undefined): RulesFormLike | null {
+  const form = element?.querySelector(".cc-rules-form");
+  return isRulesFormLike(form) ? form : null;
+}
+
+function getChecked(form: RulesFormLike, selector: string): boolean {
+  const input = form.querySelector(selector);
+  return isCheckboxLike(input) ? input.checked : false;
+}
+
+function getInputValue(form: RulesFormLike, selector: string): string | undefined {
+  const input = form.querySelector(selector);
+  return getElementValue(input);
+}
+
+function getElementValue(element: Element | null | undefined): string | undefined {
+  if (!element || !("value" in element)) return undefined;
+  const value = (element as { value?: unknown }).value;
+  return typeof value === "string" ? value : undefined;
+}
+
+function isCheckboxLike(element: Element | null | undefined): element is Element & { checked: boolean } {
+  return !!element && "checked" in element && typeof (element as { checked?: unknown }).checked === "boolean";
+}
+
+function isRulesFormLike(value: unknown): value is RulesFormLike {
+  return typeof value === "object" && value !== null && "querySelector" in value
+    && typeof (value as { querySelector?: unknown }).querySelector === "function";
 }

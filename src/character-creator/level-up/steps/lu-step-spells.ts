@@ -24,6 +24,36 @@ const SCHOOL_LABELS: Record<string, string> = {
   trs: "Transmutation",
 };
 
+interface SpellItemLike {
+  id: string;
+  type?: string;
+  name?: string;
+  system?: {
+    level?: number;
+  };
+}
+
+interface ActorWithItems extends FoundryDocument {
+  items?: Iterable<SpellItemLike> | ArrayLike<SpellItemLike>;
+}
+
+interface ClickableElementLike {
+  dataset: DOMStringMap;
+  addEventListener(event: string, handler: () => void): void;
+}
+
+interface SearchInputLike {
+  value: string;
+  addEventListener(event: string, handler: () => void): void;
+}
+
+interface SpellRowLike {
+  dataset: DOMStringMap;
+  style: {
+    display: string;
+  };
+}
+
 /* ── Step Definition ─────────────────────────────────────── */
 
 export function createLuSpellsStep(): LevelUpStepDef {
@@ -89,10 +119,8 @@ export function createLuSpellsStep(): LevelUpStepDef {
         }));
 
       // Get current spells on the actor for swap display
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const actorItems = (actor as any).items ?? [];
+      const actorItems = getActorItems(actor);
       const currentSpells: Array<{ id: string; name: string; level: number }> = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const item of actorItems) {
         if (item.type === "spell") {
           currentSpells.push({
@@ -127,9 +155,9 @@ export function createLuSpellsStep(): LevelUpStepDef {
       };
 
       // New cantrip selection
-      el.querySelectorAll("[data-cantrip-uuid]").forEach((card) => {
+      getClickableElements(el, "[data-cantrip-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
-          const uuid = (card as HTMLElement).dataset.cantripUuid;
+          const uuid = card.dataset.cantripUuid;
           if (!uuid) return;
           const current = getCurrentData();
           const cantrips = new Set(current.newCantripUuids);
@@ -140,9 +168,9 @@ export function createLuSpellsStep(): LevelUpStepDef {
       });
 
       // New spell selection
-      el.querySelectorAll("[data-spell-uuid]").forEach((card) => {
+      getClickableElements(el, "[data-spell-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
-          const uuid = (card as HTMLElement).dataset.spellUuid;
+          const uuid = card.dataset.spellUuid;
           if (!uuid) return;
           const current = getCurrentData();
           const spells = new Set(current.newSpellUuids);
@@ -153,13 +181,13 @@ export function createLuSpellsStep(): LevelUpStepDef {
       });
 
       // Search filter
-      const searchInput = el.querySelector("[data-spell-search]") as HTMLInputElement | null;
+      const searchInput = getSearchInput(el.querySelector("[data-spell-search]"));
       if (searchInput) {
         searchInput.addEventListener("input", () => {
           const query = searchInput.value.toLowerCase().trim();
-          el.querySelectorAll("[data-spell-name]").forEach((row) => {
-            const name = ((row as HTMLElement).dataset.spellName ?? "").toLowerCase();
-            (row as HTMLElement).style.display = !query || name.includes(query) ? "" : "none";
+          getSpellRows(el, "[data-spell-name]").forEach((row) => {
+            const name = (row.dataset.spellName ?? "").toLowerCase();
+            row.style.display = !query || name.includes(query) ? "" : "none";
           });
         });
       }
@@ -180,3 +208,53 @@ function getMaxSpellLevel(characterLevel: number): number {
   if (characterLevel >= 3) return 2;
   return 1;
 }
+
+function getActorItems(actor: FoundryDocument): SpellItemLike[] {
+  const items = (actor as ActorWithItems).items;
+  if (!items) return [];
+  return Array.from(items);
+}
+
+function getClickableElements(root: ParentNode, selector: string): ClickableElementLike[] {
+  const elements = Array.from(root.querySelectorAll(selector) as ArrayLike<unknown>);
+  const cards: ClickableElementLike[] = [];
+  for (const value of elements) {
+    if (isClickableElementLike(value)) cards.push(value);
+  }
+  return cards;
+}
+
+function getSearchInput(value: unknown): SearchInputLike | null {
+  if (!value || typeof value !== "object") return null;
+  if (typeof (value as { addEventListener?: unknown }).addEventListener !== "function") return null;
+  if (!("value" in value)) return null;
+  return value as SearchInputLike;
+}
+
+function getSpellRows(root: ParentNode, selector: string): SpellRowLike[] {
+  const elements = Array.from(root.querySelectorAll(selector) as ArrayLike<unknown>);
+  const rows: SpellRowLike[] = [];
+  for (const value of elements) {
+    if (isSpellRowLike(value)) rows.push(value);
+  }
+  return rows;
+}
+
+function isClickableElementLike(value: unknown): value is ClickableElementLike {
+  return typeof value === "object"
+    && value !== null
+    && "dataset" in value
+    && typeof (value as { addEventListener?: unknown }).addEventListener === "function";
+}
+
+function isSpellRowLike(value: unknown): value is SpellRowLike {
+  return typeof value === "object"
+    && value !== null
+    && "dataset" in value
+    && "style" in value;
+}
+
+export const __luStepSpellsInternals = {
+  getActorItems,
+  getMaxSpellLevel,
+};

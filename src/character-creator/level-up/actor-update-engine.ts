@@ -19,6 +19,41 @@ import {
   resolveSpellsToDelete,
 } from "./actor-update-engine-helpers";
 
+interface ActorItemLike {
+  id?: string;
+  name?: string;
+  type?: string;
+  system?: {
+    levels?: number;
+  };
+  update(data: Record<string, unknown>): Promise<unknown>;
+}
+
+interface ActorItemCollectionLike extends Iterable<ActorItemLike> {
+  get?(id: string): ActorItemLike | null | undefined;
+}
+
+interface ActorUpdateTarget extends FoundryDocument {
+  items?: ActorItemCollectionLike;
+  system?: {
+    attributes?: {
+      hp?: {
+        value?: number;
+        max?: number;
+      };
+    };
+    abilities?: Record<string, { value?: number }>;
+  } & Record<string, unknown>;
+  update(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<FoundryDocument>;
+  createEmbeddedDocuments(type: string, data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<FoundryDocument[]>;
+  deleteEmbeddedDocuments?(type: string, ids: string[], options?: Record<string, unknown>): Promise<unknown>;
+}
+
+interface CompendiumDocumentLike {
+  name?: string;
+  toObject(): Record<string, unknown>;
+}
+
 /* ── Public API ──────────────────────────────────────────── */
 
 /**
@@ -82,26 +117,24 @@ export async function applyLevelUp(state: LevelUpState): Promise<boolean> {
 
 /* ── Internal Helpers ────────────────────────────────────── */
 
-function getActorById(id: string): FoundryDocument | null {
+function getActorById(id: string): ActorUpdateTarget | null {
   const game = getGame();
   if (!game?.actors) return null;
-  return game.actors.get(id) ?? null;
+  return (game.actors.get(id) as ActorUpdateTarget | undefined) ?? null;
 }
 
 /**
  * Update class item levels (or add new class for multiclass).
  */
 async function updateClassLevels(
-  actor: FoundryDocument,
+  actor: ActorUpdateTarget,
   classChoice?: LevelUpClassChoice,
 ): Promise<void> {
   if (!classChoice) return;
 
   if (classChoice.mode === "existing" && classChoice.classItemId) {
     // Increment levels on existing class item
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const items = (actor as any).items;
-    const classItem = items?.get?.(classChoice.classItemId);
+    const classItem = actor.items?.get?.(classChoice.classItemId) ?? null;
     if (classItem) {
       const currentLevels = classItem.system?.levels ?? 0;
       await classItem.update(buildClassLevelUpdatePayload(currentLevels));
@@ -110,7 +143,7 @@ async function updateClassLevels(
     }
   } else if (classChoice.mode === "multiclass" && classChoice.newClassUuid) {
     // Add new class item from compendium
-    const doc = await fromUuid(classChoice.newClassUuid);
+    const doc = await getCompendiumDocument(classChoice.newClassUuid);
     if (doc) {
       const obj = prepareMulticlassItemData(doc.toObject());
       await actor.createEmbeddedDocuments("Item", [obj]);
@@ -123,10 +156,8 @@ async function updateClassLevels(
 /**
  * Update actor HP (add hpGained to max and current).
  */
-async function updateHp(actor: FoundryDocument, hpGained: number): Promise<void> {
-  const system = actor.system as Record<string, unknown> | undefined;
-  const attrs = system?.attributes as Record<string, unknown> | undefined;
-  const hp = attrs?.hp as { value?: number; max?: number } | undefined;
+async function updateHp(actor: ActorUpdateTarget, hpGained: number): Promise<void> {
+  const hp = actor.system?.attributes?.hp;
   const updates = buildHpUpdatePayload(hp, hpGained);
   await actor.update(updates);
   Log.debug(`ActorUpdateEngine: HP ${(hp?.max ?? 0)} → ${updates["system.attributes.hp.max"]}`);
@@ -135,10 +166,10 @@ async function updateHp(actor: FoundryDocument, hpGained: number): Promise<void>
 /**
  * Grant items from compendium UUIDs.
  */
-async function grantItems(actor: FoundryDocument, uuids: string[]): Promise<void> {
+async function grantItems(actor: ActorUpdateTarget, uuids: string[]): Promise<void> {
   const items: Record<string, unknown>[] = [];
   for (const uuid of uuids) {
-    const doc = await fromUuid(uuid);
+    const doc = await getCompendiumDocument(uuid);
     if (doc) {
       const obj = doc.toObject();
       delete obj._id;
@@ -155,10 +186,8 @@ async function grantItems(actor: FoundryDocument, uuids: string[]): Promise<void
  * Apply Ability Score Improvement.
  * If 1 ability selected: +2. If 2 abilities: +1 each.
  */
-async function applyAsi(actor: FoundryDocument, abilities: string[]): Promise<void> {
-  const system = actor.system as Record<string, unknown> | undefined;
-  const actorAbilities = system?.abilities as Record<string, { value?: number }> | undefined;
-  const updates = buildAsiUpdatePayload(actorAbilities, abilities);
+async function applyAsi(actor: ActorUpdateTarget, abilities: string[]): Promise<void> {
+  const updates = buildAsiUpdatePayload(actor.system?.abilities, abilities);
 
   if (Object.keys(updates).length > 0) {
     await actor.update(updates);
@@ -170,25 +199,27 @@ async function applyAsi(actor: FoundryDocument, abilities: string[]): Promise<vo
  * Remove spells that were swapped out.
  * Finds spells on the actor by matching name against compendium originals.
  */
-async function removeSpells(actor: FoundryDocument, uuids: string[]): Promise<void> {
+async function removeSpells(actor: ActorUpdateTarget, uuids: string[]): Promise<void> {
   // Resolve the names of spells to remove
   const namesToRemove = new Set<string>();
   for (const uuid of uuids) {
-    const doc = await fromUuid(uuid);
+    const doc = await getCompendiumDocument(uuid);
     if (doc?.name) namesToRemove.add(doc.name);
   }
 
   if (namesToRemove.size === 0) return;
 
   // Find matching items on the actor
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = (actor as any).items;
+  const items = actor.items;
   if (!items) return;
-  const idsToDelete = resolveSpellsToDelete(items as Iterable<{ id?: string; type?: string; name?: string }>, namesToRemove);
+  const idsToDelete = resolveSpellsToDelete(items, namesToRemove);
 
   if (idsToDelete.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (actor as any).deleteEmbeddedDocuments("Item", idsToDelete);
+    await actor.deleteEmbeddedDocuments?.("Item", idsToDelete);
     Log.debug(`ActorUpdateEngine: Removed ${idsToDelete.length} swapped-out spells`);
   }
+}
+
+async function getCompendiumDocument(uuid: string): Promise<CompendiumDocumentLike | null> {
+  return await fromUuid(uuid) as CompendiumDocumentLike | null;
 }
