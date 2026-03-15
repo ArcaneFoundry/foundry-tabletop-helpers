@@ -18,7 +18,7 @@
  */
 
 import { Log, MOD } from "../../logger";
-import { getHooks, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
+import { getHooks, getGame, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
 import { COMBAT_SETTINGS } from "../combat-settings";
 import { getExtractor } from "../../print-sheet/extractors/base-extractor";
 import { transformNPCToViewModel } from "../../print-sheet/renderers/viewmodels/npc-transformer";
@@ -60,6 +60,52 @@ let isFloating = false;
 const POSITION_KEY = `${MOD}:monster-preview-pos`;
 const MODE_KEY = `${MOD}:monster-preview-mode`;
 
+interface MonsterPreviewActor {
+  id?: string;
+  name?: string;
+  type?: string;
+  system?: {
+    attributes?: {
+      ac?: { value?: number };
+      hp?: { max?: number };
+    };
+    details?: {
+      cr?: string | number;
+    };
+  };
+}
+
+interface MonsterPreviewCombatant {
+  actor?: MonsterPreviewActor | null;
+}
+
+interface MonsterPreviewCombat {
+  id?: string;
+  combatant?: MonsterPreviewCombatant | null;
+  turns?: MonsterPreviewCombatant[];
+  turn?: number;
+}
+
+interface MonsterPreviewGame {
+  combat?: MonsterPreviewCombat | null;
+  system?: {
+    id?: string;
+  };
+}
+
+function getCurrentGame(): MonsterPreviewGame | null {
+  const game = getGame();
+  return isObject(game) ? game as MonsterPreviewGame : null;
+}
+
+function getActiveCombat(): MonsterPreviewCombat | null {
+  return getCurrentGame()?.combat ?? null;
+}
+
+function getCurrentSystemId(): string {
+  return getCurrentGame()?.system?.id ?? "dnd5e";
+}
+
 /** Options for the extraction pipeline — show everything, use token image */
 const PREVIEW_OPTIONS: PrintOptions = {
   paperSize: "letter",
@@ -100,30 +146,25 @@ function isMonsterPreviewEnabled(): boolean {
 
 /* ── Hook Handlers ────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onUpdateCombat(combat: any, change: any): void {
+function onUpdateCombat(combat: MonsterPreviewCombat, change: { turn?: number; round?: number }): void {
   if (!isMonsterPreviewEnabled()) return;
   if (change.turn === undefined && change.round === undefined) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gameCombat = (globalThis as any).game?.combat;
+  const gameCombat = getActiveCombat();
   if (combat.id !== gameCombat?.id) return;
 
   dismissed = false;
   void handleTurnChange(combat);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onDeleteCombat(combat: any): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gameCombat = (globalThis as any).game?.combat;
+function onDeleteCombat(combat: MonsterPreviewCombat): void {
+  const gameCombat = getActiveCombat();
   if (combat.id === gameCombat?.id || !gameCombat) {
     clearPreview();
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onCombatStart(combat: any): void {
+function onCombatStart(combat: MonsterPreviewCombat): void {
   if (!isMonsterPreviewEnabled()) return;
   dismissed = false;
   void handleTurnChange(combat);
@@ -133,8 +174,7 @@ function onCombatStart(combat: any): void {
  * Re-inject the cached stat block into the Combat Tracker on each re-render.
  * This is needed because Foundry rebuilds the sidebar HTML on every render.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRenderCombatTracker(_app: any, html: any): void {
+function onRenderCombatTracker(_app: unknown, html: HTMLElement | { get(i: number): HTMLElement } | ArrayLike<HTMLElement> | null): void {
   if (!isMonsterPreviewEnabled()) return;
   if (isFloating || dismissed || !cachedContentHTML) return;
 
@@ -143,7 +183,9 @@ function onRenderCombatTracker(_app: any, html: any): void {
       ? html
       : isObject(html) && typeof html.get === "function"
         ? (html as { get(i: number): HTMLElement }).get(0)
-        : html?.[0] ?? null;
+        : html && "length" in html && typeof html.length === "number" && html.length > 0
+          ? html[0] ?? null
+          : null;
 
   if (!el) return;
   injectIntoTracker(el);
@@ -151,8 +193,7 @@ function onRenderCombatTracker(_app: any, html: any): void {
 
 /* ── Turn Change Logic ────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleTurnChange(combat: any): Promise<void> {
+async function handleTurnChange(combat: MonsterPreviewCombat): Promise<void> {
   try {
     const combatant = combat.combatant;
     const actor = combatant?.actor;
@@ -172,7 +213,7 @@ async function handleTurnChange(combat: any): Promise<void> {
       return;
     }
 
-    currentActorId = actor.id;
+    currentActorId = actor.id ?? null;
     await extractAndRender(actor, combat);
   } catch (err) {
     Log.error("Monster Preview: failed to handle turn change", err);
@@ -181,13 +222,10 @@ async function handleTurnChange(combat: any): Promise<void> {
 
 /* ── NPC Extraction + Rendering ───────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function extractAndRender(actor: any, combat: any): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const systemId = ((globalThis as any).game?.system?.id as string) ?? "dnd5e";
-  const extractor = getExtractor(systemId);
+async function extractAndRender(actor: MonsterPreviewActor, combat: MonsterPreviewCombat): Promise<void> {
+  const extractor = getExtractor(getCurrentSystemId());
   if (!extractor) {
-    Log.warn("Monster Preview: no extractor for system", systemId);
+    Log.warn("Monster Preview: no extractor for system", getCurrentSystemId());
     return;
   }
 
@@ -208,12 +246,11 @@ async function extractAndRender(actor: any, combat: any): Promise<void> {
 
 /* ── Up Next ──────────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getUpNextData(combat: any): UpNextInfo | null {
+function getUpNextData(combat: MonsterPreviewCombat): UpNextInfo | null {
   const turns = combat.turns;
   if (!Array.isArray(turns) || turns.length <= 1) return null;
 
-  const currentIdx = combat.turn as number;
+  const currentIdx = combat.turn ?? 0;
   const nextIdx = (currentIdx + 1) % turns.length;
   const nextCombatant = turns[nextIdx];
   const nextActor = nextCombatant?.actor;
@@ -231,8 +268,7 @@ function getUpNextData(combat: any): UpNextInfo | null {
   return info;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function updateUpNext(combat: any): void {
+function updateUpNext(combat: MonsterPreviewCombat): void {
   const upNext = getUpNextData(combat);
   const upNextHTML = buildMonsterPreviewUpNextHTML(upNext);
 

@@ -38,6 +38,70 @@ interface CombatPrototypePatchState {
   origRollPC?: CombatRollMethod;
 }
 
+interface CombatActorLike extends Record<string, unknown> {
+  hasPlayerOwner?: boolean;
+}
+
+interface CombatantLike extends Record<string, unknown> {
+  id?: string;
+  initiative?: number | null;
+  actor?: CombatActorLike;
+}
+
+interface CombatantCollectionLike extends Iterable<CombatantLike> {
+  forEach?: (callback: (combatant: CombatantLike) => void) => void;
+}
+
+interface CombatLike extends Record<string, unknown> {
+  combatants?: CombatantCollectionLike | CombatantLike[];
+  rollInitiative?: (ids: string[]) => Promise<unknown>;
+}
+
+interface CombatDocumentClassLike {
+  prototype?: {
+    rollAll?: CombatRollMethod;
+    rollNPC?: CombatRollMethod;
+    rollPC?: CombatRollMethod;
+  };
+}
+
+interface GameLike {
+  combat?: CombatLike | null;
+}
+
+interface ConfigLike {
+  Combat?: {
+    documentClass?: CombatDocumentClassLike;
+  };
+}
+
+interface HtmlWrapperLike {
+  get?: (index: number) => HTMLElement | null | undefined;
+  [index: number]: unknown;
+}
+
+interface TrackerElementLike {
+  querySelector(selector: string): Element | null;
+}
+
+interface SceneControlToolLike {
+  name: string;
+  title: string;
+  icon: string;
+  order: number;
+  button: boolean;
+  visible: boolean;
+  onChange: () => void;
+}
+
+interface TokenSceneControlsLike {
+  tools?: Record<string, SceneControlToolLike>;
+}
+
+interface SceneControlsLike {
+  tokens?: TokenSceneControlsLike;
+}
+
 /* ── Feature enabled check ────────────────────────────────── */
 
 function isAdvantageInitiativeEnabled(): boolean {
@@ -125,8 +189,7 @@ export function buildCombatApi(): FthCombatApi {
     rulesReference: () => void toggleRulesReference(),
     // Batch initiative — opens advantage dialog + roll all
     batchInitiative: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const combat = (globalThis as any).game?.combat;
+      const combat = getActiveCombat();
       if (!combat) return;
       await rollWithAdvantage(combat, "all");
     },
@@ -134,6 +197,12 @@ export function buildCombatApi(): FthCombatApi {
 }
 
 export const __combatInternals = {
+  buildCombatApi,
+  onGetSceneControlButtonsRulesReference,
+  onRenderCombatTracker,
+  onRenderCombatTrackerPartySummary,
+  onRenderCombatTrackerRulesReference,
+  onRenderCombatTrackerWorkflow,
   wrapCombatPrototype,
 };
 
@@ -147,8 +216,7 @@ export const __combatInternals = {
  * as globals by then (they're defined during Foundry boot, before init).
  */
 function wrapCombatPrototype(): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const CombatClass = (globalThis as any).CONFIG?.Combat?.documentClass;
+  const CombatClass = getCombatDocumentClass();
   if (!CombatClass?.prototype) {
     Log.warn("Combat: Combat document class not found — skipping prototype wrapping");
     return;
@@ -218,7 +286,7 @@ const SCOPE_LABELS: Record<RollScope, string> = {
  * appropriate original method.
  */
 async function rollWithAdvantage(
-  combat: Record<string, unknown>,
+  combat: CombatLike,
   scope: RollScope
 ): Promise<unknown> {
   const advMode = await showAdvantageDialog(SCOPE_LABELS[scope]);
@@ -281,15 +349,15 @@ function buildScopeFilter(
  * Roll initiative for PC combatants that don't have initiative yet.
  * Mirrors the pattern of Combat.rollNPC() but for player-owned actors.
  */
-async function rollPCNormal(combat: Record<string, unknown>): Promise<unknown> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const combatants = (combat as any).combatants;
+async function rollPCNormal(combat: CombatLike): Promise<unknown> {
+  const combatants = combat.combatants;
   if (!combatants) return combat;
 
   // Collect IDs of PC combatants without initiative
   const ids: string[] = [];
-  const iterate = typeof combatants.forEach === "function"
-    ? (cb: (c: Record<string, unknown>) => void) => combatants.forEach(cb)
+  const forEachCombatant = combatants.forEach;
+  const iterate = typeof forEachCombatant === "function"
+    ? (cb: (c: Record<string, unknown>) => void) => forEachCombatant.call(combatants, cb)
     : (cb: (c: Record<string, unknown>) => void) => {
         for (const c of combatants) cb(c as Record<string, unknown>);
       };
@@ -303,8 +371,7 @@ async function rollPCNormal(combat: Record<string, unknown>): Promise<unknown> {
 
   if (ids.length === 0) return combat;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rollFn = (combat as any).rollInitiative;
+  const rollFn = combat.rollInitiative;
   if (typeof rollFn === "function") {
     return rollFn.call(combat, ids);
   }
@@ -323,19 +390,12 @@ function isDamageWorkflowsEnabled(): boolean {
  * Inject a "Quick Damage" button into the Combat Tracker header controls.
  * Uses the same renderCombatTracker hook as the Roll PCs button.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRenderCombatTrackerWorkflow(_app: any, html: any, ..._rest: unknown[]): void {
+function onRenderCombatTrackerWorkflow(_app: unknown, html: unknown, ..._rest: unknown[]): void {
   if (!isDamageWorkflowsEnabled()) return;
   // Hide the button when auto-popup panel is active
   if (getSetting<boolean>(MOD, COMBAT_SETTINGS.AUTO_DAMAGE_PANEL) ?? true) return;
 
-  const el: HTMLElement | null =
-    html instanceof HTMLElement
-      ? html
-      : isObject(html) && typeof html.get === "function"
-        ? (html as { get(i: number): HTMLElement }).get(0)
-        : html?.[0] ?? null;
-
+  const el = resolveTrackerElement(html);
   if (!el) return;
 
   // Already injected?
@@ -390,20 +450,11 @@ async function triggerDamageWorkflow(): Promise<void> {
  * Inject a "Roll PCs" button into the Combat Tracker after each render.
  * Finds the existing "Roll All" / "Roll NPCs" buttons and adds ours alongside.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRenderCombatTracker(_app: any, html: any, ..._rest: unknown[]): void {
+function onRenderCombatTracker(_app: unknown, html: unknown, ..._rest: unknown[]): void {
   if (!isGM()) return;
   if (!(getSetting<boolean>(MOD, COMBAT_SETTINGS.ENABLE_ADVANTAGE_INITIATIVE) ?? true)) return;
 
-  // In V13 ApplicationV2, html is a native HTMLElement.
-  // In V12-style or jQuery-wrapped, html might be a jQuery object.
-  const el: HTMLElement | null =
-    html instanceof HTMLElement
-      ? html
-      : isObject(html) && typeof html.get === "function"
-        ? html.get(0)
-        : html?.[0] ?? null;
-
+  const el = resolveTrackerElement(html);
   if (!el) return;
 
   // Already injected? (guard against double-render)
@@ -462,17 +513,10 @@ function isPartySummaryEnabled(): boolean {
 /**
  * Inject a "Party Summary" button into the Combat Tracker header controls.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRenderCombatTrackerPartySummary(_app: any, html: any, ..._rest: unknown[]): void {
+function onRenderCombatTrackerPartySummary(_app: unknown, html: unknown, ..._rest: unknown[]): void {
   if (!isPartySummaryEnabled()) return;
 
-  const el: HTMLElement | null =
-    html instanceof HTMLElement
-      ? html
-      : isObject(html) && typeof html.get === "function"
-        ? (html as { get(i: number): HTMLElement }).get(0)
-        : html?.[0] ?? null;
-
+  const el = resolveTrackerElement(html);
   if (!el) return;
   if (el.querySelector("[data-action='fth-party-summary']")) return;
 
@@ -515,17 +559,10 @@ function onRenderCombatTrackerPartySummary(_app: any, html: any, ..._rest: unkno
 /**
  * Inject a "Rules Reference" button into the Combat Tracker header controls.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRenderCombatTrackerRulesReference(_app: any, html: any, ..._rest: unknown[]): void {
+function onRenderCombatTrackerRulesReference(_app: unknown, html: unknown, ..._rest: unknown[]): void {
   if (!isRulesReferenceEnabled()) return;
 
-  const el: HTMLElement | null =
-    html instanceof HTMLElement
-      ? html
-      : isObject(html) && typeof html.get === "function"
-        ? (html as { get(i: number): HTMLElement }).get(0)
-        : html?.[0] ?? null;
-
+  const el = resolveTrackerElement(html);
   if (!el) return;
   if (el.querySelector("[data-action='fth-rules-reference']")) return;
 
@@ -569,8 +606,7 @@ function onRenderCombatTrackerRulesReference(_app: any, html: any, ..._rest: unk
  * Add a "Rules Reference" button to the Token scene controls.
  * V13: controls is an object keyed by name, tools is also an object.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onGetSceneControlButtonsRulesReference(controls: Record<string, any>): void {
+function onGetSceneControlButtonsRulesReference(controls: SceneControlsLike): void {
   if (!isRulesReferenceEnabled()) return;
   if (!controls.tokens?.tools) return;
 
@@ -583,4 +619,47 @@ function onGetSceneControlButtonsRulesReference(controls: Record<string, any>): 
     visible: true,
     onChange: () => toggleRulesReference(),
   };
+}
+
+function getActiveCombat(): CombatLike | null {
+  const gameValue = Reflect.get(globalThis as object, "game");
+  if (!isObject(gameValue)) return null;
+  const game = gameValue as GameLike;
+  return game.combat ?? null;
+}
+
+function getCombatDocumentClass(): CombatDocumentClassLike | undefined {
+  const configValue = Reflect.get(globalThis as object, "CONFIG");
+  if (!isObject(configValue)) return undefined;
+  const config = configValue as ConfigLike;
+  return config.Combat?.documentClass;
+}
+
+function resolveTrackerElement(html: unknown): HTMLElement | null {
+  if (typeof HTMLElement !== "undefined" && html instanceof HTMLElement) {
+    return html;
+  }
+
+  if (isTrackerElementLike(html)) {
+    return html as HTMLElement;
+  }
+
+  if (isObject(html) && typeof (html as HtmlWrapperLike).get === "function") {
+    const candidate = (html as HtmlWrapperLike).get?.(0);
+    return isTrackerElementLike(candidate) ? candidate as HTMLElement : null;
+  }
+
+  if (isObject(html)) {
+    const candidate = (html as HtmlWrapperLike)[0];
+    if (typeof HTMLElement !== "undefined" && candidate instanceof HTMLElement) {
+      return candidate;
+    }
+    return isTrackerElementLike(candidate) ? candidate as HTMLElement : null;
+  }
+
+  return null;
+}
+
+function isTrackerElementLike(value: unknown): value is TrackerElementLike {
+  return isObject(value) && typeof value.querySelector === "function";
 }

@@ -38,15 +38,45 @@ import {
   flashDamageWorkflowInputError,
 } from "./damage-workflow-inputs";
 
+type DamageWorkflowToken = Parameters<typeof executeWorkflow>[1][number];
+
+interface DamageWorkflowCanvas {
+  tokens?: {
+    controlled?: DamageWorkflowToken[];
+  };
+}
+
+interface DamageWorkflowNotifications {
+  warn?(message: string): void;
+}
+
+interface DamageWorkflowUI {
+  notifications?: DamageWorkflowNotifications;
+}
+
 /* ── State ────────────────────────────────────────────────── */
 
 let panelEl: HTMLElement | null = null;
 let currentTokenCount = 0;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let currentTokens: any[] = [];
+let currentTokens: DamageWorkflowToken[] = [];
 let currentMode: WorkflowType = "flatDamage";
 const POSITION_KEY = `${MOD}:damage-workflow-pos`;
 const CONDITION_KEY = `${MOD}:damage-workflow-cond`;
+
+function getCanvas(): DamageWorkflowCanvas | null {
+  const candidate = (globalThis as Record<string, unknown>).canvas;
+  return candidate && typeof candidate === "object" ? candidate as DamageWorkflowCanvas : null;
+}
+
+function getGlobalUI(): DamageWorkflowUI | null {
+  const candidate = (globalThis as Record<string, unknown>).ui;
+  return candidate && typeof candidate === "object" ? candidate as DamageWorkflowUI : null;
+}
+
+function getControlledTokens(): DamageWorkflowToken[] {
+  const controlled = getCanvas()?.tokens?.controlled;
+  return Array.isArray(controlled) ? controlled : [];
+}
 
 /* ── Public API ───────────────────────────────────────────── */
 
@@ -66,13 +96,9 @@ export function registerDamageWorkflowHooks(): void {
  * Manually trigger the damage workflow (for macro API / button fallback).
  */
 export async function triggerDamageWorkflow(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const canvas = (globalThis as any).canvas;
-  const tokens = canvas?.tokens?.controlled;
-  if (!Array.isArray(tokens) || tokens.length === 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ui = (globalThis as any).ui;
-    ui?.notifications?.warn?.("Select one or more tokens first.");
+  const tokens = getControlledTokens();
+  if (tokens.length === 0) {
+    getGlobalUI()?.notifications?.warn?.("Select one or more tokens first.");
     return;
   }
   currentTokens = tokens;
@@ -92,11 +118,7 @@ function isAutoPopupEnabled(): boolean {
 function onControlToken(): void {
   if (!isAutoPopupEnabled()) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const canvas = (globalThis as any).canvas;
-  const tokens = canvas?.tokens?.controlled;
-  if (!Array.isArray(tokens)) return;
-
+  const tokens = getControlledTokens();
   currentTokens = tokens;
   currentTokenCount = tokens.length;
 

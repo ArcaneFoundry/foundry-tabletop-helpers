@@ -16,6 +16,69 @@ import type {
   SaveAbility,
 } from "../combat-types";
 
+interface WorkflowActorEffect {
+  statuses?: Set<string> | string[];
+}
+
+interface WorkflowActorAbilityData {
+  save?: number | { value?: number };
+  mod?: number;
+}
+
+interface WorkflowActor {
+  id?: string;
+  name?: string;
+  system?: {
+    attributes?: {
+      hp?: {
+        value?: number;
+        max?: number;
+      };
+    };
+    abilities?: Partial<Record<SaveAbility, WorkflowActorAbilityData>>;
+  };
+  effects?: Iterable<WorkflowActorEffect>;
+  update?(data: Record<string, unknown>): Promise<unknown>;
+  toggleStatusEffect?(conditionId: string, options: { active: boolean }): Promise<unknown>;
+}
+
+interface WorkflowToken {
+  id?: string;
+  name?: string;
+  actor?: WorkflowActor | null;
+}
+
+interface D20RollInstance {
+  evaluate(): Promise<unknown>;
+  total?: number;
+}
+
+type D20RollConstructor = new (
+  formula: string,
+  data: Record<string, unknown>,
+  options: Record<string, unknown>
+) => D20RollInstance;
+
+function getTokenId(token: WorkflowToken): string {
+  return typeof token.id === "string" ? token.id : "";
+}
+
+function getActorName(token: WorkflowToken, actor: WorkflowActor): string {
+  return typeof token.name === "string"
+    ? token.name
+    : (typeof actor.name === "string" ? actor.name : "Unknown");
+}
+
+function findTokenById(tokens: WorkflowToken[], tokenId: string): WorkflowToken | undefined {
+  return tokens.find((token) => getTokenId(token) === tokenId);
+}
+
+function effectHasStatus(effect: WorkflowActorEffect, statusId: string): boolean {
+  if (effect.statuses instanceof Set) return effect.statuses.has(statusId);
+  if (Array.isArray(effect.statuses)) return effect.statuses.includes(statusId);
+  return false;
+}
+
 /* ── Public API ───────────────────────────────────────────── */
 
 /**
@@ -25,8 +88,7 @@ import type {
  */
 export async function executeWorkflow(
   input: WorkflowInput,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tokens: any[]
+  tokens: WorkflowToken[],
 ): Promise<WorkflowResult> {
   // Dispatch to the appropriate handler
   if (input.type === "removeCondition") {
@@ -42,8 +104,7 @@ export async function executeWorkflow(
 
 async function executeDamageWorkflow(
   input: WorkflowInput,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tokens: any[]
+  tokens: WorkflowToken[],
 ): Promise<WorkflowResult> {
   const targets: WorkflowTarget[] = [];
 
@@ -62,7 +123,7 @@ async function executeDamageWorkflow(
     const target: WorkflowTarget = {
       tokenId: typeof token.id === "string" ? token.id : "",
       actorId: typeof actor.id === "string" ? actor.id : "",
-      name: typeof token.name === "string" ? token.name : (typeof actor.name === "string" ? actor.name : "Unknown"),
+      name: getActorName(token, actor),
       damageApplied: 0,
       hpBefore: hpValue,
       hpMax,
@@ -108,10 +169,7 @@ async function executeDamageWorkflow(
   for (const target of targets) {
     if (target.hpBefore === target.hpAfter) continue;
 
-    const token = tokens.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (t: any) => (typeof t.id === "string" ? t.id : "") === target.tokenId
-    );
+    const token = findTokenById(tokens, target.tokenId);
     const actor = token?.actor;
     if (!actor || typeof actor.update !== "function") continue;
 
@@ -134,8 +192,7 @@ async function executeDamageWorkflow(
 
 async function executeSaveForCondition(
   input: WorkflowInput,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tokens: any[]
+  tokens: WorkflowToken[],
 ): Promise<WorkflowResult> {
   const targets: WorkflowTarget[] = [];
   const ability = input.ability ?? "wis";
@@ -149,7 +206,7 @@ async function executeSaveForCondition(
     const target: WorkflowTarget = {
       tokenId: typeof token.id === "string" ? token.id : "",
       actorId: typeof actor.id === "string" ? actor.id : "",
-      name: typeof token.name === "string" ? token.name : (typeof actor.name === "string" ? actor.name : "Unknown"),
+      name: getActorName(token, actor),
       damageApplied: 0,
       hpBefore: 0,
       hpMax: 0,
@@ -187,8 +244,7 @@ async function executeSaveForCondition(
 
 async function executeRemoveCondition(
   input: WorkflowInput,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tokens: any[]
+  tokens: WorkflowToken[],
 ): Promise<WorkflowResult> {
   const targets: WorkflowTarget[] = [];
   const conditionId = input.conditionId ?? "prone";
@@ -200,7 +256,7 @@ async function executeRemoveCondition(
     const target: WorkflowTarget = {
       tokenId: typeof token.id === "string" ? token.id : "",
       actorId: typeof actor.id === "string" ? actor.id : "",
-      name: typeof token.name === "string" ? token.name : (typeof actor.name === "string" ? actor.name : "Unknown"),
+      name: getActorName(token, actor),
       damageApplied: 0,
       hpBefore: 0,
       hpMax: 0,
@@ -240,8 +296,7 @@ async function executeRemoveCondition(
  * On failure, drop concentration.
  */
 async function checkConcentration(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tokens: any[],
+  tokens: WorkflowToken[],
   targets: WorkflowTarget[],
   _baseDamage: number
 ): Promise<ConcentrationCheck[] | undefined> {
@@ -251,10 +306,7 @@ async function checkConcentration(
     // Only check targets that actually took damage
     if (target.damageApplied <= 0) continue;
 
-    const token = tokens.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (t: any) => (typeof t.id === "string" ? t.id : "") === target.tokenId
-    );
+    const token = findTokenById(tokens, target.tokenId);
     const actor = token?.actor;
     if (!actor) continue;
 
@@ -295,12 +347,10 @@ async function checkConcentration(
 /**
  * Check if an actor is currently concentrating.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function actorIsConcentrating(actor: any): boolean {
+function actorIsConcentrating(actor: WorkflowActor): boolean {
   if (!actor.effects) return false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const effect of actor.effects) {
-    if (effect.statuses?.has?.("concentrating")) return true;
+    if (effectHasStatus(effect, "concentrating")) return true;
   }
   return false;
 }
@@ -308,12 +358,10 @@ function actorIsConcentrating(actor: any): boolean {
 /**
  * Check if an actor has a specific condition active.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function actorHasCondition(actor: any, conditionId: string): boolean {
+function actorHasCondition(actor: WorkflowActor, conditionId: string): boolean {
   if (!actor.effects) return false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const effect of actor.effects) {
-    if (effect.statuses?.has?.(conditionId)) return true;
+    if (effectHasStatus(effect, conditionId)) return true;
   }
   return false;
 }
@@ -326,31 +374,23 @@ interface SaveResult {
 }
 
 async function rollSave(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any,
+  actor: WorkflowActor,
   ability: SaveAbility
 ): Promise<SaveResult> {
-  const abilities = actor.system?.abilities as Record<string, unknown> | undefined;
-  const abilityData = abilities?.[ability] as Record<string, unknown> | undefined;
+  const abilityData = actor.system?.abilities?.[ability];
 
   let modifier = 0;
   if (typeof abilityData?.save === "number") {
     modifier = abilityData.save;
-  } else if (isObject(abilityData?.save) && typeof (abilityData!.save as Record<string, unknown>).value === "number") {
-    modifier = (abilityData!.save as Record<string, unknown>).value as number;
+  } else if (isObject(abilityData?.save) && typeof abilityData.save.value === "number") {
+    modifier = abilityData.save.value;
   } else if (typeof abilityData?.mod === "number") {
-    modifier = abilityData.mod as number;
+    modifier = abilityData.mod;
   }
 
   const rawDice = getConfig()?.Dice;
   const Dice = isObject(rawDice) ? rawDice : undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const D20Roll = (Dice?.D20Roll as any) as
-    | (new (formula: string, data: unknown, options: unknown) => {
-        evaluate: () => Promise<unknown>;
-        total: number;
-      })
-    | undefined;
+  const D20Roll = Dice?.D20Roll as D20RollConstructor | undefined;
 
   if (D20Roll) {
     const formula = `1d20 + ${modifier}`;

@@ -11,14 +11,30 @@ import { getGame } from "../../types";
 import type { WorkflowResult, ConcentrationCheck } from "../combat-types";
 import { WORKFLOW_LABELS } from "../combat-types";
 
+interface WorkflowChatMessageCreateData {
+  content: string;
+  speaker: {
+    alias: string;
+  };
+  whisper: string[];
+}
+
+interface WorkflowChatMessageStatic {
+  create?(data: WorkflowChatMessageCreateData): Promise<unknown>;
+}
+
+function getChatMessage(): WorkflowChatMessageStatic | null {
+  const candidate = (globalThis as Record<string, unknown>).ChatMessage;
+  return candidate && typeof candidate === "object" ? candidate as WorkflowChatMessageStatic : null;
+}
+
 /* ── Public API ───────────────────────────────────────────── */
 
 /**
  * Post the workflow results as a chat message (whispered to GM).
  */
 export async function postWorkflowChat(result: WorkflowResult): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ChatMessage = (globalThis as any).ChatMessage;
+  const ChatMessage = getChatMessage();
   if (!ChatMessage || typeof ChatMessage.create !== "function") {
     Log.warn("Damage Workflow: ChatMessage not available");
     return;

@@ -19,6 +19,43 @@ import { COMBAT_SETTINGS } from "../combat-settings";
 import { extractCardData, type PartySummaryCard } from "./party-summary-types";
 import type { SaveAbility } from "../combat-types";
 
+interface PartySummaryActor {
+  id?: string;
+  name?: string;
+  type?: string;
+  hasPlayerOwner?: boolean;
+  sheet?: { render(force?: boolean): void };
+  rollSavingThrow?(ability: SaveAbility): Promise<unknown> | unknown;
+  rollAbilitySave?(ability: SaveAbility): Promise<unknown> | unknown;
+}
+
+interface PartySummaryEffect {
+  parent?: unknown;
+}
+
+interface ActorCollectionLike {
+  get?(id: string): unknown;
+  forEach?(callback: (value: unknown) => void): void;
+}
+
+interface PrimaryPartyMemberLike {
+  actor?: unknown;
+}
+
+interface GroupActorLike {
+  type?: string;
+  system?: {
+    members?: PrimaryPartyMemberLike[];
+  };
+}
+
+interface GameLike {
+  actors?: ActorCollectionLike;
+  settings?: {
+    get?(scope: string, key: string): unknown;
+  };
+}
+
 /* ── State ────────────────────────────────────────────────── */
 
 let panelEl: HTMLElement | null = null;
@@ -78,19 +115,17 @@ function isPartySummaryEnabled(): boolean {
 
 /* ── Live Update Hooks ────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onUpdateActor(actor: any): void {
+function onUpdateActor(actor: unknown): void {
   if (!visible || !panelEl) return;
-  if (!actor || actor.type !== "character" || !actor.hasPlayerOwner) return;
+  if (!isPartySummaryActor(actor)) return;
   if (!pcActorIds.has(actor.id)) return;
   scheduleUpdate(actor.id);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onEffectChange(effect: any): void {
+function onEffectChange(effect: PartySummaryEffect): void {
   if (!visible || !panelEl) return;
   const actor = effect?.parent;
-  if (!actor || actor.type !== "character" || !actor.hasPlayerOwner) return;
+  if (!isPartySummaryActor(actor)) return;
   if (!pcActorIds.has(actor.id)) return;
   scheduleUpdate(actor.id);
 }
@@ -113,11 +148,10 @@ function flushUpdates(): void {
   if (!actors) { pendingActorIds.clear(); return; }
 
   for (const actorId of pendingActorIds) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const actor = (actors as any).get(actorId);
-    if (!actor) continue;
+    const actor = getActorById(actors, actorId);
+    if (!isPartySummaryActor(actor)) continue;
 
-    const cardData = extractCardData(actor);
+    const cardData = extractCardData(actor as Parameters<typeof extractCardData>[0]);
     // Update the card in our cached array
     const idx = cards.findIndex((c) => c.actorId === actorId);
     if (idx >= 0) cards[idx] = cardData;
@@ -166,10 +200,9 @@ function refreshCards(): void {
   const pcActors = getPartyActors(game);
 
   // Sort alphabetically for stable order
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pcActors.sort((a: any, b: any) => (a.name ?? "").localeCompare(b.name ?? ""));
+  pcActors.sort((a, b) => getActorName(a).localeCompare(getActorName(b)));
 
-  cards = pcActors.map(extractCardData);
+  cards = pcActors.map((actor) => extractCardData(actor as Parameters<typeof extractCardData>[0]));
   pcActorIds = new Set(cards.map((c) => c.actorId));
 }
 
@@ -182,8 +215,7 @@ function refreshCards(): void {
  *   Falls back to player-owned characters if no primary party is set.
  * - "playerOwned": All player-owned character actors in the world.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getPartyActors(game: any): any[] {
+function getPartyActors(game: GameLike): PartySummaryActor[] {
   const source = getSetting<string>(MOD, COMBAT_SETTINGS.PARTY_SOURCE) ?? "primaryParty";
 
   if (source === "primaryParty") {
@@ -202,25 +234,19 @@ function getPartyActors(game: any): any[] {
  * PrimaryPartySetting data model with an `actor` field pointing to
  * the Group actor. The group's `system.members` contains `{ actor }` entries.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getPrimaryPartyMembers(game: any): any[] {
+function getPrimaryPartyMembers(game: GameLike): PartySummaryActor[] {
   try {
     const partySetting = game.settings?.get?.("dnd5e", "primaryParty");
-    const groupActor = partySetting?.actor;
+    const groupActor = getPrimaryPartyGroupActor(partySetting);
     if (!groupActor || groupActor.type !== "group") return [];
 
     // group.system.members is an array of { actor: Actor5e }
     const members = groupActor.system?.members;
     if (!Array.isArray(members)) return [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return members
-      .map((m: { actor?: unknown }) => m.actor)
-      .filter((a: unknown) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const actor = a as any;
-        return actor && actor.type === "character";
-      });
+      .map((member) => member.actor)
+      .filter(isPartySummaryActor);
   } catch {
     Log.debug("Party Summary: could not read primary party setting");
     return [];
@@ -230,16 +256,13 @@ function getPrimaryPartyMembers(game: any): any[] {
 /**
  * Get all player-owned character actors in the world.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getPlayerOwnedActors(game: any): any[] {
+function getPlayerOwnedActors(game: GameLike): PartySummaryActor[] {
   const actors = game.actors;
   if (!actors) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (actors as any).forEach((a: any) => {
-    if (a.type === "character" && a.hasPlayerOwner) result.push(a);
+  const result: PartySummaryActor[] = [];
+  actors.forEach?.((actor) => {
+    if (isPartySummaryActor(actor)) result.push(actor);
   });
   return result;
 }
@@ -387,9 +410,8 @@ function attachCardListeners(el: HTMLElement): void {
 
 async function rollSaveForActor(actorId: string, ability: SaveAbility): Promise<void> {
   const game = getGame();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const actor = (game?.actors as any)?.get(actorId);
-  if (!actor) return;
+  const actor = getActorById(game?.actors, actorId);
+  if (!isPartySummaryActor(actor)) return;
 
   try {
     // dnd5e 5.x: rollSavingThrow; fallback: rollAbilitySave
@@ -407,10 +429,34 @@ async function rollSaveForActor(actorId: string, ability: SaveAbility): Promise<
 
 function openActorSheet(actorId: string): void {
   const game = getGame();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const actor = (game?.actors as any)?.get(actorId);
-  if (!actor?.sheet) return;
+  const actor = getActorById(game?.actors, actorId);
+  if (!isPartySummaryActor(actor) || !actor.sheet) return;
   actor.sheet.render(true);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPartySummaryActor(actor: unknown): actor is PartySummaryActor & { id: string } {
+  return isRecord(actor)
+    && typeof actor.id === "string"
+    && actor.type === "character"
+    && actor.hasPlayerOwner === true;
+}
+
+function getActorName(actor: PartySummaryActor): string {
+  return typeof actor.name === "string" ? actor.name : "";
+}
+
+function getActorById(actors: ActorCollectionLike | undefined, actorId: string): unknown {
+  return actors?.get?.(actorId);
+}
+
+function getPrimaryPartyGroupActor(partySetting: unknown): GroupActorLike | null {
+  if (!isRecord(partySetting)) return null;
+  const actor = partySetting.actor;
+  return isRecord(actor) ? (actor as GroupActorLike) : null;
 }
 
 /* ── Dragging ─────────────────────────────────────────────── */

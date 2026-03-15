@@ -8,6 +8,51 @@
 import { type SaveAbility, SAVE_ABILITIES, getHealthTier, DND_CONDITIONS } from "../combat-types";
 import type { HealthTier } from "../combat-types";
 
+interface PartySummaryAbilityData {
+  save?: number | { value?: number };
+  mod?: number;
+  proficient?: boolean | number;
+  savingThrow?: { proficient?: boolean | number };
+}
+
+interface PartySummarySkillData {
+  passive?: number;
+}
+
+interface PartySummaryClassData {
+  name?: string;
+  system?: { levels?: number };
+}
+
+interface PartySummaryActiveEffect {
+  statuses?: Iterable<string> | { has?(statusId: string): boolean };
+}
+
+interface PartySummarySystemData {
+  attributes?: {
+    hp?: { value?: number; max?: number; temp?: number };
+    ac?: { value?: number };
+    movement?: { walk?: number };
+    spelldc?: number;
+  };
+  abilities?: Partial<Record<SaveAbility, PartySummaryAbilityData>>;
+  skills?: {
+    prc?: PartySummarySkillData;
+    inv?: PartySummarySkillData;
+    ins?: PartySummarySkillData;
+  };
+  details?: { level?: number };
+}
+
+export interface PartySummaryActorLike {
+  id?: string;
+  name?: string;
+  img?: string;
+  system?: PartySummarySystemData;
+  classes?: Record<string, PartySummaryClassData> | null;
+  effects?: Iterable<PartySummaryActiveEffect>;
+}
+
 /* ── Card Data ────────────────────────────────────────────── */
 
 export interface SaveInfo {
@@ -70,8 +115,7 @@ const ABILITY_LABELS: Record<SaveAbility, string> = {
  * Extract card data from a Foundry actor document.
  * Expects a dnd5e character actor.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function extractCardData(actor: any): PartySummaryCard {
+export function extractCardData(actor: PartySummaryActorLike): PartySummaryCard {
   const system = actor.system ?? {};
   const attrs = system.attributes ?? {};
   const hp = attrs.hp ?? {};
@@ -156,14 +200,10 @@ export function extractCardData(actor: any): PartySummaryCard {
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildClassLabel(actor: any, system: any): string {
+function buildClassLabel(actor: PartySummaryActorLike, system: PartySummarySystemData): string {
   // dnd5e 5.x: actor.classes is a Record<string, Item5e>
   if (actor.classes && typeof actor.classes === "object") {
-    const entries = Object.values(actor.classes) as Array<{
-      name?: string;
-      system?: { levels?: number };
-    }>;
+    const entries = Object.values(actor.classes);
     if (entries.length > 0) {
       return entries
         .map((cls) => `${cls.name ?? "?"} ${cls.system?.levels ?? "?"}`)
@@ -176,12 +216,14 @@ function buildClassLabel(actor: any, system: any): string {
   return `Level ${level}`;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function actorHasStatus(actor: any, statusId: string): boolean {
+function actorHasStatus(actor: PartySummaryActorLike, statusId: string): boolean {
   if (!actor.effects) return false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const effect of actor.effects) {
-    if (effect.statuses?.has?.(statusId)) return true;
+    const statuses = getStatuses(effect);
+    if (statuses.has(statusId)) return true;
+    for (const effectStatus of statuses) {
+      if (effectStatus === statusId) return true;
+    }
   }
   return false;
 }
@@ -190,16 +232,13 @@ function actorHasStatus(actor: any, statusId: string): boolean {
 const CONDITION_IDS = new Set(DND_CONDITIONS.map((c) => c.id));
 const CONDITION_LABEL_MAP = new Map(DND_CONDITIONS.map((c) => [c.id, c.label]));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractConditions(actor: any): ConditionInfo[] {
+function extractConditions(actor: PartySummaryActorLike): ConditionInfo[] {
   if (!actor.effects) return [];
   const conditions: ConditionInfo[] = [];
   const seen = new Set<string>();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const effect of actor.effects) {
-    if (!effect.statuses) continue;
-    for (const statusId of effect.statuses) {
+    for (const statusId of getStatuses(effect)) {
       if (statusId === "concentrating") continue; // shown separately
       if (seen.has(statusId)) continue;
       seen.add(statusId);
@@ -211,4 +250,11 @@ function extractConditions(actor: any): ConditionInfo[] {
   }
 
   return conditions;
+}
+
+function getStatuses(effect: PartySummaryActiveEffect): Set<string> {
+  const statuses = effect.statuses;
+  if (!statuses) return new Set();
+  if (Symbol.iterator in Object(statuses)) return new Set(statuses as Iterable<string>);
+  return new Set();
 }
