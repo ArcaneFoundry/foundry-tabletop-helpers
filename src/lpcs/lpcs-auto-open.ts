@@ -14,6 +14,15 @@ import { isDnd5eWorld, isGM, getGame } from "../types";
 import { lpcsEnabled, lpcsAutoOpen } from "./lpcs-settings";
 import { isKioskPlayer } from "../settings";
 
+interface LpcsSheetLike {
+  render(options?: { force?: boolean }): void;
+}
+
+interface LpcsCharacterLike {
+  name?: string;
+  sheet?: LpcsSheetLike;
+}
+
 /**
  * Attempt to auto-open the LPCS sheet for the current user's assigned character.
  *
@@ -25,33 +34,13 @@ import { isKioskPlayer } from "../settings";
  *   5. User must have an assigned character
  */
 export function autoOpenLPCS(): void {
-  if (!lpcsEnabled()) {
-    Log.debug("LPCS auto-open: feature disabled");
+  const skipReason = getAutoOpenSkipReason();
+  if (skipReason) {
+    Log.debug(skipReason);
     return;
   }
 
-  if (!lpcsAutoOpen()) {
-    Log.debug("LPCS auto-open: setting disabled");
-    return;
-  }
-
-  if (!isDnd5eWorld()) {
-    Log.debug("LPCS auto-open: not a dnd5e world");
-    return;
-  }
-
-  if (isGM()) {
-    Log.debug("LPCS auto-open: skipped for GM");
-    return;
-  }
-
-  if (isKioskPlayer()) {
-    Log.debug("LPCS auto-open: skipped for kiosk player (kiosk handles sheet)");
-    return;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const character = (getGame()?.user as any)?.character;
+  const character = getAssignedCharacter();
   if (!character) {
     Log.debug("LPCS auto-open: no assigned character");
     return;
@@ -65,3 +54,24 @@ export function autoOpenLPCS(): void {
   }
 }
 
+function getAutoOpenSkipReason(): string | null {
+  if (!lpcsEnabled()) return "LPCS auto-open: feature disabled";
+  if (!lpcsAutoOpen()) return "LPCS auto-open: setting disabled";
+  if (!isDnd5eWorld()) return "LPCS auto-open: not a dnd5e world";
+  if (isGM()) return "LPCS auto-open: skipped for GM";
+  if (isKioskPlayer()) return "LPCS auto-open: skipped for kiosk player (kiosk handles sheet)";
+  return null;
+}
+
+function getAssignedCharacter(): LpcsCharacterLike | null {
+  const user = getGame()?.user;
+  if (!user || typeof user !== "object" || !("character" in user)) return null;
+  const character = (user as { character?: unknown }).character;
+  if (!character || typeof character !== "object") return null;
+  return character as LpcsCharacterLike;
+}
+
+export const __lpcsAutoOpenInternals = {
+  getAutoOpenSkipReason,
+  getAssignedCharacter,
+};

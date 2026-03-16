@@ -180,14 +180,12 @@ async function extractAndRender(
   // Render — the concrete renderer knows the ViewModel shape; the cast is safe
   // because the matching extractor/renderer pair always produces compatible data.
   Log.info("rendering HTML", { sheetType });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const d = data as any;
   let html: string;
   switch (sheetType) {
-    case "character":  html = await renderer.renderCharacter(d, options);      break;
-    case "npc":        html = await renderer.renderNPC(d, options);            break;
-    case "encounter":  html = await renderer.renderEncounterGroup(d, options); break;
-    case "party":      html = await renderer.renderPartySummary(d, options);   break;
+    case "character":  html = await renderer.renderCharacter(data, options);      break;
+    case "npc":        html = await renderer.renderNPC(data, options);            break;
+    case "encounter":  html = await renderer.renderEncounterGroup(data, options); break;
+    case "party":      html = await renderer.renderPartySummary(data, options);   break;
   }
   Log.info("HTML rendered", { sheetType, htmlLength: html?.length });
 

@@ -12,20 +12,7 @@ import type {
   PartyTrackingCardViewModel,
   SpellSlotRowViewModel,
 } from "./party-viewmodel";
-
-/* ── HTML Helpers ──────────────────────────────────────────── */
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function signStr(n: number): string {
-  return n >= 0 ? `+${n}` : `${n}`;
-}
+import { esc, signStr } from "./character-transformer-common";
 
 /* ── Main Transformer ───────────────────────────────────────── */
 
@@ -97,4 +84,3 @@ function buildTrackingCard(m: PartyMemberSummary): PartyTrackingCardViewModel {
     hasPactSlot: !!m.pactSlots,
   };
 }
-

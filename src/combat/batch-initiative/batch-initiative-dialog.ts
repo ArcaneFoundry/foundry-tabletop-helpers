@@ -20,6 +20,38 @@ import { Log } from "../../logger";
 import { getConfig, isObject } from "../../types";
 import { ADV_MODE, type AdvMode } from "../combat-types";
 
+interface DialogRenderable {
+  render(force: boolean): void;
+}
+
+interface DialogClassLike {
+  new (data: Record<string, unknown>, options?: Record<string, unknown>): DialogRenderable;
+}
+
+interface DiceConstructorsLike {
+  D20Roll?: new (formula: string, data: unknown, options: unknown) => unknown;
+  BasicRoll?: new (formula: string, data: unknown, options: unknown) => unknown;
+}
+
+interface InitiativeActorLike extends Record<string, unknown> {
+  getInitiativeRollConfig?(): Record<string, unknown>;
+  _cachedInitiativeRoll?: unknown;
+}
+
+interface InitiativeCombatantLike extends Record<string, unknown> {
+  initiative?: number | null;
+  actor?: InitiativeActorLike;
+}
+
+interface CombatantCollectionLike {
+  forEach?(callback: (combatant: InitiativeCombatantLike) => void): void;
+  [Symbol.iterator]?(): Iterator<InitiativeCombatantLike>;
+}
+
+interface CombatLike extends Record<string, unknown> {
+  combatants?: CombatantCollectionLike;
+}
+
 /* ── Advantage Dialog ─────────────────────────────────────── */
 
 /**
@@ -30,13 +62,7 @@ import { ADV_MODE, type AdvMode } from "../combat-types";
  */
 export function showAdvantageDialog(scopeLabel: string): Promise<AdvMode | null> {
   return new Promise<AdvMode | null>((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const DialogClass = (globalThis as any).Dialog as
-      | (new (
-          data: Record<string, unknown>,
-          options?: Record<string, unknown>
-        ) => { render(force: boolean): void })
-      | undefined;
+    const DialogClass = getDialogClass();
 
     if (!DialogClass) {
       Log.warn("Advantage Dialog: Dialog class not available");
@@ -98,48 +124,42 @@ export function showAdvantageDialog(scopeLabel: string): Promise<AdvMode | null>
  * @param advMode   The advantage mode to apply
  */
 export function cacheRollsOnCombatants(
-  combat: Record<string, unknown>,
+  combat: CombatLike,
   advMode: AdvMode,
-  filter?: (combatant: Record<string, unknown>) => boolean
+  filter?: (combatant: InitiativeCombatantLike) => boolean
 ): void {
   const rawDice = getConfig()?.Dice;
-  const Dice = isObject(rawDice) ? rawDice : undefined;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const D20Roll = (Dice?.D20Roll as any) as
-    | (new (formula: string, data: unknown, options: unknown) => unknown)
-    | undefined;
+  const Dice = isDiceConstructorsLike(rawDice) ? rawDice : undefined;
+  const D20Roll = Dice?.D20Roll;
 
   if (!D20Roll) {
     Log.warn("Batch Initiative: CONFIG.Dice.D20Roll not available");
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const combatants = (combat as any).combatants;
+  const combatants = combat.combatants;
   if (!combatants) return;
 
   // Iterate via forEach (Foundry collections support it)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const iterate = typeof combatants.forEach === "function"
-    ? (cb: (c: Record<string, unknown>) => void) => combatants.forEach(cb)
+  const forEachCombatant = combatants.forEach;
+  const iterate = typeof forEachCombatant === "function"
+    ? (cb: (c: InitiativeCombatantLike) => void) => forEachCombatant.call(combatants, cb)
     : (cb: (c: Record<string, unknown>) => void) => {
-        for (const c of combatants) cb(c as Record<string, unknown>);
+        for (const c of iterateCombatants(combatants)) cb(c);
       };
 
-  iterate((c: Record<string, unknown>) => {
+  iterate((c: InitiativeCombatantLike) => {
     // Skip combatants that already have initiative (unless we want to re-roll)
     if (c.initiative !== null && c.initiative !== undefined) return;
 
     // Apply filter if provided
     if (filter && !filter(c)) return;
 
-    const actor = c.actor as Record<string, unknown> | undefined;
+    const actor = c.actor;
     if (!actor) return;
 
     // Get the initiative roll config from the actor
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getConfigFn = (actor as any).getInitiativeRollConfig;
+    const getConfigFn = actor.getInitiativeRollConfig;
     let rollConfig: Record<string, unknown> | undefined;
 
     if (typeof getConfigFn === "function") {
@@ -163,13 +183,9 @@ export function cacheRollsOnCombatants(
 
     // Check for fixed initiative (NPC score mode in dnd5e settings)
     if (options.fixed !== undefined) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const BasicRoll = (Dice?.BasicRoll as any) as
-        | (new (formula: string, data: unknown, options: unknown) => unknown)
-        | undefined;
+      const BasicRoll = Dice?.BasicRoll;
       if (BasicRoll) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (actor as any)._cachedInitiativeRoll = new BasicRoll(
+        actor._cachedInitiativeRoll = new BasicRoll(
           String(options.fixed),
           data,
           options
@@ -177,8 +193,7 @@ export function cacheRollsOnCombatants(
       }
     } else {
       const formula = ["1d20"].concat(parts).join(" + ");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (actor as any)._cachedInitiativeRoll = new D20Roll(formula, data, options);
+      actor._cachedInitiativeRoll = new D20Roll(formula, data, options);
     }
   });
 }
@@ -187,23 +202,21 @@ export function cacheRollsOnCombatants(
  * Clean up cached initiative rolls on all combatant actors.
  * Called in a `finally` block after rolling to prevent stale caches.
  */
-export function cleanupCachedRolls(combat: Record<string, unknown>): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const combatants = (combat as any).combatants;
+export function cleanupCachedRolls(combat: CombatLike): void {
+  const combatants = combat.combatants;
   if (!combatants) return;
 
-  const cleanup = (c: Record<string, unknown>) => {
-    const actor = c.actor as Record<string, unknown> | undefined;
+  const cleanup = (c: InitiativeCombatantLike) => {
+    const actor = c.actor;
     if (actor) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (actor as any)._cachedInitiativeRoll;
+      delete actor._cachedInitiativeRoll;
     }
   };
 
   if (typeof combatants.forEach === "function") {
     combatants.forEach(cleanup);
   } else {
-    for (const c of combatants) cleanup(c as Record<string, unknown>);
+    for (const c of iterateCombatants(combatants)) cleanup(c);
   }
 }
 
@@ -212,4 +225,19 @@ export function cleanupCachedRolls(combat: Record<string, unknown>): void {
 /** Minimal HTML escaping for display strings. */
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function getDialogClass(): DialogClassLike | undefined {
+  const dialog = (globalThis as Record<string, unknown>).Dialog;
+  return typeof dialog === "function" ? (dialog as DialogClassLike) : undefined;
+}
+
+function isDiceConstructorsLike(value: unknown): value is DiceConstructorsLike {
+  return isObject(value);
+}
+
+function* iterateCombatants(collection: CombatantCollectionLike): Iterable<InitiativeCombatantLike> {
+  if (typeof collection[Symbol.iterator] === "function") {
+    yield* collection as Iterable<InitiativeCombatantLike>;
+  }
 }

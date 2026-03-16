@@ -8,6 +8,37 @@
 import { Log, MOD } from "../../logger";
 import { getHandlebars } from "../../types";
 
+interface FoundryHandlebarsNamespace {
+  loadTemplates?(paths: string[]): Promise<void>;
+}
+
+interface FoundryApplicationsNamespace {
+  handlebars?: FoundryHandlebarsNamespace;
+}
+
+interface FoundryNamespace {
+  applications?: FoundryApplicationsNamespace;
+}
+
+type TemplateLoader = (paths: string[]) => Promise<void>;
+type TemplateRenderer = (path: string, data: unknown) => Promise<string>;
+
+function getTemplateLoader(): TemplateLoader | undefined {
+  const globalRecord = globalThis as Record<string, unknown>;
+  const foundryNs = globalRecord.foundry as FoundryNamespace | undefined;
+  const namespacedLoader = foundryNs?.applications?.handlebars?.loadTemplates;
+  if (typeof namespacedLoader === "function") return namespacedLoader;
+
+  const globalLoader = globalRecord.loadTemplates;
+  return typeof globalLoader === "function" ? globalLoader as TemplateLoader : undefined;
+}
+
+function getTemplateRenderer(): TemplateRenderer | undefined {
+  const globalRecord = globalThis as Record<string, unknown>;
+  const renderer = globalRecord.renderTemplate;
+  return typeof renderer === "function" ? renderer as TemplateRenderer : undefined;
+}
+
 /* ── Module Path ────────────────────────────────────────────── */
 
 /** Get the full module path for a template */
@@ -34,12 +65,7 @@ export async function preloadPrintTemplates(): Promise<void> {
   const paths = templates.map(getTemplatePath);
   
   try {
-    // Use Foundry's loadTemplates if available (prefer v13 namespaced path)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const g = globalThis as any;
-    const loadTemplates = (g.foundry?.applications?.handlebars?.loadTemplates ?? g.loadTemplates) as
-      ((paths: string[]) => Promise<void>) | undefined;
-    
+    const loadTemplates = getTemplateLoader();
     if (loadTemplates) {
       await loadTemplates(paths);
       Log.info("Print templates preloaded", { count: paths.length });
@@ -106,9 +132,7 @@ export async function renderPrintTemplate<T>(
   const fullPath = getTemplatePath(templatePath);
 
   try {
-    const g = globalThis as Record<string, unknown>;
-    const renderTemplate = g.renderTemplate as ((path: string, data: unknown) => Promise<string>) | undefined;
-
+    const renderTemplate = getTemplateRenderer();
     if (!renderTemplate) {
       throw new Error("renderTemplate is not available — ensure this is called after Foundry's init hook.");
     }
@@ -148,4 +172,3 @@ export async function renderPartySummary<T>(data: T): Promise<string> {
 export async function renderEncounterGroup<T>(data: T): Promise<string> {
   return renderPrintTemplate("encounter/group.hbs", data);
 }
-

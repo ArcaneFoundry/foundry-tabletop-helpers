@@ -10,6 +10,16 @@ import { getGame, fromUuid } from "../../types";
 import type { FoundryCompendiumCollection, FoundryDocument, FoundryIndexEntry } from "../../types";
 import type { CreatorContentType, CreatorIndexEntry, PackSourceConfig } from "../character-creator-types";
 
+interface TextEditorLike {
+  enrichHTML?(html: string, options: { async: boolean }): Promise<string>;
+}
+
+interface DescriptionSystemData {
+  description?: {
+    value?: string;
+  };
+}
+
 /** Fields requested from compendium indexes for normalization. */
 const INDEX_FIELDS = [
   "name", "img", "type",
@@ -123,15 +133,24 @@ export class CompendiumIndexer {
   }
 
   /**
-   * Get a cached document's HTML description, if available.
-   * Returns empty string if the document isn't cached or has no description.
+   * Get a cached document's HTML description, enriched via Foundry's TextEditor.
+   * Resolves @UUID links, inline rolls, etc. Returns empty string if unavailable.
    */
-  getCachedDescription(uuid: string): string {
+  async getCachedDescription(uuid: string): Promise<string> {
     const doc = this.docCache.get(uuid);
     if (!doc) return "";
-    const system = doc.system as Record<string, unknown> | undefined;
-    const desc = system?.description as Record<string, unknown> | undefined;
-    return typeof desc?.value === "string" ? desc.value : "";
+    const system = getDescriptionSystem(doc.system);
+    const raw = typeof system?.description?.value === "string" ? system.description.value : "";
+    if (!raw) return "";
+
+    // Enrich via Foundry's TextEditor to resolve @UUID, @Check, inline rolls, etc.
+    try {
+      const TextEditor = getTextEditor();
+      if (TextEditor?.enrichHTML) {
+        return await TextEditor.enrichHTML(raw, { async: true });
+      }
+    } catch { /* fall through to raw */ }
+    return raw;
   }
 
   /**
@@ -187,7 +206,7 @@ export class CompendiumIndexer {
     const game = getGame();
     if (!game?.packs) return [];
 
-    const pack = game.packs.get(packId) as FoundryCompendiumCollection | undefined;
+    const pack = getCompendiumPack(game.packs.get(packId));
     if (!pack) {
       Log.warn(`CompendiumIndexer: pack "${packId}" not found`);
       return [];
@@ -281,6 +300,22 @@ export class CompendiumIndexer {
     const val = this.extractValue(raw, path);
     return typeof val === "number" ? val : undefined;
   }
+}
+
+function getCompendiumPack(value: unknown): FoundryCompendiumCollection | undefined {
+  return typeof value === "object" && value !== null && typeof (value as FoundryCompendiumCollection).getIndex === "function"
+    ? (value as FoundryCompendiumCollection)
+    : undefined;
+}
+
+function getTextEditor(): TextEditorLike | undefined {
+  const g = globalThis as Record<string, unknown>;
+  const textEditor = g.TextEditor;
+  return typeof textEditor === "object" && textEditor !== null ? (textEditor as TextEditorLike) : undefined;
+}
+
+function getDescriptionSystem(system: unknown): DescriptionSystemData | undefined {
+  return typeof system === "object" && system !== null ? (system as DescriptionSystemData) : undefined;
 }
 
 /** Singleton indexer instance. */

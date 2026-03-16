@@ -18,17 +18,31 @@
  */
 
 import { Log, MOD } from "../../logger";
-import { getHooks, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
+import { getHooks, getGame, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
 import { COMBAT_SETTINGS } from "../combat-settings";
 import { getExtractor } from "../../print-sheet/extractors/base-extractor";
 import { transformNPCToViewModel } from "../../print-sheet/renderers/viewmodels/npc-transformer";
 import type { NPCData } from "../../print-sheet/extractors/dnd5e-types";
 import type { PrintOptions } from "../../print-sheet/types";
-import type {
-  NPCViewModel,
-  FeatureSectionViewModel,
-  FeatureEntryViewModel,
-} from "../../print-sheet/renderers/viewmodels/npc-viewmodel";
+import {
+  buildMonsterPreviewContentHTML,
+  buildMonsterPreviewPanelHTML,
+  buildMonsterPreviewUpNextHTML,
+  type UpNextInfo,
+} from "./monster-preview-rendering";
+import {
+  makeMonsterPreviewDraggable,
+  restoreMonsterPreviewPosition,
+  saveMonsterPreviewPosition,
+} from "./monster-preview-floating";
+import {
+  attachMonsterPreviewFloatingListeners,
+  attachMonsterPreviewInlineListeners,
+} from "./monster-preview-interactions";
+import {
+  findMonsterPreviewTrackerElement,
+  injectMonsterPreviewIntoTracker,
+} from "./monster-preview-tracker";
 
 /* ── State ────────────────────────────────────────────────── */
 
@@ -45,6 +59,52 @@ let isFloating = false;
 
 const POSITION_KEY = `${MOD}:monster-preview-pos`;
 const MODE_KEY = `${MOD}:monster-preview-mode`;
+
+interface MonsterPreviewActor {
+  id?: string;
+  name?: string;
+  type?: string;
+  system?: {
+    attributes?: {
+      ac?: { value?: number };
+      hp?: { max?: number };
+    };
+    details?: {
+      cr?: string | number;
+    };
+  };
+}
+
+interface MonsterPreviewCombatant {
+  actor?: MonsterPreviewActor | null;
+}
+
+interface MonsterPreviewCombat {
+  id?: string;
+  combatant?: MonsterPreviewCombatant | null;
+  turns?: MonsterPreviewCombatant[];
+  turn?: number;
+}
+
+interface MonsterPreviewGame {
+  combat?: MonsterPreviewCombat | null;
+  system?: {
+    id?: string;
+  };
+}
+
+function getCurrentGame(): MonsterPreviewGame | null {
+  const game = getGame();
+  return isObject(game) ? game as MonsterPreviewGame : null;
+}
+
+function getActiveCombat(): MonsterPreviewCombat | null {
+  return getCurrentGame()?.combat ?? null;
+}
+
+function getCurrentSystemId(): string {
+  return getCurrentGame()?.system?.id ?? "dnd5e";
+}
 
 /** Options for the extraction pipeline — show everything, use token image */
 const PREVIEW_OPTIONS: PrintOptions = {
@@ -86,30 +146,25 @@ function isMonsterPreviewEnabled(): boolean {
 
 /* ── Hook Handlers ────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onUpdateCombat(combat: any, change: any): void {
+function onUpdateCombat(combat: MonsterPreviewCombat, change: { turn?: number; round?: number }): void {
   if (!isMonsterPreviewEnabled()) return;
   if (change.turn === undefined && change.round === undefined) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gameCombat = (globalThis as any).game?.combat;
+  const gameCombat = getActiveCombat();
   if (combat.id !== gameCombat?.id) return;
 
   dismissed = false;
   void handleTurnChange(combat);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onDeleteCombat(combat: any): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gameCombat = (globalThis as any).game?.combat;
+function onDeleteCombat(combat: MonsterPreviewCombat): void {
+  const gameCombat = getActiveCombat();
   if (combat.id === gameCombat?.id || !gameCombat) {
     clearPreview();
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onCombatStart(combat: any): void {
+function onCombatStart(combat: MonsterPreviewCombat): void {
   if (!isMonsterPreviewEnabled()) return;
   dismissed = false;
   void handleTurnChange(combat);
@@ -119,8 +174,7 @@ function onCombatStart(combat: any): void {
  * Re-inject the cached stat block into the Combat Tracker on each re-render.
  * This is needed because Foundry rebuilds the sidebar HTML on every render.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRenderCombatTracker(_app: any, html: any): void {
+function onRenderCombatTracker(_app: unknown, html: HTMLElement | { get(i: number): HTMLElement } | ArrayLike<HTMLElement> | null): void {
   if (!isMonsterPreviewEnabled()) return;
   if (isFloating || dismissed || !cachedContentHTML) return;
 
@@ -129,7 +183,9 @@ function onRenderCombatTracker(_app: any, html: any): void {
       ? html
       : isObject(html) && typeof html.get === "function"
         ? (html as { get(i: number): HTMLElement }).get(0)
-        : html?.[0] ?? null;
+        : html && "length" in html && typeof html.length === "number" && html.length > 0
+          ? html[0] ?? null
+          : null;
 
   if (!el) return;
   injectIntoTracker(el);
@@ -137,8 +193,7 @@ function onRenderCombatTracker(_app: any, html: any): void {
 
 /* ── Turn Change Logic ────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleTurnChange(combat: any): Promise<void> {
+async function handleTurnChange(combat: MonsterPreviewCombat): Promise<void> {
   try {
     const combatant = combat.combatant;
     const actor = combatant?.actor;
@@ -158,7 +213,7 @@ async function handleTurnChange(combat: any): Promise<void> {
       return;
     }
 
-    currentActorId = actor.id;
+    currentActorId = actor.id ?? null;
     await extractAndRender(actor, combat);
   } catch (err) {
     Log.error("Monster Preview: failed to handle turn change", err);
@@ -167,13 +222,10 @@ async function handleTurnChange(combat: any): Promise<void> {
 
 /* ── NPC Extraction + Rendering ───────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function extractAndRender(actor: any, combat: any): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const systemId = ((globalThis as any).game?.system?.id as string) ?? "dnd5e";
-  const extractor = getExtractor(systemId);
+async function extractAndRender(actor: MonsterPreviewActor, combat: MonsterPreviewCombat): Promise<void> {
+  const extractor = getExtractor(getCurrentSystemId());
   if (!extractor) {
-    Log.warn("Monster Preview: no extractor for system", systemId);
+    Log.warn("Monster Preview: no extractor for system", getCurrentSystemId());
     return;
   }
 
@@ -182,7 +234,7 @@ async function extractAndRender(actor: any, combat: any): Promise<void> {
   const upNext = getUpNextData(combat);
 
   // Cache the rendered HTML
-  cachedContentHTML = buildContentHTML(vm, upNext);
+  cachedContentHTML = buildMonsterPreviewContentHTML(vm, upNext);
 
   // Display in the appropriate mode
   if (isFloating) {
@@ -194,20 +246,11 @@ async function extractAndRender(actor: any, combat: any): Promise<void> {
 
 /* ── Up Next ──────────────────────────────────────────────── */
 
-interface UpNextInfo {
-  name: string;
-  isNPC: boolean;
-  ac?: number;
-  hpMax?: number;
-  cr?: string;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getUpNextData(combat: any): UpNextInfo | null {
+function getUpNextData(combat: MonsterPreviewCombat): UpNextInfo | null {
   const turns = combat.turns;
   if (!Array.isArray(turns) || turns.length <= 1) return null;
 
-  const currentIdx = combat.turn as number;
+  const currentIdx = combat.turn ?? 0;
   const nextIdx = (currentIdx + 1) % turns.length;
   const nextCombatant = turns[nextIdx];
   const nextActor = nextCombatant?.actor;
@@ -225,10 +268,9 @@ function getUpNextData(combat: any): UpNextInfo | null {
   return info;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function updateUpNext(combat: any): void {
+function updateUpNext(combat: MonsterPreviewCombat): void {
   const upNext = getUpNextData(combat);
-  const upNextHTML = buildUpNextHTML(upNext);
+  const upNextHTML = buildMonsterPreviewUpNextHTML(upNext);
 
   // Update in whichever container is active
   const containers = [
@@ -279,7 +321,7 @@ function showFloating(): void {
     restorePosition();
   }
 
-  floatingEl.innerHTML = buildPanelHTML(cachedContentHTML);
+  floatingEl.innerHTML = buildMonsterPreviewPanelHTML(cachedContentHTML);
   attachFloatingListeners(floatingEl);
   makeDraggable(floatingEl);
   floatingEl.style.display = "";
@@ -317,295 +359,66 @@ function clearPreview(): void {
 
 /** Find the combat tracker sidebar element */
 function findCombatTrackerElement(): HTMLElement | null {
-  // V13 ApplicationV2: the sidebar tab is rendered as a section
-  return document.querySelector<HTMLElement>("#combat")
-    ?? document.querySelector<HTMLElement>("[data-tab='combat']");
+  return findMonsterPreviewTrackerElement();
 }
 
 /** Inject the stat block into the combat tracker sidebar */
 function injectIntoTracker(trackerEl: HTMLElement): void {
-  // Remove any existing inline preview
-  trackerEl.querySelector("#fth-mp-inline")?.remove();
-
-  if (!cachedContentHTML || dismissed) return;
-
-  // Find the combatant list — try common V13 selectors
-  const combatantList = trackerEl.querySelector<HTMLElement>(".combat-tracker")
-    ?? trackerEl.querySelector<HTMLElement>("[class*='combatant']")?.parentElement
-    ?? trackerEl.querySelector<HTMLElement>("ol, ul");
-
-  // Build the inline container
-  const inlineEl = document.createElement("div");
-  inlineEl.id = "fth-mp-inline";
-  inlineEl.className = "fth-monster-preview fth-mp-inline";
-  inlineEl.innerHTML = buildInlineHTML(cachedContentHTML);
-
-  // Insert after the combatant list, or at the end of the tracker
-  if (combatantList) {
-    combatantList.parentNode?.insertBefore(inlineEl, combatantList.nextSibling);
-  } else {
-    trackerEl.appendChild(inlineEl);
-  }
-
-  attachInlineListeners(inlineEl);
-}
-
-/* ── HTML Builders ────────────────────────────────────────── */
-
-/** Build the stat block + up-next content (shared between modes) */
-function buildContentHTML(vm: NPCViewModel, upNext: UpNextInfo | null): string {
-  return `
-    ${buildStatBlockHTML(vm)}
-    <div class="mp-up-next">${buildUpNextHTML(upNext)}</div>
-  `;
-}
-
-/** Wrap content for inline mode (with pop-out + dismiss buttons) */
-function buildInlineHTML(content: string): string {
-  return `
-    <div class="mp-header">
-      <span class="mp-title"><i class="fa-solid fa-dragon"></i> Monster Preview</span>
-      <button class="mp-popout" type="button" aria-label="Pop out" data-tooltip="Pop Out">
-        <i class="fa-solid fa-up-right-from-square"></i>
-      </button>
-      <button class="mp-close" type="button" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="mp-body">${content}</div>
-  `;
-}
-
-/** Wrap content for floating mode (with dock + dismiss buttons, drag handle) */
-function buildPanelHTML(content: string): string {
-  return `
-    <div class="mp-header" data-mp-drag>
-      <span class="mp-title"><i class="fa-solid fa-dragon"></i> Monster Preview</span>
-      <button class="mp-dock" type="button" aria-label="Dock to sidebar" data-tooltip="Dock to Sidebar">
-        <i class="fa-solid fa-right-to-bracket"></i>
-      </button>
-      <button class="mp-close" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="mp-body">${content}</div>
-  `;
-}
-
-function buildStatBlockHTML(vm: NPCViewModel): string {
-  const parts: string[] = [];
-
-  // Name + portrait
-  parts.push(`<div class="mp-identity">`);
-  if (vm.hasPortrait) {
-    parts.push(`<img class="mp-portrait" src="${vm.portraitUrl}" alt="" />`);
-  }
-  parts.push(`<div class="mp-name-block">`);
-  parts.push(`<div class="mp-name">${vm.name}</div>`);
-  parts.push(`<div class="mp-meta">${vm.meta}</div>`);
-  parts.push(`</div></div>`);
-
-  // Core stats
-  if (vm.showStats) {
-    parts.push(`<div class="mp-divider"></div>`);
-    parts.push(`<div class="mp-core-stats">`);
-    parts.push(`<div class="mp-stat"><span class="mp-stat-label">AC</span> <span class="mp-stat-value">${vm.ac}</span></div>`);
-    parts.push(`<div class="mp-stat"><span class="mp-stat-label">HP</span> <span class="mp-stat-value">${vm.hp}</span></div>`);
-    parts.push(`<div class="mp-stat"><span class="mp-stat-label">Speed</span> <span class="mp-stat-value">${vm.speed}</span></div>`);
-    parts.push(`<div class="mp-stat"><span class="mp-stat-label">Init</span> <span class="mp-stat-value">${vm.initiative}</span></div>`);
-    parts.push(`</div>`);
-  }
-
-  // Ability scores
-  if (vm.showAbilities && vm.abilityRows.length > 0) {
-    parts.push(`<div class="mp-divider"></div>`);
-    parts.push(`<div class="mp-abilities">`);
-    for (const row of vm.abilityRows) {
-      if (row.left) parts.push(buildAbilityCell(row.left));
-      if (row.right) parts.push(buildAbilityCell(row.right));
-    }
-    parts.push(`</div>`);
-  }
-
-  // Trait lines
-  if (vm.showTraits && vm.traitLines.length > 0) {
-    parts.push(`<div class="mp-divider"></div>`);
-    parts.push(`<div class="mp-traits">`);
-    for (const trait of vm.traitLines) {
-      parts.push(`<div class="mp-trait"><strong class="mp-trait-label">${trait.label}</strong> ${trait.value}</div>`);
-    }
-    parts.push(`</div>`);
-  }
-
-  // Feature sections
-  if (vm.featureSections.length > 0) {
-    for (const section of vm.featureSections) {
-      if (!section.hasEntries) continue;
-      parts.push(buildFeatureSection(section));
-    }
-  }
-
-  return parts.join("");
-}
-
-function buildAbilityCell(cell: { key: string; value: number; mod: string; save: string }): string {
-  return `
-    <div class="mp-ability">
-      <span class="mp-ability-key">${cell.key}</span>
-      <span class="mp-ability-score">${cell.value} <span class="mp-ability-mod">(${cell.mod})</span></span>
-      <span class="mp-ability-save">Save ${cell.save}</span>
-    </div>
-  `;
-}
-
-function buildFeatureSection(section: FeatureSectionViewModel): string {
-  const parts: string[] = [];
-  parts.push(`<div class="mp-divider"></div>`);
-  parts.push(`<div class="mp-feature-section">`);
-  parts.push(`<div class="mp-section-title">${section.title}</div>`);
-  if (section.intro) {
-    parts.push(`<div class="mp-section-intro">${section.intro}</div>`);
-  }
-  for (const entry of section.entries) {
-    parts.push(buildFeatureEntry(entry));
-  }
-  parts.push(`</div>`);
-  return parts.join("");
-}
-
-function buildFeatureEntry(entry: FeatureEntryViewModel): string {
-  return `
-    <div class="mp-feature">
-      <span class="mp-feature-name">${entry.nameWithUses}.</span>
-      <span class="mp-feature-desc">${entry.description}</span>
-    </div>
-  `;
-}
-
-function buildUpNextHTML(upNext: UpNextInfo | null): string {
-  if (!upNext) return "";
-
-  let statsHtml = "";
-  if (upNext.isNPC) {
-    const statParts: string[] = [];
-    if (upNext.cr !== undefined) statParts.push(`CR ${upNext.cr}`);
-    if (upNext.ac !== undefined) statParts.push(`AC ${upNext.ac}`);
-    if (upNext.hpMax !== undefined) statParts.push(`HP ${upNext.hpMax}`);
-    statsHtml = statParts.length > 0
-      ? `<span class="mp-upnext-stats">${statParts.join(" · ")}</span>`
-      : "";
-  }
-
-  const icon = upNext.isNPC
-    ? `<i class="fa-solid fa-skull"></i>`
-    : `<i class="fa-solid fa-user"></i>`;
-
-  return `
-    <div class="mp-upnext-divider"></div>
-    <div class="mp-upnext-row">
-      <span class="mp-upnext-label">Up Next</span>
-      <span class="mp-upnext-name">${icon} ${upNext.name}</span>
-      ${statsHtml}
-    </div>
-  `;
+  injectMonsterPreviewIntoTracker(trackerEl, {
+    cachedContentHTML,
+    dismissed,
+    attachInlineListeners,
+  });
 }
 
 /* ── Inline Mode Listeners ────────────────────────────────── */
 
 function attachInlineListeners(el: HTMLElement): void {
-  el.querySelector(".mp-close")?.addEventListener("click", () => {
-    dismissed = true;
-    el.remove();
-  });
-
-  el.querySelector(".mp-popout")?.addEventListener("click", () => {
-    isFloating = true;
-    saveMode();
-    el.remove();
-    showFloating();
+  attachMonsterPreviewInlineListeners(el, {
+    onDismiss: () => {
+      dismissed = true;
+      el.remove();
+    },
+    onPopout: () => {
+      isFloating = true;
+      saveMode();
+      el.remove();
+      showFloating();
+    },
   });
 }
 
 /* ── Floating Mode Listeners ──────────────────────────────── */
 
 function attachFloatingListeners(el: HTMLElement): void {
-  el.querySelector(".mp-close")?.addEventListener("click", () => {
-    dismissed = true;
-    el.style.display = "none";
-  });
-
-  el.querySelector(".mp-dock")?.addEventListener("click", () => {
-    isFloating = false;
-    saveMode();
-    el.remove();
-    floatingEl = null;
-    // Clear saved position so next pop-out starts fresh
-    try { localStorage.removeItem(POSITION_KEY); } catch { /* ignore */ }
-    showInline();
+  attachMonsterPreviewFloatingListeners(el, {
+    onDismiss: () => {
+      dismissed = true;
+      el.style.display = "none";
+    },
+    onDock: () => {
+      isFloating = false;
+      saveMode();
+      el.remove();
+      floatingEl = null;
+      try { localStorage.removeItem(POSITION_KEY); } catch { /* ignore */ }
+      showInline();
+    },
   });
 }
 
 /* ── Dragging (floating mode only) ────────────────────────── */
 
 function makeDraggable(el: HTMLElement): void {
-  const handle = el.querySelector<HTMLElement>("[data-mp-drag]");
-  if (!handle) return;
-
-  let dragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
-
-  handle.style.cursor = "grab";
-
-  handle.addEventListener("pointerdown", (e: PointerEvent) => {
-    if ((e.target as HTMLElement).closest(".mp-close, .mp-dock")) return;
-    dragging = true;
-    offsetX = e.clientX - el.offsetLeft;
-    offsetY = e.clientY - el.offsetTop;
-    handle.style.cursor = "grabbing";
-    handle.setPointerCapture(e.pointerId);
-    e.preventDefault();
-  });
-
-  handle.addEventListener("pointermove", (e: PointerEvent) => {
-    if (!dragging) return;
-    el.style.left = `${e.clientX - offsetX}px`;
-    el.style.top = `${e.clientY - offsetY}px`;
-    el.style.right = "auto";
-    el.style.bottom = "auto";
-  });
-
-  const stopDrag = () => {
-    if (!dragging) return;
-    dragging = false;
-    handle.style.cursor = "grab";
-    savePosition();
-  };
-
-  handle.addEventListener("pointerup", stopDrag);
-  handle.addEventListener("pointercancel", stopDrag);
+  makeMonsterPreviewDraggable(el, savePosition);
 }
 
 function savePosition(): void {
-  if (!floatingEl) return;
-  const pos = { left: floatingEl.style.left, top: floatingEl.style.top };
-  try { localStorage.setItem(POSITION_KEY, JSON.stringify(pos)); } catch { /* ignore */ }
+  saveMonsterPreviewPosition(floatingEl, POSITION_KEY);
 }
 
 function restorePosition(): void {
-  if (!floatingEl) return;
-  try {
-    const raw = localStorage.getItem(POSITION_KEY);
-    if (raw) {
-      const pos = JSON.parse(raw) as { left?: string; top?: string };
-      if (pos.left && pos.top) {
-        floatingEl.style.left = pos.left;
-        floatingEl.style.top = pos.top;
-        floatingEl.style.right = "auto";
-        floatingEl.style.bottom = "auto";
-        return;
-      }
-    }
-  } catch { /* ignore */ }
-  // Default floating position: left of the sidebar
-  floatingEl.style.right = "320px";
-  floatingEl.style.top = "80px";
+  restoreMonsterPreviewPosition(floatingEl, POSITION_KEY);
 }
 
 function saveMode(): void {

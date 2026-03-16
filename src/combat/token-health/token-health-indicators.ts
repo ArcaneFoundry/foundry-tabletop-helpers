@@ -58,11 +58,72 @@ interface TokenData {
   hpMax: number;
 }
 
-function extractTokenData(token: Record<string, unknown>): TokenData | null {
-  const actor = token.actor as Record<string, unknown> | undefined;
+interface TokenActorLike {
+  hasPlayerOwner?: boolean;
+  system?: {
+    attributes?: {
+      ac?: { value?: number };
+      hp?: { value?: number; max?: number };
+    };
+  };
+}
+
+interface TokenIndicatorContainer {
+  name?: string;
+  eventMode?: string;
+  interactiveChildren?: boolean;
+  removeChildren(): void;
+  addChild(child: unknown): void;
+  destroy(): void;
+}
+
+interface TokenLike {
+  actor?: TokenActorLike;
+  w?: number;
+  h?: number;
+  addChild(child: TokenIndicatorContainer): void;
+  removeChild(child: TokenIndicatorContainer): void;
+  getChildByName?(name: string): TokenIndicatorContainer | null;
+}
+
+interface PixiTextLike {
+  anchor: { set(value: number): void };
+  position: { set(x: number, y: number): void };
+}
+
+interface PixiTextConstructor {
+  new (text: string, style: Record<string, unknown>): PixiTextLike;
+}
+
+interface PixiGraphicsLike {
+  beginFill(color: number, alpha?: number): void;
+  lineStyle(width: number, color?: number, alpha?: number): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
+  drawCircle(x: number, y: number, radius: number): void;
+  endFill(): void;
+}
+
+interface PixiGraphicsConstructor {
+  new (): PixiGraphicsLike;
+}
+
+interface PixiContainerConstructor {
+  new (): TokenIndicatorContainer;
+}
+
+interface PixiLike {
+  Container: PixiContainerConstructor;
+  Graphics: PixiGraphicsConstructor;
+  Text: PixiTextConstructor;
+}
+
+function extractTokenData(token: TokenLike): TokenData | null {
+  const actor = token.actor;
   if (!actor) return null;
 
-  const system = actor.system as Record<string, unknown> | undefined;
+  const system = actor.system;
   if (!system) return null;
 
   // Only show on NPCs (non-player-owned actors)
@@ -70,12 +131,12 @@ function extractTokenData(token: Record<string, unknown>): TokenData | null {
   if (hasPlayerOwner) return null;
 
   // Extract AC
-  const attributes = system.attributes as Record<string, unknown> | undefined;
-  const acObj = attributes?.ac as Record<string, unknown> | undefined;
+  const attributes = system.attributes;
+  const acObj = attributes?.ac;
   const ac = typeof acObj?.value === "number" ? acObj.value : null;
 
   // Extract HP
-  const hpObj = attributes?.hp as Record<string, unknown> | undefined;
+  const hpObj = attributes?.hp;
   const hpValue = typeof hpObj?.value === "number" ? hpObj.value : 0;
   const hpMax = typeof hpObj?.max === "number" ? hpObj.max : 1;
   const hpPercent = hpMax > 0 ? (hpValue / hpMax) * 100 : 0;
@@ -85,9 +146,9 @@ function extractTokenData(token: Record<string, unknown>): TokenData | null {
 
 /* ── PIXI Drawing ─────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getPixi(): any {
-  return (globalThis as Record<string, unknown>).PIXI;
+function getPixi(): PixiLike | undefined {
+  const pixi = (globalThis as Record<string, unknown>).PIXI;
+  return isPixiLike(pixi) ? pixi : undefined;
 }
 
 /**
@@ -95,8 +156,7 @@ function getPixi(): any {
  * Both badges are stacked in the bottom-right corner:
  *   AC shield (above) + health heart/skull (below).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function drawIndicators(token: any): void {
+function drawIndicators(token: TokenLike): void {
   if (!shouldShowIndicators()) {
     removeIndicators(token);
     return;
@@ -158,8 +218,8 @@ function drawIndicators(token: any): void {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function drawACBadge(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  container: any, PIXI: any,
+  container: TokenIndicatorContainer,
+  PIXI: PixiLike,
   ac: number,
   cx: number, topY: number,
   shieldW: number, shieldH: number,
@@ -201,8 +261,8 @@ function drawACBadge(
  * - Defeated: white skull (☠)
  */
 function drawHealthBadge(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  container: any, PIXI: any,
+  container: TokenIndicatorContainer,
+  PIXI: PixiLike,
   tier: HealthTier,
   cx: number, cy: number,
   radius: number, scale: number
@@ -238,8 +298,7 @@ function drawHealthBadge(
 /**
  * Remove health indicators from a token.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function removeIndicators(token: any): void {
+function removeIndicators(token: TokenLike): void {
   const container = token.getChildByName?.(CONTAINER_NAME);
   if (container) {
     container.removeChildren();
@@ -250,8 +309,7 @@ function removeIndicators(token: any): void {
 
 /* ── Hook Handlers ────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onDrawToken(token: any): void {
+function onDrawToken(token: TokenLike): void {
   try {
     drawIndicators(token);
   } catch (err) {
@@ -259,8 +317,7 @@ function onDrawToken(token: any): void {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onRefreshToken(token: any): void {
+function onRefreshToken(token: TokenLike): void {
   try {
     drawIndicators(token);
   } catch (err) {
@@ -268,11 +325,18 @@ function onRefreshToken(token: any): void {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onDeleteToken(token: any): void {
+function onDeleteToken(token: TokenLike): void {
   try {
     removeIndicators(token);
   } catch (err) {
     // Token is being destroyed anyway
   }
+}
+
+function isPixiLike(value: unknown): value is PixiLike {
+  if (!value || typeof value !== "object") return false;
+  const pixi = value as Partial<PixiLike>;
+  return typeof pixi.Container === "function"
+    && typeof pixi.Graphics === "function"
+    && typeof pixi.Text === "function";
 }

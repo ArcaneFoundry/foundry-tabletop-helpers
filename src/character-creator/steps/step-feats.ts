@@ -23,6 +23,10 @@ import { ABILITY_KEYS, ABILITY_LABELS, abilityModifier, formatModifier } from ".
 /** Levels that grant an ASI/feat. */
 const ASI_LEVELS = [4, 8, 12, 16, 19];
 
+interface DatasetElementLike extends Element {
+  dataset: DOMStringMap;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function getAvailableFeats(state: WizardState): CreatorIndexEntry[] {
@@ -94,9 +98,9 @@ export function createFeatsStep(): WizardStepDefinition {
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
       // Choice tabs (ASI vs Feat)
-      el.querySelectorAll("[data-feat-choice]").forEach((tab) => {
+      getDatasetElements(el, "[data-feat-choice]").forEach((tab) => {
         tab.addEventListener("click", () => {
-          const choice = (tab as HTMLElement).dataset.featChoice as "asi" | "feat";
+          const choice = getFeatChoice(tab.dataset.featChoice);
           if (!choice) return;
           const current = state.selections.feats ?? { choice: "asi" };
           callbacks.setData({ ...current, choice } as FeatSelection);
@@ -104,9 +108,9 @@ export function createFeatsStep(): WizardStepDefinition {
       });
 
       // ASI ability toggles — patch selected state in-place
-      el.querySelectorAll("[data-asi-ability]").forEach((btn) => {
+      getDatasetElements(el, "[data-asi-ability]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const ability = (btn as HTMLElement).dataset.asiAbility as AbilityKey;
+          const ability = getAbilityKey(btn.dataset.asiAbility);
           if (!ability) return;
           const current = state.selections.feats ?? { choice: "asi" };
           const abilities = new Set(current.asiAbilities ?? []);
@@ -121,12 +125,12 @@ export function createFeatsStep(): WizardStepDefinition {
             ...current,
             choice: "asi" as const,
             asiAbilities: [...abilities],
-          } as FeatSelection;
+          } satisfies FeatSelection;
 
           // Patch DOM: toggle selected class on ability buttons
-          el.querySelectorAll<HTMLElement>("[data-asi-ability]").forEach((b) => {
-            const key = b.dataset.asiAbility as AbilityKey;
-            b.classList.toggle("cc-asi-btn--selected", abilities.has(key));
+          getDatasetElements(el, "[data-asi-ability]").forEach((b) => {
+            const key = getAbilityKey(b.dataset.asiAbility);
+            b.classList.toggle("cc-asi-btn--selected", key ? abilities.has(key) : false);
           });
           // Update counter
           const countEl = el.querySelector("[data-asi-count]");
@@ -137,9 +141,9 @@ export function createFeatsStep(): WizardStepDefinition {
       });
 
       // Feat card selection — patch selected state in-place
-      el.querySelectorAll("[data-card-uuid]").forEach((card) => {
+      getDatasetElements(el, "[data-card-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
-          const uuid = (card as HTMLElement).dataset.cardUuid;
+          const uuid = card.dataset.cardUuid;
           if (!uuid) return;
           const feats = getAvailableFeats(state);
           const entry = feats.find((e) => e.uuid === uuid);
@@ -150,10 +154,10 @@ export function createFeatsStep(): WizardStepDefinition {
             featUuid: entry.uuid,
             featName: entry.name,
             featImg: entry.img,
-          } as FeatSelection;
+          } satisfies FeatSelection;
 
           // Patch DOM: toggle selected class on cards
-          el.querySelectorAll<HTMLElement>("[data-card-uuid]").forEach((c) => {
+          getDatasetElements(el, "[data-card-uuid]").forEach((c) => {
             const isSelected = c.dataset.cardUuid === uuid;
             c.classList.toggle("cc-spell-card--selected", isSelected);
             c.setAttribute("aria-selected", String(isSelected));
@@ -165,3 +169,23 @@ export function createFeatsStep(): WizardStepDefinition {
     },
   };
 }
+
+function getDatasetElements(root: ParentNode, selector: string): DatasetElementLike[] {
+  return Array.from(root.querySelectorAll(selector)).filter(isDatasetElementLike);
+}
+
+function getFeatChoice(value: string | undefined): "asi" | "feat" | null {
+  return value === "asi" || value === "feat" ? value : null;
+}
+
+function getAbilityKey(value: string | undefined): AbilityKey | null {
+  return ABILITY_KEYS.includes(value as AbilityKey) ? value as AbilityKey : null;
+}
+
+function isDatasetElementLike(value: unknown): value is DatasetElementLike {
+  return value instanceof Element && "dataset" in value;
+}
+
+export const __featsStepInternals = {
+  getAvailableFeats,
+};

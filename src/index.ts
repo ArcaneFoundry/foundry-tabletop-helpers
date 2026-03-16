@@ -8,10 +8,11 @@ import "./combat/styles/combat-party-summary.css";
 import "./combat/styles/combat-rules-reference.css";
 import "./asset-manager/styles/asset-manager.css";
 import "./character-creator/styles/character-creator-styles.css";
+import { attachFthApi } from "./fth-api";
 import { Log, MOD, type Level } from "./logger";
 import { registerSettings } from "./settings";
 import { registerPrintSheetHooks } from "./print-sheet/print-sheet";
-import { registerWindowRotationHooks, initWindowRotationReady, buildRotationApi } from "./window-rotation/index";
+import { registerWindowRotationHooks, initWindowRotationReady } from "./window-rotation/index";
 import { getGame, getHooks, getSetting, isGM } from "./types";
 import { registerLPCSSettings } from "./lpcs/lpcs-settings";
 import { registerLPCSSheet, preloadLPCSTemplates } from "./lpcs/lpcs-sheet";
@@ -19,27 +20,53 @@ import { autoOpenLPCS } from "./lpcs/lpcs-auto-open";
 import { registerInitiativeSettings, registerInitiativeHooks } from "./initiative/initiative-dialog";
 import { initKioskSetup, initKioskReady } from "./kiosk/kiosk-init";
 import { registerCombatSettings } from "./combat/combat-settings";
-import { registerCombatHooks, initCombatReady, buildCombatApi } from "./combat/combat-init";
+import { registerCombatHooks, initCombatReady } from "./combat/combat-init";
 import { registerAssetManagerSettings, isAssetManagerEnabled, loadSavedPresets } from "./asset-manager/asset-manager-settings";
 import { registerAssetManagerPicker, openAssetManager } from "./asset-manager/asset-manager-picker";
 import {
   registerCharacterCreatorSettings,
   registerCharacterCreatorHooks,
   initCharacterCreatorReady,
-  openGMConfigApp,
-  openCharacterCreatorWizard,
-  openLevelUpWizard,
 } from "./character-creator/character-creator-init";
+
+interface SceneControlTool {
+  name: string;
+  title: string;
+  icon: string;
+  order: number;
+  button: boolean;
+  visible: boolean;
+  onChange: () => void;
+}
+
+interface SceneControls {
+  tokens?: {
+    tools?: Record<string, SceneControlTool>;
+  };
+}
 
 /* ── Hook Registration ─────────────────────────────────────── */
 
 getHooks()?.on?.("init", () => {
+  onInit();
+});
+
+getHooks()?.on?.("setup", () => {
+  onSetup();
+});
+
+getHooks()?.on?.("ready", () => {
+  onReady();
+});
+
+function onInit(): void {
   registerSettings();
   registerWindowRotationHooks();
   registerPrintSheetHooks();
 
-  // LPCS — Live Play Character Sheet
   const settings = getGame()?.settings;
+
+  // LPCS — Live Play Character Sheet
   if (settings) registerLPCSSettings(settings);
   registerLPCSSheet();
   void preloadLPCSTemplates();
@@ -59,40 +86,24 @@ getHooks()?.on?.("init", () => {
   if (settings) registerCharacterCreatorSettings(settings);
   registerCharacterCreatorHooks();
 
-  // Asset Manager — Scene Control button (token controls layer)
-  // V13: controls is an object keyed by name, tools is also an object
-  getHooks()?.on?.("getSceneControlButtons", (controls: Record<string, any>) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    if (!isAssetManagerEnabled() || !isGM()) return;
-    if (!controls.tokens?.tools) return;
-    controls.tokens.tools["fth-asset-manager"] = {
-      name: "fth-asset-manager",
-      title: "Asset Manager",
-      icon: "fa-solid fa-folder-open",
-      order: Object.keys(controls.tokens.tools).length,
-      button: true,
-      visible: true,
-      onChange: () => openAssetManager(),
-    };
-  });
+  registerAssetManagerSceneControlHook();
 
   const logLevel = getSetting<string>(MOD, "logLevel");
   if (logLevel) Log.setLevel(logLevel as Level);
   Log.info("init");
-});
+}
 
-getHooks()?.on?.("setup", () => {
+function onSetup(): void {
   // Asset Manager — FilePicker override (needs game.user + settings, available at setup)
   registerAssetManagerPicker();
-
   initKioskSetup();
-});
+}
 
-getHooks()?.on?.("ready", () => {
-  const game = getGame();
+function onReady(): void {
   Log.info("ready", {
-    core: game?.version,
-    system: game?.system?.id,
-    user: game?.user?.id,
+    core: getGame()?.version,
+    system: getGame()?.system?.id,
+    user: getGame()?.user?.id,
   });
 
   // Socket listener + macro pack provisioning
@@ -114,17 +125,33 @@ getHooks()?.on?.("ready", () => {
   // Character Creator — ready-phase initialization
   initCharacterCreatorReady();
 
-  // Expose unified API to window for macro and console use
-  (globalThis as unknown as Record<string, unknown>).fth = {
-    setLevel: (lvl: Level) => Log.setLevel(lvl),
-    version: game?.modules?.get(MOD)?.version,
-    ...buildRotationApi(),
-    ...buildCombatApi(),
-    assetManager: () => openAssetManager(),
-    characterCreator: () => openCharacterCreatorWizard(),
-    characterCreatorConfig: () => openGMConfigApp(),
-    levelUp: (actorId: string) => openLevelUpWizard(actorId),
-  };
+  attachFthApi();
 
   Log.debug("window.fth API attached");
-});
+}
+
+function registerAssetManagerSceneControlHook(): void {
+  getHooks()?.on?.("getSceneControlButtons", onGetSceneControlButtonsAssetManager);
+}
+
+function onGetSceneControlButtonsAssetManager(controls: SceneControls): void {
+  if (!isAssetManagerEnabled() || !isGM()) return;
+  if (!controls.tokens?.tools) return;
+
+  controls.tokens.tools["fth-asset-manager"] = {
+    name: "fth-asset-manager",
+    title: "Asset Manager",
+    icon: "fa-solid fa-folder-open",
+    order: Object.keys(controls.tokens.tools).length,
+    button: true,
+    visible: true,
+    onChange: () => openAssetManager(),
+  };
+}
+
+export const __indexInternals = {
+  onInit,
+  onSetup,
+  onReady,
+  onGetSceneControlButtonsAssetManager,
+};

@@ -8,12 +8,21 @@
 import { MOD, Log } from "../../logger";
 import { getGame, renderTemplate } from "../../types";
 import type { FoundryDocument } from "../../types";
-import type { WizardShellContext } from "../character-creator-types";
 import { LevelUpStateMachine } from "./level-up-state-machine";
 import { applyLevelUp } from "./actor-update-engine";
 import { shouldShowLevelUp } from "./level-up-detection";
 import { getStepAtmosphere } from "../wizard/step-registry";
 import { allowMulticlass as getAllowMulticlass } from "../character-creator-settings";
+import {
+  activateLevelUpStep,
+  applyLevelUpAtmosphere,
+  buildLevelUpShellContext,
+  createLevelUpStepCallbacks,
+  type LevelUpShellContext,
+  resetApplyLevelUpButton,
+  setApplyLevelUpButtonPending,
+  updateLevelUpWindowTitle,
+} from "./level-up-app-helpers";
 
 // Level-up step definitions
 import { createClassChoiceStep } from "./steps/lu-step-class-choice";
@@ -27,22 +36,47 @@ import type { LevelUpStepDef } from "./steps/lu-step-class-choice";
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
 
+interface RuntimeApplicationBase {
+  element?: Element | null;
+  title?: string;
+  render(options?: Record<string, unknown>): void;
+  close(options?: unknown): Promise<void>;
+  _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
+}
+
+interface RuntimeApplicationClass {
+  new (): RuntimeApplicationBase;
+}
+
+type RuntimeHandlebarsApplicationMixin = (base: RuntimeApplicationClass) => RuntimeApplicationClass;
+
+interface RuntimeFoundryAppClasses {
+  HandlebarsApplicationMixin?: RuntimeHandlebarsApplicationMixin;
+  ApplicationV2?: RuntimeApplicationClass;
+}
+
+interface LevelUpAppActorLike extends FoundryDocument {
+  id: string;
+}
+
+interface ActorCollectionLike {
+  get(id: string): LevelUpAppActorLike | null | undefined;
+}
+
 const getFoundryAppClasses = () => {
   const g = globalThis as Record<string, unknown>;
   const api = (g.foundry as Record<string, unknown> | undefined)
     ?.applications as Record<string, unknown> | undefined;
+  const appApi = api?.api as Record<string, unknown> | undefined;
   return {
-    HandlebarsApplicationMixin: (api?.api as Record<string, unknown> | undefined)
-      ?.HandlebarsApplicationMixin as ((...args: unknown[]) => unknown) | undefined,
-    ApplicationV2: (api?.api as Record<string, unknown> | undefined)
-      ?.ApplicationV2 as (new (...args: unknown[]) => unknown) | undefined,
-  };
+    HandlebarsApplicationMixin: appApi?.HandlebarsApplicationMixin as RuntimeHandlebarsApplicationMixin | undefined,
+    ApplicationV2: appApi?.ApplicationV2 as RuntimeApplicationClass | undefined,
+  } satisfies RuntimeFoundryAppClasses;
 };
 
 /* ── Module-Level State ──────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _LevelUpAppClass: (new (...args: any[]) => any) | null = null;
+let _LevelUpAppClass: RuntimeApplicationClass | null = null;
 
 /** Registry of level-up step definitions. */
 const LEVEL_UP_STEPS: LevelUpStepDef[] = [];
@@ -76,8 +110,7 @@ export function buildLevelUpAppClass(): void {
 
   registerLevelUpSteps();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Base = (HandlebarsApplicationMixin as any)(ApplicationV2);
+  const Base = HandlebarsApplicationMixin(ApplicationV2);
 
   class LevelUpApp extends Base {
 
@@ -132,9 +165,10 @@ export function buildLevelUpAppClass(): void {
       return this._machine;
     }
 
-    private _getActor(): FoundryDocument | null {
+    private _getActor(): LevelUpAppActorLike | null {
       const game = getGame();
-      return game?.actors?.get(this._actorId) ?? null;
+      const actors = game?.actors as ActorCollectionLike | undefined;
+      return actors?.get(this._actorId) ?? null;
     }
 
     private _getStepDef(stepId: string): LevelUpStepDef | undefined {
@@ -143,80 +177,37 @@ export function buildLevelUpAppClass(): void {
 
     /* ── Rendering ───────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _prepareContext(_options: any): Promise<WizardShellContext & { isLevelUp: boolean }> {
+    async _prepareContext(_options: unknown): Promise<LevelUpShellContext> {
       const machine = this._ensureMachine();
       const stepId = machine.currentStepId;
       const stepDef = this._getStepDef(stepId);
       const actor = this._getActor();
-
-      let stepContentHtml = "";
-      if (stepDef && actor) {
-        const vmData = await stepDef.buildViewModel(machine.state, actor);
-        stepContentHtml = await renderTemplate(stepDef.templatePath, vmData);
-      }
-
-      const indicatorData = machine.buildStepIndicatorData();
-
-      return {
-        steps: indicatorData,
-        stepContentHtml,
-        currentStepId: stepId,
-        currentStepLabel: stepDef?.label ?? "",
-        currentStepIcon: stepDef?.icon ?? "",
-        canGoBack: machine.canGoBack,
-        canGoNext: machine.canGoNext,
-        isReviewStep: machine.isReviewStep,
-        statusHint: "",
-        atmosphereClass: getStepAtmosphere(stepId),
-        isLevelUp: true,
-      };
+      return buildLevelUpShellContext(
+        machine,
+        stepId,
+        stepDef,
+        actor,
+        renderTemplate,
+        getStepAtmosphere,
+      );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _preparePartContext(partId: string, context: any, options: any): Promise<any> {
-      const base = await super._preparePartContext(partId, context, options);
+    async _preparePartContext(partId: string, context: LevelUpShellContext, options: unknown): Promise<unknown> {
+      const base = await super._preparePartContext?.(partId, context, options) ?? {};
       return { ...base, ...context };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _onRender(_context: any, _options: any): Promise<void> {
+    async _onRender(_context: LevelUpShellContext, _options: unknown): Promise<void> {
       const machine = this._ensureMachine();
       const stepDef = this._getStepDef(machine.currentStepId);
 
-      const callbacks = {
-        setData: (value: unknown) => {
-          machine.setStepData(machine.currentStepId, value);
-          machine.markComplete(machine.currentStepId);
-          this.render({ force: true });
-        },
-        rerender: () => {
-          this.render({ force: true });
-        },
-      };
+      const callbacks = createLevelUpStepCallbacks(machine, () => {
+        this.render({ force: true });
+      });
 
-      if (stepDef?.onActivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) {
-          stepDef.onActivate(machine.state, stepEl as HTMLElement, callbacks);
-        }
-      }
-
-      // Apply atmospheric background
-      const shell = this.element?.querySelector(".cc-wizard-shell");
-      if (shell) {
-        shell.classList.forEach((cls: string) => {
-          if (cls.startsWith("cc-atmosphere--")) shell.classList.remove(cls);
-        });
-        shell.classList.add(getStepAtmosphere(machine.currentStepId));
-      }
-
-      // Update window title
-      const actor = this._getActor();
-      if (actor?.name) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this as any).title = `Level Up — ${actor.name}`;
-      }
+      activateLevelUpStep(stepDef, machine, this.element, callbacks);
+      applyLevelUpAtmosphere(this.element, getStepAtmosphere(machine.currentStepId));
+      updateLevelUpWindowTitle(this, this._getActor());
     }
 
     /* ── Action Handlers ─────────────────────────────── */
@@ -248,11 +239,8 @@ export function buildLevelUpAppClass(): void {
     static async _onApplyLevelUp(this: InstanceType<typeof LevelUpApp>): Promise<void> {
       const machine = this._ensureMachine();
 
-      const btn = this.element?.querySelector("[data-action='applyLevelUp']") as HTMLButtonElement | null;
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Applying...</span>';
-      }
+      const btn = getApplyLevelUpButton(this.element);
+      setApplyLevelUpButtonPending(btn);
 
       try {
         const success = await applyLevelUp(machine.state);
@@ -261,24 +249,17 @@ export function buildLevelUpAppClass(): void {
           await this.close();
         } else {
           Log.error("Level-Up: Failed to apply changes");
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i> <span>Apply Level Up</span>';
-          }
+          resetApplyLevelUpButton(btn);
         }
       } catch (err) {
         Log.error("Level-Up: Error applying changes", err);
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i> <span>Apply Level Up</span>';
-        }
+        resetApplyLevelUpButton(btn);
       }
     }
 
     /* ── Close ───────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async close(options?: any): Promise<void> {
+    async close(options?: unknown): Promise<void> {
       this._machine = null;
       return super.close(options);
     }
@@ -299,7 +280,8 @@ export function openLevelUpWizard(actorId: string): void {
 
   // Verify the actor exists and can level up
   const game = getGame();
-  const actor = game?.actors?.get(actorId);
+  const actors = game?.actors as ActorCollectionLike | undefined;
+  const actor = actors?.get(actorId) ?? null;
   if (!actor) {
     Log.warn("Level-Up Manager: Actor not found", { actorId });
     return;
@@ -311,6 +293,19 @@ export function openLevelUpWizard(actorId: string): void {
   }
 
   const app = new _LevelUpAppClass();
-  app.setActor(actorId);
+  (app as RuntimeApplicationBase & { setActor(actorId: string): void }).setActor(actorId);
   app.render({ force: true });
+}
+
+export function getLevelUpAppClass(): RuntimeApplicationClass | null {
+  return _LevelUpAppClass;
+}
+
+function getApplyLevelUpButton(root: Element | null | undefined): HTMLButtonElement | null {
+  const button = root?.querySelector("[data-action='applyLevelUp']");
+  return isApplyLevelUpButtonLike(button) ? button : null;
+}
+
+function isApplyLevelUpButtonLike(value: unknown): value is HTMLButtonElement {
+  return typeof HTMLButtonElement !== "undefined" && value instanceof HTMLButtonElement;
 }

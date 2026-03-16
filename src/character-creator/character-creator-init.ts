@@ -8,7 +8,8 @@
  */
 
 import { Log, MOD } from "../logger";
-import { getGame, getHooks, isDnd5eWorld, isGM, loadTemplates } from "../types";
+import type { FoundryHooks, SettingMenuRegistration, SettingRegistration } from "../types";
+import { getGame, getHooks, getUI, isDnd5eWorld, isGM, loadTemplates } from "../types";
 import {
   registerCharacterCreatorSettings as registerSettings,
   ccEnabled,
@@ -24,13 +25,36 @@ export { openCharacterCreatorWizard } from "./wizard/character-creator-app";
 export { openLevelUpWizard } from "./level-up/level-up-init";
 export { shouldShowLevelUp } from "./level-up/level-up-detection";
 
+interface SettingsRegistrar {
+  register(module: string, key: string, data: SettingRegistration): void;
+  registerMenu(module: string, key: string, data: SettingMenuRegistration): void;
+}
+
+interface SceneControlTool {
+  name: string;
+  title: string;
+  icon: string;
+  order: number;
+  button: boolean;
+  visible: boolean;
+  onChange: () => void;
+}
+
+interface SceneControls {
+  tokens?: {
+    tools?: Record<string, SceneControlTool>;
+  };
+}
+
+interface CharacterCreatedPayload {
+  action?: unknown;
+  characterName?: unknown;
+  userName?: unknown;
+}
+
 /* ── Settings Registration ───────────────────────────────── */
 
-export function registerCharacterCreatorSettings(settings: {
-  register(module: string, key: string, data: Record<string, unknown>): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registerMenu(module: string, key: string, data: any): void;
-}): void {
+export function registerCharacterCreatorSettings(settings: SettingsRegistrar): void {
   registerSettings(settings);
 }
 
@@ -68,22 +92,7 @@ export function registerCharacterCreatorHooks(): void {
     `modules/${MOD}/templates/character-creator/cc-step-placeholder.hbs`,
   ]);
 
-  // Scene control button — Character Creator (GM only, dnd5e only)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getHooks()?.on?.("getSceneControlButtons", (controls: Record<string, any>) => {
-    if (!ccEnabled() || !isGM() || !isDnd5eWorld()) return;
-    if (!controls.tokens?.tools) return;
-
-    controls.tokens.tools["fth-character-creator"] = {
-      name: "fth-character-creator",
-      title: "Character Creator",
-      icon: "fa-solid fa-hat-wizard",
-      order: Object.keys(controls.tokens.tools).length,
-      button: true,
-      visible: true,
-      onChange: () => openCharacterCreatorWizard(),
-    };
-  });
+  registerSceneControlButtonHook(getHooks());
 }
 
 /* ── Ready Phase ─────────────────────────────────────────── */
@@ -99,22 +108,10 @@ export function initCharacterCreatorReady(): void {
 function registerCharacterCreatorSocket(): void {
   if (!isGM()) return;
 
-  const game = getGame();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const socket = (game as any)?.socket;
+  const socket = getGame()?.socket;
   if (!socket) return;
 
-  socket.on(`module.${MOD}`, (payload: Record<string, unknown>) => {
-    if (payload.action !== "characterCreated") return;
-
-    const name = payload.characterName as string;
-    const user = payload.userName as string;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ui = (globalThis as any).ui;
-    ui?.notifications?.info?.(`${user} created a new character: ${name}`);
-    Log.info(`Character Creator: ${user} created "${name}"`);
-  });
+  socket.on(`module.${MOD}`, handleCharacterCreatorSocketMessage);
 }
 
 /* ── Auto-Open ──────────────────────────────────────────── */
@@ -138,3 +135,45 @@ function autoOpenCharacterCreator(): void {
   Log.info("Character Creator: auto-opening for characterless player");
   openCharacterCreatorWizard();
 }
+
+function registerSceneControlButtonHook(hooks: FoundryHooks | undefined): void {
+  hooks?.on?.("getSceneControlButtons", onGetSceneControlButtons);
+}
+
+function onGetSceneControlButtons(controls: SceneControls): void {
+  if (!ccEnabled() || !isGM() || !isDnd5eWorld()) return;
+  if (!controls.tokens?.tools) return;
+
+  controls.tokens.tools["fth-character-creator"] = {
+    name: "fth-character-creator",
+    title: "Character Creator",
+    icon: "fa-solid fa-hat-wizard",
+    order: Object.keys(controls.tokens.tools).length,
+    button: true,
+    visible: true,
+    onChange: () => openCharacterCreatorWizard(),
+  };
+}
+
+function handleCharacterCreatorSocketMessage(payload: unknown, ui = getUI()): void {
+  if (!isCharacterCreatedPayload(payload)) return;
+
+  const name = typeof payload.characterName === "string" ? payload.characterName : "Unknown Character";
+  const user = typeof payload.userName === "string" ? payload.userName : "Unknown User";
+
+  ui?.notifications?.info?.(`${user} created a new character: ${name}`);
+  Log.info(`Character Creator: ${user} created "${name}"`);
+}
+
+function isCharacterCreatedPayload(payload: unknown): payload is CharacterCreatedPayload & { action: "characterCreated" } {
+  return typeof payload === "object"
+    && payload !== null
+    && "action" in payload
+    && (payload as { action?: unknown }).action === "characterCreated";
+}
+
+export const __characterCreatorInitInternals = {
+  onGetSceneControlButtons,
+  handleCharacterCreatorSocketMessage,
+  autoOpenCharacterCreator,
+};

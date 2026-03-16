@@ -12,6 +12,13 @@ import { renderTemplate } from "../../types";
 import type { WizardShellContext, GMConfig } from "../character-creator-types";
 import { WizardStateMachine } from "./wizard-state-machine";
 import { getOrderedSteps, getStepAtmosphere } from "./step-registry";
+import {
+  applyWizardAtmosphere,
+  buildWizardShellContext,
+  deactivateCurrentStep,
+  patchWizardNavState,
+  patchWizardStepIndicators,
+} from "./character-creator-app-helpers";
 import { createCharacterFromWizard } from "../engine/actor-creation-engine";
 import {
   getPackSources,
@@ -27,22 +34,49 @@ import {
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
 
+interface RuntimeApplicationBase {
+  element?: Element | null;
+  render(options?: Record<string, unknown>): void;
+  close(options?: unknown): Promise<void>;
+  _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
+}
+
+interface RuntimeApplicationClass {
+  new (): RuntimeApplicationBase;
+}
+
+type RuntimeHandlebarsApplicationMixin = (base: RuntimeApplicationClass) => RuntimeApplicationClass;
+
+interface RuntimeFoundryAppClasses {
+  HandlebarsApplicationMixin?: RuntimeHandlebarsApplicationMixin;
+  ApplicationV2?: RuntimeApplicationClass;
+}
+
+interface RenderableActorLike {
+  sheet?: {
+    render(options?: Record<string, unknown>): void;
+  };
+}
+
+interface CreateCharacterButtonLike extends Element {
+  disabled: boolean;
+  innerHTML: string;
+}
+
 const getFoundryAppClasses = () => {
   const g = globalThis as Record<string, unknown>;
   const api = (g.foundry as Record<string, unknown> | undefined)
     ?.applications as Record<string, unknown> | undefined;
+  const appApi = api?.api as Record<string, unknown> | undefined;
   return {
-    HandlebarsApplicationMixin: (api?.api as Record<string, unknown> | undefined)
-      ?.HandlebarsApplicationMixin as ((...args: unknown[]) => unknown) | undefined,
-    ApplicationV2: (api?.api as Record<string, unknown> | undefined)
-      ?.ApplicationV2 as (new (...args: unknown[]) => unknown) | undefined,
-  };
+    HandlebarsApplicationMixin: appApi?.HandlebarsApplicationMixin as RuntimeHandlebarsApplicationMixin | undefined,
+    ApplicationV2: appApi?.ApplicationV2 as RuntimeApplicationClass | undefined,
+  } satisfies RuntimeFoundryAppClasses;
 };
 
 /* ── Module-Level State ──────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _CharacterCreatorAppClass: (new () => any) | null = null;
+let _CharacterCreatorAppClass: RuntimeApplicationClass | null = null;
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -58,8 +92,7 @@ export function buildCharacterCreatorAppClass(): void {
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Base = (HandlebarsApplicationMixin as any)(ApplicationV2);
+  const Base = HandlebarsApplicationMixin(ApplicationV2);
 
   class CharacterCreatorApp extends Base {
 
@@ -130,54 +163,22 @@ export function buildCharacterCreatorAppClass(): void {
 
     /* ── Rendering ─────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _prepareContext(_options: any): Promise<WizardShellContext> {
+    async _prepareContext(_options: unknown): Promise<WizardShellContext> {
       const machine = this._ensureMachine();
-      const stepDef = machine.currentStepDef;
-
-      // Build step ViewModel and render its template to HTML
-      let stepContentHtml = "";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let vmData: Record<string, any> = {};
-      if (stepDef) {
-        vmData = await stepDef.buildViewModel(machine.state);
-        stepContentHtml = await renderTemplate(stepDef.templatePath, vmData);
-      }
-
-      // Extract enhanced header fields from card-select steps
-      const headerTitle = vmData.stepTitle as string | undefined;
-      const headerSubtitle = vmData.stepLabel as string | undefined;
-      const headerDescription = vmData.stepDescription as string | undefined;
-      const headerIcon = vmData.stepIcon as string | undefined;
-      const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
-
-      return {
-        steps: machine.buildStepIndicatorData(),
-        stepContentHtml,
-        currentStepId: machine.currentStepId,
-        currentStepLabel: stepDef?.label ?? "",
-        currentStepIcon: stepDef?.icon ?? "",
-        canGoBack: machine.canGoBack,
-        canGoNext: machine.canGoNext,
-        isReviewStep: machine.isReviewStep,
-        statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
-        atmosphereClass: getStepAtmosphere(machine.currentStepId),
-        headerTitle,
-        headerSubtitle,
-        headerDescription,
-        headerIcon,
-        selectedEntry,
-      };
+      return buildWizardShellContext(
+        machine,
+        machine.currentStepDef,
+        renderTemplate,
+        getStepAtmosphere,
+      );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _preparePartContext(partId: string, context: any, options: any): Promise<any> {
-      const base = await super._preparePartContext(partId, context, options);
+    async _preparePartContext(partId: string, context: WizardShellContext, options: unknown): Promise<unknown> {
+      const base = await super._preparePartContext?.(partId, context, options) ?? {};
       return { ...base, ...context };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _onRender(_context: any, _options: any): Promise<void> {
+    async _onRender(_context: WizardShellContext, _options: unknown): Promise<void> {
       const machine = this._ensureMachine();
       const stepDef = machine.currentStepDef;
 
@@ -189,29 +190,8 @@ export function buildCharacterCreatorAppClass(): void {
         },
         setDataSilent: (value: unknown) => {
           machine.setStepData(machine.currentStepId, value);
-
-          // Patch nav bar: Next button state + status hint
-          const nextBtn = this.element?.querySelector("[data-action='goNext']") as HTMLButtonElement | null;
-          if (nextBtn) nextBtn.disabled = !machine.canGoNext;
-          const hintEl = this.element?.querySelector("[data-status-hint]");
-          if (hintEl) {
-            const curDef = machine.currentStepDef;
-            hintEl.textContent = curDef?.getStatusHint?.(machine.state) ?? "";
-          }
-
-          // Patch step indicators (complete/pending status)
-          const indicators = (this.element as HTMLElement | null)
-            ?.querySelectorAll(".cc-step-indicator__step") as NodeListOf<HTMLElement> | undefined;
-          if (indicators) {
-            const stepData = machine.buildStepIndicatorData();
-            for (let i = 0; i < indicators.length; i++) {
-              const sd = stepData[i];
-              if (!sd) continue;
-              indicators[i].classList.toggle("cc-step-indicator__step--complete", sd.status === "complete");
-              indicators[i].classList.toggle("cc-step-indicator__step--pending", sd.status === "pending");
-              indicators[i].classList.toggle("cc-step-indicator__step--invalid", sd.status === "invalid");
-            }
-          }
+          patchWizardNavState(this.element as HTMLElement | null, machine);
+          patchWizardStepIndicators(this.element as HTMLElement | null, machine);
         },
         rerender: () => {
           this.render({ force: true });
@@ -220,36 +200,21 @@ export function buildCharacterCreatorAppClass(): void {
 
       // Call onActivate for the current step
       if (stepDef?.onActivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
+        const stepEl = getStepContentElement(this.element);
         if (stepEl) {
-          stepDef.onActivate(machine.state, stepEl as HTMLElement, callbacks);
+          stepDef.onActivate(machine.state, stepEl, callbacks);
         }
       }
 
       // Apply atmospheric background class
-      const shell = this.element?.querySelector(".cc-wizard-shell");
-      if (shell) {
-        // Remove all atmosphere classes
-        shell.classList.forEach((cls: string) => {
-          if (cls.startsWith("cc-atmosphere--")) shell.classList.remove(cls);
-        });
-        // Add current atmosphere
-        const atmosphere = getStepAtmosphere(machine.currentStepId);
-        shell.classList.add(atmosphere);
-      }
+      applyWizardAtmosphere(this.element, getStepAtmosphere(machine.currentStepId));
     }
 
     /* ── Action Handlers ───────────────────────────────── */
 
     static _onGoNext(this: InstanceType<typeof CharacterCreatorApp>): void {
       const machine = this._ensureMachine();
-      const prevDef = machine.currentStepDef;
-
-      // Deactivate current step
-      if (prevDef?.onDeactivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) prevDef.onDeactivate(machine.state, stepEl as HTMLElement);
-      }
+      deactivateCurrentStep(machine.currentStepDef, machine, this.element);
 
       if (machine.goNext()) {
         this.render({ force: true });
@@ -258,13 +223,7 @@ export function buildCharacterCreatorAppClass(): void {
 
     static _onGoBack(this: InstanceType<typeof CharacterCreatorApp>): void {
       const machine = this._ensureMachine();
-      const prevDef = machine.currentStepDef;
-
-      // Deactivate current step
-      if (prevDef?.onDeactivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) prevDef.onDeactivate(machine.state, stepEl as HTMLElement);
-      }
+      deactivateCurrentStep(machine.currentStepDef, machine, this.element);
 
       if (machine.goBack()) {
         this.render({ force: true });
@@ -280,11 +239,7 @@ export function buildCharacterCreatorAppClass(): void {
       // Only allow jumping from the review step
       if (!machine.isReviewStep) return;
 
-      const prevDef = machine.currentStepDef;
-      if (prevDef?.onDeactivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) prevDef.onDeactivate(machine.state, stepEl as HTMLElement);
-      }
+      deactivateCurrentStep(machine.currentStepDef, machine, this.element);
 
       if (machine.jumpTo(stepId)) {
         this.render({ force: true });
@@ -305,7 +260,7 @@ export function buildCharacterCreatorAppClass(): void {
       }
 
       // Disable button to prevent double-click
-      const btn = this.element?.querySelector("[data-action='createCharacter']") as HTMLButtonElement | null;
+      const btn = getCreateCharacterButton(this.element);
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Creating...</span>';
@@ -316,7 +271,7 @@ export function buildCharacterCreatorAppClass(): void {
         if (actor) {
           Log.info(`Character Creator: Successfully created "${name}"`);
           // Show the actor sheet
-          actor.sheet?.render({ force: true });
+          (actor as RenderableActorLike).sheet?.render({ force: true });
           // Close the wizard
           await this.close();
         } else {
@@ -337,8 +292,7 @@ export function buildCharacterCreatorAppClass(): void {
 
     /* ── Close Guard ───────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async close(options?: any): Promise<void> {
+    async close(options?: unknown): Promise<void> {
       // Reset state machine on close
       this._machine = null;
       return super.close(options);
@@ -359,4 +313,25 @@ export function openCharacterCreatorWizard(): void {
     return;
   }
   new _CharacterCreatorAppClass().render({ force: true });
+}
+
+export function getCharacterCreatorAppClass(): RuntimeApplicationClass | null {
+  return _CharacterCreatorAppClass;
+}
+
+function getStepContentElement(root: Element | null | undefined): HTMLElement | null {
+  const stepEl = root?.querySelector(".cc-step-content");
+  return typeof HTMLElement !== "undefined" && stepEl instanceof HTMLElement ? stepEl : null;
+}
+
+function getCreateCharacterButton(root: Element | null | undefined): CreateCharacterButtonLike | null {
+  const button = root?.querySelector("[data-action='createCharacter']");
+  return isCreateCharacterButtonLike(button) ? button : null;
+}
+
+function isCreateCharacterButtonLike(value: unknown): value is CreateCharacterButtonLike {
+  return typeof Element !== "undefined"
+    && value instanceof Element
+    && "disabled" in value
+    && "innerHTML" in value;
 }

@@ -10,7 +10,28 @@
 
 import { Log } from "../../logger";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+interface SpellEntryLike {
+  uuid?: string;
+}
+
+interface SpellListResultShape {
+  spells?: Array<string | SpellEntryLike>;
+  entries?: Array<string | SpellEntryLike>;
+}
+
+interface SpellListMethodCollection {
+  forClass?(classIdentifier: string): Promise<unknown> | unknown;
+  getListForClass?(classIdentifier: string): Promise<unknown> | unknown;
+  get?(classIdentifier: string): Promise<unknown> | unknown;
+}
+
+interface Dnd5eRegistryLike {
+  spellLists?: SpellListMethodCollection;
+}
+
+interface Dnd5eGlobalLike {
+  registry?: Dnd5eRegistryLike;
+}
 
 /**
  * Attempt to resolve the set of spell UUIDs available to a class.
@@ -36,8 +57,7 @@ export async function resolveClassSpellUuids(
 
 async function tryRegistryLookup(classIdentifier: string): Promise<Set<string> | null> {
   try {
-    const g = globalThis as Record<string, any>;
-    const dnd5e = g.dnd5e;
+    const dnd5e = getDnd5eGlobal();
     if (!dnd5e?.registry) return null;
 
     const registry = dnd5e.registry;
@@ -47,9 +67,10 @@ async function tryRegistryLookup(classIdentifier: string): Promise<Set<string> |
       const spellLists = registry.spellLists;
 
       // Try known API method names
-      for (const method of ["forClass", "getListForClass", "get"]) {
-        if (typeof spellLists[method] === "function") {
-          const result = await spellLists[method](classIdentifier);
+      for (const method of ["forClass", "getListForClass", "get"] as const) {
+        const lookup = spellLists[method];
+        if (typeof lookup === "function") {
+          const result = await lookup(classIdentifier);
           const uuids = extractUuidsFromResult(result);
           if (uuids) {
             Log.debug(`Spell list resolved via registry.spellLists.${method}()`, {
@@ -86,28 +107,53 @@ async function tryRegistryLookup(classIdentifier: string): Promise<Set<string> |
 /**
  * Extract a Set of UUID strings from various possible spell list result shapes.
  */
-function extractUuidsFromResult(result: any): Set<string> | null {
+function extractUuidsFromResult(result: unknown): Set<string> | null {
   if (!result) return null;
 
   // Shape: { spells: string[] } or { spells: [{ uuid: string }] }
-  if (Array.isArray(result.spells) && result.spells.length > 0) {
+  if (hasSpellArray(result, "spells")) {
     return new Set(
-      result.spells.map((s: any) => (typeof s === "string" ? s : s?.uuid)).filter(Boolean),
+      result.spells.map(getSpellUuid).filter(isNonEmptyString),
     );
   }
 
   // Shape: { entries: string[] } or { entries: [{ uuid: string }] }
-  if (Array.isArray(result.entries) && result.entries.length > 0) {
+  if (hasSpellArray(result, "entries")) {
     return new Set(
-      result.entries.map((s: any) => (typeof s === "string" ? s : s?.uuid)).filter(Boolean),
+      result.entries.map(getSpellUuid).filter(isNonEmptyString),
     );
   }
 
   // Shape: Set<string> or Array<string> directly
-  if (result instanceof Set) return result as Set<string>;
+  if (result instanceof Set) {
+    const uuids = [...result].filter(isNonEmptyString);
+    return uuids.length > 0 ? new Set(uuids) : null;
+  }
   if (Array.isArray(result) && result.length > 0 && typeof result[0] === "string") {
     return new Set(result);
   }
 
   return null;
+}
+
+function getDnd5eGlobal(): Dnd5eGlobalLike | undefined {
+  const g = globalThis as Record<string, unknown>;
+  const dnd5e = g.dnd5e;
+  if (!dnd5e || typeof dnd5e !== "object") return undefined;
+  return dnd5e as Dnd5eGlobalLike;
+}
+
+function hasSpellArray<K extends keyof SpellListResultShape>(
+  result: unknown,
+  key: K,
+): result is Required<Pick<SpellListResultShape, K>> {
+  return typeof result === "object" && result !== null && Array.isArray((result as SpellListResultShape)[key]);
+}
+
+function getSpellUuid(entry: string | SpellEntryLike): string | undefined {
+  return typeof entry === "string" ? entry : entry.uuid;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
 }

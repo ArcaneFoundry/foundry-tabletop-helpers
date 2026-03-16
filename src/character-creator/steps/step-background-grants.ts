@@ -22,6 +22,14 @@ import {
   LANGUAGE_LABELS,
 } from "../data/dnd5e-constants";
 
+interface SelectElementLike {
+  dataset: DOMStringMap;
+  value: string;
+  addEventListener(event: string, handler: () => void): void;
+  querySelector<TElement extends Element>(selector: string): TElement | null;
+  querySelectorAll<TElement extends Element>(selector: string): ArrayLike<TElement>;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 /** Total language choices = background choices + species choices. */
@@ -194,10 +202,11 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
       if (!bg?.grants) return;
 
       // ASI dropdown handlers — patch counters and dropdown availability in-place
-      el.querySelectorAll<HTMLSelectElement>("[data-asi-ability]").forEach((select) => {
+      getSelectElements(el, "[data-asi-ability]").forEach((select) => {
         select.addEventListener("change", () => {
           if (!bg.grants) return;
-          const ability = select.dataset.asiAbility as AbilityKey;
+          const ability = getAbilityKey(select.dataset.asiAbility);
+          if (!ability) return;
           const newValue = parseInt(select.value, 10) || 0;
 
           if (newValue > bg.grants.asiCap) {
@@ -227,8 +236,9 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
 
           // Patch DOM: update +2 option availability on other dropdowns
           const remaining = bg.grants.asiPoints - proposedTotal;
-          el.querySelectorAll<HTMLSelectElement>("[data-asi-ability]").forEach((otherSelect) => {
-            const otherAbility = otherSelect.dataset.asiAbility as AbilityKey;
+          getSelectElements(el, "[data-asi-ability]").forEach((otherSelect) => {
+            const otherAbility = getAbilityKey(otherSelect.dataset.asiAbility);
+            if (!otherAbility) return;
             const otherValue = bg.asi.assignments[otherAbility] ?? 0;
             // Disable +2 option if there aren't enough remaining points
             const opt2 = otherSelect.querySelector<HTMLOptionElement>('option[value="2"]');
@@ -249,7 +259,7 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
       });
 
       // Language dropdown handlers — patch disabled states in-place
-      el.querySelectorAll<HTMLSelectElement>("[data-lang-slot]").forEach((select) => {
+      getSelectElements(el, "[data-lang-slot]").forEach((select) => {
         select.addEventListener("change", () => {
           if (!bg.grants) return;
           const slotIndex = parseInt(select.dataset.langSlot ?? "0", 10);
@@ -262,10 +272,10 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
 
           // Patch DOM: disable already-chosen languages in other dropdowns
           const chosenSet = new Set(bg.languages.chosen);
-          el.querySelectorAll<HTMLSelectElement>("[data-lang-slot]").forEach((otherSelect) => {
+          getSelectElements(el, "[data-lang-slot]").forEach((otherSelect) => {
             const otherSlot = parseInt(otherSelect.dataset.langSlot ?? "0", 10);
             const otherValue = otherSelect.value;
-            otherSelect.querySelectorAll<HTMLOptionElement>("option").forEach((opt) => {
+            Array.from(otherSelect.querySelectorAll<HTMLOptionElement>("option")).forEach((opt) => {
               if (!opt.value) return; // skip placeholder
               opt.disabled = opt.value !== otherValue && chosenSet.has(opt.value);
             });
@@ -279,3 +289,30 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
     },
   };
 }
+
+function getSelectElements(root: ParentNode, selector: string): SelectElementLike[] {
+  const elements = Array.from(root.querySelectorAll(selector) as ArrayLike<unknown>);
+  const selects: SelectElementLike[] = [];
+  for (const value of elements) {
+    if (isSelectElementLike(value)) selects.push(value);
+  }
+  return selects;
+}
+
+function getAbilityKey(value: string | undefined): AbilityKey | null {
+  return ABILITY_KEYS.includes(value as AbilityKey) ? value as AbilityKey : null;
+}
+
+function isSelectElementLike(value: unknown): value is SelectElementLike {
+  return typeof Element !== "undefined"
+    && value instanceof Element
+    && "dataset" in value
+    && "value" in value
+    && typeof (value as { querySelector?: unknown }).querySelector === "function"
+    && typeof (value as { querySelectorAll?: unknown }).querySelectorAll === "function";
+}
+
+export const __backgroundGrantsStepInternals = {
+  getAllFixedLanguages,
+  getTotalLanguageChoiceCount,
+};

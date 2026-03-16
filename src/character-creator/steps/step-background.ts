@@ -17,6 +17,10 @@ import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseBackgroundGrants } from "../data/advancement-parser";
 import { patchCardSelection } from "./card-select-utils";
 
+interface DatasetElementLike extends Element {
+  dataset: DOMStringMap;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function getAvailableBackgrounds(state: WizardState): CreatorIndexEntry[] {
@@ -47,6 +51,9 @@ export function createBackgroundStep(): WizardStepDefinition {
       await compendiumIndexer.loadPacks(state.config.packSources);
       const entries = getAvailableBackgrounds(state);
       const selected = state.selections.background;
+      const selectedEntry = selected
+        ? entries.find((e) => e.uuid === selected.uuid) ?? null
+        : null;
 
       return {
         stepId: "background",
@@ -58,8 +65,8 @@ export function createBackgroundStep(): WizardStepDefinition {
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
-        selectedEntry: selected
-          ? { ...entries.find((e) => e.uuid === selected.uuid), description: compendiumIndexer.getCachedDescription(selected.uuid) }
+        selectedEntry: selectedEntry
+          ? { ...selectedEntry, description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid) }
           : null,
         hasEntries: entries.length > 0,
         emptyMessage: "No backgrounds available. Check your GM configuration.",
@@ -67,9 +74,9 @@ export function createBackgroundStep(): WizardStepDefinition {
     },
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
-      el.querySelectorAll("[data-card-uuid]").forEach((card) => {
+      getCardElements(el).forEach((card) => {
         card.addEventListener("click", async () => {
-          const uuid = (card as HTMLElement).dataset.cardUuid;
+          const uuid = card.dataset.cardUuid;
           if (!uuid) return;
           const entries = getAvailableBackgrounds(state);
           const entry = entries.find((e) => e.uuid === uuid);
@@ -92,9 +99,9 @@ export function createBackgroundStep(): WizardStepDefinition {
               },
             };
 
-            // Visual feedback first, then update state
+            // Patch DOM directly instead of full re-render
             patchCardSelection(el, uuid, entry);
-            callbacks.setData(selection);
+            callbacks.setDataSilent(selection);
           } catch (err) {
             Log.warn("Failed to parse background grants", err);
           }
@@ -103,3 +110,15 @@ export function createBackgroundStep(): WizardStepDefinition {
     },
   };
 }
+
+function getCardElements(root: ParentNode): DatasetElementLike[] {
+  return Array.from(root.querySelectorAll("[data-card-uuid]")).filter(isDatasetElementLike);
+}
+
+function isDatasetElementLike(value: unknown): value is DatasetElementLike {
+  return value instanceof Element && "dataset" in value;
+}
+
+export const __backgroundStepInternals = {
+  getAvailableBackgrounds,
+};

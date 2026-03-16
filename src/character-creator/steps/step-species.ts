@@ -17,12 +17,20 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseSpeciesTraits, parseSpeciesLanguages } from "../data/advancement-parser";
+import { patchCardSelection } from "./card-select-utils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function getAvailableSpecies(state: WizardState): CreatorIndexEntry[] {
   const entries = compendiumIndexer.getIndexedEntries("race", state.config.packSources);
   return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
+}
+
+/** Split "Tiefling, Abyssal" into ["Tiefling", "Abyssal"]. Single names return ["Name", ""] */
+function splitSpeciesName(name: string): [string, string] {
+  const commaIdx = name.indexOf(",");
+  if (commaIdx < 0) return [name.trim(), ""];
+  return [name.slice(0, commaIdx).trim(), name.slice(commaIdx + 1).trim()];
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -45,18 +53,28 @@ export function createSpeciesStep(): WizardStepDefinition {
       const entries = getAvailableSpecies(state);
       const selected = state.selections.species;
 
+      // Sort entries so species with comma-separated names (e.g., "Tiefling, Abyssal")
+      // are grouped by their base name, then sorted by subname within the group.
+      const sorted = [...entries].sort((a, b) => {
+        const [aBase, aSub] = splitSpeciesName(a.name);
+        const [bBase, bSub] = splitSpeciesName(b.name);
+        const baseCompare = aBase.localeCompare(bBase);
+        if (baseCompare !== 0) return baseCompare;
+        return aSub.localeCompare(bSub);
+      });
+
       return {
         stepId: "species",
         stepTitle: "Character Origins:",
         stepLabel: "Species",
         stepIcon: "fa-solid fa-dna",
         stepDescription: "Choose your character's species.",
-        entries: entries.map((e) => ({
+        entries: sorted.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
         selectedEntry: selected
-          ? { ...entries.find((e) => e.uuid === selected.uuid), description: compendiumIndexer.getCachedDescription(selected.uuid) }
+          ? { ...entries.find((e) => e.uuid === selected.uuid), description: await compendiumIndexer.getCachedDescription(selected.uuid) }
           : null,
         hasEntries: entries.length > 0,
         emptyMessage: "No species available. Check your GM configuration.",
@@ -91,9 +109,65 @@ export function createSpeciesStep(): WizardStepDefinition {
             Log.warn("Failed to parse species data", err);
           }
 
-          callbacks.setData(selection);
+          // Patch DOM directly instead of full re-render
+          patchCardSelection(el, uuid, entry);
+          patchDetailPanelDOM(el, entry, uuid);
+          callbacks.setDataSilent(selection);
         });
       });
     },
   };
+}
+
+/** Patch the detail panel in-place without triggering a full re-render. */
+function patchDetailPanelDOM(el: HTMLElement, entry: CreatorIndexEntry, uuid: string): void {
+  const pane = el.querySelector(".cc-card-detail-pane");
+  if (!pane) return;
+
+  // Build new detail panel via safe DOM methods
+  const detail = document.createElement("div");
+  detail.className = "cc-card-detail cc-card-detail--active";
+
+  const header = document.createElement("div");
+  header.className = "cc-card-detail__header";
+  const img = document.createElement("img");
+  img.className = "cc-card-detail__img";
+  img.src = entry.img;
+  img.alt = entry.name;
+  header.appendChild(img);
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "cc-card-detail__title";
+  const h3 = document.createElement("h3");
+  h3.textContent = entry.name;
+  titleWrap.appendChild(h3);
+  const source = document.createElement("span");
+  source.className = "cc-card-detail__source";
+  source.textContent = entry.packLabel;
+  titleWrap.appendChild(source);
+  header.appendChild(titleWrap);
+  detail.appendChild(header);
+
+  // Placeholder while description loads
+  const descPlaceholder = document.createElement("p");
+  descPlaceholder.className = "cc-card-detail__hint";
+  descPlaceholder.textContent = "Loading...";
+  detail.appendChild(descPlaceholder);
+
+  // Swap immediately (header visible), then async-load description
+  pane.replaceChildren(detail);
+
+  compendiumIndexer.getCachedDescription(uuid).then((enrichedHtml) => {
+    if (enrichedHtml) {
+      const descEl = document.createElement("div");
+      descEl.className = "cc-card-detail__description";
+      // Enriched by Foundry's TextEditor.enrichHTML — safe rendered HTML
+      // eslint-disable-next-line no-unsanitized/property
+      descEl.innerHTML = enrichedHtml;
+      descPlaceholder.replaceWith(descEl);
+    } else {
+      descPlaceholder.textContent = "No description available.";
+    }
+  }).catch(() => {
+    descPlaceholder.textContent = "No description available.";
+  });
 }

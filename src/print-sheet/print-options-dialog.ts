@@ -18,6 +18,47 @@ const SHEET_LABELS: Record<SheetType, string> = {
   party: "Party Summary",
 };
 
+interface FormQueryRoot {
+  querySelector?(selector: string): Element | null;
+  closest?(selector: string): Element | null;
+}
+
+interface FormHost extends FormQueryRoot {}
+
+interface DialogHtmlWrapper {
+  get?(index: number): FormHost | undefined;
+  length?: number;
+  0?: FormHost;
+}
+
+function isDialogHtmlWrapper(value: FormHost | DialogHtmlWrapper): value is DialogHtmlWrapper {
+  return typeof value === "object" && value !== null
+    && ("get" in value || 0 in value);
+}
+
+interface DialogButtonConfig {
+  icon: string;
+  label: string;
+  callback: (html: HTMLElement | DialogHtmlWrapper) => void;
+}
+
+interface DialogConfig {
+  title: string;
+  content: string;
+  buttons: {
+    print: DialogButtonConfig;
+    cancel: DialogButtonConfig;
+  };
+  default: "print";
+  close: () => void;
+}
+
+interface DialogInstance {
+  render(force: boolean): void;
+}
+
+type DialogConstructor = new (options: DialogConfig) => DialogInstance;
+
 /**
  * Build the inner HTML for the options form.
  * @param sheetType The type of sheet being printed
@@ -87,28 +128,33 @@ function buildDialogContent(
  * Parse the dialog form into a PrintOptions object.
  */
 function parseForm(
-  html: HTMLElement | JQuery,
+  html: FormHost | DialogHtmlWrapper,
   sections: SectionDef[],
 ): PrintOptions {
-  const el: HTMLElement =
-    html instanceof HTMLElement ? html : (html as any)[0] ?? (html as any);
-  const form = el.querySelector?.("form") ?? el.closest?.("form") ?? el;
+  const isHTMLElement = typeof HTMLElement !== "undefined" && html instanceof HTMLElement;
+  const el: FormHost | null =
+    isHTMLElement
+      ? html as FormHost
+      : isDialogHtmlWrapper(html)
+        ? html.get?.(0) ?? html[0] ?? null
+        : html;
+  const form = ((el?.querySelector?.("form") ?? el?.closest?.("form") ?? el) as FormQueryRoot | null) ?? null;
 
   const sectionValues: Record<string, boolean> = {};
   for (const s of sections) {
-    const cb = form.querySelector?.(
+    const cb = form?.querySelector?.(
       `[name="section-${s.key}"]`,
     ) as HTMLInputElement | null;
     sectionValues[s.key] = cb ? cb.checked : s.default;
   }
 
-  const portraitRadio = form.querySelector?.(
+  const portraitRadio = form?.querySelector?.(
     '[name="portrait"]:checked',
   ) as HTMLInputElement | null;
   const portrait: PortraitMode =
     (portraitRadio?.value as PortraitMode) ?? "portrait";
 
-  const paperRadio = form.querySelector?.(
+  const paperRadio = form?.querySelector?.(
     '[name="paperSize"]:checked',
   ) as HTMLInputElement | null;
   const paperSize: PaperSize = (paperRadio?.value as PaperSize) ?? "letter";
@@ -143,7 +189,7 @@ export async function showPrintOptionsDialog(
   const content = buildDialogContent(sheetType, sections, defaults);
 
   // Cast to a more usable type since we've already verified it exists
-  const Dialog = DialogClass as new (options: Record<string, unknown>) => { render: (force: boolean) => void };
+  const Dialog = DialogClass as DialogConstructor;
 
   return new Promise<PrintOptions | null>((resolve) => {
     new Dialog({
@@ -153,7 +199,7 @@ export async function showPrintOptionsDialog(
         print: {
           icon: '<i class="fa-solid fa-print"></i>',
           label: "Print",
-          callback: (html: HTMLElement | JQuery) => resolve(parseForm(html, sections)),
+          callback: (html: FormHost | DialogHtmlWrapper) => resolve(parseForm(html, sections)),
         },
         cancel: {
           icon: '<i class="fa-solid fa-xmark"></i>',

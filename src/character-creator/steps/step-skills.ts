@@ -20,6 +20,16 @@ import { SKILLS, ABILITY_ABBREVS } from "../data/dnd5e-constants";
 /** Default number of skill picks for most classes. */
 const DEFAULT_SKILL_PICKS = 2;
 
+interface DatasetElementLike extends Element {
+  dataset: DOMStringMap;
+}
+
+interface SkillCheckboxLike extends DatasetElementLike {
+  checked: boolean;
+  disabled: boolean;
+  closest(selector: string): Element | null;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function getBackgroundSkills(state: WizardState): string[] {
@@ -43,8 +53,9 @@ function patchSkillsDOM(
 ): void {
   const atMax = chosen.size >= maxPicks;
   // Update each checkbox row
-  el.querySelectorAll<HTMLInputElement>("[data-skill]").forEach((cb) => {
-    const key = cb.dataset.skill!;
+  getSkillCheckboxes(el).forEach((cb) => {
+    const key = cb.dataset.skill;
+    if (!key) return;
     const isChosen = chosen.has(key);
     cb.checked = isChosen;
     cb.disabled = !isChosen && atMax;
@@ -129,7 +140,7 @@ export function createSkillsStep(): WizardStepDefinition {
       const backgroundSet = new Set(getBackgroundSkills(state));
       const maxPicks = getSkillCount(state);
 
-      el.querySelectorAll<HTMLInputElement>("[data-skill]").forEach((checkbox) => {
+      getSkillCheckboxes(el).forEach((checkbox) => {
         checkbox.addEventListener("change", () => {
           const key = checkbox.dataset.skill;
           if (!key) return;
@@ -163,3 +174,23 @@ export function createSkillsStep(): WizardStepDefinition {
     },
   };
 }
+
+function getSkillCheckboxes(root: ParentNode): SkillCheckboxLike[] {
+  return Array.from(root.querySelectorAll("[data-skill]")).filter(isSkillCheckboxLike);
+}
+
+function isSkillCheckboxLike(value: unknown): value is SkillCheckboxLike {
+  return typeof Element !== "undefined"
+    && value instanceof Element
+    && "dataset" in value
+    && "checked" in value
+    && "disabled" in value
+    && typeof (value as { closest?: unknown }).closest === "function";
+}
+
+export const __skillsStepInternals = {
+  getBackgroundSkills,
+  getClassPool,
+  getSkillCount,
+  patchSkillsDOM,
+};
