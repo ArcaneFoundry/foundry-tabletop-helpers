@@ -20,6 +20,8 @@
 - Tweaked `src/combat/styles/combat-monster-preview.css` again to reduce the active-turn badge offset from `top: -20px` to `top: -2px` for a tighter header overlap.
 - Verified the badge-offset tweak with `npm run typecheck`, `npm run test`, and `npm run build`.
 - Deployed the badge-offset tweak to the Foundry server module directory and verified the remote `index.js`, `module.json`, and `styles.css` checksums match the local build.
+- Started Phase 4 wrap-up and release prep for `v1.2.1`.
+- Updated `package.json`, `package-lock.json`, `module.json`, and `CHANGELOG.md` for the `1.2.1` release checkpoint and rebuilt the distributable zip artifact.
 
 ## 2026-03-15
 
