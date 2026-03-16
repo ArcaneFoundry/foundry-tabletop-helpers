@@ -1,6 +1,6 @@
 {
   "name": "fth-optimizer",
-  "version": "1.0.0",
+  "version": "1.2.1",
   "description": "Asset optimization server companion for Foundry Tabletop Helpers",
   "license": "MIT",
   "type": "module",
