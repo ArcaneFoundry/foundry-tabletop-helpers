@@ -86,7 +86,10 @@ describe("monster preview rendering", () => {
     expect(html).toContain("Init 18");
     expect(html).toContain("Acting now");
     expect(html).toContain("mp-identity-active");
+    expect(html).toContain("mp-active-turn-badge");
     expect(html).toContain("mp-active-turn-pill");
+    expect(html).not.toContain("mp-context-turn");
+    expect(html).toMatch(/<\/(?:button|div)><div class="mp-context-strip">/);
     expect(html).toContain("Concentrating");
     expect(html).toContain("Poisoned");
     expect(html).toContain("data-mp-action=\"roll-initiative\"");
@@ -127,8 +130,8 @@ describe("monster preview rendering", () => {
     expect(contextHtml).toContain("mp-context-strip");
     expect(contextHtml).toContain("Goblin 3");
     expect(contextHtml).toContain("Init 17");
-    expect(contextHtml).toContain("Acting now");
     expect(contextHtml).toContain("Round 2");
+    expect(contextHtml).not.toContain("Acting now");
     expect(emptyHtml).toBe("");
   });
 
@@ -161,6 +164,7 @@ describe("monster preview rendering", () => {
 
     expect(html).not.toContain("mp-identity-active");
     expect(html).not.toContain("mp-active-turn-pill");
+    expect(html).not.toContain("mp-active-turn-badge");
   });
 
   it("renders compact quick actions when an actor id is available", () => {
@@ -171,6 +175,9 @@ describe("monster preview rendering", () => {
     expect(html).toContain("data-mp-action=\"roll-initiative\"");
     expect(html).toContain("data-skill=\"prc\"");
     expect(html).toContain("data-ability=\"wis\"");
+    expect(html).toContain("aria-label=\"Perception\"");
+    expect(html).toContain("fa-eye");
+    expect(html).toContain("fa-user-ninja");
   });
 
   it("renders only the configured quick action subset", () => {
@@ -179,10 +186,10 @@ describe("monster preview rendering", () => {
       DEFAULT_MONSTER_PREVIEW_QUICK_ACTIONS[3],
     ]);
 
-    expect(html).toContain("Sheet");
-    expect(html).toContain("Stealth");
-    expect(html).not.toContain("Perception");
-    expect(html).not.toContain("Wis Save");
+    expect(html).toContain("fa-book-open");
+    expect(html).toContain("fa-user-ninja");
+    expect(html).not.toContain("fa-eye");
+    expect(html).not.toContain("fa-shield-halved");
   });
 
   it("renders a minimized floating panel with identity-only content", () => {
@@ -206,8 +213,9 @@ describe("monster preview rendering", () => {
     const minimizedPanel = buildMonsterPreviewMinimizedPanelHTML(content, true, "pinned", "Pinned");
 
     expect(minimizedContent).toContain("mp-minimized-content");
-    expect(minimizedContent).toContain("Dragon Alpha");
-    expect(minimizedContent).not.toContain("Perception");
+    expect(minimizedContent).toContain("Adult Red Dragon");
+    expect(minimizedContent).not.toContain("Dragon Alpha");
+    expect(minimizedContent).not.toContain("aria-label=\"Perception\"");
     expect(minimizedPanel).toContain("mp-expand");
     expect(minimizedPanel).toContain("mp-pin is-active");
     expect(minimizedPanel).toContain("Pinned Here");
@@ -265,7 +273,7 @@ describe("monster preview rendering", () => {
     expect(content).toContain("data-actor-id=\"dragon-1\"");
     expect(content).toContain("Blinded");
     expect(content).toContain("Dragon Alpha");
-    expect(content).toContain("Perception");
+    expect(content).toContain("aria-label=\"Perception\"");
     expect(inlineHtml).toContain("mp-popout");
     expect(inlineHtml).toContain("mp-pin");
     expect(inlineHtml).toContain("World Persistent");

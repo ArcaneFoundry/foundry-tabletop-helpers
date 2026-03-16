@@ -1,5 +1,26 @@
 # Status
 
+## 2026-03-16
+
+- Continued the post-Phase 4 Combat Monster Preview polish pass with a focused layout/UI cleanup slice.
+- Updated `src/combat/monster-preview/monster-preview-rendering.ts` so the active-turn indicator now renders once as a floating lightning badge instead of also appearing as a duplicate context chip.
+- Updated `src/combat/styles/combat-monster-preview.css` to position the acting badge partially into the header, center the AC/HP/Speed/Init stat row, and restyle quick actions as compact icon buttons.
+- Extended `src/combat/monster-preview/monster-preview-quick-actions.ts` with explicit icon metadata for the existing quick-action set while preserving action ids and settings behavior.
+- Added regression coverage in `src/combat/monster-preview/monster-preview-rendering.test.ts` for the badge relocation and icon-based quick-action rendering.
+- Verified the polish slice with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Followed up with a layout-fix pass in `src/combat/styles/combat-monster-preview.css` to make the active-turn badge layer above the header/body seam more reliably, contain the name block cleanly inside the identity button, remove horizontal stat-gap padding that caused wrapping, and center the quick-action icon row.
+- Verified the layout-fix follow-up with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Continued the monster preview layout cleanup by moving the context and status strips out of the clickable identity block in `src/combat/monster-preview/monster-preview-rendering.ts`, leaving the actor button focused on portrait/name/meta while those strips render as separate rows beneath it.
+- Updated `src/combat/styles/combat-monster-preview.css` to preserve compact spacing for the newly separated context/status rows.
+- Added regression coverage in `src/combat/monster-preview/monster-preview-rendering.test.ts` to assert the context strip now renders outside the identity markup.
+- Verified the context/status layout follow-up with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Followed up in `src/combat/styles/combat-monster-preview.css` with an explicit `button.mp-identity` height reset so Foundry's inherited button sizing no longer clips the monster preview identity content.
+- Verified the identity-height fix with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Deployed the identity-height fix to the Foundry server module directory and verified the remote `index.js`, `module.json`, and `styles.css` checksums match the local build.
+- Tweaked `src/combat/styles/combat-monster-preview.css` again to reduce the active-turn badge offset from `top: -20px` to `top: -2px` for a tighter header overlap.
+- Verified the badge-offset tweak with `npm run typecheck`, `npm run test`, and `npm run build`.
+- Deployed the badge-offset tweak to the Foundry server module directory and verified the remote `index.js`, `module.json`, and `styles.css` checksums match the local build.
+
 ## 2026-03-15
 
 - Started Phase 4 user-facing feature work on Combat Monster Preview.

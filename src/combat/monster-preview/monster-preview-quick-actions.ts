@@ -2,6 +2,7 @@ export interface MonsterPreviewQuickActionDefinition {
   id: string;
   label: string;
   action: string;
+  icon: string;
   ability?: string;
   skill?: string;
 }
@@ -19,11 +20,11 @@ export const DEFAULT_MONSTER_PREVIEW_QUICK_ACTION_IDS = [
 ] as const;
 
 const QUICK_ACTION_DEFINITIONS: readonly MonsterPreviewQuickActionDefinition[] = [
-  { id: "open-sheet", label: "Sheet", action: "open-sheet" },
-  { id: "roll-initiative", label: "Init", action: "roll-initiative" },
-  { id: "roll-skill:prc", label: "Perception", action: "roll-skill", skill: "prc" },
-  { id: "roll-skill:ste", label: "Stealth", action: "roll-skill", skill: "ste" },
-  { id: "roll-save:wis", label: "Wis Save", action: "roll-save", ability: "wis" },
+  { id: "open-sheet", label: "Sheet", action: "open-sheet", icon: "fa-book-open" },
+  { id: "roll-initiative", label: "Init", action: "roll-initiative", icon: "fa-dice-d20" },
+  { id: "roll-skill:prc", label: "Perception", action: "roll-skill", skill: "prc", icon: "fa-eye" },
+  { id: "roll-skill:ste", label: "Stealth", action: "roll-skill", skill: "ste", icon: "fa-user-ninja" },
+  { id: "roll-save:wis", label: "Wis Save", action: "roll-save", ability: "wis", icon: "fa-shield-halved" },
 ] as const;
 
 export const DEFAULT_MONSTER_PREVIEW_QUICK_ACTIONS = [...QUICK_ACTION_DEFINITIONS];

@@ -132,6 +132,10 @@ export function buildMonsterPreviewStatBlockHTML(
 ): string {
   const parts: string[] = [];
   const isActiveTurn = Boolean(context?.turnLabel);
+  parts.push(`<div class="mp-statblock-shell${isActiveTurn ? " mp-statblock-shell-active" : ""}">`);
+  if (isActiveTurn) {
+    parts.push(`<div class="mp-active-turn-badge"><span class="mp-active-turn-pill"><i class="fa-solid fa-bolt"></i> ${context?.turnLabel}</span></div>`);
+  }
   const identityTag = actorId ? "button" : "div";
   const identityAttrs = actorId
     ? ` class="mp-identity${isActiveTurn ? " mp-identity-active" : ""} mp-open-actor" type="button" data-actor-id="${actorId}" aria-label="Open ${vm.name} sheet"`
@@ -143,12 +147,9 @@ export function buildMonsterPreviewStatBlockHTML(
   parts.push(`<div class="mp-name-block">`);
   parts.push(`<div class="mp-name">${vm.name}</div>`);
   parts.push(`<div class="mp-meta">${vm.meta}</div>`);
-  if (isActiveTurn) {
-    parts.push(`<div class="mp-active-turn-banner"><span class="mp-active-turn-pill"><i class="fa-solid fa-bolt"></i> ${context?.turnLabel}</span></div>`);
-  }
+  parts.push(`</div></${identityTag}>`);
   parts.push(buildMonsterPreviewContextHTML(context));
   parts.push(buildMonsterPreviewStatusHTML(status));
-  parts.push(`</div></${identityTag}>`);
   parts.push(buildMonsterPreviewQuickActionsHTML(actorId, quickActions));
 
   if (vm.showStats) {
@@ -187,6 +188,7 @@ export function buildMonsterPreviewStatBlockHTML(
     }
   }
 
+  parts.push(`</div>`);
   return parts.join("");
 }
 
@@ -218,9 +220,6 @@ export function buildMonsterPreviewContextHTML(context?: MonsterPreviewContextIn
   if (context.initiative) {
     chips.push(`<span class="mp-context-chip mp-context-init"><i class="fa-solid fa-list-ol"></i> Init ${context.initiative}</span>`);
   }
-  if (context.turnLabel) {
-    chips.push(`<span class="mp-context-chip mp-context-turn">${context.turnLabel}</span>`);
-  }
   if (context.roundLabel) {
     chips.push(`<span class="mp-context-chip mp-context-round">${context.roundLabel}</span>`);
   }
@@ -243,9 +242,11 @@ export function buildMonsterPreviewQuickActionsHTML(
           type="button"
           data-mp-action="${quickAction.action}"
           data-actor-id="${actorId}"
+          aria-label="${quickAction.label}"
+          data-tooltip="${quickAction.label}"
           ${quickAction.skill ? `data-skill="${quickAction.skill}"` : ""}
           ${quickAction.ability ? `data-ability="${quickAction.ability}"` : ""}
-        >${quickAction.label}</button>
+        ><i class="fa-solid ${quickAction.icon}" aria-hidden="true"></i></button>
       `).join("")}
     </div>
   `;

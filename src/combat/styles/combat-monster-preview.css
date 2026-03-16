@@ -16,7 +16,7 @@
     0 0 0 1px rgba(200, 167, 93, 0.06);
   font-family: "Roboto", sans-serif;
   user-select: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ── Inline mode (inside Combat Tracker sidebar) ──────────── */
@@ -44,6 +44,8 @@
 
 /* ── Header ───────────────────────────────────────────────── */
 .mp-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -184,6 +186,9 @@
 }
 
 .mp-body {
+  position: relative;
+  z-index: 2;
+  overflow-x: visible;
   overflow-y: auto;
   padding: 10px 12px;
   flex: 1;
@@ -193,6 +198,14 @@
 .mp-body.mp-body-minimized {
   overflow: hidden;
   padding: 8px 10px 10px;
+}
+
+.mp-statblock-shell {
+  position: relative;
+}
+
+.mp-statblock-shell-active {
+  padding-top: 6px;
 }
 
 .mp-minimized-content .mp-identity {
@@ -232,8 +245,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 4px 0;
   margin-bottom: 2px;
   border-radius: 10px;
+  overflow: hidden;
   transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
@@ -256,6 +271,11 @@ button.mp-upnext-row {
 }
 
 button.mp-identity {
+  display: flex;
+  align-items: center;
+  height: auto;
+  min-height: 0;
+  line-height: normal;
   border-radius: 10px;
 }
 
@@ -280,8 +300,25 @@ button.mp-upnext-row:focus-visible {
 }
 
 .mp-name-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   flex: 1;
   min-width: 0;
+}
+
+.mp-identity + .mp-context-strip,
+.mp-identity + .mp-status-strip,
+.mp-context-strip + .mp-status-strip {
+  margin-top: 6px;
+}
+
+.mp-active-turn-badge {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  z-index: 4;
+  pointer-events: none;
 }
 
 .mp-name {
@@ -302,15 +339,11 @@ button.mp-upnext-row:focus-visible {
   line-height: 1.3;
 }
 
-.mp-active-turn-banner {
-  margin-top: 6px;
-}
-
 .mp-active-turn-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 7px;
+  padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.55rem;
   font-weight: 800;
@@ -318,7 +351,9 @@ button.mp-upnext-row:focus-visible {
   text-transform: uppercase;
   background: rgba(200, 167, 93, 0.18);
   color: #f2dfab;
-  box-shadow: 0 0 0 1px rgba(200, 167, 93, 0.18);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(200, 167, 93, 0.22);
 }
 
 .mp-active-turn-pill i {
@@ -329,11 +364,7 @@ button.mp-upnext-row:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 6px;
-}
-
-.mp-active-turn-banner + .mp-context-strip {
-  margin-top: 5px;
+  margin-top: 0;
 }
 
 .mp-context-chip {
@@ -353,11 +384,6 @@ button.mp-upnext-row:focus-visible {
   font-size: 0.5rem;
 }
 
-.mp-context-turn {
-  background: rgba(200, 167, 93, 0.12);
-  color: #edd89a;
-}
-
 .mp-identity-active .mp-portrait {
   border-color: rgba(240, 211, 128, 0.78);
   box-shadow: 0 0 16px rgba(200, 167, 93, 0.16);
@@ -375,7 +401,7 @@ button.mp-upnext-row:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .mp-status-badge {
@@ -414,22 +440,29 @@ button.mp-upnext-row:focus-visible {
 .mp-quick-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
   margin: 8px 0 2px;
 }
 
 .mp-quick-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(200, 167, 93, 0.14);
   border-radius: 999px;
   color: #d3cec4;
   cursor: pointer;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 4px 8px;
-  text-transform: uppercase;
+  font-size: 0.72rem;
+  padding: 0;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.mp-quick-action i {
+  font-size: 0.72rem;
 }
 
 .mp-quick-action:hover {
@@ -459,23 +492,33 @@ button.mp-upnext-row:focus-visible {
 .mp-core-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
+  justify-content: center;
+  gap: 8px 0;
 }
 
 .mp-stat {
+  display: flex;
+  flex: 1 1 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
   font-size: 0.72rem;
   color: #e8e4dc;
   line-height: 1.4;
+  text-align: center;
 }
 
 .mp-stat-label {
   font-weight: 700;
   color: #c8a75d;
   font-size: 0.68rem;
+  text-transform: uppercase;
 }
 
 .mp-stat-value {
   font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-size: 0.74rem;
 }
 
 /* ── Ability scores (6-cell grid) ─────────────────────────── */
