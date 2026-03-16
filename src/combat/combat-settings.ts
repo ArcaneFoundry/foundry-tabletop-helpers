@@ -10,6 +10,11 @@
  */
 
 import { Log, MOD } from "../logger";
+import { getFormApplicationClass, getUI, setSetting, getSetting } from "../types";
+import {
+  getMonsterPreviewQuickActionChoices,
+  serializeMonsterPreviewQuickActionSelection,
+} from "./monster-preview/monster-preview-quick-actions";
 
 /* ── Setting Keys ─────────────────────────────────────────── */
 
@@ -24,6 +29,12 @@ export const COMBAT_SETTINGS = {
   AUTO_DAMAGE_PANEL: "autoDamagePanel",
   /** Auto-show NPC stat block panel on their combat turn. */
   ENABLE_MONSTER_PREVIEW: "enableMonsterPreview",
+  /** Default display mode for the combat monster preview panel. */
+  MONSTER_PREVIEW_DEFAULT_DISPLAY: "monsterPreviewDefaultDisplay",
+  /** Keep the last monster preview visible between NPC turns. */
+  MONSTER_PREVIEW_PERSIST_BETWEEN_TURNS: "monsterPreviewPersistBetweenTurns",
+  /** Comma-separated quick action ids shown in the monster preview. */
+  MONSTER_PREVIEW_QUICK_ACTIONS: "monsterPreviewQuickActions",
   /** Enable the Party Summary quick-reference panel. */
   ENABLE_PARTY_SUMMARY: "enablePartySummary",
   /** Party source: "primaryParty" (dnd5e group) or "playerOwned" (all player-owned characters). */
@@ -40,6 +51,7 @@ export const COMBAT_SETTINGS = {
  */
 export function registerCombatSettings(settings: {
   register(module: string, key: string, data: Record<string, unknown>): void;
+  registerMenu?(module: string, key: string, data: { type: new () => unknown } & Record<string, unknown>): void;
 }): void {
   try {
     settings.register(MOD, COMBAT_SETTINGS.ENABLE_ADVANTAGE_INITIATIVE, {
@@ -89,13 +101,51 @@ export function registerCombatSettings(settings: {
 
     settings.register(MOD, COMBAT_SETTINGS.ENABLE_MONSTER_PREVIEW, {
       name: "Combat Monster Preview",
-      hint: "Auto-show NPC stat block panel during their combat turn. Includes an Up Next preview for the next combatant. GM only.",
+      hint: "Auto-show the GM-facing NPC preview during monster turns. Use the local pin control to keep one preview open for yourself, or enable the between-turn setting below to keep previews visible world-wide between turns.",
       scope: "world",
       config: true,
       type: Boolean,
       default: true,
       restricted: true,
     });
+
+    settings.register(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_DEFAULT_DISPLAY, {
+      name: "Monster Preview Default Display",
+      hint: "How the GM-facing monster preview should appear by default when the world loads. This controls layout only. Local pinning and the between-turn setting below control whether the preview stays visible off-turn.",
+      scope: "world",
+      config: true,
+      type: String,
+      choices: {
+        remember: "Remember Last",
+        inline: "Inline",
+        floating: "Floating",
+        floatingMinimized: "Floating (Minimized)",
+      },
+      default: "remember",
+      restricted: true,
+    });
+
+    settings.register(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_PERSIST_BETWEEN_TURNS, {
+      name: "Keep Monster Preview Between Turns",
+      hint: "When enabled, all GMs keep the last monster preview visible on non-NPC turns instead of auto-hiding immediately. This is separate from the header pin, which only keeps a preview open locally for one GM/browser.",
+      scope: "world",
+      config: true,
+      type: Boolean,
+      default: false,
+      restricted: true,
+    });
+
+    settings.register(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_QUICK_ACTIONS, {
+      name: "Monster Preview Quick Actions",
+      hint: "Stored quick-action selection for the Monster Preview submenu.",
+      scope: "world",
+      config: false,
+      type: String,
+      default: "open-sheet,roll-initiative,roll-skill:prc,roll-skill:ste,roll-save:wis",
+      restricted: true,
+    });
+
+    registerMonsterPreviewQuickActionsMenu(settings);
 
     settings.register(MOD, COMBAT_SETTINGS.ENABLE_PARTY_SUMMARY, {
       name: "Party Summary Panel",
@@ -134,5 +184,59 @@ export function registerCombatSettings(settings: {
     Log.debug("Combat settings registered");
   } catch (err) {
     Log.warn("Combat: failed to register settings", err);
+  }
+}
+
+function registerMonsterPreviewQuickActionsMenu(settings: {
+  registerMenu?(module: string, key: string, data: { type: new () => unknown } & Record<string, unknown>): void;
+}): void {
+  if (typeof settings.registerMenu !== "function") return;
+
+  try {
+    const FormAppBase = getFormApplicationClass() ?? class {};
+    const BaseWithDefaults = FormAppBase as {
+      defaultOptions?: Record<string, unknown>;
+      new (): {
+        getData?(): Promise<Record<string, unknown>>;
+        _updateObject?(_event: Event, formData: Record<string, unknown>): Promise<void>;
+      };
+    };
+
+    class MonsterPreviewQuickActionsForm extends BaseWithDefaults {
+      static get defaultOptions() {
+        const base = BaseWithDefaults.defaultOptions ?? {};
+        return foundry.utils.mergeObject(base, {
+          id: `${MOD}-monster-preview-quick-actions`,
+          title: "Monster Preview Quick Actions",
+          template: `modules/${MOD}/templates/combat/monster-preview-quick-actions.hbs`,
+          width: 460,
+          height: "auto",
+        }, { inplace: false });
+      }
+
+      async getData() {
+        const storedValue = getSetting<string>(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_QUICK_ACTIONS);
+        return {
+          actions: getMonsterPreviewQuickActionChoices(storedValue),
+        };
+      }
+
+      async _updateObject(_event: Event, formData: Record<string, unknown>) {
+        const serialized = serializeMonsterPreviewQuickActionSelection(formData.actionIds);
+        await setSetting(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_QUICK_ACTIONS, serialized);
+        getUI()?.notifications?.info?.("Monster preview quick actions saved.");
+      }
+    }
+
+    settings.registerMenu(MOD, "monsterPreviewQuickActionsMenu", {
+      name: "Monster Preview Quick Actions",
+      label: "Configure",
+      hint: "Choose which quick actions appear in the monster preview. The action order stays compact and fixed.",
+      icon: "fa-solid fa-bolt",
+      type: MonsterPreviewQuickActionsForm,
+      restricted: true,
+    });
+  } catch (err) {
+    Log.warn("Combat: failed to register Monster Preview Quick Actions submenu", err);
   }
 }

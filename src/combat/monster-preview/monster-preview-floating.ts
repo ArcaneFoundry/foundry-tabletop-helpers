@@ -52,7 +52,7 @@ export function makeMonsterPreviewDraggable(
   handle.style.cursor = "grab";
 
   handle.addEventListener("pointerdown", (e: PointerEvent) => {
-    if ((e.target as HTMLElement).closest(".mp-close, .mp-dock")) return;
+    if ((e.target as HTMLElement).closest(".mp-close, .mp-pin, .mp-dock, .mp-reset-layout, .mp-minimize, .mp-expand")) return;
     dragging = true;
     offsetX = e.clientX - el.offsetLeft;
     offsetY = e.clientY - el.offsetTop;

@@ -78,6 +78,8 @@ describe("monster preview tracker", () => {
       injectMonsterPreviewIntoTracker(tracker as unknown as HTMLElement, {
         cachedContentHTML: "<div>dragon</div>",
         dismissed: false,
+        pinned: true,
+        headerCue: "pinned",
         attachInlineListeners,
       });
 
@@ -85,6 +87,7 @@ describe("monster preview tracker", () => {
       expect(injected.id).toBe("fth-mp-inline");
       expect(injected.className).toContain("fth-mp-inline");
       expect(injected.innerHTML).toContain("Monster Preview");
+      expect(injected.innerHTML).toContain("mp-pin is-active");
       expect(attachInlineListeners).toHaveBeenCalledWith(injected);
     } finally {
       Object.defineProperty(globalThis, "document", {

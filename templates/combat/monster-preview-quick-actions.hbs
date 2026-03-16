@@ -1,0 +1,24 @@
+<form>
+  <div class="form-group">
+    <p>Select which quick actions should appear in the Combat Monster Preview.</p>
+    <p class="notes">Uncheck everything to hide the quick-action row entirely. Display order stays fixed for compact layout.</p>
+  </div>
+
+  <div class="form-group">
+    <label>Quick Actions</label>
+    <div class="form-fields" style="display:flex; flex-direction: column; gap: 6px;">
+      {{#each actions}}
+        <label class="checkbox">
+          <input type="checkbox" name="actionIds" value="{{this.id}}" {{#if this.enabled}}checked{{/if}} />
+          {{this.label}}
+        </label>
+      {{/each}}
+    </div>
+  </div>
+
+  <footer class="sheet-footer flexrow">
+    <button type="submit" class="dialog-button default">
+      <i class="fa-solid fa-save"></i> Save
+    </button>
+  </footer>
+</form>

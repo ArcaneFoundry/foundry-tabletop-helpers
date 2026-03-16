@@ -18,7 +18,7 @@
  */
 
 import { Log, MOD } from "../../logger";
-import { getHooks, getGame, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
+import { getGame, getHooks, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
 import { COMBAT_SETTINGS } from "../combat-settings";
 import { getExtractor } from "../../print-sheet/extractors/base-extractor";
 import { transformNPCToViewModel } from "../../print-sheet/renderers/viewmodels/npc-transformer";
@@ -26,9 +26,10 @@ import type { NPCData } from "../../print-sheet/extractors/dnd5e-types";
 import type { PrintOptions } from "../../print-sheet/types";
 import {
   buildMonsterPreviewContentHTML,
+  type MonsterPreviewHeaderCue,
+  buildMonsterPreviewMinimizedPanelHTML,
   buildMonsterPreviewPanelHTML,
   buildMonsterPreviewUpNextHTML,
-  type UpNextInfo,
 } from "./monster-preview-rendering";
 import {
   makeMonsterPreviewDraggable,
@@ -38,11 +39,19 @@ import {
 import {
   attachMonsterPreviewFloatingListeners,
   attachMonsterPreviewInlineListeners,
+  type MonsterPreviewQuickAction,
 } from "./monster-preview-interactions";
 import {
   findMonsterPreviewTrackerElement,
   injectMonsterPreviewIntoTracker,
 } from "./monster-preview-tracker";
+import { getMonsterPreviewUpNextData } from "./monster-preview-up-next";
+import { createMonsterPreviewLiveRefreshController } from "./monster-preview-live-refresh";
+import { getMonsterPreviewStatusInfo } from "./monster-preview-status";
+import { getMonsterPreviewContextInfo } from "./monster-preview-context";
+import { getInitialMonsterPreviewDisplayState, type MonsterPreviewDisplayMode } from "./monster-preview-display";
+import { resolveMonsterPreviewQuickActions } from "./monster-preview-quick-actions";
+import { shouldKeepMonsterPreviewVisible } from "./monster-preview-availability";
 
 /* ── State ────────────────────────────────────────────────── */
 
@@ -56,9 +65,18 @@ let currentActorId: string | null = null;
 let dismissed = false;
 /** Whether the panel is in floating mode (user dragged it out) */
 let isFloating = false;
+/** Whether the floating panel is minimized */
+let isMinimized = false;
+/** Whether the preview is pinned open between turns */
+let isPinned = false;
+/** Short-lived feedback message shown in the preview header */
+let headerFlashMessage: string | null = null;
+let headerFlashTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 const POSITION_KEY = `${MOD}:monster-preview-pos`;
 const MODE_KEY = `${MOD}:monster-preview-mode`;
+const MINIMIZED_KEY = `${MOD}:monster-preview-minimized`;
+const PINNED_KEY = `${MOD}:monster-preview-pinned`;
 
 interface MonsterPreviewActor {
   id?: string;
@@ -113,6 +131,16 @@ const PREVIEW_OPTIONS: PrintOptions = {
   sections: { stats: true, abilities: true, traits: true, features: true, actions: true },
 };
 
+const liveRefresh = createMonsterPreviewLiveRefreshController({
+  getCurrentActorId: () => currentActorId,
+  isDismissed: () => dismissed,
+  hasCachedContent: () => Boolean(cachedContentHTML),
+  isEnabled: isMonsterPreviewEnabled,
+  refreshActiveActorPreview: extractAndRender,
+});
+
+let lastAvailabilityPersistence = false;
+
 /* ── Public API ───────────────────────────────────────────── */
 
 /**
@@ -127,10 +155,18 @@ export function registerMonsterPreviewHooks(): void {
   hooks.on("deleteCombat", onDeleteCombat);
   hooks.on("combatStart", onCombatStart);
   hooks.on("renderCombatTracker", onRenderCombatTracker);
+  hooks.on("updateActor", onUpdateActor);
+  hooks.on("createActiveEffect", onEffectChange);
+  hooks.on("deleteActiveEffect", onEffectChange);
+  hooks.on("updateActiveEffect", onEffectChange);
 
   // Restore mode preference
   try {
-    isFloating = localStorage.getItem(MODE_KEY) === "floating";
+    const defaultDisplay = getSetting<string>(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_DEFAULT_DISPLAY) as MonsterPreviewDisplayMode | undefined;
+    const initialState = getInitialMonsterPreviewDisplayState(defaultDisplay, localStorage, MODE_KEY, MINIMIZED_KEY);
+    isFloating = initialState.isFloating;
+    isMinimized = initialState.isMinimized;
+    isPinned = localStorage.getItem(PINNED_KEY) === "true";
   } catch { /* ignore */ }
 
   Log.debug("Monster preview hooks registered");
@@ -170,6 +206,16 @@ function onCombatStart(combat: MonsterPreviewCombat): void {
   void handleTurnChange(combat);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function onUpdateActor(actor: any): void {
+  liveRefresh.handleActorUpdate(actor);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function onEffectChange(effect: any): void {
+  liveRefresh.handleEffectChange(effect);
+}
+
 /**
  * Re-inject the cached stat block into the Combat Tracker on each re-render.
  * This is needed because Foundry rebuilds the sidebar HTML on every render.
@@ -197,8 +243,21 @@ async function handleTurnChange(combat: MonsterPreviewCombat): Promise<void> {
   try {
     const combatant = combat.combatant;
     const actor = combatant?.actor;
+    const keepVisible = shouldKeepMonsterPreviewVisible({
+      isNPCTurn: actor?.type === "npc",
+      persistBetweenTurns: getPersistentBetweenTurnsSetting(),
+      pinned: isPinned,
+      hasCachedContent: Boolean(cachedContentHTML),
+      dismissed,
+    });
 
     if (!actor || actor.type !== "npc") {
+      if (keepVisible) {
+        currentActorId = null;
+        updateUpNext(combat);
+        showPreview();
+        return;
+      }
       hidePreview();
       currentActorId = null;
       return;
@@ -231,10 +290,16 @@ async function extractAndRender(actor: MonsterPreviewActor, combat: MonsterPrevi
 
   const npcData = await extractor.extractNPC(actor, PREVIEW_OPTIONS) as NPCData;
   const vm = transformNPCToViewModel(npcData, PREVIEW_OPTIONS, false);
-  const upNext = getUpNextData(combat);
+  const upNext = getMonsterPreviewUpNextData(combat);
+  const status = getMonsterPreviewStatusInfo(actor, combat?.combatant);
+  const context = getMonsterPreviewContextInfo(combat?.combatant, combat);
+  const quickActions = resolveMonsterPreviewQuickActions(
+    getSetting<string>(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_QUICK_ACTIONS),
+  );
+  lastAvailabilityPersistence = getPersistentBetweenTurnsSetting();
 
   // Cache the rendered HTML
-  cachedContentHTML = buildMonsterPreviewContentHTML(vm, upNext);
+  cachedContentHTML = buildMonsterPreviewContentHTML(vm, upNext, actor.id, status, context, quickActions);
 
   // Display in the appropriate mode
   if (isFloating) {
@@ -244,6 +309,7 @@ async function extractAndRender(actor: MonsterPreviewActor, combat: MonsterPrevi
   }
 }
 
+<<<<<<< HEAD
 /* ── Up Next ──────────────────────────────────────────────── */
 
 function getUpNextData(combat: MonsterPreviewCombat): UpNextInfo | null {
@@ -270,6 +336,11 @@ function getUpNextData(combat: MonsterPreviewCombat): UpNextInfo | null {
 
 function updateUpNext(combat: MonsterPreviewCombat): void {
   const upNext = getUpNextData(combat);
+=======
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function updateUpNext(combat: any): void {
+  const upNext = getMonsterPreviewUpNextData(combat);
+>>>>>>> 8aa5441 (feat: expand combat monster preview)
   const upNextHTML = buildMonsterPreviewUpNextHTML(upNext);
 
   // Update in whichever container is active
@@ -321,7 +392,10 @@ function showFloating(): void {
     restorePosition();
   }
 
-  floatingEl.innerHTML = buildMonsterPreviewPanelHTML(cachedContentHTML);
+  floatingEl.innerHTML = isMinimized
+    ? buildMonsterPreviewMinimizedPanelHTML(cachedContentHTML, isPinned, getHeaderCue(), headerFlashMessage)
+    : buildMonsterPreviewPanelHTML(cachedContentHTML, isPinned, getHeaderCue(), headerFlashMessage);
+  floatingEl.classList.toggle("fth-mp-minimized", isMinimized);
   attachFloatingListeners(floatingEl);
   makeDraggable(floatingEl);
   floatingEl.style.display = "";
@@ -345,6 +419,7 @@ function showPreview(): void {
 
 /** Full cleanup on combat end */
 function clearPreview(): void {
+  clearHeaderFlash();
   if (floatingEl) {
     floatingEl.remove();
     floatingEl = null;
@@ -367,6 +442,9 @@ function injectIntoTracker(trackerEl: HTMLElement): void {
   injectMonsterPreviewIntoTracker(trackerEl, {
     cachedContentHTML,
     dismissed,
+    pinned: isPinned,
+    headerCue: getHeaderCue(),
+    headerFlash: headerFlashMessage,
     attachInlineListeners,
   });
 }
@@ -379,12 +457,20 @@ function attachInlineListeners(el: HTMLElement): void {
       dismissed = true;
       el.remove();
     },
+    onTogglePin: () => {
+      isPinned = !isPinned;
+      savePinned();
+      flashHeaderFeedback(isPinned ? "Pinned" : "Unpinned");
+      showInline();
+    },
     onPopout: () => {
       isFloating = true;
       saveMode();
       el.remove();
       showFloating();
     },
+    onOpenActor: openActorSheet,
+    onRunQuickAction: runQuickAction,
   });
 }
 
@@ -396,14 +482,32 @@ function attachFloatingListeners(el: HTMLElement): void {
       dismissed = true;
       el.style.display = "none";
     },
+    onTogglePin: () => {
+      isPinned = !isPinned;
+      savePinned();
+      flashHeaderFeedback(isPinned ? "Pinned" : "Unpinned");
+      showFloating();
+    },
     onDock: () => {
       isFloating = false;
       saveMode();
       el.remove();
       floatingEl = null;
       try { localStorage.removeItem(POSITION_KEY); } catch { /* ignore */ }
+      flashHeaderFeedback("Docked");
       showInline();
     },
+    onResetLayout: () => {
+      flashHeaderFeedback("Layout Reset");
+      resetFloatingLayout();
+    },
+    onToggleMinimize: () => {
+      isMinimized = !isMinimized;
+      saveMinimized();
+      showFloating();
+    },
+    onOpenActor: openActorSheet,
+    onRunQuickAction: runQuickAction,
   });
 }
 
@@ -421,6 +525,125 @@ function restorePosition(): void {
   restoreMonsterPreviewPosition(floatingEl, POSITION_KEY);
 }
 
+function resetFloatingLayout(): void {
+  isMinimized = false;
+  try {
+    localStorage.removeItem(POSITION_KEY);
+    localStorage.removeItem(MINIMIZED_KEY);
+  } catch {
+    /* ignore */
+  }
+
+  if (floatingEl) {
+    floatingEl.style.left = "";
+    floatingEl.style.bottom = "";
+    floatingEl.style.right = "320px";
+    floatingEl.style.top = "80px";
+  }
+
+  showFloating();
+}
+
 function saveMode(): void {
   try { localStorage.setItem(MODE_KEY, isFloating ? "floating" : "inline"); } catch { /* ignore */ }
+}
+
+function saveMinimized(): void {
+  try { localStorage.setItem(MINIMIZED_KEY, isMinimized ? "true" : "false"); } catch { /* ignore */ }
+}
+
+function savePinned(): void {
+  try { localStorage.setItem(PINNED_KEY, isPinned ? "true" : "false"); } catch { /* ignore */ }
+}
+
+function flashHeaderFeedback(message: string): void {
+  headerFlashMessage = message;
+  if (headerFlashTimeoutId) clearTimeout(headerFlashTimeoutId);
+  headerFlashTimeoutId = setTimeout(() => {
+    headerFlashMessage = null;
+    headerFlashTimeoutId = null;
+    if (cachedContentHTML) showPreview();
+  }, 1800);
+}
+
+function clearHeaderFlash(): void {
+  headerFlashMessage = null;
+  if (!headerFlashTimeoutId) return;
+  clearTimeout(headerFlashTimeoutId);
+  headerFlashTimeoutId = null;
+}
+
+function getPersistentBetweenTurnsSetting(): boolean {
+  return getSetting<boolean>(MOD, COMBAT_SETTINGS.MONSTER_PREVIEW_PERSIST_BETWEEN_TURNS) ?? false;
+}
+
+function getHeaderCue(): MonsterPreviewHeaderCue {
+  if (currentActorId) return null;
+  if (isPinned) return "pinned";
+  if (lastAvailabilityPersistence) return "persistent";
+  return null;
+}
+
+function openActorSheet(actorId: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const actor = (getGame()?.actors as any)?.get?.(actorId);
+  if (!actor?.sheet) return;
+  actor.sheet.render(true);
+}
+
+function runQuickAction(action: MonsterPreviewQuickAction): void {
+  void handleQuickAction(action);
+}
+
+async function handleQuickAction(action: MonsterPreviewQuickAction): Promise<void> {
+  const actor = getActorById(action.actorId);
+  if (!actor) return;
+
+  try {
+    switch (action.action) {
+      case "open-sheet":
+        openActorSheet(action.actorId);
+        return;
+      case "roll-initiative":
+        if (typeof actor.rollInitiativeDialog === "function") {
+          await actor.rollInitiativeDialog({});
+        } else if (typeof actor.rollInitiative === "function") {
+          await actor.rollInitiative({});
+        } else {
+          Log.warn("Monster Preview: no initiative roll method found on actor");
+        }
+        return;
+      case "roll-skill":
+        if (!action.skill) return;
+        if (typeof actor.rollSkill === "function") {
+          try {
+            await actor.rollSkill({ skill: action.skill });
+          } catch {
+            await actor.rollSkill(action.skill);
+          }
+        } else {
+          Log.warn("Monster Preview: no skill roll method found on actor");
+        }
+        return;
+      case "roll-save":
+        if (!action.ability) return;
+        if (typeof actor.rollSavingThrow === "function") {
+          await actor.rollSavingThrow(action.ability);
+        } else if (typeof actor.rollAbilitySave === "function") {
+          await actor.rollAbilitySave(action.ability);
+        } else {
+          Log.warn("Monster Preview: no save roll method found on actor");
+        }
+        return;
+      default:
+        Log.warn("Monster Preview: unknown quick action", action.action);
+    }
+  } catch (err) {
+    Log.error("Monster Preview: quick action failed", err);
+  }
+}
+
+function getActorById(actorId: string): any {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (getGame()?.actors as any)?.get?.(actorId);
 }

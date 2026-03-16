@@ -1,4 +1,4 @@
-import { buildMonsterPreviewInlineHTML } from "./monster-preview-rendering";
+import { buildMonsterPreviewInlineHTML, type MonsterPreviewHeaderCue } from "./monster-preview-rendering";
 
 export function findMonsterPreviewTrackerElement(doc: Document = document): HTMLElement | null {
   return doc.querySelector<HTMLElement>("#combat")
@@ -8,6 +8,9 @@ export function findMonsterPreviewTrackerElement(doc: Document = document): HTML
 interface InjectMonsterPreviewOptions {
   cachedContentHTML: string;
   dismissed: boolean;
+  pinned: boolean;
+  headerCue: MonsterPreviewHeaderCue;
+  headerFlash?: string | null;
   attachInlineListeners: (el: HTMLElement) => void;
 }
 
@@ -26,7 +29,12 @@ export function injectMonsterPreviewIntoTracker(
   const inlineEl = document.createElement("div");
   inlineEl.id = "fth-mp-inline";
   inlineEl.className = "fth-monster-preview fth-mp-inline";
-  inlineEl.innerHTML = buildMonsterPreviewInlineHTML(options.cachedContentHTML);
+  inlineEl.innerHTML = buildMonsterPreviewInlineHTML(
+    options.cachedContentHTML,
+    options.pinned,
+    options.headerCue,
+    options.headerFlash,
+  );
 
   if (combatantList) {
     combatantList.parentNode?.insertBefore(inlineEl, combatantList.nextSibling);
