@@ -85,7 +85,7 @@ interface MonsterPreviewActor {
   system?: {
     attributes?: {
       ac?: { value?: number };
-      hp?: { max?: number };
+      hp?: { max?: number; value?: number };
     };
     details?: {
       cr?: string | number;
@@ -95,6 +95,13 @@ interface MonsterPreviewActor {
 
 interface MonsterPreviewCombatant {
   actor?: MonsterPreviewActor | null;
+  defeated?: boolean;
+  isDefeated?: boolean;
+  name?: string;
+  initiative?: number | string | null;
+  token?: {
+    name?: string;
+  } | null;
 }
 
 interface MonsterPreviewCombat {
@@ -102,6 +109,7 @@ interface MonsterPreviewCombat {
   combatant?: MonsterPreviewCombatant | null;
   turns?: MonsterPreviewCombatant[];
   turn?: number;
+  round?: number;
 }
 
 interface MonsterPreviewGame {
@@ -309,38 +317,8 @@ async function extractAndRender(actor: MonsterPreviewActor, combat: MonsterPrevi
   }
 }
 
-<<<<<<< HEAD
-/* ── Up Next ──────────────────────────────────────────────── */
-
-function getUpNextData(combat: MonsterPreviewCombat): UpNextInfo | null {
-  const turns = combat.turns;
-  if (!Array.isArray(turns) || turns.length <= 1) return null;
-
-  const currentIdx = combat.turn ?? 0;
-  const nextIdx = (currentIdx + 1) % turns.length;
-  const nextCombatant = turns[nextIdx];
-  const nextActor = nextCombatant?.actor;
-  if (!nextActor) return null;
-
-  const isNPC = nextActor.type === "npc";
-  const info: UpNextInfo = { name: nextActor.name ?? "Unknown", isNPC };
-
-  if (isNPC) {
-    info.ac = nextActor.system?.attributes?.ac?.value;
-    info.hpMax = nextActor.system?.attributes?.hp?.max;
-    info.cr = nextActor.system?.details?.cr?.toString();
-  }
-
-  return info;
-}
-
 function updateUpNext(combat: MonsterPreviewCombat): void {
-  const upNext = getUpNextData(combat);
-=======
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function updateUpNext(combat: any): void {
   const upNext = getMonsterPreviewUpNextData(combat);
->>>>>>> 8aa5441 (feat: expand combat monster preview)
   const upNextHTML = buildMonsterPreviewUpNextHTML(upNext);
 
   // Update in whichever container is active

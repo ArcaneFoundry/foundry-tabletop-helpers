@@ -8,6 +8,7 @@ const {
   transformNPCToViewModelMock,
   buildContentHTMLMock,
   buildPanelHTMLMock,
+  buildMinimizedPanelHTMLMock,
   buildUpNextHTMLMock,
   injectMonsterPreviewIntoTrackerMock,
   findMonsterPreviewTrackerElementMock,
@@ -24,6 +25,7 @@ const {
   transformNPCToViewModelMock: vi.fn(),
   buildContentHTMLMock: vi.fn(),
   buildPanelHTMLMock: vi.fn(),
+  buildMinimizedPanelHTMLMock: vi.fn(),
   buildUpNextHTMLMock: vi.fn(),
   injectMonsterPreviewIntoTrackerMock: vi.fn(),
   findMonsterPreviewTrackerElementMock: vi.fn(),
@@ -65,6 +67,7 @@ vi.mock("../../print-sheet/renderers/viewmodels/npc-transformer", () => ({
 vi.mock("./monster-preview-rendering", () => ({
   buildMonsterPreviewContentHTML: buildContentHTMLMock,
   buildMonsterPreviewPanelHTML: buildPanelHTMLMock,
+  buildMonsterPreviewMinimizedPanelHTML: buildMinimizedPanelHTMLMock,
   buildMonsterPreviewUpNextHTML: buildUpNextHTMLMock,
 }));
 
@@ -90,6 +93,9 @@ class FakeElement {
   innerHTML = "";
   style: Record<string, string> = {};
   removed = false;
+  classList = {
+    toggle: vi.fn(),
+  };
 
   remove(): void {
     this.removed = true;
@@ -156,6 +162,7 @@ beforeEach(() => {
   transformNPCToViewModelMock.mockReturnValue({ name: "Dragon VM" });
   buildContentHTMLMock.mockReturnValue("<section>dragon</section>");
   buildPanelHTMLMock.mockImplementation((content: string) => `<div class="panel">${content}</div>`);
+  buildMinimizedPanelHTMLMock.mockImplementation((content: string) => `<div class="panel minimized">${content}</div>`);
   buildUpNextHTMLMock.mockImplementation((info: unknown) => `<aside>${JSON.stringify(info)}</aside>`);
   findMonsterPreviewTrackerElementMock.mockReturnValue(new FakeElement());
 });

@@ -37,7 +37,9 @@ export function getMonsterPreviewQuickActionChoices(settingValue?: string | null
 }
 
 export function resolveMonsterPreviewQuickActions(settingValue?: string | null): MonsterPreviewQuickActionDefinition[] {
-  const normalized = (settingValue ?? "").trim().toLowerCase();
+  const normalized = typeof settingValue === "string"
+    ? settingValue.trim().toLowerCase()
+    : "";
   if (normalized === "none") return [];
 
   const requestedIds = normalized
