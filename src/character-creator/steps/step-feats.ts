@@ -45,7 +45,7 @@ export function createFeatsStep(): WizardStepDefinition {
     dependencies: ["class", "abilities"],
 
     isApplicable(state: WizardState): boolean {
-      return ASI_LEVELS.includes(state.config.startingLevel);
+      return state.config.startingLevel >= ASI_LEVELS[0];
     },
 
     isComplete(state: WizardState): boolean {
@@ -127,16 +127,7 @@ export function createFeatsStep(): WizardStepDefinition {
             asiAbilities: [...abilities],
           } satisfies FeatSelection;
 
-          // Patch DOM: toggle selected class on ability buttons
-          getDatasetElements(el, "[data-asi-ability]").forEach((b) => {
-            const key = getAbilityKey(b.dataset.asiAbility);
-            b.classList.toggle("cc-asi-btn--selected", key ? abilities.has(key) : false);
-          });
-          // Update counter
-          const countEl = el.querySelector("[data-asi-count]");
-          if (countEl) countEl.textContent = String(abilities.size);
-
-          callbacks.setDataSilent(newData);
+          callbacks.setData(newData);
         });
       });
 
@@ -156,14 +147,7 @@ export function createFeatsStep(): WizardStepDefinition {
             featImg: entry.img,
           } satisfies FeatSelection;
 
-          // Patch DOM: toggle selected class on cards
-          getDatasetElements(el, "[data-card-uuid]").forEach((c) => {
-            const isSelected = c.dataset.cardUuid === uuid;
-            c.classList.toggle("cc-spell-card--selected", isSelected);
-            c.setAttribute("aria-selected", String(isSelected));
-          });
-
-          callbacks.setDataSilent(newData);
+          callbacks.setData(newData);
         });
       });
     },

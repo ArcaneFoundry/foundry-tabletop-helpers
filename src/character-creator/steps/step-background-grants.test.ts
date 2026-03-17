@@ -240,4 +240,41 @@ describe("step background grants", () => {
     expect(state.selections.background?.languages.chosen).toEqual(["dwarvish"]);
     expect(lang1Option.disabled).toBe(true);
   });
+
+  it("preserves later language slot selections when an earlier slot changes afterward", async () => {
+    const { createBackgroundGrantsStep } = await import("./step-background-grants");
+    const step = createBackgroundGrantsStep();
+    const state = makeState();
+    const setDataSilent = vi.fn();
+
+    const lang0 = new FakeSelect();
+    lang0.dataset.langSlot = "0";
+    lang0.value = "";
+    lang0.setQuerySelectorAll("option", [new FakeOption(""), new FakeOption("draconic"), new FakeOption("elvish")]);
+
+    const lang1 = new FakeSelect();
+    lang1.dataset.langSlot = "1";
+    lang1.value = "elvish";
+    lang1.setQuerySelectorAll("option", [new FakeOption(""), new FakeOption("draconic"), new FakeOption("elvish")]);
+
+    const root = new FakeElement();
+    root.setQuerySelectorAll("[data-asi-ability]", []);
+    root.setQuerySelectorAll("[data-lang-slot]", [lang0, lang1]);
+
+    const onActivate = step.onActivate;
+    if (!onActivate) throw new Error("Expected background grants step to expose onActivate");
+
+    onActivate(state, root as unknown as HTMLElement, {
+      setData: vi.fn(),
+      setDataSilent,
+      rerender: vi.fn(),
+    });
+
+    lang1.trigger("change");
+    lang0.value = "draconic";
+    lang0.trigger("change");
+
+    expect(state.selections.background?.languages.chosen).toEqual(["draconic", "elvish"]);
+    expect(setDataSilent).toHaveBeenCalledTimes(2);
+  });
 });

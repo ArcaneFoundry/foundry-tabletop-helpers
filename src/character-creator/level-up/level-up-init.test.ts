@@ -76,6 +76,7 @@ const buildLevelUpAppClassMock = vi.fn();
 const openLevelUpWizardMock = vi.fn();
 const shouldShowLevelUpMock = vi.fn(() => true);
 const ccEnabledMock = vi.fn(() => true);
+const ccLevelUpEnabledMock = vi.fn(() => true);
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -83,6 +84,7 @@ vi.mock("../../logger", () => ({
 
 vi.mock("../character-creator-settings", () => ({
   ccEnabled: ccEnabledMock,
+  ccLevelUpEnabled: ccLevelUpEnabledMock,
 }));
 
 vi.mock("./level-up-app", () => ({
@@ -97,8 +99,16 @@ vi.mock("./level-up-detection", () => ({
 describe("level-up init shell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ccLevelUpEnabledMock.mockReturnValue(true);
 
     (globalThis as Record<string, unknown>).loadTemplates = vi.fn();
+    (globalThis as Record<string, unknown>).foundry = {
+      applications: {
+        handlebars: {
+          loadTemplates: vi.fn(),
+        },
+      },
+    };
     (globalThis as Record<string, unknown>).Hooks = {
       on: vi.fn(),
     };
@@ -115,19 +125,25 @@ describe("level-up init shell", () => {
 
   it("builds the app class, preloads templates, and registers the sheet and directory hooks", async () => {
     const mod = await import("./level-up-init");
+    const namespacedLoadTemplatesMock = (
+      (globalThis as Record<string, unknown>).foundry as {
+        applications: { handlebars: { loadTemplates: ReturnType<typeof vi.fn> } };
+      }
+    ).applications.handlebars.loadTemplates;
     const loadTemplatesMock = (globalThis as Record<string, unknown>).loadTemplates as ReturnType<typeof vi.fn>;
     const hooksOn = ((globalThis as Record<string, unknown>).Hooks as { on: ReturnType<typeof vi.fn> }).on;
 
     mod.registerLevelUpHooks();
 
     expect(buildLevelUpAppClassMock).toHaveBeenCalledTimes(1);
-    expect(loadTemplatesMock).toHaveBeenCalledWith([
+    expect(namespacedLoadTemplatesMock).toHaveBeenCalledWith([
       "modules/foundry-tabletop-helpers/templates/character-creator/lu-step-class-choice.hbs",
       "modules/foundry-tabletop-helpers/templates/character-creator/lu-step-hp.hbs",
       "modules/foundry-tabletop-helpers/templates/character-creator/lu-step-features.hbs",
       "modules/foundry-tabletop-helpers/templates/character-creator/lu-step-spells.hbs",
       "modules/foundry-tabletop-helpers/templates/character-creator/lu-step-review.hbs",
     ]);
+    expect(loadTemplatesMock).not.toHaveBeenCalled();
     expect(hooksOn).toHaveBeenCalledWith("renderActorSheet", expect.any(Function));
     expect(hooksOn).toHaveBeenCalledWith("getActorDirectoryEntryContext", expect.any(Function));
   });
@@ -192,5 +208,28 @@ describe("level-up init shell", () => {
 
     options[0]?.callback(entry);
     expect(openLevelUpWizardMock).toHaveBeenCalledWith("actor-1");
+  });
+
+  it("skips sheet and directory integrations when level-up is disabled", async () => {
+    ccLevelUpEnabledMock.mockReturnValue(false);
+
+    const mod = await import("./level-up-init");
+    const header = new FakeElement();
+    const options: Array<{
+      name: string;
+      icon: string;
+      condition: (li: unknown) => boolean;
+      callback: (li: unknown) => void;
+    }> = [];
+
+    mod.__levelUpInitInternals.onRenderActorSheet(
+      { document: makeActor("actor-1") },
+      { querySelector: vi.fn(() => header) },
+    );
+    mod.__levelUpInitInternals.onGetActorDirectoryEntryContext({}, options);
+
+    expect(header.children).toHaveLength(0);
+    expect(options).toHaveLength(0);
+    expect(openLevelUpWizardMock).not.toHaveBeenCalled();
   });
 });

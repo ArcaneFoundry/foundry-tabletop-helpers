@@ -222,7 +222,13 @@ export async function fromUuid(uuid: string): Promise<import("./foundry").Foundr
  */
 export function loadTemplates(paths: string[]): void {
   const g = globalThis as Record<string, unknown>;
-  const fn = g.loadTemplates as ((paths: string[]) => Promise<unknown>) | undefined;
+  const foundryNs = g.foundry as Record<string, unknown> | undefined;
+  const applicationsNs = foundryNs?.applications as Record<string, unknown> | undefined;
+  const handlebarsNs = applicationsNs?.handlebars as Record<string, unknown> | undefined;
+  const fn = (
+    handlebarsNs?.loadTemplates
+    ?? g.loadTemplates
+  ) as ((paths: string[]) => Promise<unknown>) | undefined;
   if (typeof fn === "function") void fn(paths);
 }
 
@@ -234,7 +240,13 @@ export function loadTemplates(paths: string[]): void {
  */
 export async function renderTemplate(path: string, data: Record<string, unknown>): Promise<string> {
   const g = globalThis as Record<string, unknown>;
-  const fn = g.renderTemplate as ((path: string, data: unknown) => Promise<string>) | undefined;
+  const foundryNs = g.foundry as Record<string, unknown> | undefined;
+  const applicationsNs = foundryNs?.applications as Record<string, unknown> | undefined;
+  const handlebarsNs = applicationsNs?.handlebars as Record<string, unknown> | undefined;
+  const fn = (
+    handlebarsNs?.renderTemplate
+    ?? g.renderTemplate
+  ) as ((path: string, data: unknown) => Promise<string>) | undefined;
   if (typeof fn !== "function") return "";
   try {
     return await fn(path, data);
@@ -261,4 +273,3 @@ export function hasProperty<K extends PropertyKey>(
 export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
-

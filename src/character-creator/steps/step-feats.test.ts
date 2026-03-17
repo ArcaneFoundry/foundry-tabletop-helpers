@@ -159,14 +159,14 @@ beforeEach(() => {
 });
 
 describe("step feats", () => {
-  it("is applicable only at feat or ASI levels and builds the feat/asi view model", async () => {
+  it("stays applicable once the creator has crossed the first feat or ASI level", async () => {
     const { createFeatsStep } = await import("./step-feats");
     const step = createFeatsStep();
 
     expect(step.isApplicable(makeState())).toBe(true);
     expect(step.isApplicable(makeState({
       config: { ...makeState().config, startingLevel: 5 },
-    }))).toBe(false);
+    }))).toBe(true);
 
     const viewModel = await step.buildViewModel(makeState({
       selections: {
@@ -206,11 +206,13 @@ describe("step feats", () => {
     ]);
   });
 
-  it("patches asi toggles and feat-card selection on activate", async () => {
+  it("rerenders through setData when asi toggles and feat-card selection change", async () => {
     const { createFeatsStep } = await import("./step-feats");
     const step = createFeatsStep();
-    const setData = vi.fn();
     const state = makeState();
+    const setData = vi.fn((value: unknown) => {
+      state.selections.feats = value as WizardState["selections"]["feats"];
+    });
     const setDataSilent = vi.fn((value: unknown) => {
       state.selections.feats = value as WizardState["selections"]["feats"];
     });
@@ -227,8 +229,6 @@ describe("step feats", () => {
     const wisBtn = new FakeElement();
     wisBtn.dataset.asiAbility = "wis";
 
-    const countEl = new FakeElement();
-
     const alertCard = new FakeElement();
     alertCard.dataset.cardUuid = "Compendium.feat.alert";
     const toughCard = new FakeElement();
@@ -237,7 +237,6 @@ describe("step feats", () => {
     const root = new FakeElement();
     root.setQuerySelectorAll("[data-feat-choice]", [asiTab, featTab]);
     root.setQuerySelectorAll("[data-asi-ability]", [strBtn, conBtn, wisBtn]);
-    root.setQuerySelector("[data-asi-count]", countEl);
     root.setQuerySelectorAll("[data-card-uuid]", [alertCard, toughCard]);
 
     step.onActivate?.(state, root as unknown as HTMLElement, {
@@ -252,30 +251,25 @@ describe("step feats", () => {
     wisBtn.trigger("click");
     toughCard.trigger("click");
 
-    expect(setData).toHaveBeenCalledWith({ choice: "feat" });
-    expect(setDataSilent).toHaveBeenNthCalledWith(1, {
+    expect(setData).toHaveBeenNthCalledWith(1, { choice: "feat" });
+    expect(setData).toHaveBeenNthCalledWith(2, {
       choice: "asi",
       asiAbilities: ["str"],
     });
-    expect(setDataSilent).toHaveBeenNthCalledWith(2, {
+    expect(setData).toHaveBeenNthCalledWith(3, {
       choice: "asi",
       asiAbilities: ["str", "con"],
     });
-    expect(setDataSilent).toHaveBeenNthCalledWith(3, {
+    expect(setData).toHaveBeenNthCalledWith(4, {
       choice: "asi",
       asiAbilities: ["str", "con"],
     });
-    expect(setDataSilent).toHaveBeenNthCalledWith(4, {
+    expect(setData).toHaveBeenNthCalledWith(5, {
       choice: "feat",
       featUuid: "Compendium.feat.tough",
       featName: "Tough",
       featImg: "tough.png",
     });
-    expect(strBtn.classList.contains("cc-asi-btn--selected")).toBe(true);
-    expect(conBtn.classList.contains("cc-asi-btn--selected")).toBe(true);
-    expect(wisBtn.classList.contains("cc-asi-btn--selected")).toBe(false);
-    expect(countEl.textContent).toBe("2");
-    expect(alertCard.getAttribute("aria-selected")).toBe("false");
-    expect(toughCard.getAttribute("aria-selected")).toBe("true");
+    expect(setDataSilent).not.toHaveBeenCalled();
   });
 });

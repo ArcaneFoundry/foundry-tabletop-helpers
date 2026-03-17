@@ -65,7 +65,14 @@ export function buildLevelUpClassItems(
 
     const levels = typeof sys.levels === "number" ? sys.levels : 0;
     const identifier = typeof sys.identifier === "string" ? sys.identifier : item.name?.toLowerCase() ?? "";
-    const hitDie = typeof sys.hitDice === "string" ? sys.hitDice : "d8";
+    const hd = typeof sys.hd === "object" && sys.hd !== null
+      ? sys.hd as { denomination?: unknown }
+      : undefined;
+    const hitDie = typeof sys.hitDice === "string"
+      ? sys.hitDice
+      : typeof hd?.denomination === "string"
+        ? hd.denomination
+        : "d8";
 
     classItems.push({
       itemId: item.id ?? item._id ?? "",

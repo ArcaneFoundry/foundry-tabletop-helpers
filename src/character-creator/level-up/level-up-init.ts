@@ -7,7 +7,7 @@
 import { MOD } from "../../logger";
 import type { FoundryDocument, FoundryHooks } from "../../types";
 import { getGame, getHooks, isDnd5eWorld, loadTemplates } from "../../types";
-import { ccEnabled } from "../character-creator-settings";
+import { ccEnabled, ccLevelUpEnabled } from "../character-creator-settings";
 import { buildLevelUpAppClass, openLevelUpWizard } from "./level-up-app";
 import { shouldShowLevelUp } from "./level-up-detection";
 
@@ -103,7 +103,7 @@ function registerLevelUpDirectoryHook(hooks: FoundryHooks | undefined): void {
 }
 
 function onRenderActorSheet(app: ActorSheetLike, html: HtmlWrapperLike): void {
-  if (!ccEnabled() || !isDnd5eWorld()) return;
+  if (!ccEnabled() || !ccLevelUpEnabled() || !isDnd5eWorld()) return;
 
   const actor = app.document ?? app.actor;
   if (!actor || actor.type !== "character") return;
@@ -123,7 +123,7 @@ function onRenderActorSheet(app: ActorSheetLike, html: HtmlWrapperLike): void {
 }
 
 function onGetActorDirectoryEntryContext(_html: unknown, options: DirectoryContextOption[]): void {
-  if (!ccEnabled() || !isDnd5eWorld()) return;
+  if (!ccEnabled() || !ccLevelUpEnabled() || !isDnd5eWorld()) return;
 
   options.push({
     name: "Level Up",

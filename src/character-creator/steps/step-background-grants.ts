@@ -264,15 +264,17 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
           if (!bg.grants) return;
           const slotIndex = parseInt(select.dataset.langSlot ?? "0", 10);
           const newValue = select.value;
+          const langSelects = getSelectElements(el, "[data-lang-slot]");
 
-          const chosen = [...bg.languages.chosen];
-          while (chosen.length <= slotIndex) chosen.push("");
-          chosen[slotIndex] = newValue;
-          bg.languages.chosen = chosen.filter((v) => v !== "");
+          // Rebuild selections from the rendered dropdown values so later-slot
+          // choices are not lost when an earlier slot changes afterward.
+          bg.languages.chosen = langSelects
+            .map((langSelect) => langSelect.value)
+            .filter((value) => value !== "");
 
           // Patch DOM: disable already-chosen languages in other dropdowns
           const chosenSet = new Set(bg.languages.chosen);
-          getSelectElements(el, "[data-lang-slot]").forEach((otherSelect) => {
+          langSelects.forEach((otherSelect) => {
             const otherSlot = parseInt(otherSelect.dataset.langSlot ?? "0", 10);
             const otherValue = otherSelect.value;
             Array.from(otherSelect.querySelectorAll<HTMLOptionElement>("option")).forEach((opt) => {

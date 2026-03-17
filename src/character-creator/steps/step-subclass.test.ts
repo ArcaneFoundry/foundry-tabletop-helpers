@@ -116,6 +116,62 @@ beforeEach(() => {
 });
 
 describe("step subclass", () => {
+  it("uses class-specific subclass timing instead of a hardcoded level 3 gate", async () => {
+    const { createSubclassStep } = await import("./step-subclass");
+    const step = createSubclassStep();
+
+    expect(step.isApplicable(makeState({
+      config: { ...makeState().config, startingLevel: 2 },
+      selections: {
+        class: {
+          uuid: "Compendium.class.wizard",
+          name: "Wizard",
+          img: "wizard.png",
+          identifier: "wizard",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "int",
+          spellcastingProgression: "full",
+        },
+      },
+    }))).toBe(true);
+
+    expect(step.isApplicable(makeState({
+      config: { ...makeState().config, startingLevel: 1 },
+      selections: {
+        class: {
+          uuid: "Compendium.class.fighter",
+          name: "Fighter",
+          img: "fighter.png",
+          identifier: "fighter",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: false,
+          spellcastingAbility: "",
+          spellcastingProgression: "",
+        },
+      },
+    }))).toBe(false);
+
+    expect(step.isApplicable(makeState({
+      config: { ...makeState().config, startingLevel: 1 },
+      selections: {
+        class: {
+          uuid: "Compendium.class.cleric",
+          name: "Cleric",
+          img: "cleric.png",
+          identifier: "cleric",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "wis",
+          spellcastingProgression: "full",
+        },
+      },
+    }))).toBe(true);
+  });
+
   it("filters subclasses to the selected class and builds selected-entry details", async () => {
     const { createSubclassStep } = await import("./step-subclass");
     const step = createSubclassStep();

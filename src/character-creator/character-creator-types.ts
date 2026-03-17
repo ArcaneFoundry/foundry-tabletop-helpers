@@ -321,6 +321,14 @@ export interface SpellSelection {
   cantrips: string[];
   /** Selected spell UUIDs. */
   spells: string[];
+  /** Explicitly prepared leveled spell UUIDs for classes that prepare on create. */
+  preparedSpells?: string[];
+  /** Class-driven cantrip target, when the system exposes one. */
+  maxCantrips?: number;
+  /** Class-driven leveled-spell target, when the system exposes one. */
+  maxSpells?: number;
+  /** Class-driven prepared-spell target, when the system exposes one. */
+  maxPreparedSpells?: number;
 }
 
 /** Equipment selection state. */

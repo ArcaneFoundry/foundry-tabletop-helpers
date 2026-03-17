@@ -18,6 +18,7 @@ import {
   prepareMulticlassItemData,
   resolveSpellsToDelete,
 } from "./actor-update-engine-helpers";
+import { resolveGrantedFeaturesForDocument } from "./level-up-feature-helpers";
 
 interface ActorItemLike {
   id?: string;
@@ -25,6 +26,8 @@ interface ActorItemLike {
   type?: string;
   system?: {
     levels?: number;
+    classIdentifier?: string;
+    identifier?: string;
   };
   update(data: Record<string, unknown>): Promise<unknown>;
 }
@@ -69,27 +72,42 @@ export async function applyLevelUp(state: LevelUpState): Promise<boolean> {
 
   const sel = state.selections;
   const itemOps = collectLevelUpItemOperations(state);
+  const featureGrantUuids = new Set(itemOps.featureUuids);
 
   try {
     // 1. Update class levels
-    await updateClassLevels(actor, sel.classChoice);
+    await updateClassLevels(actor, sel.classChoice, state.targetLevel);
 
     // 2. Update HP
     if (sel.hp) {
       await updateHp(actor, sel.hp.hpGained);
     }
 
-    // 3. Grant features
-    if (itemOps.featureUuids.length > 0) {
-      await grantItems(actor, itemOps.featureUuids);
+    // 3. Add class feature grants that come from the new class item itself
+    if (sel.classChoice?.mode === "multiclass" && sel.classChoice.newClassUuid) {
+      const classFeatures = await resolveGrantedFeaturesForDocument(sel.classChoice.newClassUuid, { level: 1 });
+      for (const feature of classFeatures) featureGrantUuids.add(feature.uuid);
     }
 
     // 4. Grant subclass
-    if (itemOps.subclassUuids.length > 0) {
+    if (sel.subclass?.uuid) {
+      const subclassAlreadyPresent = hasMatchingSubclass(actor, sel.subclass.name, sel.classChoice?.classIdentifier);
+      if (!subclassAlreadyPresent) {
+        await grantItems(actor, [sel.subclass.uuid]);
+      }
+
+      const subclassFeatures = await resolveGrantedFeaturesForDocument(sel.subclass.uuid, { level: state.targetLevel });
+      for (const feature of subclassFeatures) featureGrantUuids.add(feature.uuid);
+    } else if (itemOps.subclassUuids.length > 0) {
       await grantItems(actor, itemOps.subclassUuids);
     }
 
-    // 5. Apply ASI or grant feat
+    // 5. Grant features
+    if (featureGrantUuids.size > 0) {
+      await grantItems(actor, [...featureGrantUuids]);
+    }
+
+    // 6. Apply ASI or grant feat
     if (sel.feats) {
       if (sel.feats.choice === "asi" && sel.feats.asiAbilities) {
         await applyAsi(actor, sel.feats.asiAbilities);
@@ -98,7 +116,7 @@ export async function applyLevelUp(state: LevelUpState): Promise<boolean> {
       }
     }
 
-    // 6. Grant new spells
+    // 7. Grant new spells
     if (itemOps.spellGrantUuids.length > 0) {
       await grantItems(actor, itemOps.spellGrantUuids);
     }
@@ -115,6 +133,25 @@ export async function applyLevelUp(state: LevelUpState): Promise<boolean> {
   }
 }
 
+function hasMatchingSubclass(
+  actor: ActorUpdateTarget,
+  subclassName: string | undefined,
+  classIdentifier: string | undefined,
+): boolean {
+  if (!subclassName) return false;
+  const normalizedName = subclassName.toLowerCase();
+
+  for (const item of actor.items ?? []) {
+    if (item.type !== "subclass") continue;
+    if ((item.name ?? "").toLowerCase() !== normalizedName) continue;
+    if (!classIdentifier || item.system?.classIdentifier === classIdentifier) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /* ── Internal Helpers ────────────────────────────────────── */
 
 function getActorById(id: string): ActorUpdateTarget | null {
@@ -129,6 +166,7 @@ function getActorById(id: string): ActorUpdateTarget | null {
 async function updateClassLevels(
   actor: ActorUpdateTarget,
   classChoice?: LevelUpClassChoice,
+  targetLevel?: number,
 ): Promise<void> {
   if (!classChoice) return;
 
@@ -137,7 +175,8 @@ async function updateClassLevels(
     const classItem = actor.items?.get?.(classChoice.classItemId) ?? null;
     if (classItem) {
       const currentLevels = classItem.system?.levels ?? 0;
-      await classItem.update(buildClassLevelUpdatePayload(currentLevels));
+      const desiredLevel = targetLevel ?? (currentLevels + 1);
+      await classItem.update(buildClassLevelUpdatePayload(desiredLevel));
       const description = describeClassLevelTarget(classChoice, currentLevels);
       if (description) Log.debug(`ActorUpdateEngine: ${description}`);
     }

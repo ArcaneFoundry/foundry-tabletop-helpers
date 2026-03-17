@@ -11,6 +11,7 @@ const applyLevelUpMock = vi.fn();
 const shouldShowLevelUpMock = vi.fn();
 const getStepAtmosphereMock = vi.fn();
 const allowMulticlassMock = vi.fn();
+const ccLevelUpEnabledMock = vi.fn();
 
 const createClassChoiceStepMock = vi.fn();
 const createHpStepMock = vi.fn();
@@ -49,6 +50,7 @@ vi.mock("../wizard/step-registry", () => ({
 
 vi.mock("../character-creator-settings", () => ({
   allowMulticlass: allowMulticlassMock,
+  ccLevelUpEnabled: ccLevelUpEnabledMock,
 }));
 
 function makeStep(id: string, label: string) {
@@ -198,6 +200,7 @@ beforeEach(() => {
   shouldShowLevelUpMock.mockReturnValue(true);
   getStepAtmosphereMock.mockReturnValue("cc-atmosphere--steel");
   allowMulticlassMock.mockReturnValue(true);
+  ccLevelUpEnabledMock.mockReturnValue(true);
 
   createClassChoiceStepMock.mockReturnValue(makeStep("classChoice", "Class"));
   createHpStepMock.mockReturnValue(makeStep("hp", "HP"));
@@ -304,5 +307,16 @@ describe("level-up app shell", () => {
 
     expect(logWarnMock).toHaveBeenCalledWith("Level-Up Manager: Actor not found", { actorId: "missing" });
     expect(logInfoMock).toHaveBeenCalledWith("Level-Up Manager: Actor is not eligible to level up");
+  });
+
+  it("does not open when level-up is disabled in settings", async () => {
+    ccLevelUpEnabledMock.mockReturnValue(false);
+
+    const mod = await import("./level-up-app");
+    mod.buildLevelUpAppClass();
+    mod.openLevelUpWizard("actor-1");
+
+    expect(FakeBaseApplication.instances).toHaveLength(0);
+    expect(logInfoMock).toHaveBeenCalledWith("Level-Up Manager: feature disabled in settings");
   });
 });
