@@ -17,12 +17,14 @@ interface SpellEntryLike {
 interface SpellListResultShape {
   spells?: Array<string | SpellEntryLike>;
   entries?: Array<string | SpellEntryLike>;
+  uuids?: Set<string> | string[];
 }
 
 interface SpellListMethodCollection {
   forClass?(classIdentifier: string): Promise<unknown> | unknown;
   getListForClass?(classIdentifier: string): Promise<unknown> | unknown;
   get?(classIdentifier: string): Promise<unknown> | unknown;
+  forType?(type: string, identifier?: string): Promise<unknown> | unknown;
 }
 
 interface Dnd5eRegistryLike {
@@ -62,9 +64,23 @@ async function tryRegistryLookup(classIdentifier: string): Promise<Set<string> |
 
     const registry = dnd5e.registry;
 
-    // dnd5e 5.x: registry.spellLists is a Map-like structure
+    // dnd5e variants expose spellLists as either:
+    // - a registry object with forClass/get helpers
+    // - a class with static forType("class", identifier)
     if (registry.spellLists) {
       const spellLists = registry.spellLists;
+
+      if (typeof spellLists.forType === "function") {
+        const result = await spellLists.forType("class", classIdentifier);
+        const uuids = extractUuidsFromResult(result);
+        if (uuids) {
+          Log.debug("Spell list resolved via registry.spellLists.forType()", {
+            classIdentifier,
+            count: uuids.size,
+          });
+          return uuids;
+        }
+      }
 
       // Try known API method names
       for (const method of ["forClass", "getListForClass", "get"] as const) {
@@ -110,27 +126,31 @@ async function tryRegistryLookup(classIdentifier: string): Promise<Set<string> |
 function extractUuidsFromResult(result: unknown): Set<string> | null {
   if (!result) return null;
 
+  if (hasUuidSet(result)) {
+    const uuids = normalizeUuidValues(result.uuids);
+    return uuids.size > 0 ? uuids : null;
+  }
+
   // Shape: { spells: string[] } or { spells: [{ uuid: string }] }
   if (hasSpellArray(result, "spells")) {
-    return new Set(
-      result.spells.map(getSpellUuid).filter(isNonEmptyString),
-    );
+    const uuids = normalizeUuidValues(result.spells.map(getSpellUuid).filter(isNonEmptyString));
+    return uuids.size > 0 ? uuids : null;
   }
 
   // Shape: { entries: string[] } or { entries: [{ uuid: string }] }
   if (hasSpellArray(result, "entries")) {
-    return new Set(
-      result.entries.map(getSpellUuid).filter(isNonEmptyString),
-    );
+    const uuids = normalizeUuidValues(result.entries.map(getSpellUuid).filter(isNonEmptyString));
+    return uuids.size > 0 ? uuids : null;
   }
 
   // Shape: Set<string> or Array<string> directly
   if (result instanceof Set) {
-    const uuids = [...result].filter(isNonEmptyString);
-    return uuids.length > 0 ? new Set(uuids) : null;
+    const uuids = normalizeUuidValues(result);
+    return uuids.size > 0 ? uuids : null;
   }
   if (Array.isArray(result) && result.length > 0 && typeof result[0] === "string") {
-    return new Set(result);
+    const uuids = normalizeUuidValues(result);
+    return uuids.size > 0 ? uuids : null;
   }
 
   return null;
@@ -150,10 +170,21 @@ function hasSpellArray<K extends keyof SpellListResultShape>(
   return typeof result === "object" && result !== null && Array.isArray((result as SpellListResultShape)[key]);
 }
 
+function hasUuidSet(result: unknown): result is Required<Pick<SpellListResultShape, "uuids">> {
+  const uuids = typeof result === "object" && result !== null
+    ? (result as SpellListResultShape).uuids
+    : null;
+  return uuids instanceof Set || Array.isArray(uuids);
+}
+
 function getSpellUuid(entry: string | SpellEntryLike): string | undefined {
   return typeof entry === "string" ? entry : entry.uuid;
 }
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+function normalizeUuidValues(values: Iterable<unknown>): Set<string> {
+  return new Set(Array.from(values).filter(isNonEmptyString));
 }

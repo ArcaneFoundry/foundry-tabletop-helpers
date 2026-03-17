@@ -6,12 +6,17 @@ const logDebugMock = vi.fn();
 const loadPacksMock = vi.fn(async () => {});
 const getIndexedEntriesMock = vi.fn();
 const resolveClassSpellUuidsMock = vi.fn();
+const fromUuidMock = vi.fn();
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
   Log: {
     debug: logDebugMock,
   },
+}));
+
+vi.mock("../../types", () => ({
+  fromUuid: fromUuidMock,
 }));
 
 vi.mock("../data/compendium-indexer", () => ({
@@ -65,20 +70,25 @@ class FakeElement {
   textContent: string | null = null;
   className = "";
   readonly children: FakeElement[] = [];
-  private readonly listeners = new Map<string, Array<() => void>>();
+  private readonly listeners = new Map<string, Array<(event: { preventDefault(): void; stopPropagation(): void }) => void>>();
   private readonly selectorMap = new Map<string, FakeElement | null>();
   private readonly selectorAllMap = new Map<string, FakeElement[]>();
 
   constructor(public readonly tagName = "div") {}
 
-  addEventListener(event: string, handler: () => void): void {
+  addEventListener(event: string, handler: (event: { preventDefault(): void; stopPropagation(): void }) => void): void {
     const list = this.listeners.get(event) ?? [];
     list.push(handler);
     this.listeners.set(event, list);
   }
 
   trigger(event: string): void {
-    for (const handler of this.listeners.get(event) ?? []) handler();
+    for (const handler of this.listeners.get(event) ?? []) {
+      handler({
+        preventDefault() {},
+        stopPropagation() {},
+      });
+    }
   }
 
   appendChild(child: FakeElement): FakeElement {
@@ -202,6 +212,42 @@ beforeEach(() => {
       school: "evo",
     },
   ]);
+
+  fromUuidMock.mockResolvedValue({
+    system: {
+      advancement: [
+        {
+          type: "ScaleValue",
+          title: "Cantrips Known",
+          configuration: {
+            scale: {
+              1: { value: 3 },
+              4: { value: 4 },
+            },
+          },
+        },
+        {
+          type: "ScaleValue",
+          title: "Max Prepared Spells",
+          configuration: {
+            identifier: "max-prepared",
+            scale: {
+              1: { value: 4 },
+              2: { value: 5 },
+              3: { value: 6 },
+              4: { value: 7 },
+              5: { value: 9 },
+            },
+          },
+        },
+      ],
+      spellcasting: {
+        preparation: {
+          formula: "@scale.wizard.max-prepared",
+        },
+      },
+    },
+  });
 });
 
 describe("step spells", () => {
@@ -224,6 +270,8 @@ describe("step spells", () => {
       maxSpellLevel: 2,
       cantripCount: 0,
       spellCount: 0,
+      maxCantrips: 4,
+      maxSpells: 14,
     });
 
     const cantrips = (viewModel.cantrips as Array<Record<string, unknown>>).map((s) => s.name);
@@ -232,6 +280,120 @@ describe("step spells", () => {
 
     expect(cantrips).toEqual(["Light"]);
     expect(levels).toEqual([{ level: 1, names: ["Magic Missile"] }]);
+  });
+
+  it("uses spellbook counts for wizard creation instead of prepared spell counts", async () => {
+    resolveClassSpellUuidsMock.mockResolvedValue(new Set([
+      "Compendium.spell.light",
+      "Compendium.spell.magic-missile",
+      "Compendium.spell.fireball",
+    ]));
+
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+    const viewModel = await step.buildViewModel(makeState({
+      selections: {
+        class: {
+          uuid: "Compendium.class.wizard",
+          name: "Wizard",
+          img: "wizard.png",
+          identifier: "wizard",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "int",
+          spellcastingProgression: "full",
+        },
+        spells: {
+          cantrips: [],
+          spells: [],
+        },
+      },
+      config: {
+        ...makeState().config,
+        startingLevel: 5,
+      },
+    }));
+
+    expect(viewModel).toMatchObject({
+      maxSpellLevel: 3,
+      maxCantrips: 4,
+      maxSpells: 14,
+      selectionSummary: "0 / 4 cantrips, 0 / 14 spells",
+      hasPreparationNotice: true,
+      preparationNotice: "Choose which leveled spells start prepared for this Wizard. You can change them later on the sheet.",
+      showPreparedPicker: true,
+      preparedCount: 0,
+      preparedLimit: 9,
+    });
+  });
+
+  it("shows the explicit prepared picker for prepared casters beyond wizard", async () => {
+    resolveClassSpellUuidsMock.mockResolvedValue(new Set([
+      "Compendium.spell.light",
+      "Compendium.spell.magic-missile",
+    ]));
+    fromUuidMock.mockResolvedValueOnce({
+      system: {
+        advancement: [
+          {
+            type: "ScaleValue",
+            title: "Cantrips Known",
+            configuration: {
+              scale: {
+                1: { value: 3 },
+                4: { value: 4 },
+              },
+            },
+          },
+          {
+            type: "ScaleValue",
+            configuration: {
+              identifier: "max-prepared",
+              scale: {
+                5: { value: 9 },
+              },
+            },
+          },
+        ],
+        spellcasting: {
+          preparation: {
+            formula: "@scale.cleric.max-prepared",
+          },
+        },
+      },
+    });
+
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+    const viewModel = await step.buildViewModel(makeState({
+      selections: {
+        class: {
+          uuid: "Compendium.class.cleric",
+          name: "Cleric",
+          img: "cleric.png",
+          identifier: "cleric",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "wis",
+          spellcastingProgression: "full",
+        },
+        spells: {
+          cantrips: [],
+          spells: ["Compendium.spell.magic-missile"],
+        },
+      },
+    }));
+
+    expect(viewModel).toMatchObject({
+      maxSpells: null,
+      hasPreparationNotice: true,
+      preparationNotice: "Choose which 1 leveled spell start prepared for this Cleric. You can change them later on the sheet.",
+      showPreparedPicker: true,
+      preparedCount: 0,
+      preparedLimit: 9,
+    });
   });
 
   it("resets the cached class filter when the class identifier becomes unavailable", async () => {
@@ -272,12 +434,16 @@ describe("step spells", () => {
     const { createSpellsStep, __spellsStepInternals } = await import("./step-spells");
     const step = createSpellsStep();
     const state = makeState();
-    const setDataSilent = vi.fn();
+    const setDataSilent = vi.fn((value: unknown) => {
+      state.selections.spells = value as typeof state.selections.spells;
+    });
 
     const cantripCard = new FakeElement("button");
     cantripCard.dataset.cantripUuid = "Compendium.spell.light";
     const spellCard = new FakeElement("button");
     spellCard.dataset.spellUuid = "Compendium.spell.magic-missile";
+    const preparedToggle = new FakeElement("button");
+    preparedToggle.dataset.preparedUuid = "Compendium.spell.magic-missile";
     const searchInput = new FakeElement("input") as FakeElement & { value: string };
     searchInput.value = "";
     const visibleRow = new FakeElement("div");
@@ -285,44 +451,187 @@ describe("step spells", () => {
     const hiddenRow = new FakeElement("div");
     hiddenRow.dataset.spellName = "Shield";
     const cantripCount = new FakeElement("span");
+    cantripCount.dataset.cantripLimit = "4";
     const summary = new FakeElement("span");
-    summary.textContent = "0 cantrips, 0 spells";
+    summary.dataset.cantripLimit = "4";
+    summary.dataset.spellLimit = "9";
+    summary.dataset.preparedLimit = "4";
+    summary.textContent = "0 / 4 cantrips, 0 / 9 spells";
+    const preparedSummary = new FakeElement("div");
+    preparedSummary.dataset.preparedPicker = "true";
 
     const root = new FakeElement("section");
     root.setQuerySelectorAll("[data-cantrip-uuid]", [cantripCard]);
     root.setQuerySelectorAll("[data-spell-uuid]", [spellCard]);
+    root.setQuerySelectorAll("[data-prepared-uuid]", [preparedToggle]);
     root.setQuerySelector("[data-spell-search]", searchInput);
     root.setQuerySelectorAll("[data-spell-name]", [visibleRow, hiddenRow]);
     root.setQuerySelector(".cc-spell-section__count", cantripCount);
     root.setQuerySelector(".cc-spells-summary__value", summary);
+    root.setQuerySelector("[data-prepared-picker='true']", preparedSummary);
 
+    const setData = vi.fn((value: unknown) => {
+      state.selections.spells = value as typeof state.selections.spells;
+    });
     step.onActivate?.(state, root as unknown as HTMLElement, {
-      setData: vi.fn(),
+      setData,
       setDataSilent,
       rerender: vi.fn(),
     });
 
     cantripCard.trigger("click");
     spellCard.trigger("click");
+    preparedToggle.trigger("click");
     searchInput.value = "magic";
     searchInput.trigger("input");
 
     expect(setDataSilent).toHaveBeenNthCalledWith(1, {
-      cantrips: ["Compendium.spell.light"],
+      maxCantrips: 4,
+      maxSpells: 9,
+      maxPreparedSpells: 4,
+      cantrips: [],
       spells: [],
+      preparedSpells: [],
     });
     expect(setDataSilent).toHaveBeenNthCalledWith(2, {
-      cantrips: [],
+      cantrips: ["Compendium.spell.light"],
+      spells: [],
+      preparedSpells: [],
+      maxCantrips: 4,
+      maxSpells: 9,
+      maxPreparedSpells: 4,
+    });
+    expect(setData).toHaveBeenNthCalledWith(1, {
+      cantrips: ["Compendium.spell.light"],
       spells: ["Compendium.spell.magic-missile"],
+      preparedSpells: [],
+      maxCantrips: 4,
+      maxSpells: 9,
+      maxPreparedSpells: 4,
+    });
+    expect(setData).toHaveBeenNthCalledWith(2, {
+      cantrips: ["Compendium.spell.light"],
+      spells: ["Compendium.spell.magic-missile"],
+      preparedSpells: ["Compendium.spell.magic-missile"],
+      maxCantrips: 4,
+      maxSpells: 9,
+      maxPreparedSpells: 4,
     });
     expect(cantripCard.classList.contains("cc-spell-card--selected")).toBe(true);
-    expect(spellCard.classList.contains("cc-spell-card--selected")).toBe(true);
-    expect(cantripCount.textContent).toBe("1 selected");
-    expect(summary.textContent).toBe("1 cantrips, 1 spells");
+    expect(cantripCount.textContent).toBe("1 / 4 selected");
+    expect(summary.textContent).toBe("1 / 4 cantrips, 0 / 9 spells");
     expect(visibleRow.style.display).toBe("");
     expect(hiddenRow.style.display).toBe("none");
 
     __spellsStepInternals.patchSpellCounter(root as unknown as HTMLElement, "spell", 2);
-    expect(summary.textContent).toBe("1 cantrips, 2 spells");
+    expect(summary.textContent).toBe("1 / 4 cantrips, 2 / 9 spells");
+  });
+
+  it("uses class-driven selection targets for completion and over-selection prevention", async () => {
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+    const getStatusHint = step.getStatusHint;
+    if (!getStatusHint) throw new Error("Expected getStatusHint to be defined");
+
+    const completeState = makeState({
+      config: {
+        ...makeState().config,
+        startingLevel: 3,
+      },
+      selections: {
+        class: makeState().selections.class,
+        spells: {
+          cantrips: ["a", "b", "c"],
+          spells: ["s1", "s2", "s3", "s4", "s5", "s6"],
+          preparedSpells: ["s1", "s2", "s3", "s4", "s5", "s6"],
+          maxCantrips: 3,
+          maxSpells: 6,
+          maxPreparedSpells: 6,
+        },
+      },
+    });
+
+    expect(step.isComplete(completeState)).toBe(true);
+    expect(getStatusHint(completeState)).toBe("");
+
+    const incompleteState = makeState({
+      config: {
+        ...makeState().config,
+        startingLevel: 3,
+      },
+      selections: {
+        class: makeState().selections.class,
+        spells: {
+          cantrips: ["a", "b"],
+          spells: ["s1", "s2", "s3"],
+          preparedSpells: ["s1"],
+          maxCantrips: 3,
+          maxSpells: 6,
+          maxPreparedSpells: 3,
+        },
+      },
+    });
+
+    expect(step.isComplete(incompleteState)).toBe(false);
+    expect(getStatusHint(incompleteState)).toBe("choose 1 more cantrip and choose 3 more spells and choose 2 more prepared spells");
+  });
+
+  it("requires prepared casters without known-spell caps to pick enough spells to fill their prepared limit", async () => {
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+    const getStatusHint = step.getStatusHint;
+    if (!getStatusHint) throw new Error("Expected getStatusHint to be defined");
+
+    const incompleteState = makeState({
+      selections: {
+        class: {
+          uuid: "Compendium.class.cleric",
+          name: "Cleric",
+          img: "cleric.png",
+          identifier: "cleric",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "wis",
+          spellcastingProgression: "full",
+        },
+        spells: {
+          cantrips: ["a", "b", "c", "d"],
+          spells: ["s1", "s2", "s3"],
+          preparedSpells: ["s1"],
+          maxCantrips: 4,
+          maxPreparedSpells: 5,
+        },
+      },
+    });
+
+    expect(step.isComplete(incompleteState)).toBe(false);
+    expect(getStatusHint(incompleteState)).toBe("choose 2 more spells and choose 4 more prepared spells");
+
+    const completeState = makeState({
+      selections: {
+        class: {
+          uuid: "Compendium.class.cleric",
+          name: "Cleric",
+          img: "cleric.png",
+          identifier: "cleric",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "wis",
+          spellcastingProgression: "full",
+        },
+        spells: {
+          cantrips: ["a", "b", "c", "d"],
+          spells: ["s1", "s2", "s3", "s4", "s5"],
+          preparedSpells: ["s1", "s2", "s3", "s4", "s5"],
+          maxCantrips: 4,
+          maxPreparedSpells: 5,
+        },
+      },
+    });
+
+    expect(step.isComplete(completeState)).toBe(true);
+    expect(getStatusHint(completeState)).toBe("");
   });
 });

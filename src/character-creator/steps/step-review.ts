@@ -23,6 +23,13 @@ import {
   abilityModifier,
   formatModifier,
 } from "../data/dnd5e-constants";
+import { getStartingGoldForSelections } from "../starting-resources";
+import { fromUuid } from "../../types";
+import {
+  buildPreparationNotice,
+  getSpellPreparationPolicy,
+  type SpellPreparationClassDocumentLike,
+} from "../spell-preparation-policy";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -147,7 +154,7 @@ export function createReviewStep(): WizardStepDefinition {
         classSection,
       ];
 
-      if (state.config.startingLevel >= 3 && state.applicableSteps.includes("subclass")) {
+      if (state.applicableSteps.includes("subclass")) {
         sections.push({
           id: "subclass",
           label: "Subclass",
@@ -229,12 +236,25 @@ export function createReviewStep(): WizardStepDefinition {
       if (state.applicableSteps.includes("spells")) {
         const cantripCount = sel.spells?.cantrips?.length ?? 0;
         const spellCount = sel.spells?.spells?.length ?? 0;
+        const classDoc = sel.class?.uuid
+          ? await fromUuid(sel.class.uuid) as SpellPreparationClassDocumentLike | null
+          : null;
+        const preparationPolicy = getSpellPreparationPolicy(
+          sel.class?.identifier ?? "",
+          classDoc,
+          state.config.startingLevel,
+        );
+        const preparedCount = sel.spells?.preparedSpells?.length ?? 0;
+        const preparationDetail = buildPreparationNotice(sel.class?.name ?? "spellcaster", spellCount, preparationPolicy);
         sections.push({
           id: "spells",
           label: "Spells",
           icon: "fa-solid fa-wand-sparkles",
           complete: cantripCount > 0 || spellCount > 0,
-          summary: `${cantripCount} cantrips, ${spellCount} spells`,
+          summary: preparationPolicy.usesPreparedSpellPicker
+            ? `${cantripCount} cantrips, ${spellCount} spells, ${preparedCount} prepared`
+            : `${cantripCount} cantrips, ${spellCount} spells`,
+          detail: preparationDetail,
           isSimple: true,
         });
       }
@@ -245,7 +265,7 @@ export function createReviewStep(): WizardStepDefinition {
         if (sel.equipment.method === "gold") {
           equipmentSummary = `Starting gold: ${sel.equipment.goldAmount ?? 0} gp`;
         } else {
-          equipmentSummary = "Standard equipment packs";
+          equipmentSummary = `Recommended gold fallback: ${getStartingGoldForSelections(sel)} gp`;
         }
       }
       sections.push({

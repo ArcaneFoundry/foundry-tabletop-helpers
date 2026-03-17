@@ -7,6 +7,7 @@
  */
 
 import { Log, MOD } from "../../logger";
+import { fromUuid } from "../../types";
 import type {
   WizardStepDefinition,
   WizardState,
@@ -16,6 +17,14 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { resolveClassSpellUuids } from "../data/spell-list-resolver";
+import {
+  buildPreparationNotice,
+  getSpellPreparationPolicy,
+  parsePreparationScaleIdentifier,
+  resolveScaleValue,
+  type SpellPreparationClassDocumentLike,
+  type SpellScaleAdvancementLike,
+} from "../spell-preparation-policy";
 
 /* ── Constants ───────────────────────────────────────────── */
 
@@ -89,6 +98,147 @@ function getMaxSpellLevel(characterLevel: number, progression: string): number {
   return 1;
 }
 
+async function getSpellSelectionLimits(
+  state: WizardState,
+): Promise<{
+  maxCantrips: number | null;
+  maxSpells: number | null;
+  classDoc: SpellPreparationClassDocumentLike | null;
+}> {
+  const classUuid = state.selections.class?.uuid;
+  const classIdentifier = state.selections.class?.identifier ?? "";
+  if (!classUuid) return { maxCantrips: null, maxSpells: null, classDoc: null };
+
+  const classDoc = await fromUuid(classUuid) as SpellPreparationClassDocumentLike | null;
+  if (!classDoc) return { maxCantrips: null, maxSpells: null, classDoc: null };
+
+  const advancements = classDoc.system?.advancement ?? [];
+  const maxCantrips = resolveScaleByTitle(advancements, "Cantrips Known", state.config.startingLevel);
+  const knownSpellLimit = resolveKnownSpellLimit(classIdentifier, state.config.startingLevel);
+  if (knownSpellLimit !== null) {
+    return { maxCantrips, maxSpells: knownSpellLimit, classDoc };
+  }
+
+  const policy = getSpellPreparationPolicy(classIdentifier, classDoc, state.config.startingLevel);
+  return { maxCantrips, maxSpells: policy.usesPreparedSpellPicker ? null : policy.preparedLimit, classDoc };
+}
+
+function resolveScaleByTitle(
+  advancements: SpellScaleAdvancementLike[],
+  title: string,
+  level: number,
+): number | null {
+  const match = advancements.find((entry) => entry.type === "ScaleValue" && entry.title === title);
+  return resolveScaleValue(match?.configuration?.scale, level);
+}
+
+function resolveKnownSpellLimit(classIdentifier: string, level: number): number | null {
+  switch (classIdentifier) {
+    case "wizard":
+      // Wizards add two spells to their spellbook at every level after starting with six.
+      return Math.max(6, 4 + (level * 2));
+    default:
+      return null;
+  }
+}
+
+function isSelectionComplete(
+  selectedCount: number,
+  requiredCount: number | undefined,
+): boolean {
+  if (requiredCount === undefined) return selectedCount > 0;
+  return selectedCount === requiredCount;
+}
+
+function getRequiredSpellSelectionCount(
+  maxSpells: number | undefined,
+  usesPreparedPicker: boolean,
+  preparedLimit: number | null,
+): number | undefined {
+  if (maxSpells !== undefined) return maxSpells;
+  if (usesPreparedPicker && preparedLimit !== null && preparedLimit > 0) return preparedLimit;
+  return undefined;
+}
+
+function buildSelectionSummary(
+  cantripCount: number,
+  spellCount: number,
+  maxCantrips: number | null,
+  maxSpells: number | null,
+): string {
+  const cantripSummary = maxCantrips !== null
+    ? `${cantripCount} / ${maxCantrips} cantrips`
+    : `${cantripCount} cantrips`;
+  const spellSummary = maxSpells !== null
+    ? `${spellCount} / ${maxSpells} spells`
+    : `${spellCount} spells`;
+  return `${cantripSummary}, ${spellSummary}`;
+}
+
+function getPreparedSelectionTarget(
+  _spellCount: number,
+  preparedLimit: number | null,
+  usesPreparedPicker: boolean,
+): number | undefined {
+  if (!usesPreparedPicker || preparedLimit === null || preparedLimit < 1) return undefined;
+  return preparedLimit;
+}
+
+function sanitizePreparedSpellSelection(
+  selectedSpellUuids: string[],
+  preparedSpellUuids: string[] | undefined,
+  preparedLimit: number | null,
+): string[] {
+  const selected = new Set(selectedSpellUuids);
+  const prepared = (preparedSpellUuids ?? []).filter((uuid) => selected.has(uuid));
+  if (preparedLimit === null || preparedLimit < 1) return [];
+  return prepared.slice(0, preparedLimit);
+}
+
+function getDefaultPreparedSpellSelection(
+  selectedSpellUuids: string[],
+  preparedLimit: number | null,
+): string[] {
+  if (preparedLimit === null || preparedLimit < 1) return [];
+  return selectedSpellUuids.slice(0, preparedLimit);
+}
+
+function buildStatusHint(
+  data: SpellSelection | undefined,
+  usesPreparedPicker = false,
+  preparedLimit: number | null = null,
+): string {
+  const cantripCount = data?.cantrips.length ?? 0;
+  const spellCount = data?.spells.length ?? 0;
+  const maxCantrips = data?.maxCantrips;
+  const maxSpells = data?.maxSpells;
+  const parts: string[] = [];
+
+  if (maxCantrips !== undefined && cantripCount !== maxCantrips) {
+    const remaining = maxCantrips - cantripCount;
+    parts.push(remaining > 0 ? `choose ${remaining} more cantrip${remaining === 1 ? "" : "s"}` : "reduce cantrips");
+  } else if (maxCantrips === undefined && cantripCount === 0) {
+    parts.push("select cantrips");
+  }
+
+  const requiredSpellCount = getRequiredSpellSelectionCount(maxSpells, usesPreparedPicker, preparedLimit);
+  if (requiredSpellCount !== undefined && spellCount !== requiredSpellCount) {
+    const remaining = requiredSpellCount - spellCount;
+    parts.push(remaining > 0 ? `choose ${remaining} more spells` : "reduce spells");
+  } else if (requiredSpellCount === undefined && spellCount === 0) {
+    parts.push("select spells");
+  }
+
+  const preparedTarget = getPreparedSelectionTarget(spellCount, preparedLimit, usesPreparedPicker);
+  const preparedCount = sanitizePreparedSpellSelection(data?.spells ?? [], data?.preparedSpells, preparedLimit).length;
+  if (usesPreparedPicker && preparedTarget !== undefined && preparedCount !== preparedTarget) {
+    const remaining = preparedTarget - preparedCount;
+    parts.push(remaining > 0 ? `choose ${remaining} more prepared spells` : "reduce prepared spells");
+  }
+
+  return parts.length > 0 ? parts.join(" and ") : "";
+}
+
 /* ── Step Definition ─────────────────────────────────────── */
 
 export function createSpellsStep(): WizardStepDefinition {
@@ -112,17 +262,23 @@ export function createSpellsStep(): WizardStepDefinition {
       if (!cls?.isSpellcaster) return true;
       const data = state.selections.spells;
       if (!data) return false;
-      return data.cantrips.length > 0 || data.spells.length > 0;
+      const usesPreparedPicker = (data.maxPreparedSpells ?? 0) > 0;
+      const preparedLimit = usesPreparedPicker ? data.maxPreparedSpells ?? null : null;
+      const requiredSpellCount = getRequiredSpellSelectionCount(data.maxSpells, usesPreparedPicker, preparedLimit);
+      const preparedTarget = getPreparedSelectionTarget(data.spells.length, preparedLimit, usesPreparedPicker);
+      const preparedCount = sanitizePreparedSpellSelection(data.spells, data.preparedSpells, preparedLimit).length;
+      return isSelectionComplete(data.cantrips.length, data.maxCantrips)
+        && isSelectionComplete(data.spells.length, requiredSpellCount)
+        && (!preparedTarget || preparedCount === preparedTarget);
     },
 
     getStatusHint(state: WizardState): string {
       const cls = state.selections.class;
       if (!cls?.isSpellcaster) return "";
       const data = state.selections.spells;
-      if (!data || (data.cantrips.length === 0 && data.spells.length === 0)) {
-        return "Select your cantrips and spells";
-      }
-      return "";
+      const usesPreparedPicker = (data?.maxPreparedSpells ?? 0) > 0;
+      const preparedLimit = usesPreparedPicker ? data?.maxPreparedSpells ?? null : null;
+      return buildStatusHint(data, usesPreparedPicker, preparedLimit);
     },
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
@@ -161,8 +317,19 @@ export function createSpellsStep(): WizardStepDefinition {
       });
 
       const data = state.selections.spells ?? { cantrips: [], spells: [] };
+      const limits = await getSpellSelectionLimits(state);
       const selectedCantrips = new Set(data.cantrips);
       const selectedSpells = new Set(data.spells);
+      const preparationPolicy = getSpellPreparationPolicy(
+        classIdentifier,
+        limits.classDoc,
+        state.config.startingLevel,
+      );
+      const usesPreparedPicker = preparationPolicy.usesPreparedSpellPicker;
+      const preparedSpellUuids = usesPreparedPicker
+        ? sanitizePreparedSpellSelection(data.spells, data.preparedSpells, preparationPolicy.preparedLimit)
+        : [];
+      const preparedSpells = new Set(preparedSpellUuids);
 
       // Separate cantrips and leveled spells
       const cantrips = allSpells
@@ -180,6 +347,7 @@ export function createSpellsStep(): WizardStepDefinition {
         .map((s) => ({
           ...s,
           selected: selectedSpells.has(s.uuid),
+          prepared: preparedSpells.has(s.uuid),
           schoolLabel: SCHOOL_LABELS[s.school ?? ""] ?? s.school ?? "",
         }));
 
@@ -201,17 +369,55 @@ export function createSpellsStep(): WizardStepDefinition {
       return {
         cantrips,
         cantripCount: data.cantrips.length,
+        maxCantrips: limits.maxCantrips,
         spellsByLevel,
         spellCount: data.spells.length,
+        maxSpells: limits.maxSpells,
         hasCantrips: cantrips.length > 0,
         hasSpells: leveledSpells.length > 0,
         maxSpellLevel: maxLevel,
         className,
         usingClassFilter,
+        selectionSummary: buildSelectionSummary(
+          data.cantrips.length,
+          data.spells.length,
+          limits.maxCantrips,
+          limits.maxSpells,
+        ),
+        preparationNotice: buildPreparationNotice(className, data.spells.length, preparationPolicy),
+        hasPreparationNotice: preparationPolicy.usesPreparedSpells,
+        showPreparedPicker: usesPreparedPicker,
+        preparedCount: preparedSpellUuids.length,
+        preparedLimit: preparationPolicy.preparedLimit,
       };
     },
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
+      const maxCantrips = readNumericDataValue(el, ".cc-spells-summary__value", "cantripLimit");
+      const maxSpells = readNumericDataValue(el, ".cc-spells-summary__value", "spellLimit");
+      const preparedLimit = readNumericDataValue(el, ".cc-spells-summary__value", "preparedLimit");
+      const usesPreparedPicker = el.querySelector("[data-prepared-picker='true']") !== null;
+      const currentSelection = state.selections.spells ?? { cantrips: [], spells: [] };
+      const preparedSpells = usesPreparedPicker
+        ? (currentSelection.preparedSpells?.length
+          ? sanitizePreparedSpellSelection(currentSelection.spells, currentSelection.preparedSpells, preparedLimit)
+          : getDefaultPreparedSpellSelection(currentSelection.spells, preparedLimit))
+        : [];
+      if (
+        currentSelection.maxCantrips !== maxCantrips
+        || currentSelection.maxSpells !== maxSpells
+        || currentSelection.maxPreparedSpells !== preparedLimit
+        || (usesPreparedPicker && JSON.stringify(currentSelection.preparedSpells ?? []) !== JSON.stringify(preparedSpells))
+      ) {
+        callbacks.setDataSilent({
+          ...currentSelection,
+          maxCantrips: maxCantrips ?? undefined,
+          maxSpells: maxSpells ?? undefined,
+          maxPreparedSpells: preparedLimit ?? undefined,
+          preparedSpells: usesPreparedPicker ? preparedSpells : undefined,
+        } satisfies SpellSelection);
+      }
+
       // Cantrip selection
       getElementsWithDataset(el, "[data-cantrip-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
@@ -222,11 +428,20 @@ export function createSpellsStep(): WizardStepDefinition {
 
           if (cantrips.has(uuid)) {
             cantrips.delete(uuid);
+          } else if (current.maxCantrips !== undefined && cantrips.size >= current.maxCantrips) {
+            return;
           } else {
             cantrips.add(uuid);
           }
 
-          const newData: SpellSelection = { cantrips: [...cantrips], spells: current.spells };
+          const newData: SpellSelection = {
+            cantrips: [...cantrips],
+            spells: current.spells,
+            preparedSpells: current.preparedSpells,
+            maxCantrips: current.maxCantrips,
+            maxSpells: current.maxSpells,
+            maxPreparedSpells: current.maxPreparedSpells,
+          };
           patchSpellCard(card, cantrips.has(uuid));
           patchSpellCounter(el, "cantrip", cantrips.size);
           callbacks.setDataSilent(newData);
@@ -240,17 +455,55 @@ export function createSpellsStep(): WizardStepDefinition {
           if (!uuid) return;
           const current = state.selections.spells ?? { cantrips: [], spells: [] };
           const spells = new Set(current.spells);
+          const nextPrepared = new Set(sanitizePreparedSpellSelection(current.spells, current.preparedSpells, preparedLimit));
 
           if (spells.has(uuid)) {
             spells.delete(uuid);
+            nextPrepared.delete(uuid);
+          } else if (current.maxSpells !== undefined && spells.size >= current.maxSpells) {
+            return;
           } else {
             spells.add(uuid);
           }
 
-          const newData: SpellSelection = { cantrips: current.cantrips, spells: [...spells] };
-          patchSpellCard(card, spells.has(uuid));
-          patchSpellCounter(el, "spell", spells.size);
-          callbacks.setDataSilent(newData);
+          const newData: SpellSelection = {
+            cantrips: current.cantrips,
+            spells: [...spells],
+            preparedSpells: usesPreparedPicker
+              ? sanitizePreparedSpellSelection([...spells], [...nextPrepared], preparedLimit)
+              : current.preparedSpells,
+            maxCantrips: current.maxCantrips,
+            maxSpells: current.maxSpells,
+            maxPreparedSpells: current.maxPreparedSpells,
+          };
+          callbacks.setData(newData);
+        });
+      });
+
+      getElementsWithDataset(el, "[data-prepared-uuid]").forEach((toggle) => {
+        toggle.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const uuid = toggle.dataset.preparedUuid;
+          if (!uuid) return;
+
+          const current = state.selections.spells ?? { cantrips: [], spells: [] };
+          if (!current.spells.includes(uuid)) return;
+
+          const prepared = new Set(sanitizePreparedSpellSelection(current.spells, current.preparedSpells, preparedLimit));
+          if (prepared.has(uuid)) {
+            prepared.delete(uuid);
+          } else if (preparedLimit !== null && prepared.size >= preparedLimit) {
+            return;
+          } else {
+            prepared.add(uuid);
+          }
+
+          callbacks.setData({
+            ...current,
+            maxPreparedSpells: current.maxPreparedSpells,
+            preparedSpells: [...prepared],
+          } satisfies SpellSelection);
         });
       });
 
@@ -295,16 +548,45 @@ function patchSpellCard(card: SpellCardLike, selected: boolean): void {
 function patchSpellCounter(el: HTMLElement, type: "cantrip" | "spell", count: number): void {
   // Update section header count
   if (type === "cantrip") {
-    const countEl = el.querySelector(".cc-spell-section__count");
-    if (countEl) countEl.textContent = `${count} selected`;
+    const countEl = el.querySelector<HTMLElement>(".cc-spell-section__count");
+    if (countEl) {
+      const limit = parseDataNumber(countEl.dataset.cantripLimit);
+      countEl.textContent = limit !== null ? `${count} / ${limit} selected` : `${count} selected`;
+    }
   }
   // Update summary bar
-  const summary = el.querySelector(".cc-spells-summary__value");
+  const summary = el.querySelector<HTMLElement>(".cc-spells-summary__value");
   if (summary) {
-    const cantripCount = type === "cantrip" ? count : parseInt(summary.textContent?.match(/(\d+) cantrips/)?.[1] ?? "0", 10);
-    const spellCount = type === "spell" ? count : parseInt(summary.textContent?.match(/(\d+) spells/)?.[1] ?? "0", 10);
-    summary.textContent = `${cantripCount} cantrips, ${spellCount} spells`;
+    const cantripCount = type === "cantrip" ? count : parseSummaryCount(summary.textContent, "cantrips");
+    const spellCount = type === "spell" ? count : parseSummaryCount(summary.textContent, "spells");
+    const cantripLimit = parseDataNumber(summary.dataset.cantripLimit);
+    const spellLimit = parseDataNumber(summary.dataset.spellLimit);
+    summary.textContent = buildSelectionSummary(cantripCount, spellCount, cantripLimit, spellLimit);
   }
+}
+
+function readNumericDataValue(
+  root: ParentNode,
+  selector: string,
+  key: "cantripLimit" | "spellLimit" | "preparedLimit",
+): number | null {
+  const el = root.querySelector<HTMLElement>(selector);
+  return el ? parseDataNumber(el.dataset[key]) : null;
+}
+
+function parseDataNumber(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function parseSummaryCount(
+  textContent: string | null | undefined,
+  label: "cantrips" | "spells",
+): number {
+  const match = textContent?.match(new RegExp(`(\\d+)(?:\\s*\\/\\s*\\d+)?\\s+${label}`));
+  const parsed = Number.parseInt(match?.[1] ?? "0", 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function getDocumentRef(): DocumentLike | null {
@@ -345,7 +627,14 @@ function isDocumentLike(value: unknown): value is DocumentLike {
 }
 
 export const __spellsStepInternals = {
+  getSpellSelectionLimits,
   getMaxSpellLevel,
+  buildSelectionSummary,
+  buildStatusHint,
+  sanitizePreparedSpellSelection,
+  getDefaultPreparedSpellSelection,
   patchSpellCard,
   patchSpellCounter,
+  parsePreparationScaleIdentifier,
+  resolveScaleValue,
 };
