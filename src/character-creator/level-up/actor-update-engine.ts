@@ -54,6 +54,10 @@ interface ActorUpdateTarget extends FoundryDocument {
 
 interface CompendiumDocumentLike {
   name?: string;
+  type?: string;
+  system?: {
+    identifier?: string;
+  };
   toObject(): Record<string, unknown>;
 }
 
@@ -210,6 +214,7 @@ async function grantItems(actor: ActorUpdateTarget, uuids: string[]): Promise<vo
   for (const uuid of uuids) {
     const doc = await getCompendiumDocument(uuid);
     if (doc) {
+      if (actorAlreadyHasGrantedItem(actor, doc)) continue;
       const obj = doc.toObject();
       delete obj._id;
       items.push(obj);
@@ -219,6 +224,45 @@ async function grantItems(actor: ActorUpdateTarget, uuids: string[]): Promise<vo
     await actor.createEmbeddedDocuments("Item", items);
     Log.debug(`ActorUpdateEngine: Granted ${items.length} items`);
   }
+}
+
+function actorAlreadyHasGrantedItem(
+  actor: ActorUpdateTarget,
+  doc: CompendiumDocumentLike,
+): boolean {
+  const obj = doc.toObject();
+  const docType = typeof obj.type === "string"
+    ? obj.type
+    : typeof doc.type === "string"
+      ? doc.type
+      : undefined;
+  const docName = typeof obj.name === "string"
+    ? obj.name.trim().toLowerCase()
+    : typeof doc.name === "string"
+      ? doc.name.trim().toLowerCase()
+      : "";
+  const system = typeof obj.system === "object" && obj.system !== null
+    ? obj.system as Record<string, unknown>
+    : typeof doc.system === "object" && doc.system !== null
+      ? doc.system as Record<string, unknown>
+      : {};
+  const identifier = typeof system.identifier === "string"
+    ? system.identifier.trim().toLowerCase()
+    : "";
+
+  for (const item of actor.items ?? []) {
+    if (docType && item.type && item.type !== docType) continue;
+
+    const itemIdentifier = typeof item.system?.identifier === "string"
+      ? item.system.identifier.trim().toLowerCase()
+      : "";
+    if (identifier && itemIdentifier === identifier) return true;
+
+    const itemName = typeof item.name === "string" ? item.name.trim().toLowerCase() : "";
+    if (docName && itemName === docName) return true;
+  }
+
+  return false;
 }
 
 /**

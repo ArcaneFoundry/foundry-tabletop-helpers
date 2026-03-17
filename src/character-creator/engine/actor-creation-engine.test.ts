@@ -360,6 +360,24 @@ beforeEach(() => {
                 },
               ],
             }
+        : uuid === "Compendium.subclasses.life-domain"
+          ? {
+              classIdentifier: "cleric",
+              identifier: "life-domain",
+              advancement: [
+                {
+                  type: "ItemGrant",
+                  level: 3,
+                  configuration: {
+                    items: [
+                      { uuid: "Compendium.spells.bless", name: "Bless" },
+                      { uuid: "Compendium.spells.cure-wounds", name: "Cure Wounds" },
+                      { uuid: "Compendium.spells.aid", name: "Aid" },
+                    ],
+                  },
+                },
+              ],
+            }
         : uuid === "Compendium.spells.fire-bolt"
           ? {
               level: 0,
@@ -687,6 +705,61 @@ describe("actor creation engine", () => {
       system: { method: "spell", prepared: SPELL_PREPARATION_STATES.unprepared },
     });
     expect(isPrepared(spellItems.find((item) => item.name === "comprehend-languages")!)).toBe(false);
+  });
+
+  it("skips manually embedding subclass-granted prepared spells during higher-level cleric creation", async () => {
+    const { createCharacterFromWizard } = await import("./actor-creation-engine");
+    const state = createWizardState();
+    state.selections.class = {
+      uuid: "Compendium.classes.cleric",
+      identifier: "cleric",
+      name: "Cleric",
+    } as never;
+    state.selections.subclass = {
+      uuid: "Compendium.subclasses.life-domain",
+      identifier: "life-domain",
+      name: "Life Domain",
+    } as never;
+    state.config.startingLevel = 5;
+    state.selections.spells = {
+      cantrips: ["Compendium.spells.fire-bolt"],
+      spells: [
+        "Compendium.spells.bless",
+        "Compendium.spells.cure-wounds",
+        "Compendium.spells.aid",
+        "Compendium.spells.detect-magic",
+      ],
+      preparedSpells: [
+        "Compendium.spells.bless",
+        "Compendium.spells.detect-magic",
+      ],
+      maxPreparedSpells: 9,
+    } as never;
+
+    await createCharacterFromWizard(state as never);
+
+    const embeddedItemCalls = (createActorInstance.createEmbeddedDocuments as ReturnType<typeof vi.fn>).mock.calls;
+    const initiallyEmbeddedSpellDocs = ((embeddedItemCalls[0]?.[1] ?? []) as unknown[])
+      .filter((doc: unknown): doc is Record<string, unknown> => typeof doc === "object" && doc !== null)
+      .filter((doc: Record<string, unknown>) => doc.type === "spell");
+    const initiallyEmbeddedSpellNames = initiallyEmbeddedSpellDocs.map((doc) => doc.name);
+    const allEmbeddedSpellNames = embeddedItemCalls
+      .flatMap(([, docs]) => docs)
+      .filter((doc: unknown): doc is Record<string, unknown> => typeof doc === "object" && doc !== null)
+      .filter((doc: Record<string, unknown>) => doc.type === "spell")
+      .map((doc: Record<string, unknown>) => doc.name);
+
+    expect(initiallyEmbeddedSpellNames).toContain("fire-bolt");
+    expect(initiallyEmbeddedSpellNames).toContain("detect-magic");
+    expect(initiallyEmbeddedSpellNames).not.toContain("bless");
+    expect(initiallyEmbeddedSpellNames).not.toContain("cure-wounds");
+    expect(initiallyEmbeddedSpellNames).not.toContain("aid");
+    expect(allEmbeddedSpellNames.filter((name) => name === "bless")).toHaveLength(1);
+    expect(allEmbeddedSpellNames.filter((name) => name === "cure-wounds")).toHaveLength(1);
+    expect(allEmbeddedSpellNames.filter((name) => name === "aid")).toHaveLength(1);
+    expect([...createActorInstance.items].find((item) => item.name === "detect-magic")).toMatchObject({
+      system: { method: "spell", prepared: SPELL_PREPARATION_STATES.prepared },
+    });
   });
 
   it("uploads data-url portraits through FilePicker and applies the uploaded path", async () => {

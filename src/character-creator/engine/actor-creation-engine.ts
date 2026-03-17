@@ -149,7 +149,7 @@ export async function createCharacterFromWizard(
     await applyAbilityScores(actor, sel);
 
     // 3. Collect and embed items (species, background, origin feat, class, subclass, feats, spells)
-    await embedItems(actor, sel);
+    await embedItems(actor, state);
 
     // 4. Grant baseline level-1 features that dnd5e class items do not
     // materialize automatically when embedded during creation.
@@ -212,12 +212,19 @@ async function applyAbilityScores(
 
 async function embedItems(
   actor: FoundryDocument,
-  sel: WizardState["selections"],
+  state: WizardState,
 ): Promise<void> {
+  const sel = state.selections;
   const uuids: string[] = [];
   const selectedCantrips = new Set(sel.spells?.cantrips ?? []);
   const selectedSpells = new Set(sel.spells?.spells ?? []);
   const usesPreparedSpellSelection = (sel.spells?.maxPreparedSpells ?? 0) > 0;
+  const grantedSpellRefs = await resolveGrantedSpellRefsForCreation(
+    sel.class?.uuid,
+    sel.subclass?.uuid,
+    state.config.startingLevel,
+  );
+  const grantedSpellUuids = new Set(grantedSpellRefs.map((ref) => ref.uuid));
 
   // Species
   if (sel.species?.uuid) uuids.push(sel.species.uuid);
@@ -232,7 +239,11 @@ async function embedItems(
   // Feat item (if player chose a feat instead of ASI)
   if (sel.feats?.featUuid) uuids.push(sel.feats.featUuid);
   // Spell UUIDs (cantrips + leveled spells)
-  for (const uuid of [...(sel.spells?.cantrips ?? []), ...(sel.spells?.spells ?? [])]) {
+  for (const uuid of sel.spells?.cantrips ?? []) {
+    uuids.push(uuid);
+  }
+  for (const uuid of sel.spells?.spells ?? []) {
+    if (grantedSpellUuids.has(uuid)) continue;
     uuids.push(uuid);
   }
 
@@ -345,8 +356,8 @@ async function normalizeActorSpellPreparation(
 
 async function resolveSelectedSpellRefs(
   uuids: string[],
-): Promise<Array<{ name?: string; identifier?: string }>> {
-  const refs: Array<{ name?: string; identifier?: string }> = [];
+): Promise<Array<{ uuid: string; name?: string; identifier?: string }>> {
+  const refs: Array<{ uuid: string; name?: string; identifier?: string }> = [];
 
   for (const uuid of uuids) {
     const doc = await fromUuid(uuid);
@@ -356,12 +367,39 @@ async function resolveSelectedSpellRefs(
       ? obj.system as Record<string, unknown>
       : {};
     refs.push({
+      uuid,
       name: typeof obj?.name === "string" ? obj.name : undefined,
       identifier: typeof system.identifier === "string" ? system.identifier : undefined,
     });
   }
 
   return refs;
+}
+
+async function resolveGrantedSpellRefsForCreation(
+  classUuid: string | undefined,
+  subclassUuid: string | undefined,
+  level: number,
+): Promise<Array<{ uuid: string; name?: string; identifier?: string }>> {
+  const granted = [
+    ...(await resolveGrantedFeaturesForDocument(classUuid, { maxLevel: level })),
+    ...(await resolveGrantedFeaturesForDocument(subclassUuid, { maxLevel: level })),
+  ];
+  const spellUuids = new Set<string>();
+
+  for (const grant of granted) {
+    if (await isSpellGrantUuid(grant.uuid)) spellUuids.add(grant.uuid);
+  }
+
+  return resolveSelectedSpellRefs([...spellUuids]);
+}
+
+async function isSpellGrantUuid(uuid: string): Promise<boolean> {
+  if (/\.spells?\./i.test(uuid)) return true;
+
+  const doc = await fromUuid(uuid);
+  const obj = doc?.toObject?.();
+  return obj?.type === "spell";
 }
 
 async function resolveInitiallyPreparedSpellIds(

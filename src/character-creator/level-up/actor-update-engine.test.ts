@@ -356,6 +356,108 @@ describe("actor update engine", () => {
     );
   });
 
+  it("skips duplicate subclass spell grants when matching spell items already exist on the actor", async () => {
+    const actor = makeActor();
+    actor.itemsList.push(
+      {
+        id: "subclass-life-domain",
+        type: "subclass",
+        name: "Life Domain",
+        system: { classIdentifier: "cleric", identifier: "life-domain" },
+      },
+      {
+        id: "spell-bless",
+        type: "spell",
+        name: "Bless",
+        system: { identifier: "bless" },
+      },
+      {
+        id: "spell-cure-wounds",
+        type: "spell",
+        name: "Cure Wounds",
+        system: { identifier: "cure-wounds" },
+      },
+      {
+        id: "spell-aid",
+        type: "spell",
+        name: "Aid",
+        system: { identifier: "aid" },
+      },
+      {
+        id: "spell-lesser-restoration",
+        type: "spell",
+        name: "Lesser Restoration",
+        system: { identifier: "lesser-restoration" },
+      },
+    );
+
+    getGameMock.mockReturnValue({
+      actors: {
+        get: () => actor,
+      },
+    });
+
+    fromUuidMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "Compendium.subclass.life-domain") {
+        return makeCompendiumDoc("Life Domain", {
+          type: "subclass",
+          system: {
+            classIdentifier: "cleric",
+            advancement: [
+              {
+                type: "ItemGrant",
+                level: 3,
+                configuration: {
+                  items: [
+                    { uuid: "Compendium.spell.bless", name: "Bless" },
+                    { uuid: "Compendium.spell.cure-wounds", name: "Cure Wounds" },
+                    { uuid: "Compendium.spell.aid", name: "Aid" },
+                    { uuid: "Compendium.spell.lesser-restoration", name: "Lesser Restoration" },
+                  ],
+                },
+              },
+            ],
+          },
+        });
+      }
+      if (uuid === "Compendium.spell.bless") {
+        return makeCompendiumDoc("Bless", { type: "spell", system: { identifier: "bless" } });
+      }
+      if (uuid === "Compendium.spell.cure-wounds") {
+        return makeCompendiumDoc("Cure Wounds", { type: "spell", system: { identifier: "cure-wounds" } });
+      }
+      if (uuid === "Compendium.spell.aid") {
+        return makeCompendiumDoc("Aid", { type: "spell", system: { identifier: "aid" } });
+      }
+      if (uuid === "Compendium.spell.lesser-restoration") {
+        return makeCompendiumDoc("Lesser Restoration", { type: "spell", system: { identifier: "lesser-restoration" } });
+      }
+      return null;
+    });
+
+    const { applyLevelUp } = await import("./actor-update-engine");
+    const success = await applyLevelUp(makeState({
+      currentLevel: 2,
+      targetLevel: 3,
+      selections: {
+        classChoice: {
+          mode: "existing",
+          classItemId: "fighter-1",
+          className: "Cleric",
+          classIdentifier: "cleric",
+        },
+        subclass: {
+          uuid: "Compendium.subclass.life-domain",
+          name: "Life Domain",
+          img: "life-domain.png",
+        },
+      },
+    }));
+
+    expect(success).toBe(true);
+    expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled();
+  });
+
   it("returns false when the actor does not exist", async () => {
     getGameMock.mockReturnValue({
       actors: {
