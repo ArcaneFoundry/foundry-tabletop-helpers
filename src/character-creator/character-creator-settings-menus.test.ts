@@ -78,6 +78,8 @@ vi.mock("./character-creator-settings-shared", () => ({
 
 class FakeFormApplication {
   static defaultOptions = { base: true };
+  activateListeners(_html: unknown): void {}
+  close = vi.fn(async () => {});
 }
 
 function installFoundryUtils(): void {
@@ -223,6 +225,61 @@ describe("character creator settings menus", () => {
     expect(setStartingLevelMock).toHaveBeenCalledWith(25);
     expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
     expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
+    expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
+  });
+
+  it("binds explicit submit handling so live form submission persists settings", async () => {
+    const registrations: Array<{ key: string; data: Record<string, unknown> }> = [];
+    const notifications = { warn: vi.fn(), info: vi.fn() };
+    getUIMock.mockReturnValue({ notifications });
+
+    const mod = await import("./character-creator-settings-menus");
+    mod.registerCharacterCreatorSettingsMenus({
+      registerMenu: (_module, key, data) => {
+        registrations.push({ key, data });
+      },
+    });
+
+    const SettingsForm = registrations.find((entry) => entry.key === "ccSettingsMenu")?.data.type as
+      new () => FakeFormApplication & {
+        activateListeners(html: unknown): void;
+      };
+    const formApp = new SettingsForm();
+
+    const listeners = new Map<string, (event: Event) => void | Promise<void>>();
+    const form = {
+      dataset: {} as Record<string, string>,
+      elements: [
+        { name: "ccEnabled", disabled: false, type: "checkbox", checked: true },
+        { name: "ccAutoOpen", disabled: false, type: "checkbox", checked: false },
+        { name: "ccLevelUpEnabled", disabled: false, type: "checkbox", checked: true },
+        { name: "method_4d6", disabled: false, type: "checkbox", checked: false },
+        { name: "method_pointBuy", disabled: false, type: "checkbox", checked: false },
+        { name: "method_standardArray", disabled: false, type: "checkbox", checked: true },
+        { name: "maxRerolls", disabled: false, value: "2.9" },
+        { name: "startingLevel", disabled: false, value: "6" },
+        { name: "allowMulticlass", disabled: false, type: "checkbox", checked: true },
+        { name: "equipmentMethod", disabled: false, value: "gold" },
+        { name: "level1HpMethod", disabled: false, value: "roll" },
+      ],
+      addEventListener: vi.fn((type: string, listener: (event: Event) => void | Promise<void>) => {
+        listeners.set(type, listener);
+      }),
+    };
+    const host = {
+      querySelector: vi.fn(() => form),
+    };
+
+    formApp.activateListeners(host);
+    const submitEvent = { preventDefault: vi.fn() } as unknown as Event;
+    await listeners.get("submit")?.(submitEvent);
+
+    expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["standardArray"]);
+    expect(setMaxRerollsMock).toHaveBeenCalledWith(2.9);
+    expect(setStartingLevelMock).toHaveBeenCalledWith(6);
+    expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
+    expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
+    expect(formApp.close).toHaveBeenCalled();
     expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
   });
 

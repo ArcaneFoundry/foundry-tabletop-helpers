@@ -26,6 +26,8 @@ import {
 } from "./character-creator-settings-normalization";
 
 interface FormAppLike {
+  activateListeners?(html: unknown): void;
+  close?(): Promise<void>;
   getData?(): Promise<Record<string, unknown>> | Record<string, unknown>;
   _updateObject?(event: Event, formData: Record<string, unknown>): Promise<void> | void;
 }
@@ -179,6 +181,11 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
 
         getUI()?.notifications?.info?.("Character Creator settings saved.");
       }
+
+      activateListeners(html: unknown): void {
+        super.activateListeners?.(html);
+        bindExplicitFormSubmit(this, html);
+      }
     }
 
     settings.registerMenu(MOD, "ccSettingsMenu", {
@@ -248,6 +255,11 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
         compendiumIndexer.invalidate();
         getUI()?.notifications?.info?.("Compendium sources updated. Changes take effect on next wizard open.");
       }
+
+      activateListeners(html: unknown): void {
+        super.activateListeners?.(html);
+        bindExplicitFormSubmit(this, html);
+      }
     }
 
     settings.registerMenu(MOD, "ccCompendiumSelectMenu", {
@@ -265,6 +277,68 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
 
 function getFormAppBase(FormAppBase: unknown): FormAppConstructor {
   return typeof FormAppBase === "function" ? (FormAppBase as FormAppConstructor) : class {} as FormAppConstructor;
+}
+
+function bindExplicitFormSubmit(app: FormAppLike, html: unknown): void {
+  const root = getRootElement(html);
+  const form = root?.querySelector("form");
+  if (!form || form.dataset.fthExplicitSubmitBound === "true") return;
+
+  form.dataset.fthExplicitSubmitBound = "true";
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await app._updateObject?.(event, extractFormData(form));
+    await app.close?.();
+  });
+}
+
+function getRootElement(html: unknown): HTMLElement | null {
+  if (typeof HTMLElement !== "undefined" && html instanceof HTMLElement) return html;
+  if (html && typeof html === "object" && typeof (html as { querySelector?: unknown }).querySelector === "function") {
+    return html as HTMLElement;
+  }
+  if (html && typeof html === "object") {
+    const maybeJQuery = html as { 0?: unknown; length?: number };
+    if (
+      typeof maybeJQuery.length === "number"
+      && typeof HTMLElement !== "undefined"
+      && maybeJQuery[0] instanceof HTMLElement
+    ) {
+      return maybeJQuery[0];
+    }
+  }
+  return null;
+}
+
+function extractFormData(form: HTMLFormElement): Record<string, unknown> {
+  const formData: Record<string, unknown> = {};
+  const elements = Array.from(form.elements);
+
+  for (const element of elements) {
+    if (!isFormValueElement(element)) continue;
+    if (!element.name || element.disabled) continue;
+
+    if (element.type === "checkbox") {
+      formData[element.name] = element.checked;
+      continue;
+    }
+
+    formData[element.name] = element.value;
+  }
+
+  return formData;
+}
+
+interface FormValueElementLike {
+  checked?: boolean;
+  disabled?: boolean;
+  name?: string;
+  type?: string;
+  value?: string;
+}
+
+function isFormValueElement(element: unknown): element is FormValueElementLike {
+  return !!element && typeof element === "object" && "name" in element && "disabled" in element;
 }
 
 function getPackIterable(packs: unknown): CompendiumPackLike[] {
