@@ -110,7 +110,8 @@ describe("character creator init shell", () => {
     expect(namespacedLoadTemplatesMock).toHaveBeenCalledWith(
       expect.arrayContaining([
         "modules/foundry-tabletop-helpers/templates/character-creator/cc-shell.hbs",
-        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-background-grants.hbs",
+        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-origin-choices.hbs",
+        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-species-choices.hbs",
       ]),
     );
     expect(loadTemplatesMock).not.toHaveBeenCalled();
