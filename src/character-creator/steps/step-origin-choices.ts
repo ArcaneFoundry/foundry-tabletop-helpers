@@ -152,15 +152,19 @@ function getAvailableOriginSkillKeys(state: WizardState): string[] {
   return getClassSkillPool(state).filter((key) => !backgroundSet.has(key) && key in SKILLS);
 }
 
+function getRequiredOriginSkillPickCount(state: WizardState): number {
+  return Math.min(getClassSkillCount(state), getAvailableOriginSkillKeys(state).length);
+}
+
 function getOriginChoiceValidationMessages(state: WizardState): string[] {
   const messages: string[] = [];
   const availableSkillCount = getAvailableOriginSkillKeys(state).length;
   const requiredSkillCount = getClassSkillCount(state);
 
   if (requiredSkillCount > 0 && availableSkillCount === 0) {
-    messages.push("No legal class skill options remain after background overlap. Choose a different class or background to continue.");
+    messages.push("No legal class skill options remain after background overlap, so this step will no longer block progression.");
   } else if (availableSkillCount > 0 && availableSkillCount < requiredSkillCount) {
-    messages.push(`Only ${availableSkillCount} legal class skill option${availableSkillCount === 1 ? "" : "s"} remain, but ${requiredSkillCount} selection${requiredSkillCount === 1 ? "" : "s"} are required.`);
+    messages.push(`Only ${availableSkillCount} legal class skill option${availableSkillCount === 1 ? "" : "s"} remain, so this step will accept fewer picks than the class normally grants.`);
   }
 
   if (state.config.allowCustomBackgrounds && !!state.selections.background?.grants.originFeatUuid) {
@@ -180,19 +184,14 @@ export function createOriginChoicesStep(): WizardStepDefinition {
     isApplicable: (state) => !!state.selections.background?.uuid && !!state.selections.class?.uuid,
 
     isComplete(state: WizardState): boolean {
-      const classSkillsComplete = getChosenClassSkills(state).length === getClassSkillCount(state);
+      const classSkillsComplete = getChosenClassSkills(state).length >= getRequiredOriginSkillPickCount(state);
       const featComplete = !state.selections.background?.grants.originFeatUuid || !!state.selections.originFeat?.uuid;
       return classSkillsComplete && featComplete;
     },
 
     getStatusHint(state: WizardState): string {
-      const availableSkillCount = getAvailableOriginSkillKeys(state).length;
-      const maxSkills = getClassSkillCount(state);
-      if (maxSkills > 0 && availableSkillCount < maxSkills) {
-        return "Not enough legal class skill options remain for this class/background combination";
-      }
-
       const chosenSkills = getChosenClassSkills(state).length;
+      const maxSkills = getRequiredOriginSkillPickCount(state);
       if (chosenSkills < maxSkills) {
         const remaining = maxSkills - chosenSkills;
         return `Choose ${remaining} more class skill${remaining === 1 ? "" : "s"}`;
@@ -212,7 +211,8 @@ export function createOriginChoicesStep(): WizardStepDefinition {
 
       const backgroundSkills = getBackgroundSkills(state);
       const chosenSkills = new Set(getChosenClassSkills(state));
-      const maxPicks = getClassSkillCount(state);
+      const maxPicks = getRequiredOriginSkillPickCount(state);
+      const requestedSkillPicks = getClassSkillCount(state);
       const availableKeys = getAvailableOriginSkillKeys(state);
       const featSelection = state.selections.originFeat ?? getDefaultOriginFeatSelection(state);
       const feats = state.config.allowCustomBackgrounds && state.selections.background?.grants.originFeatUuid
@@ -245,7 +245,9 @@ export function createOriginChoicesStep(): WizardStepDefinition {
         maxPicks,
         atMax: chosenSkills.size >= maxPicks,
         skillSelectionMessage: maxPicks > 0
-          ? `Choose ${maxPicks} class skill${maxPicks === 1 ? "" : "s"}. Background skills are locked out automatically.`
+          ? requestedSkillPicks > maxPicks
+            ? `Only ${maxPicks} legal class skill option${maxPicks === 1 ? "" : "s"} are currently available here, so choose those available picks to continue.`
+            : `Choose ${maxPicks} class skill${maxPicks === 1 ? "" : "s"}. Background skills are locked out automatically.`
           : "This class does not add any extra skill choices here.",
         toolProficiency: state.selections.background?.grants.toolProficiency
           ? toolLabel(state.selections.background.grants.toolProficiency)

@@ -190,12 +190,31 @@ describe("step origin choices", () => {
     expect(vm).toMatchObject({
       hasAvailableSkills: true,
       validationMessages: [
-        "Only 1 legal class skill option remain, but 2 selections are required.",
+        "Only 1 legal class skill option remain, so this step will accept fewer picks than the class normally grants.",
       ],
+      maxPicks: 1,
     });
-    expect(step.getStatusHint?.(state)).toBe(
-      "Not enough legal class skill options remain for this class/background combination",
-    );
+    expect(step.getStatusHint?.(state)).toBe("Choose 1 more class skill");
+  });
+
+  it("treats reduced legal class skill pools as completable once the available picks are chosen", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.selections.class = {
+      ...state.selections.class!,
+      skillPool: ["arc", "his"],
+      skillCount: 2,
+    };
+    state.selections.skills = { chosen: ["his"] };
+    state.selections.originFeat = {
+      uuid: "feat.magic-initiate",
+      name: "Magic Initiate",
+      img: "feat.png",
+      isCustom: false,
+    };
+
+    const step = createOriginChoicesStep();
+    expect(step.isComplete(state)).toBe(true);
   });
 
   it("shows custom origin feat choices when feat swapping is enabled", async () => {

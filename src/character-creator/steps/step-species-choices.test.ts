@@ -168,14 +168,13 @@ describe("step species choices", () => {
 
     expect(vm).toMatchObject({
       hasAvailableSpeciesSkills: false,
+      skillChoiceCount: 0,
       validationMessages: [
-        "No legal species skill options remain after your background and class picks. Choose a different species, class, or background to continue.",
-        "Mysterious Legacy has no selectable options in the enabled compendium data.",
+        "No legal species skill options remain after your background and class picks, so this step will no longer block progression.",
+        "Mysterious Legacy has no selectable options in the enabled compendium data, so it will not block progression.",
       ],
     });
-    expect(step.getStatusHint?.(state)).toBe(
-      "No legal species skill options remain after your background and class picks. Choose a different species, class, or background to continue.",
-    );
+    expect(step.getStatusHint?.(state)).toBe("Choose 1 more species language");
   });
 
   it("stores selected species languages, skills, and item choices and completes when the slots are filled", async () => {
@@ -248,5 +247,42 @@ describe("step species choices", () => {
       chosenItems: {},
     };
     expect(step.getStatusHint?.(state)).toBe("Choose 1 more species skill");
+  });
+
+  it("allows sparse item-choice groups to complete once all available options are chosen", async () => {
+    const { createSpeciesChoicesStep } = await import("./step-species-choices");
+    const step = createSpeciesChoicesStep();
+    const state = makeState();
+    state.selections.species = {
+      ...state.selections.species!,
+      languageChoiceCount: 0,
+      skillChoiceCount: 0,
+      itemChoiceGroups: [
+        {
+          id: "legacy-choice",
+          title: "Legacy Choice",
+          count: 2,
+          options: [{ uuid: "spell.light", name: "Light" }],
+        },
+      ],
+    };
+    state.selections.speciesChoices = {
+      hasChoices: true,
+      chosenLanguages: [],
+      chosenSkills: [],
+      chosenItems: {
+        "legacy-choice": ["spell.light"],
+      },
+    };
+
+    const vm = await step.buildViewModel(state);
+
+    expect(vm).toMatchObject({
+      requiredItemChoiceCount: 1,
+      validationMessages: [
+        "Legacy Choice only exposes 1 option, so this step will accept the available selections.",
+      ],
+    });
+    expect(step.isComplete(state)).toBe(true);
   });
 });

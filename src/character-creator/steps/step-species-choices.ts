@@ -27,11 +27,10 @@ function buildSpeciesChoicesState(state: WizardState): SpeciesChoicesState {
 
 function getRequiredSpeciesItemChoiceCount(state: WizardState): number {
   return (state.selections.species?.itemChoiceGroups ?? [])
-    .reduce((sum, group) => sum + group.count, 0);
+    .reduce((sum, group) => sum + Math.min(group.count, group.options.length), 0);
 }
 
-function getSpeciesChoiceValidationMessages(state: WizardState): string[] {
-  const messages: string[] = [];
+function getAvailableSpeciesSkillCount(state: WizardState): number {
   const chosenSkills = state.selections.speciesChoices?.chosenSkills ?? [];
   const fixedSkills = new Set(state.selections.species?.skillGrants ?? []);
   const takenSkills = new Set([
@@ -39,25 +38,35 @@ function getSpeciesChoiceValidationMessages(state: WizardState): string[] {
     ...(state.selections.skills?.chosen ?? []),
     ...fixedSkills,
   ]);
-  const availableSkillCount = (state.selections.species?.skillChoicePool ?? [])
+
+  return (state.selections.species?.skillChoicePool ?? [])
     .filter((skill) => skill in SKILLS)
     .filter((skill) => chosenSkills.includes(skill) || !takenSkills.has(skill))
     .length;
+}
+
+function getRequiredSpeciesSkillChoiceCount(state: WizardState): number {
+  return Math.min(state.selections.species?.skillChoiceCount ?? 0, getAvailableSpeciesSkillCount(state));
+}
+
+function getSpeciesChoiceValidationMessages(state: WizardState): string[] {
+  const messages: string[] = [];
+  const availableSkillCount = getAvailableSpeciesSkillCount(state);
   const requiredSkillCount = state.selections.species?.skillChoiceCount ?? 0;
 
   if (requiredSkillCount > 0 && availableSkillCount === 0) {
-    messages.push("No legal species skill options remain after your background and class picks. Choose a different species, class, or background to continue.");
+    messages.push("No legal species skill options remain after your background and class picks, so this step will no longer block progression.");
   } else if (availableSkillCount > 0 && availableSkillCount < requiredSkillCount) {
-    messages.push(`Only ${availableSkillCount} legal species skill option${availableSkillCount === 1 ? "" : "s"} remain, but ${requiredSkillCount} selection${requiredSkillCount === 1 ? "" : "s"} are required.`);
+    messages.push(`Only ${availableSkillCount} legal species skill option${availableSkillCount === 1 ? "" : "s"} remain, so this step will accept fewer picks than the species normally grants.`);
   }
 
   for (const group of state.selections.species?.itemChoiceGroups ?? []) {
     if (group.options.length === 0) {
-      messages.push(`${group.title} has no selectable options in the enabled compendium data.`);
+      messages.push(`${group.title} has no selectable options in the enabled compendium data, so it will not block progression.`);
       continue;
     }
     if (group.options.length < group.count) {
-      messages.push(`${group.title} only exposes ${group.options.length} option${group.options.length === 1 ? "" : "s"}, but ${group.count} selection${group.count === 1 ? "" : "s"} are required.`);
+      messages.push(`${group.title} only exposes ${group.options.length} option${group.options.length === 1 ? "" : "s"}, so this step will accept the available selections.`);
     }
   }
 
@@ -90,17 +99,14 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
     isComplete: (state) => {
       if (!state.selections.species?.uuid) return false;
       const neededLanguages = state.selections.species.languageChoiceCount ?? 0;
-      const neededSkills = state.selections.species.skillChoiceCount ?? 0;
+      const neededSkills = getRequiredSpeciesSkillChoiceCount(state);
       const itemGroups = state.selections.species.itemChoiceGroups ?? [];
       const chosenItems = state.selections.speciesChoices?.chosenItems ?? {};
       return (state.selections.speciesChoices?.chosenLanguages?.length ?? 0) >= neededLanguages
         && (state.selections.speciesChoices?.chosenSkills?.length ?? 0) >= neededSkills
-        && itemGroups.every((group) => (chosenItems[group.id]?.length ?? 0) >= group.count);
+        && itemGroups.every((group) => (chosenItems[group.id]?.length ?? 0) >= Math.min(group.count, group.options.length));
     },
     getStatusHint(state) {
-      const validationMessages = getSpeciesChoiceValidationMessages(state);
-      if (validationMessages.length > 0) return validationMessages[0];
-
       const neededLanguages = state.selections.species?.languageChoiceCount ?? 0;
       const chosenLanguages = state.selections.speciesChoices?.chosenLanguages?.length ?? 0;
       if (chosenLanguages < neededLanguages) {
@@ -108,7 +114,7 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
         return `Choose ${remaining} more species language${remaining === 1 ? "" : "s"}`;
       }
 
-      const neededSkills = state.selections.species?.skillChoiceCount ?? 0;
+      const neededSkills = getRequiredSpeciesSkillChoiceCount(state);
       const chosenSkills = state.selections.speciesChoices?.chosenSkills?.length ?? 0;
       if (chosenSkills < neededSkills) {
         const remaining = neededSkills - chosenSkills;
@@ -118,13 +124,15 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
       const itemGroups = state.selections.species?.itemChoiceGroups ?? [];
       for (const group of itemGroups) {
         const chosenCount = state.selections.speciesChoices?.chosenItems?.[group.id]?.length ?? 0;
-        if (chosenCount < group.count) {
-          const remaining = group.count - chosenCount;
+        const requiredCount = Math.min(group.count, group.options.length);
+        if (chosenCount < requiredCount) {
+          const remaining = requiredCount - chosenCount;
           return `Choose ${remaining} more option${remaining === 1 ? "" : "s"} for ${group.title}`;
         }
       }
 
-      return "";
+      const validationMessages = getSpeciesChoiceValidationMessages(state);
+      return validationMessages[0] ?? "";
     },
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       const stepState = buildSpeciesChoicesState(state);
@@ -138,16 +146,18 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
         ...(state.selections.skills?.chosen ?? []),
         ...fixedSkills,
       ]);
-      const skillChoiceCount = state.selections.species?.skillChoiceCount ?? 0;
+      const skillChoiceCount = getRequiredSpeciesSkillChoiceCount(state);
+      const requestedSkillChoiceCount = state.selections.species?.skillChoiceCount ?? 0;
       const itemChoiceGroups = (state.selections.species?.itemChoiceGroups ?? []).map((group) => ({
         id: group.id,
         title: group.title,
-        count: group.count,
+        count: Math.min(group.count, group.options.length),
+        requestedCount: group.count,
         options: group.options.map((option) => ({
           ...option,
           selected: (state.selections.speciesChoices?.chosenItems?.[group.id] ?? []).includes(option.uuid),
           disabled: !(state.selections.speciesChoices?.chosenItems?.[group.id] ?? []).includes(option.uuid)
-            && (state.selections.speciesChoices?.chosenItems?.[group.id] ?? []).length >= group.count,
+            && (state.selections.speciesChoices?.chosenItems?.[group.id] ?? []).length >= Math.min(group.count, group.options.length),
         })),
         selectedCount: (state.selections.speciesChoices?.chosenItems?.[group.id] ?? []).length,
       }));
@@ -186,6 +196,7 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
         fixedSkills: [...fixedSkills].map(skillLabel),
         hasSkillChoices: skillChoiceCount > 0,
         skillChoiceCount,
+        requestedSkillChoiceCount,
         chosenSkillCount: chosenSkills.length,
         availableSpeciesSkills,
         hasAvailableSpeciesSkills: availableSpeciesSkills.length > 0,

@@ -91,10 +91,21 @@ export function createReviewStep(): WizardStepDefinition {
 
       const speciesChoiceCount = sel.species?.languageChoiceCount ?? 0;
       const chosenSpeciesLanguages = sel.speciesChoices?.chosenLanguages ?? [];
-      const speciesSkillChoiceCount = sel.species?.skillChoiceCount ?? 0;
       const chosenSpeciesSkills = sel.speciesChoices?.chosenSkills ?? [];
+      const speciesSkillChoiceCount = Math.min(
+        sel.species?.skillChoiceCount ?? 0,
+        (sel.species?.skillChoicePool ?? [])
+          .filter((skill) => skill in SKILLS)
+          .filter((skill) => chosenSpeciesSkills.includes(skill)
+            || !new Set([
+              ...(sel.background?.grants.skillProficiencies ?? []),
+              ...(sel.skills?.chosen ?? []),
+              ...(sel.species?.skillGrants ?? []),
+            ]).has(skill))
+          .length,
+      );
       const speciesItemChoiceCount = (sel.species?.itemChoiceGroups ?? [])
-        .reduce((sum, group) => sum + group.count, 0);
+        .reduce((sum, group) => sum + Math.min(group.count, group.options.length), 0);
       const chosenSpeciesItems = Object.values(sel.speciesChoices?.chosenItems ?? {}).flat().length;
       const speciesChoicesSection = {
         id: "speciesChoices",

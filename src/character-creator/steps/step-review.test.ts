@@ -25,6 +25,7 @@ function makeState(): WizardState {
         traits: [],
         skillGrants: ["prc"],
         skillChoiceCount: 1,
+        skillChoicePool: ["nat"],
         itemChoiceGroups: [
           {
             id: "wizard-cantrip",
