@@ -50,6 +50,11 @@ function createWizardState(): any {
       },
       originFeat: { uuid: "Compendium.feats.magic-initiate" },
       class: { uuid: "Compendium.classes.wizard", identifier: "wizard", name: "Wizard" },
+      classChoices: {
+        chosenSkills: ["his", "ins"],
+        chosenWeaponMasteries: [],
+        availableWeaponMasteries: 0,
+      },
       subclass: { uuid: "Compendium.subclasses.evoker" },
       feats: { featUuid: "Compendium.feats.alert" },
       skills: { chosen: ["his", "ins"] },
@@ -145,6 +150,13 @@ function createActor() {
               ? createActorInstance.system.traits.languages.value as string[]
               : [];
             createActorInstance.system.traits.languages.value = [...new Set([...existing, languageKey ?? ""])] as never;
+          }
+          if (key.startsWith("weapon:")) {
+            const weaponKey = key.slice("weapon:".length);
+            const existing = Array.isArray(createActorInstance.system.traits.weaponProf.mastery.value)
+              ? createActorInstance.system.traits.weaponProf.mastery.value as string[]
+              : [];
+            createActorInstance.system.traits.weaponProf.mastery.value = [...new Set([...existing, weaponKey])] as never;
           }
         }
       }),
@@ -242,6 +254,11 @@ function createActor() {
       traits: {
         languages: {
           value: [],
+        },
+        weaponProf: {
+          mastery: {
+            value: [],
+          },
         },
       },
       skills: {
@@ -434,6 +451,18 @@ beforeEach(() => {
               levels: 1,
               identifier: "fighter",
               advancement: [
+                {
+                  type: "Trait",
+                  title: "Weapon Mastery",
+                  level: 1,
+                  configuration: {
+                    mode: "mastery",
+                    choices: [
+                      { count: 2 },
+                    ],
+                  },
+                  value: { chosen: [] },
+                },
                 {
                   type: "ItemGrant",
                   level: 1,
@@ -706,6 +735,37 @@ describe("actor creation engine", () => {
     });
     expect(isPrepared(spellItems.find((item) => item.name === "alarm")!)).toBe(false);
     expect(isPrepared(spellItems.find((item) => item.name === "comprehend-languages")!)).toBe(false);
+  });
+
+  it("applies chosen weapon masteries to the created actor and class advancement state", async () => {
+    const { createCharacterFromWizard } = await import("./actor-creation-engine");
+    const state = createWizardState();
+    state.selections.class = {
+      uuid: "Compendium.classes.fighter",
+      identifier: "fighter",
+      name: "Fighter",
+    } as never;
+    state.selections.classChoices = {
+      chosenSkills: ["his", "ins"],
+      chosenWeaponMasteries: ["longsword", "shortbow"],
+      chosenWeaponMasteryDetails: [
+        { id: "longsword", label: "Longsword", mastery: "Sap" },
+        { id: "shortbow", label: "Shortbow", mastery: "Vex" },
+      ],
+      availableWeaponMasteries: 2,
+    } as never;
+
+    await createCharacterFromWizard(state as never);
+
+    expect(createActorInstance.system.traits.weaponProf.mastery.value).toEqual(["longsword", "shortbow"]);
+
+    const classItem = Array.from(createActorInstance.items).find((item) => item.type === "class");
+    const classAdvancement = ((classItem?.toObject().system as {
+      advancement?: Array<{ title?: string; value?: { chosen?: string[] } }>;
+    } | undefined)?.advancement ?? []);
+    const masteryAdvancement = classAdvancement.find((entry) => entry.title === "Weapon Mastery");
+
+    expect(masteryAdvancement?.value?.chosen).toEqual(["weapon:longsword", "weapon:shortbow"]);
   });
 
   it("respects explicit prepared spell choices for other prepared casters", async () => {

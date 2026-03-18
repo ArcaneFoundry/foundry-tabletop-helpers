@@ -71,6 +71,12 @@ function parseGrantKey(key: string): string {
   return key;
 }
 
+function toStringList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((entry): entry is string => typeof entry === "string");
+  if (value instanceof Set) return [...value].filter((entry): entry is string => typeof entry === "string");
+  return [];
+}
+
 /** All 18 skill abbreviation keys. */
 const ALL_SKILL_KEYS = Object.keys(SKILLS);
 
@@ -212,7 +218,7 @@ export function parseClassSkillAdvancement(
   if (!firstChoice) return fallback;
 
   const count = typeof firstChoice.count === "number" ? firstChoice.count : 2;
-  const pool = Array.isArray(firstChoice.pool) ? (firstChoice.pool as string[]) : [];
+  const pool = toStringList(firstChoice.pool);
 
   // Convert pool entries: "skills:ath" -> "ath", "skills:*" -> all skill keys
   const skillPool: string[] = [];
@@ -227,6 +233,43 @@ export function parseClassSkillAdvancement(
 
   if (skillPool.length === 0) return fallback;
   return { skillPool, skillCount: count };
+}
+
+export function parseClassWeaponMasteryAdvancement(
+  doc: FoundryDocument,
+  maxLevel = 1,
+): { count: number; pool: string[] } {
+  const advancements = getAdvancementArray(doc);
+  const pool = new Set<string>();
+  let count = 0;
+
+  for (const entry of advancements) {
+    if (entry.type !== "Trait") continue;
+    if ((entry.title ?? "").toLowerCase() !== "weapon mastery") continue;
+    const level = typeof (entry as { level?: unknown }).level === "number"
+      ? ((entry as { level?: number }).level ?? 1)
+      : 1;
+    if (level > maxLevel) continue;
+    if (entry.configuration?.mode !== "mastery") continue;
+
+    const choices = Array.isArray(entry.configuration.choices)
+      ? (entry.configuration.choices as Array<Record<string, unknown>>)
+      : [];
+
+    for (const choice of choices) {
+      const choiceCount = typeof choice.count === "number" ? choice.count : 0;
+      count += choiceCount;
+      const choicePool = toStringList(choice.pool);
+      for (const option of choicePool) {
+        if (typeof option === "string" && option.length > 0) pool.add(option);
+      }
+    }
+  }
+
+  return {
+    count,
+    pool: [...pool],
+  };
 }
 
 /* ── Class Spellcasting ────────────────────────────────── */

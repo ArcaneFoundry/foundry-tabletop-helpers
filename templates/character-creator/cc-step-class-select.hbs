@@ -1,0 +1,41 @@
+<div class="cc-card-select cc-class-select" data-step="{{stepId}}">
+  {{#if hasEntries}}
+  <div class="cc-card-select__layout cc-class-select__layout">
+    <div class="cc-card-select__grid-pane">
+      <div class="cc-card-grid">
+        {{#each entries}}
+        <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}"
+             data-card-uuid="{{uuid}}"
+             role="button"
+             tabindex="0"
+             aria-selected="{{selected}}"
+             style="--cc-card-index: {{@index}}">
+          <div class="cc-select-card__img-wrap">
+            <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+          </div>
+          <div class="cc-select-card__info">
+            <div class="cc-select-card__name">{{name}}</div>
+            <div class="cc-select-card__source">{{packLabel}}</div>
+            {{#if primaryAbilityText}}
+            <div class="cc-select-card__meta">Primary Ability: {{primaryAbilityText}}</div>
+            {{/if}}
+          </div>
+          {{#if selected}}
+          <div class="cc-select-card__check">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+
+    <div class="cc-card-detail-pane cc-class-select__detail-pane">{{{detailPaneHtml}}}</div>
+  </div>
+  {{else}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <p>{{emptyMessage}}</p>
+  </div>
+  {{/if}}
+</div>

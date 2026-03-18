@@ -1,28 +1,18 @@
 import { MOD } from "../../logger";
 import type {
-  AbilityKey,
   CreatorIndexEntry,
-  OriginChoicesState,
   OriginFeatSelection,
-  SkillSelection,
   StepCallbacks,
   WizardState,
   WizardStepDefinition,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseBackgroundGrants } from "../data/advancement-parser";
-import { ABILITY_ABBREVS, SKILLS } from "../data/dnd5e-constants";
+import { SKILLS } from "../data/dnd5e-constants";
 
 interface DatasetElementLike {
   dataset: DOMStringMap;
   addEventListener(event: string, handler: () => void): void;
-}
-
-interface SkillCheckboxLike extends DatasetElementLike {
-  checked: boolean;
-  disabled: boolean;
-  addEventListener(event: string, handler: () => void): void;
-  closest(selector: string): Element | null;
 }
 
 interface FeatDocumentLike {
@@ -52,14 +42,6 @@ function getBackgroundSkills(state: WizardState): string[] {
 
 function getChosenClassSkills(state: WizardState): string[] {
   return state.selections.skills?.chosen ?? [];
-}
-
-function getClassSkillPool(state: WizardState): string[] {
-  return state.selections.class?.skillPool ?? [];
-}
-
-function getClassSkillCount(state: WizardState): number {
-  return state.selections.class?.skillCount ?? 0;
 }
 
 function getDefaultOriginFeatSelection(state: WizardState): OriginFeatSelection | null {
@@ -124,22 +106,7 @@ async function getAvailableOriginFeats(state: WizardState): Promise<CreatorIndex
   return entries.filter((entry) => !state.config.disabledUUIDs.has(entry.uuid));
 }
 
-function patchSkillsDOM(el: HTMLElement, chosen: Set<string>, maxPicks: number): void {
-  const atMax = chosen.size >= maxPicks;
-  getSkillCheckboxes(el).forEach((cb) => {
-    const key = cb.dataset.skill;
-    if (!key) return;
-    const isChosen = chosen.has(key);
-    cb.checked = isChosen;
-    cb.disabled = !isChosen && atMax;
-    const row = cb.closest(".cc-skill-row");
-    if (row) row.classList.toggle("cc-skill-row--checked", isChosen);
-  });
-  const countEl = el.querySelector<HTMLElement>("[data-skill-count]");
-  if (countEl) countEl.textContent = String(chosen.size);
-}
-
-function buildStepData(state: WizardState): OriginChoicesState {
+function buildStepData(state: WizardState): Record<string, unknown> {
   return {
     classSkills: getChosenClassSkills(state),
     chosenLanguages: [],
@@ -147,26 +114,8 @@ function buildStepData(state: WizardState): OriginChoicesState {
   };
 }
 
-function getAvailableOriginSkillKeys(state: WizardState): string[] {
-  const backgroundSet = new Set(getBackgroundSkills(state));
-  return getClassSkillPool(state).filter((key) => !backgroundSet.has(key) && key in SKILLS);
-}
-
-function getRequiredOriginSkillPickCount(state: WizardState): number {
-  return Math.min(getClassSkillCount(state), getAvailableOriginSkillKeys(state).length);
-}
-
 function getOriginChoiceValidationMessages(state: WizardState): string[] {
   const messages: string[] = [];
-  const availableSkillCount = getAvailableOriginSkillKeys(state).length;
-  const requiredSkillCount = getClassSkillCount(state);
-
-  if (requiredSkillCount > 0 && availableSkillCount === 0) {
-    messages.push("No legal class skill options remain after background overlap, so this step will no longer block progression.");
-  } else if (availableSkillCount > 0 && availableSkillCount < requiredSkillCount) {
-    messages.push(`Only ${availableSkillCount} legal class skill option${availableSkillCount === 1 ? "" : "s"} remain, so this step will accept fewer picks than the class normally grants.`);
-  }
-
   if (state.config.allowCustomBackgrounds && !!state.selections.background?.grants.originFeatUuid) {
     messages.push("If the feat swap list looks empty, keep the background's default origin feat or enable a feat pack that contains 2024 origin feats.");
   }
@@ -184,19 +133,11 @@ export function createOriginChoicesStep(): WizardStepDefinition {
     isApplicable: (state) => !!state.selections.background?.uuid && !!state.selections.class?.uuid,
 
     isComplete(state: WizardState): boolean {
-      const classSkillsComplete = getChosenClassSkills(state).length >= getRequiredOriginSkillPickCount(state);
       const featComplete = !state.selections.background?.grants.originFeatUuid || !!state.selections.originFeat?.uuid;
-      return classSkillsComplete && featComplete;
+      return featComplete;
     },
 
     getStatusHint(state: WizardState): string {
-      const chosenSkills = getChosenClassSkills(state).length;
-      const maxSkills = getRequiredOriginSkillPickCount(state);
-      if (chosenSkills < maxSkills) {
-        const remaining = maxSkills - chosenSkills;
-        return `Choose ${remaining} more class skill${remaining === 1 ? "" : "s"}`;
-      }
-
       if (state.selections.background?.grants.originFeatUuid && !state.selections.originFeat?.uuid) {
         return "Confirm your origin feat";
       }
@@ -210,10 +151,6 @@ export function createOriginChoicesStep(): WizardStepDefinition {
       }
 
       const backgroundSkills = getBackgroundSkills(state);
-      const chosenSkills = new Set(getChosenClassSkills(state));
-      const maxPicks = getRequiredOriginSkillPickCount(state);
-      const requestedSkillPicks = getClassSkillCount(state);
-      const availableKeys = getAvailableOriginSkillKeys(state);
       const featSelection = state.selections.originFeat ?? getDefaultOriginFeatSelection(state);
       const feats = state.config.allowCustomBackgrounds && state.selections.background?.grants.originFeatUuid
         ? await getAvailableOriginFeats(state)
@@ -225,30 +162,11 @@ export function createOriginChoicesStep(): WizardStepDefinition {
         ? await compendiumIndexer.getCachedDescription(selectedFeatEntry.uuid)
         : "";
 
-      const availableSkills = availableKeys
-        .filter((key) => key in SKILLS)
-        .map((key) => ({
-          key,
-          label: SKILLS[key].label,
-          abilityAbbrev: ABILITY_ABBREVS[SKILLS[key].ability as AbilityKey],
-          checked: chosenSkills.has(key),
-          disabled: !chosenSkills.has(key) && chosenSkills.size >= maxPicks,
-        }));
-
       return {
         className: state.selections.class?.name ?? "",
         backgroundName: state.selections.background?.name ?? "",
-        availableSkills,
-        hasAvailableSkills: availableSkills.length > 0,
+        chosenClassSkillChips: getChosenClassSkills(state).map(skillLabel),
         backgroundSkillChips: backgroundSkills.map(skillLabel),
-        chosenCount: chosenSkills.size,
-        maxPicks,
-        atMax: chosenSkills.size >= maxPicks,
-        skillSelectionMessage: maxPicks > 0
-          ? requestedSkillPicks > maxPicks
-            ? `Only ${maxPicks} legal class skill option${maxPicks === 1 ? "" : "s"} are currently available here, so choose those available picks to continue.`
-            : `Choose ${maxPicks} class skill${maxPicks === 1 ? "" : "s"}. Background skills are locked out automatically.`
-          : "This class does not add any extra skill choices here.",
         toolProficiency: state.selections.background?.grants.toolProficiency
           ? toolLabel(state.selections.background.grants.toolProficiency)
           : null,
@@ -279,32 +197,6 @@ export function createOriginChoicesStep(): WizardStepDefinition {
       if (state.selections.background?.grants.originFeatUuid && !state.selections.originFeat) {
         state.selections.originFeat = getDefaultOriginFeatSelection(state) ?? undefined;
       }
-
-      const backgroundSet = new Set(getBackgroundSkills(state));
-      const maxPicks = getClassSkillCount(state);
-
-      getSkillCheckboxes(el).forEach((checkbox) => {
-        checkbox.addEventListener("change", () => {
-          const key = checkbox.dataset.skill;
-          if (!key) return;
-
-          const chosen = new Set(getChosenClassSkills(state));
-          if (checkbox.checked) {
-            if (chosen.size >= maxPicks || backgroundSet.has(key)) {
-              checkbox.checked = false;
-              return;
-            }
-            chosen.add(key);
-          } else {
-            chosen.delete(key);
-          }
-
-          const skillSelection: SkillSelection = { chosen: [...chosen] };
-          state.selections.skills = skillSelection;
-          patchSkillsDOM(el, chosen, maxPicks);
-          callbacks.setDataSilent(buildStepData(state));
-        });
-      });
 
       getCardElements(el).forEach((card) => {
         card.addEventListener("click", () => {
@@ -345,19 +237,9 @@ function getCardElements(root: ParentNode): DatasetElementLike[] {
     .map((value) => value as DatasetElementLike);
 }
 
-function getSkillCheckboxes(root: ParentNode): SkillCheckboxLike[] {
-  return Array.from(root.querySelectorAll("[data-skill]"))
-    .filter((value) =>
-      typeof value === "object" && value !== null && "dataset" in value && "checked" in value && "disabled" in value
-    )
-    .map((value) => value as unknown as SkillCheckboxLike);
-}
-
 export const __originChoicesStepInternals = {
   getBackgroundSkills,
   getChosenClassSkills,
-  getClassSkillPool,
-  getClassSkillCount,
   getDefaultOriginFeatSelection,
   getAvailableOriginFeats,
   isEligibleOriginFeatDocument,

@@ -74,6 +74,10 @@ interface TraitAdvancementLike {
   type?: string;
   level?: number;
   configuration?: {
+    mode?: string;
+    choices?: Array<{
+      count?: number;
+    }>;
     grants?: Set<string> | string[];
   };
   value?: AdvancementValueLike;
@@ -869,8 +873,53 @@ async function applyFinalCharacterSelections(
 ): Promise<void> {
   await applyAbilityScores(actor, state.selections);
   await applyProficiencies(actor, state.selections);
+  await applyWeaponMasteries(actor, state);
   await applyLanguages(actor, state.selections);
   await applyFinalHitPoints(actor, state);
+}
+
+async function applyWeaponMasteries(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const chosenMasteries = state.selections.classChoices?.chosenWeaponMasteries ?? [];
+  if (chosenMasteries.length === 0) return;
+
+  const classItem = findActorItemWithAdvancement(actor, ["class"], state.selections.class?.identifier);
+  let appliedViaAdvancement = false;
+
+  if (classItem && Array.isArray(classItem.system?.advancement)) {
+    const masteryAdvancements = classItem.system.advancement
+      .filter((entry) =>
+        entry.type === "Trait"
+        && (entry.title ?? "").toLowerCase() === "weapon mastery"
+        && entry.configuration?.mode === "mastery"
+        && typeof entry.apply === "function"
+        && (typeof entry.level !== "number" || entry.level <= state.config.startingLevel)
+      )
+      .sort((left, right) => (left.level ?? 0) - (right.level ?? 0));
+
+    const remaining = [...chosenMasteries];
+    for (const advancement of masteryAdvancements) {
+      const count = getTraitAdvancementChoiceCount(advancement);
+      if (count <= 0 || remaining.length === 0) continue;
+      const chunk = remaining.splice(0, count);
+      if (chunk.length === 0) continue;
+      await advancement.apply?.(advancement.level ?? 1, {
+        chosen: new Set(chunk.map((id) => id.startsWith("weapon:") ? id : `weapon:${id}`)),
+      });
+      appliedViaAdvancement = true;
+    }
+
+    if (appliedViaAdvancement) {
+      await persistAdvancementSelections(classItem);
+    }
+  }
+
+  await actor.update({
+    "system.traits.weaponProf.mastery.value": chosenMasteries,
+  });
+  Log.debug(`ActorCreationEngine: Applied ${chosenMasteries.length} weapon masteries${appliedViaAdvancement ? " via advancements and actor traits" : ""}`);
 }
 
 async function applyFinalHitPoints(
@@ -972,6 +1021,13 @@ function getAdvancementGrantKeys(advancement: TraitAdvancementLike): string[] {
   if (Array.isArray(grants)) return [...grants];
   if (grants instanceof Set) return Array.from(grants);
   return [];
+}
+
+function getTraitAdvancementChoiceCount(advancement: TraitAdvancementLike): number {
+  const choices = Array.isArray(advancement.configuration?.choices)
+    ? advancement.configuration?.choices ?? []
+    : [];
+  return choices.reduce((sum, choice) => sum + (typeof choice.count === "number" ? choice.count : 0), 0);
 }
 
 async function grantItemsByUuid(
