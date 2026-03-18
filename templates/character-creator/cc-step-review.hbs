@@ -123,9 +123,29 @@
             </span>
           </div>
           {{/if}}
+          {{#if hasSpeciesSkills}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Species:</span>
+            <span class="cc-review-grant__chips">
+              {{#each speciesSkills}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
+          {{#if hasSpeciesItems}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Species Choices:</span>
+            <span class="cc-review-grant__chips">
+              {{#each speciesItems}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
           {{#unless hasClassSkills}}
           {{#unless hasBackgroundSkills}}
+          {{#unless hasSpeciesSkills}}
+          {{#unless hasSpeciesItems}}
           <span class="cc-review-simple__text">None selected</span>
+          {{/unless}}
+          {{/unless}}
           {{/unless}}
           {{/unless}}
         </div>

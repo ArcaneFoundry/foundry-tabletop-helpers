@@ -18,7 +18,30 @@ function makeState(): WizardState {
     applicableSteps: ["class", "spells", "review"],
     selections: {
       review: { characterName: "Arannis Vale" },
-      species: { uuid: "species.human", name: "Human", img: "human.png", traits: [] },
+      species: {
+        uuid: "species.human",
+        name: "Human",
+        img: "human.png",
+        traits: [],
+        skillGrants: ["prc"],
+        skillChoiceCount: 1,
+        itemChoiceGroups: [
+          {
+            id: "wizard-cantrip",
+            title: "Wizard Cantrip",
+            count: 1,
+            options: [{ uuid: "spell.light", name: "Light" }],
+          },
+        ],
+      },
+      speciesChoices: {
+        hasChoices: true,
+        chosenLanguages: [],
+        chosenSkills: ["nat"],
+        chosenItems: {
+          "wizard-cantrip": ["spell.light"],
+        },
+      },
       background: {
         uuid: "background.sage",
         name: "Sage",
@@ -107,10 +130,20 @@ describe("step review", () => {
     const viewModel = await step.buildViewModel(makeState());
     const sections = viewModel.sections as Array<Record<string, unknown>>;
     const spellsSection = sections.find((section) => section.id === "spells");
+    const originSummarySection = sections.find((section) => section.id === "originSummary");
+    const speciesChoicesSection = sections.find((section) => section.id === "speciesChoices");
 
     expect(spellsSection).toMatchObject({
       summary: "4 cantrips, 14 spells, 9 prepared",
       detail: "Choose which 9 leveled spells start prepared for this Wizard. You can change them later on the sheet.",
+    });
+    expect(originSummarySection).toMatchObject({
+      speciesSkills: ["Perception", "Nature"],
+      speciesItems: ["Light"],
+      hasSpeciesSkills: true,
+    });
+    expect(speciesChoicesSection).toMatchObject({
+      summary: "1 / 1 skill choices, 1 / 1 spell/item choices",
     });
   });
 
@@ -163,6 +196,27 @@ describe("step review", () => {
     expect(spellsSection).toMatchObject({
       summary: "4 cantrips, 7 spells, 5 prepared",
       detail: "Choose which 5 leveled spells start prepared for this Cleric. You can change them later on the sheet.",
+    });
+  });
+
+  it("surfaces a swapped origin feat in the review summary", async () => {
+    const { createReviewStep } = await import("./step-review");
+    const step = createReviewStep();
+    const state = makeState();
+    state.selections.originFeat = {
+      uuid: "feat.alert",
+      name: "Alert",
+      img: "alert.png",
+      isCustom: true,
+    };
+
+    const viewModel = await step.buildViewModel(state);
+    const sections = viewModel.sections as Array<Record<string, unknown>>;
+    const originChoicesSection = sections.find((section) => section.id === "originChoices");
+
+    expect(originChoicesSection).toMatchObject({
+      summary: "2 class skills, 2 chosen languages, Alert",
+      img: "alert.png",
     });
   });
 });

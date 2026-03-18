@@ -89,6 +89,28 @@ export function createReviewStep(): WizardStepDefinition {
         hasTraits: (sel.species?.traits?.length ?? 0) > 0,
       };
 
+      const speciesChoiceCount = sel.species?.languageChoiceCount ?? 0;
+      const chosenSpeciesLanguages = sel.speciesChoices?.chosenLanguages ?? [];
+      const speciesSkillChoiceCount = sel.species?.skillChoiceCount ?? 0;
+      const chosenSpeciesSkills = sel.speciesChoices?.chosenSkills ?? [];
+      const speciesItemChoiceCount = (sel.species?.itemChoiceGroups ?? [])
+        .reduce((sum, group) => sum + group.count, 0);
+      const chosenSpeciesItems = Object.values(sel.speciesChoices?.chosenItems ?? {}).flat().length;
+      const speciesChoicesSection = {
+        id: "speciesChoices",
+        label: "Species Choices",
+        icon: "fa-solid fa-wand-magic-sparkles",
+        complete: chosenSpeciesLanguages.length >= speciesChoiceCount
+          && chosenSpeciesSkills.length >= speciesSkillChoiceCount
+          && chosenSpeciesItems >= speciesItemChoiceCount,
+        summary: [
+          speciesChoiceCount > 0 ? `${chosenSpeciesLanguages.length} / ${speciesChoiceCount} language choices` : "",
+          speciesSkillChoiceCount > 0 ? `${chosenSpeciesSkills.length} / ${speciesSkillChoiceCount} skill choices` : "",
+          speciesItemChoiceCount > 0 ? `${chosenSpeciesItems} / ${speciesItemChoiceCount} spell/item choices` : "",
+        ].filter(Boolean).join(", ") || "No additional species choices",
+        isSimple: true,
+      };
+
       /* ── 2. Background ──────────────────────────────────── */
       const bg = sel.background;
       const bgSkills = bg?.grants.skillProficiencies.map(skillName) ?? [];
@@ -103,15 +125,11 @@ export function createReviewStep(): WizardStepDefinition {
         ? Object.values(bg.asi.assignments).reduce((sum, v) => sum + (v ?? 0), 0)
         : 0;
       const asiNeeded = bg?.grants.asiPoints ?? 0;
-      const langChosenCount = bg?.languages.chosen.length ?? 0;
-      const langNeeded = bg?.grants.languageChoiceCount ?? 0;
-      const bgComplete = !!bg?.uuid && asiTotal >= asiNeeded && langChosenCount >= langNeeded;
-
       const backgroundSection = {
         id: "background",
         label: "Background",
         icon: "fa-solid fa-scroll",
-        complete: bgComplete,
+        complete: !!bg?.uuid,
         summary: bg?.name ?? "Not selected",
         img: bg?.img,
         isBackground: true,
@@ -124,13 +142,30 @@ export function createReviewStep(): WizardStepDefinition {
         hasBgDetails: !!bg?.uuid,
       };
 
-      /* ── 3. Origin Feat ─────────────────────────────────── */
-      const originFeatSection = {
-        id: "originFeat",
-        label: "Origin Feat",
-        icon: "fa-solid fa-star-half-stroke",
-        complete: !!sel.originFeat?.uuid,
-        summary: sel.originFeat?.name ?? "Not selected",
+      const backgroundAsiSection = {
+        id: "backgroundAsi",
+        label: "Background ASI",
+        icon: "fa-solid fa-chart-line",
+        complete: asiTotal >= asiNeeded,
+        summary: bgASI,
+        isSimple: true,
+      };
+
+      const originChoicesComplete = (sel.skills?.chosen.length ?? 0) >= (sel.class?.skillCount ?? 0)
+        && (bg?.languages.chosen.length ?? 0) >= (bg?.grants.languageChoiceCount ?? 0)
+        && (!bg?.grants.originFeatUuid || !!sel.originFeat?.uuid);
+      const originChoicesSummary = [
+        `${sel.skills?.chosen.length ?? 0} class skills`,
+        `${bg?.languages.chosen.length ?? 0} chosen languages`,
+        sel.originFeat?.name ?? bgOriginFeat,
+      ].filter(Boolean).join(", ");
+
+      const originChoicesSection = {
+        id: "originChoices",
+        label: "Origin Choices",
+        icon: "fa-solid fa-hand-sparkles",
+        complete: originChoicesComplete,
+        summary: originChoicesSummary || "Not selected",
         img: sel.originFeat?.img,
         isSimple: true,
       };
@@ -148,10 +183,12 @@ export function createReviewStep(): WizardStepDefinition {
 
       /* ── 5. Subclass (conditional) ──────────────────────── */
       const sections: Record<string, unknown>[] = [
-        speciesSection,
-        backgroundSection,
-        originFeatSection,
         classSection,
+        backgroundSection,
+        backgroundAsiSection,
+        originChoicesSection,
+        speciesSection,
+        speciesChoicesSection,
       ];
 
       if (state.applicableSteps.includes("subclass")) {
@@ -197,16 +234,32 @@ export function createReviewStep(): WizardStepDefinition {
       /* ── 7. Skills ──────────────────────────────────────── */
       const classSkills = sel.skills?.chosen.map(skillName) ?? [];
       const backgroundSkills = bg?.grants.skillProficiencies.map(skillName) ?? [];
+      const speciesSkills = [
+        ...(sel.species?.skillGrants ?? []),
+        ...(sel.speciesChoices?.chosenSkills ?? []),
+      ].map(skillName);
+      const speciesItems = Object.values(sel.speciesChoices?.chosenItems ?? {})
+        .flatMap((uuids) => uuids)
+        .map((uuid) => {
+          const group = (sel.species?.itemChoiceGroups ?? []).find((candidate) =>
+            candidate.options.some((option) => option.uuid === uuid)
+          );
+          return group?.options.find((option) => option.uuid === uuid)?.name ?? uuid;
+        });
 
       sections.push({
-        id: "skills",
-        label: "Skills",
-        icon: "fa-solid fa-hand-fist",
-        complete: classSkills.length > 0 || backgroundSkills.length > 0,
+        id: "originSummary",
+        label: "Origin Summary",
+        icon: "fa-solid fa-layer-group",
+        complete: !!bg?.uuid && !!sel.species?.uuid,
         classSkills,
         backgroundSkills,
+        speciesSkills,
+        speciesItems,
         hasClassSkills: classSkills.length > 0,
         hasBackgroundSkills: backgroundSkills.length > 0,
+        hasSpeciesSkills: speciesSkills.length > 0,
+        hasSpeciesItems: speciesItems.length > 0,
         isSkills: true,
       });
 

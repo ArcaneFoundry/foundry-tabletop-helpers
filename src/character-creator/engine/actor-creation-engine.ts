@@ -228,6 +228,11 @@ async function embedItems(
 
   // Species
   if (sel.species?.uuid) uuids.push(sel.species.uuid);
+  for (const groupSelection of Object.values(sel.speciesChoices?.chosenItems ?? {})) {
+    for (const uuid of groupSelection) {
+      if (typeof uuid === "string" && uuid.length > 0) uuids.push(uuid);
+    }
+  }
   // Background
   if (sel.background?.uuid) uuids.push(sel.background.uuid);
   // Origin feat (from background grants or player swap)
@@ -569,6 +574,10 @@ async function applyProficiencies(
 ): Promise<void> {
   const backgroundSkills = sel.background?.grants.skillProficiencies ?? [];
   const classSkills = sel.skills?.chosen ?? [];
+  const speciesSkills = [
+    ...(sel.species?.skillGrants ?? []),
+    ...(sel.speciesChoices?.chosenSkills ?? []),
+  ];
   let appliedViaAdvancement = false;
 
   appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
@@ -587,6 +596,14 @@ async function applyProficiencies(
     itemIdentifier: sel.class?.identifier,
   }) || appliedViaAdvancement;
 
+  appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
+    itemTypes: ["race", "species"],
+    advancementTitleIncludes: "proficien",
+    chosen: prefixTraitKeys(speciesSkills, "skills"),
+    level: 0,
+    includeConfigurationGrants: true,
+  }) || appliedViaAdvancement;
+
   if (appliedViaAdvancement) {
     Log.debug("ActorCreationEngine: Applied skill proficiencies via dnd5e advancements");
     return;
@@ -600,6 +617,10 @@ async function applyProficiencies(
   }
   // Class-chosen skills
   for (const key of classSkills) {
+    skillUpdates[`system.skills.${key}.proficient`] = 1;
+  }
+  // Species-granted/chosen skills
+  for (const key of speciesSkills) {
     skillUpdates[`system.skills.${key}.proficient`] = 1;
   }
 
@@ -618,7 +639,8 @@ async function applyLanguages(
   const fixed = sel.background?.languages.fixed ?? [];
   const chosen = sel.background?.languages.chosen ?? [];
   const speciesLanguages = sel.species?.languageGrants ?? [];
-  const allLanguages = [...new Set([...speciesLanguages, ...fixed, ...chosen])];
+  const speciesChosen = sel.speciesChoices?.chosenLanguages ?? [];
+  const allLanguages = [...new Set([...speciesLanguages, ...speciesChosen, ...fixed, ...chosen])];
 
   let appliedViaAdvancement = false;
   appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
@@ -632,7 +654,7 @@ async function applyLanguages(
   appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
     itemTypes: ["race", "species"],
     advancementTitleIncludes: "language",
-    chosen: prefixTraitKeys(speciesLanguages, "languages:standard"),
+    chosen: prefixTraitKeys([...speciesLanguages, ...speciesChosen], "languages:standard"),
     level: 0,
     includeConfigurationGrants: true,
   }) || appliedViaAdvancement;

@@ -59,7 +59,31 @@ function createWizardState(): any {
         maxPreparedSpells: 4,
       },
       portrait: undefined as { portraitDataUrl?: string; tokenDataUrl?: string } | undefined,
-      species: { uuid: "Compendium.species.high-elf", languageGrants: ["elvish"] },
+      species: {
+        uuid: "Compendium.species.high-elf",
+        languageGrants: ["elvish"],
+        skillChoiceCount: 1,
+        skillChoicePool: ["prc", "nat"],
+        itemChoiceGroups: [
+          {
+            id: "wizard-cantrip",
+            title: "Wizard Cantrip",
+            count: 1,
+            options: [
+              { uuid: "Compendium.spells.light", name: "Light" },
+              { uuid: "Compendium.spells.prestidigitation", name: "Prestidigitation" },
+            ],
+          },
+        ],
+      },
+      speciesChoices: {
+        hasChoices: true,
+        chosenLanguages: [],
+        chosenSkills: ["prc"],
+        chosenItems: {
+          "wizard-cantrip": ["Compendium.spells.light"],
+        },
+      },
       equipment: { method: "gold", goldAmount: 125 },
     },
   };
@@ -226,6 +250,8 @@ function createActor() {
         arc: { proficient: 0, value: 0 },
         his: { proficient: 0, value: 0 },
         ins: { proficient: 0, value: 0 },
+        prc: { proficient: 0, value: 0 },
+        nat: { proficient: 0, value: 0 },
       },
     },
     items: {
@@ -386,7 +412,7 @@ beforeEach(() => {
                 prepared: false,
               },
             }
-          : uuid === "Compendium.spells.magic-missile"
+        : uuid === "Compendium.spells.magic-missile"
             ? {
                 level: 1,
                 preparation: {
@@ -394,6 +420,14 @@ beforeEach(() => {
                   prepared: true,
                 },
               }
+        : uuid === "Compendium.spells.light"
+          ? {
+              level: 0,
+              preparation: {
+                mode: "prepared",
+                prepared: false,
+              },
+            }
         : uuid === "Compendium.classes.fighter"
           ? {
               hitDice: "d10",
@@ -438,6 +472,12 @@ beforeEach(() => {
                       title: "Languages",
                       level: 0,
                       configuration: { grants: ["languages:standard:elvish"] },
+                      value: { chosen: [] },
+                    },
+                    {
+                      type: "Trait",
+                      title: "Skill Proficiencies",
+                      level: 0,
                       value: { chosen: [] },
                     },
                   ],
@@ -507,6 +547,8 @@ describe("actor creation engine", () => {
     expect(createActorInstance.system.skills.arc).toMatchObject({ proficient: 1, value: 1 });
     expect(createActorInstance.system.skills.his).toMatchObject({ proficient: 1, value: 1 });
     expect(createActorInstance.system.skills.ins).toMatchObject({ proficient: 1, value: 1 });
+    expect(createActorInstance.system.skills.prc).toMatchObject({ proficient: 1, value: 1 });
+    expect(Array.from(createActorInstance.items).some((item) => item.name === "light")).toBe(true);
     expect([...createActorInstance.system.traits.languages.value].sort()).toEqual(["common", "draconic", "elvish"]);
     expect(createActorInstance.update).toHaveBeenCalledWith({
       "system.attributes.hp.max": 7,
@@ -583,6 +625,7 @@ describe("actor creation engine", () => {
       "languages:standard:draconic",
     ]);
     expect(speciesAdvancement[0]?.value?.chosen).toEqual(["languages:standard:elvish"]);
+    expect(speciesAdvancement[1]?.value?.chosen).toEqual(["skills:prc"]);
   });
 
   it("seeds an initial prepared subset for higher-level wizard creation from the final actor class item", async () => {
