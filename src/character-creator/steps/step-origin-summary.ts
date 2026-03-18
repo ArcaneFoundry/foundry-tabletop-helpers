@@ -1,0 +1,57 @@
+import { MOD } from "../../logger";
+import type { WizardState, WizardStepDefinition } from "../character-creator-types";
+import { LANGUAGE_LABELS, SKILLS } from "../data/dnd5e-constants";
+import { getAllFixedLanguages } from "./origin-flow-utils";
+
+function skillLabel(key: string): string {
+  return SKILLS[key]?.label ?? key;
+}
+
+function languageLabel(key: string): string {
+  return LANGUAGE_LABELS[key] ?? key;
+}
+
+function toolLabel(key: string | null): string | null {
+  if (!key) return null;
+  return key.split(":").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(": ");
+}
+
+export function createOriginSummaryStep(): WizardStepDefinition {
+  return {
+    id: "originSummary",
+    label: "Origin Summary",
+    icon: "fa-solid fa-layer-group",
+    templatePath: `modules/${MOD}/templates/character-creator/cc-step-origin-summary.hbs`,
+    dependencies: ["background", "species"],
+    isApplicable: (state) => !!state.selections.background?.uuid && !!state.selections.species?.uuid,
+    isComplete: (state) => !!state.selections.background?.uuid && !!state.selections.species?.uuid,
+    async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
+      return {
+        backgroundName: state.selections.background?.name ?? "",
+        speciesName: state.selections.species?.name ?? "",
+        backgroundSkills: (state.selections.background?.grants.skillProficiencies ?? []).map(skillLabel),
+        classSkills: (state.selections.skills?.chosen ?? []).map(skillLabel),
+        speciesSkills: [
+          ...(state.selections.species?.skillGrants ?? []),
+          ...(state.selections.speciesChoices?.chosenSkills ?? []),
+        ].map(skillLabel),
+        speciesItems: Object.entries(state.selections.speciesChoices?.chosenItems ?? {})
+          .flatMap(([, uuids]) => uuids)
+          .map((uuid) => {
+            const group = (state.selections.species?.itemChoiceGroups ?? [])
+              .find((candidate) => candidate.options.some((option) => option.uuid === uuid));
+            const option = group?.options.find((candidate) => candidate.uuid === uuid);
+            return option?.name ?? uuid;
+          }),
+        toolProficiency: toolLabel(state.selections.background?.grants.toolProficiency ?? null),
+        originFeatName: state.selections.originFeat?.name ?? state.selections.background?.grants.originFeatName ?? null,
+        languages: [
+          ...getAllFixedLanguages(state).map(languageLabel),
+          ...(state.selections.background?.languages.chosen ?? []).map(languageLabel),
+          ...(state.selections.speciesChoices?.chosenLanguages ?? []).map(languageLabel),
+        ],
+        speciesTraits: state.selections.species?.traits ?? [],
+      };
+    },
+  };
+}

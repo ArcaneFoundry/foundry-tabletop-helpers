@@ -1,0 +1,45 @@
+<div class="cc-origin-summary" data-step="originSummary">
+  <div class="cc-step-intro">
+    <p>Here’s the combined snapshot of what your background and species contribute before ability assignment.</p>
+  </div>
+
+  <section class="cc-panel">
+    <h3>Origin Overview</h3>
+    <p><strong>Background:</strong> {{backgroundName}}</p>
+    <p><strong>Species:</strong> {{speciesName}}</p>
+  </section>
+
+  <section class="cc-panel">
+    <h3>Proficiencies</h3>
+    {{#if backgroundSkills.length}}
+    <p><strong>Background Skills:</strong></p>
+    <div class="cc-chip-row">{{#each backgroundSkills}}<span class="cc-chip cc-chip--locked">{{this}}</span>{{/each}}</div>
+    {{/if}}
+    {{#if classSkills.length}}
+    <p><strong>Class Skills:</strong></p>
+    <div class="cc-chip-row">{{#each classSkills}}<span class="cc-chip">{{this}}</span>{{/each}}</div>
+    {{/if}}
+    {{#if speciesSkills.length}}
+    <p><strong>Species Skills:</strong></p>
+    <div class="cc-chip-row">{{#each speciesSkills}}<span class="cc-chip">{{this}}</span>{{/each}}</div>
+    {{/if}}
+    {{#if speciesItems.length}}
+    <p><strong>Species Spell/Item Choices:</strong></p>
+    <div class="cc-chip-row">{{#each speciesItems}}<span class="cc-chip">{{this}}</span>{{/each}}</div>
+    {{/if}}
+    {{#if toolProficiency}}<p><strong>Tool:</strong> {{toolProficiency}}</p>{{/if}}
+  </section>
+
+  <section class="cc-panel">
+    <h3>Origin Features</h3>
+    {{#if originFeatName}}<p><strong>Origin Feat:</strong> {{originFeatName}}</p>{{/if}}
+    {{#if speciesTraits.length}}
+    <div class="cc-chip-row">{{#each speciesTraits}}<span class="cc-chip">{{this}}</span>{{/each}}</div>
+    {{/if}}
+  </section>
+
+  <section class="cc-panel">
+    <h3>Languages</h3>
+    <div class="cc-chip-row">{{#each languages}}<span class="cc-chip">{{this}}</span>{{/each}}</div>
+  </section>
+</div>
