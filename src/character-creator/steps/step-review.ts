@@ -23,6 +23,13 @@ import {
   abilityModifier,
   formatModifier,
 } from "../data/dnd5e-constants";
+import { getStartingGoldForSelections } from "../starting-resources";
+import { fromUuid } from "../../types";
+import {
+  buildPreparationNotice,
+  getSpellPreparationPolicy,
+  type SpellPreparationClassDocumentLike,
+} from "../spell-preparation-policy";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -82,6 +89,39 @@ export function createReviewStep(): WizardStepDefinition {
         hasTraits: (sel.species?.traits?.length ?? 0) > 0,
       };
 
+      const speciesChoiceCount = sel.species?.languageChoiceCount ?? 0;
+      const chosenSpeciesLanguages = sel.speciesChoices?.chosenLanguages ?? [];
+      const chosenSpeciesSkills = sel.speciesChoices?.chosenSkills ?? [];
+      const speciesSkillChoiceCount = Math.min(
+        sel.species?.skillChoiceCount ?? 0,
+        (sel.species?.skillChoicePool ?? [])
+          .filter((skill) => skill in SKILLS)
+          .filter((skill) => chosenSpeciesSkills.includes(skill)
+            || !new Set([
+              ...(sel.background?.grants.skillProficiencies ?? []),
+              ...(sel.skills?.chosen ?? []),
+              ...(sel.species?.skillGrants ?? []),
+            ]).has(skill))
+          .length,
+      );
+      const speciesItemChoiceCount = (sel.species?.itemChoiceGroups ?? [])
+        .reduce((sum, group) => sum + Math.min(group.count, group.options.length), 0);
+      const chosenSpeciesItems = Object.values(sel.speciesChoices?.chosenItems ?? {}).flat().length;
+      const speciesChoicesSection = {
+        id: "speciesChoices",
+        label: "Species Choices",
+        icon: "fa-solid fa-wand-magic-sparkles",
+        complete: chosenSpeciesLanguages.length >= speciesChoiceCount
+          && chosenSpeciesSkills.length >= speciesSkillChoiceCount
+          && chosenSpeciesItems >= speciesItemChoiceCount,
+        summary: [
+          speciesChoiceCount > 0 ? `${chosenSpeciesLanguages.length} / ${speciesChoiceCount} language choices` : "",
+          speciesSkillChoiceCount > 0 ? `${chosenSpeciesSkills.length} / ${speciesSkillChoiceCount} skill choices` : "",
+          speciesItemChoiceCount > 0 ? `${chosenSpeciesItems} / ${speciesItemChoiceCount} spell/item choices` : "",
+        ].filter(Boolean).join(", ") || "No additional species choices",
+        isSimple: true,
+      };
+
       /* ── 2. Background ──────────────────────────────────── */
       const bg = sel.background;
       const bgSkills = bg?.grants.skillProficiencies.map(skillName) ?? [];
@@ -96,15 +136,11 @@ export function createReviewStep(): WizardStepDefinition {
         ? Object.values(bg.asi.assignments).reduce((sum, v) => sum + (v ?? 0), 0)
         : 0;
       const asiNeeded = bg?.grants.asiPoints ?? 0;
-      const langChosenCount = bg?.languages.chosen.length ?? 0;
-      const langNeeded = bg?.grants.languageChoiceCount ?? 0;
-      const bgComplete = !!bg?.uuid && asiTotal >= asiNeeded && langChosenCount >= langNeeded;
-
       const backgroundSection = {
         id: "background",
         label: "Background",
         icon: "fa-solid fa-scroll",
-        complete: bgComplete,
+        complete: !!bg?.uuid,
         summary: bg?.name ?? "Not selected",
         img: bg?.img,
         isBackground: true,
@@ -117,13 +153,30 @@ export function createReviewStep(): WizardStepDefinition {
         hasBgDetails: !!bg?.uuid,
       };
 
-      /* ── 3. Origin Feat ─────────────────────────────────── */
-      const originFeatSection = {
-        id: "originFeat",
-        label: "Origin Feat",
-        icon: "fa-solid fa-star-half-stroke",
-        complete: !!sel.originFeat?.uuid,
-        summary: sel.originFeat?.name ?? "Not selected",
+      const backgroundAsiSection = {
+        id: "backgroundAsi",
+        label: "Background ASI",
+        icon: "fa-solid fa-chart-line",
+        complete: asiTotal >= asiNeeded,
+        summary: bgASI,
+        isSimple: true,
+      };
+
+      const originChoicesComplete = (sel.skills?.chosen.length ?? 0) >= (sel.class?.skillCount ?? 0)
+        && (bg?.languages.chosen.length ?? 0) >= (bg?.grants.languageChoiceCount ?? 0)
+        && (!bg?.grants.originFeatUuid || !!sel.originFeat?.uuid);
+      const originChoicesSummary = [
+        `${sel.skills?.chosen.length ?? 0} class skills`,
+        `${bg?.languages.chosen.length ?? 0} chosen languages`,
+        sel.originFeat?.name ?? bgOriginFeat,
+      ].filter(Boolean).join(", ");
+
+      const originChoicesSection = {
+        id: "originChoices",
+        label: "Origin Choices",
+        icon: "fa-solid fa-hand-sparkles",
+        complete: originChoicesComplete,
+        summary: originChoicesSummary || "Not selected",
         img: sel.originFeat?.img,
         isSimple: true,
       };
@@ -141,13 +194,15 @@ export function createReviewStep(): WizardStepDefinition {
 
       /* ── 5. Subclass (conditional) ──────────────────────── */
       const sections: Record<string, unknown>[] = [
-        speciesSection,
-        backgroundSection,
-        originFeatSection,
         classSection,
+        backgroundSection,
+        backgroundAsiSection,
+        originChoicesSection,
+        speciesSection,
+        speciesChoicesSection,
       ];
 
-      if (state.config.startingLevel >= 3 && state.applicableSteps.includes("subclass")) {
+      if (state.applicableSteps.includes("subclass")) {
         sections.push({
           id: "subclass",
           label: "Subclass",
@@ -190,16 +245,32 @@ export function createReviewStep(): WizardStepDefinition {
       /* ── 7. Skills ──────────────────────────────────────── */
       const classSkills = sel.skills?.chosen.map(skillName) ?? [];
       const backgroundSkills = bg?.grants.skillProficiencies.map(skillName) ?? [];
+      const speciesSkills = [
+        ...(sel.species?.skillGrants ?? []),
+        ...(sel.speciesChoices?.chosenSkills ?? []),
+      ].map(skillName);
+      const speciesItems = Object.values(sel.speciesChoices?.chosenItems ?? {})
+        .flatMap((uuids) => uuids)
+        .map((uuid) => {
+          const group = (sel.species?.itemChoiceGroups ?? []).find((candidate) =>
+            candidate.options.some((option) => option.uuid === uuid)
+          );
+          return group?.options.find((option) => option.uuid === uuid)?.name ?? uuid;
+        });
 
       sections.push({
-        id: "skills",
-        label: "Skills",
-        icon: "fa-solid fa-hand-fist",
-        complete: classSkills.length > 0 || backgroundSkills.length > 0,
+        id: "originSummary",
+        label: "Origin Summary",
+        icon: "fa-solid fa-layer-group",
+        complete: !!bg?.uuid && !!sel.species?.uuid,
         classSkills,
         backgroundSkills,
+        speciesSkills,
+        speciesItems,
         hasClassSkills: classSkills.length > 0,
         hasBackgroundSkills: backgroundSkills.length > 0,
+        hasSpeciesSkills: speciesSkills.length > 0,
+        hasSpeciesItems: speciesItems.length > 0,
         isSkills: true,
       });
 
@@ -229,12 +300,25 @@ export function createReviewStep(): WizardStepDefinition {
       if (state.applicableSteps.includes("spells")) {
         const cantripCount = sel.spells?.cantrips?.length ?? 0;
         const spellCount = sel.spells?.spells?.length ?? 0;
+        const classDoc = sel.class?.uuid
+          ? await fromUuid(sel.class.uuid) as SpellPreparationClassDocumentLike | null
+          : null;
+        const preparationPolicy = getSpellPreparationPolicy(
+          sel.class?.identifier ?? "",
+          classDoc,
+          state.config.startingLevel,
+        );
+        const preparedCount = sel.spells?.preparedSpells?.length ?? 0;
+        const preparationDetail = buildPreparationNotice(sel.class?.name ?? "spellcaster", spellCount, preparationPolicy);
         sections.push({
           id: "spells",
           label: "Spells",
           icon: "fa-solid fa-wand-sparkles",
           complete: cantripCount > 0 || spellCount > 0,
-          summary: `${cantripCount} cantrips, ${spellCount} spells`,
+          summary: preparationPolicy.usesPreparedSpellPicker
+            ? `${cantripCount} cantrips, ${spellCount} spells, ${preparedCount} prepared`
+            : `${cantripCount} cantrips, ${spellCount} spells`,
+          detail: preparationDetail,
           isSimple: true,
         });
       }
@@ -245,7 +329,7 @@ export function createReviewStep(): WizardStepDefinition {
         if (sel.equipment.method === "gold") {
           equipmentSummary = `Starting gold: ${sel.equipment.goldAmount ?? 0} gp`;
         } else {
-          equipmentSummary = "Standard equipment packs";
+          equipmentSummary = `Recommended gold fallback: ${getStartingGoldForSelections(sel)} gp`;
         }
       }
       sections.push({
@@ -257,12 +341,14 @@ export function createReviewStep(): WizardStepDefinition {
         isSimple: true,
       });
 
-      const allComplete = sections.every((s) => s.complete);
+      const incompleteSections = sections.filter((section) => !section.complete);
+      const allComplete = incompleteSections.length === 0;
 
       return {
         characterName: reviewData?.characterName ?? "",
         sections,
         allComplete,
+        incompleteSectionLabels: incompleteSections.map((section) => section.label),
         isReview: true,
         startingLevel: state.config.startingLevel,
       };

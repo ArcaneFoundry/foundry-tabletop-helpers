@@ -21,6 +21,9 @@
           <div class="cc-select-card__info">
             <div class="cc-select-card__name">{{name}}</div>
             <div class="cc-select-card__source">{{packLabel}}</div>
+            {{#if primaryAbilityText}}
+            <div class="cc-select-card__meta">Primary Ability: {{primaryAbilityText}}</div>
+            {{/if}}
           </div>
           {{#if selected}}
           <div class="cc-select-card__check">
@@ -41,6 +44,9 @@
           <div class="cc-card-detail__title">
             <h3>{{selectedEntry.name}}</h3>
             <span class="cc-card-detail__source">{{selectedEntry.packLabel}}</span>
+            {{#if selectedEntry.primaryAbilityHint}}
+            <p class="cc-card-detail__hint"><strong>Primary Ability:</strong> {{selectedEntry.primaryAbilityHint}}</p>
+            {{/if}}
           </div>
         </div>
         {{#if selectedEntry.description}}

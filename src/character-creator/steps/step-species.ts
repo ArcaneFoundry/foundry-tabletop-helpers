@@ -16,7 +16,12 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseSpeciesTraits, parseSpeciesLanguages } from "../data/advancement-parser";
+import {
+  parseSpeciesTraits,
+  parseSpeciesLanguages,
+  parseSpeciesProficiencies,
+  parseSpeciesItemChoices,
+} from "../data/advancement-parser";
 import { patchCardSelection } from "./card-select-utils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
@@ -104,6 +109,12 @@ export function createSpeciesStep(): WizardStepDefinition {
               const langs = parseSpeciesLanguages(doc);
               selection.languageGrants = langs.fixed;
               selection.languageChoiceCount = langs.choiceCount;
+              selection.languageChoicePool = langs.choicePool;
+              const profs = parseSpeciesProficiencies(doc);
+              selection.skillGrants = profs.fixedSkills;
+              selection.skillChoiceCount = profs.skillChoiceCount;
+              selection.skillChoicePool = profs.skillChoicePool;
+              selection.itemChoiceGroups = await parseSpeciesItemChoices(doc);
             }
           } catch (err) {
             Log.warn("Failed to parse species data", err);

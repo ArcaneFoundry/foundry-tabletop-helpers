@@ -87,6 +87,31 @@ describe("spell list resolver", () => {
     await expect(resolveClassSpellUuids("fighter")).resolves.toBeNull();
   });
 
+  it("supports dnd5e SpellListRegistry.forType results with uuid sets", async () => {
+    const forType = vi.fn((type: string, identifier?: string) => {
+      if (type === "class" && identifier === "wizard") {
+        return {
+          uuids: new Set([
+            "Compendium.dnd5e.spells.fireball",
+            "Compendium.dnd5e.spells.magic-missile",
+          ]),
+        };
+      }
+      return null;
+    });
+    setDnd5eRegistry({ forType });
+
+    const { resolveClassSpellUuids } = await import("./spell-list-resolver");
+
+    await expect(resolveClassSpellUuids("wizard")).resolves.toEqual(
+      new Set([
+        "Compendium.dnd5e.spells.fireball",
+        "Compendium.dnd5e.spells.magic-missile",
+      ]),
+    );
+    expect(forType).toHaveBeenCalledWith("class", "wizard");
+  });
+
   it("returns null when the registry is unavailable or throws", async () => {
     setDnd5eRegistry({
       forClass: vi.fn(async () => {

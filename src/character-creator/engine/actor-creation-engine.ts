@@ -14,6 +14,11 @@ import type { FoundryDocument } from "../../types";
 import type { WizardState, PortraitSelection } from "../character-creator-types";
 import { ABILITY_KEYS } from "../data/dnd5e-constants";
 import type { AbilityKey } from "../character-creator-types";
+import { getStartingGoldForSelections } from "../starting-resources";
+import { applyLevelUp } from "../level-up/actor-update-engine";
+import { averageHpForHitDie, getClassItems } from "../level-up/level-up-detection";
+import { buildFeatureSelectionForLevel, resolveGrantedFeaturesForDocument } from "../level-up/level-up-feature-helpers";
+import type { ClassItemInfo, LevelUpState } from "../level-up/level-up-types";
 
 interface ActorCollectionWithClass {
   documentClass?: {
@@ -37,6 +42,72 @@ interface FilePickerLike {
 interface GameSocketLike {
   emit?(event: string, data: Record<string, unknown>): void;
 }
+
+interface ClassDocumentLike {
+  system?: {
+    hitDice?: string;
+    hd?: {
+      denomination?: string;
+    };
+    levels?: number;
+    advancement?: Array<{
+      type?: string;
+      configuration?: {
+        identifier?: string;
+        scale?: Record<string, { value?: number }>;
+      };
+    }>;
+    spellcasting?: {
+      preparation?: {
+        formula?: string;
+      };
+    };
+  };
+}
+
+interface AdvancementValueLike {
+  chosen?: Set<string> | string[];
+}
+
+interface TraitAdvancementLike {
+  title?: string;
+  type?: string;
+  level?: number;
+  configuration?: {
+    grants?: Set<string> | string[];
+  };
+  value?: AdvancementValueLike;
+  apply?(level: number, data: { chosen: Set<string> }): Promise<void> | void;
+  toObject?(): Record<string, unknown>;
+}
+
+interface ItemWithAdvancementLike extends FoundryDocument {
+  system?: {
+    advancement?: TraitAdvancementLike[];
+    identifier?: string;
+  };
+}
+
+interface SpellItemLike extends FoundryDocument {
+  type?: string;
+  name?: string;
+  system?: {
+    level?: number;
+    identifier?: string;
+    method?: string;
+    prepared?: number | boolean;
+    preparation?: {
+      mode?: string;
+      prepared?: boolean | number;
+    };
+  };
+}
+
+const SPELL_PREPARATION_STATES = {
+  unprepared: 0,
+  prepared: 1,
+  always: 2,
+} as const;
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -78,24 +149,42 @@ export async function createCharacterFromWizard(
     await applyAbilityScores(actor, sel);
 
     // 3. Collect and embed items (species, background, origin feat, class, subclass, feats, spells)
-    await embedItems(actor, sel);
+    await embedItems(actor, state);
 
-    // 4. Apply proficiencies (background skills + class-chosen skills)
+    // 4. Grant baseline level-1 features that dnd5e class items do not
+    // materialize automatically when embedded during creation.
+    await applyInitialFeatureGrants(actor, state);
+
+    // 5. Apply proficiencies (background skills + class-chosen skills)
     await applyProficiencies(actor, sel);
 
-    // 5. Apply languages
+    // 6. Apply languages
     await applyLanguages(actor, sel);
 
-    // 6. Upload and apply portrait if generated
+    // 7. Apply level-1 HP and starting resources
+    await applyStartingDetails(actor, state);
+
+    // 8. Apply higher-level progression when starting above level 1
+    await applyStartingLevelProgression(actor, state);
+
+    // 9. Re-apply final derived selections after item embedding and
+    // higher-level progression, which can overwrite actor data in live dnd5e.
+    await applyFinalCharacterSelections(actor, state);
+
+    // 10. Normalize embedded spell preparation after dnd5e creation/progression
+    // flows have finished mutating actor spell items.
+    await normalizeActorSpellPreparation(actor, state);
+
+    // 11. Upload and apply portrait if generated
     await applyPortrait(actor, sel.portrait, characterName);
 
-    // 7. Set ownership
+    // 12. Set ownership
     await setOwnership(actor);
 
-    // 8. Notify GM via socket
+    // 13. Notify GM via socket
     notifyGMCharacterCreated(characterName, actor.id);
 
-    // 9. Return the created actor
+    // 14. Return the created actor
     return actor;
   } catch (err) {
     Log.error("ActorCreationEngine: Failed to create character", err);
@@ -109,30 +198,41 @@ async function applyAbilityScores(
   actor: FoundryDocument,
   sel: WizardState["selections"],
 ): Promise<void> {
-  const baseScores = sel.abilities?.scores ?? ({} as Partial<Record<AbilityKey, number>>);
-  const asiAssignments = sel.background?.asi?.assignments ?? {};
-
   const abilityUpdates: Record<string, unknown> = {};
+  const scores = buildSelectedAbilityScores(sel);
   for (const key of ABILITY_KEYS) {
-    const base = baseScores[key] ?? 10;
-    const bonus = asiAssignments[key] ?? 0;
-    abilityUpdates[`system.abilities.${key}.value`] = base + bonus;
+    abilityUpdates[`system.abilities.${key}.value`] = scores[key];
   }
 
   await actor.update(abilityUpdates);
-  Log.debug("ActorCreationEngine: Applied ability scores with background ASI");
+  Log.debug("ActorCreationEngine: Applied ability scores");
 }
 
 /* ── Step 3: Collect & Embed Items ───────────────────────── */
 
 async function embedItems(
   actor: FoundryDocument,
-  sel: WizardState["selections"],
+  state: WizardState,
 ): Promise<void> {
+  const sel = state.selections;
   const uuids: string[] = [];
+  const selectedCantrips = new Set(sel.spells?.cantrips ?? []);
+  const selectedSpells = new Set(sel.spells?.spells ?? []);
+  const usesPreparedSpellSelection = (sel.spells?.maxPreparedSpells ?? 0) > 0;
+  const grantedSpellRefs = await resolveGrantedSpellRefsForCreation(
+    sel.class?.uuid,
+    sel.subclass?.uuid,
+    state.config.startingLevel,
+  );
+  const grantedSpellUuids = new Set(grantedSpellRefs.map((ref) => ref.uuid));
 
   // Species
   if (sel.species?.uuid) uuids.push(sel.species.uuid);
+  for (const groupSelection of Object.values(sel.speciesChoices?.chosenItems ?? {})) {
+    for (const uuid of groupSelection) {
+      if (typeof uuid === "string" && uuid.length > 0) uuids.push(uuid);
+    }
+  }
   // Background
   if (sel.background?.uuid) uuids.push(sel.background.uuid);
   // Origin feat (from background grants or player swap)
@@ -144,7 +244,11 @@ async function embedItems(
   // Feat item (if player chose a feat instead of ASI)
   if (sel.feats?.featUuid) uuids.push(sel.feats.featUuid);
   // Spell UUIDs (cantrips + leveled spells)
-  for (const uuid of [...(sel.spells?.cantrips ?? []), ...(sel.spells?.spells ?? [])]) {
+  for (const uuid of sel.spells?.cantrips ?? []) {
+    uuids.push(uuid);
+  }
+  for (const uuid of sel.spells?.spells ?? []) {
+    if (grantedSpellUuids.has(uuid)) continue;
     uuids.push(uuid);
   }
 
@@ -156,6 +260,7 @@ async function embedItems(
       const obj = doc.toObject();
       // Remove _id so Foundry generates a new one
       delete obj._id;
+      normalizeEmbeddedSpellData(obj, uuid, selectedCantrips, selectedSpells, usesPreparedSpellSelection);
       items.push(obj);
     } else {
       Log.warn(`ActorCreationEngine: Could not resolve UUID ${uuid}`);
@@ -168,20 +273,354 @@ async function embedItems(
   }
 }
 
+function normalizeEmbeddedSpellData(
+  itemData: Record<string, unknown>,
+  uuid: string,
+  selectedCantrips: ReadonlySet<string>,
+  selectedSpells: ReadonlySet<string>,
+  usesPreparedSpellSelection: boolean,
+): void {
+  if (itemData.type !== "spell") return;
+
+  const system = typeof itemData.system === "object" && itemData.system !== null
+    ? { ...(itemData.system as Record<string, unknown>) }
+    : {};
+
+  if (selectedCantrips.has(uuid)) {
+    system.level = 0;
+    system.method = "spell";
+    system.prepared = SPELL_PREPARATION_STATES.always;
+    delete system.preparation;
+    itemData.system = system;
+    return;
+  }
+
+  if (selectedSpells.has(uuid) && usesPreparedSpellSelection) {
+    system.method = "spell";
+    system.prepared = SPELL_PREPARATION_STATES.unprepared;
+    delete system.preparation;
+    itemData.system = system;
+  }
+}
+
+async function normalizeActorSpellPreparation(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const sel = state.selections;
+  const cantripRefs = await resolveSelectedSpellRefs(sel.spells?.cantrips ?? []);
+  const leveledSpellRefs = await resolveSelectedSpellRefs(sel.spells?.spells ?? []);
+  const selectedCantripIds = new Set(cantripRefs.flatMap(({ identifier, name }) => [identifier, name]).filter(Boolean));
+  const selectedSpellIds = new Set(leveledSpellRefs.flatMap(({ identifier, name }) => [identifier, name]).filter(Boolean));
+  const initialPreparedIds = await resolveInitiallyPreparedSpellIds(actor, state, leveledSpellRefs);
+  const usesPreparedSpellSelection = (sel.spells?.maxPreparedSpells ?? 0) > 0 || initialPreparedIds.size > 0;
+  const updates: Array<{ _id: string; system: Record<string, unknown> }> = [];
+
+  for (const item of iterateActorItems(actor)) {
+    if (item.type !== "spell" || !item.id) continue;
+
+    const identifier = item.system?.identifier;
+    const name = item.name;
+    const keyMatchesCantrip = selectedCantripIds.has(identifier) || selectedCantripIds.has(name);
+    const keyMatchesLeveled = selectedSpellIds.has(identifier) || selectedSpellIds.has(name);
+
+    if (keyMatchesCantrip) {
+      updates.push({
+        _id: item.id,
+        system: {
+          level: 0,
+          method: "spell",
+          prepared: SPELL_PREPARATION_STATES.always,
+        },
+      });
+      continue;
+    }
+
+    if (keyMatchesLeveled && usesPreparedSpellSelection) {
+      const shouldPrepare = (identifier ? initialPreparedIds.has(identifier) : false)
+        || (name ? initialPreparedIds.has(name) : false);
+      updates.push({
+        _id: item.id,
+        system: {
+          method: "spell",
+          prepared: shouldPrepare
+            ? SPELL_PREPARATION_STATES.prepared
+            : SPELL_PREPARATION_STATES.unprepared,
+        },
+      });
+    }
+  }
+
+  if (updates.length === 0) return;
+
+  const updateEmbeddedDocuments = getUpdateEmbeddedDocuments(actor);
+  if (!updateEmbeddedDocuments) return;
+
+  await updateEmbeddedDocuments("Item", updates);
+}
+
+async function resolveSelectedSpellRefs(
+  uuids: string[],
+): Promise<Array<{ uuid: string; name?: string; identifier?: string }>> {
+  const refs: Array<{ uuid: string; name?: string; identifier?: string }> = [];
+
+  for (const uuid of uuids) {
+    const doc = await fromUuid(uuid);
+    if (!doc) continue;
+    const obj = doc.toObject?.();
+    const system = typeof obj?.system === "object" && obj.system !== null
+      ? obj.system as Record<string, unknown>
+      : {};
+    refs.push({
+      uuid,
+      name: typeof obj?.name === "string" ? obj.name : undefined,
+      identifier: typeof system.identifier === "string" ? system.identifier : undefined,
+    });
+  }
+
+  return refs;
+}
+
+async function resolveGrantedSpellRefsForCreation(
+  classUuid: string | undefined,
+  subclassUuid: string | undefined,
+  level: number,
+): Promise<Array<{ uuid: string; name?: string; identifier?: string }>> {
+  const granted = [
+    ...(await resolveGrantedFeaturesForDocument(classUuid, { maxLevel: level })),
+    ...(await resolveGrantedFeaturesForDocument(subclassUuid, { maxLevel: level })),
+  ];
+  const spellUuids = new Set<string>();
+
+  for (const grant of granted) {
+    if (await isSpellGrantUuid(grant.uuid)) spellUuids.add(grant.uuid);
+  }
+
+  return resolveSelectedSpellRefs([...spellUuids]);
+}
+
+async function isSpellGrantUuid(uuid: string): Promise<boolean> {
+  if (/\.spells?\./i.test(uuid)) return true;
+
+  const doc = await fromUuid(uuid);
+  const obj = doc?.toObject?.();
+  return obj?.type === "spell";
+}
+
+async function resolveInitiallyPreparedSpellIds(
+  actor: FoundryDocument,
+  state: WizardState,
+  leveledSpellRefs: Array<{ name?: string; identifier?: string }>,
+): Promise<Set<string>> {
+  const explicitPreparedRefs = await resolveSelectedSpellRefs(state.selections.spells?.preparedSpells ?? []);
+  if (explicitPreparedRefs.length > 0) {
+    const explicitPrepared = new Set<string>();
+    for (const ref of explicitPreparedRefs) {
+      if (ref.identifier) explicitPrepared.add(ref.identifier);
+      if (ref.name) explicitPrepared.add(ref.name);
+    }
+    return explicitPrepared;
+  }
+
+  const preparedLimit = await resolvePreparedSpellLimit(actor, state);
+  if (!preparedLimit || preparedLimit < 1) return new Set<string>();
+
+  const prepared = new Set<string>();
+  for (const ref of leveledSpellRefs.slice(0, preparedLimit)) {
+    if (ref.identifier) prepared.add(ref.identifier);
+    if (ref.name) prepared.add(ref.name);
+  }
+  return prepared;
+}
+
+async function resolvePreparedSpellLimit(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<number> {
+  const classIdentifier = state.selections.class?.identifier;
+  const actorClassItem = findActorClassItem(actor, classIdentifier);
+  const actorClassLevel = getActorClassLevel(actor, actorClassItem, state.config.startingLevel);
+  const actorFormula = actorClassItem?.system?.spellcasting?.preparation?.formula ?? "";
+  const actorScaleIdentifier = parsePreparationScaleIdentifier(actorFormula);
+  if (actorScaleIdentifier) {
+    const actorPreparedLimit = resolveScaleByIdentifier(
+      actorClassItem?.system?.advancement ?? [],
+      actorScaleIdentifier,
+      actorClassLevel,
+    );
+    if (actorPreparedLimit > 0) return actorPreparedLimit;
+  }
+
+  const classUuid = state.selections.class?.uuid;
+  if (!classUuid) return 0;
+
+  const classDoc = await fromUuid(classUuid) as ClassDocumentLike | null;
+  const formula = classDoc?.system?.spellcasting?.preparation?.formula ?? "";
+  const scaleIdentifier = parsePreparationScaleIdentifier(formula);
+  if (!scaleIdentifier) return 0;
+
+  const advancements = classDoc?.system?.advancement ?? [];
+  return resolveScaleByIdentifier(advancements, scaleIdentifier, actorClassLevel);
+}
+
+function parsePreparationScaleIdentifier(formula: string): string | null {
+  const match = formula.match(/^@scale\.[^.]+\.([a-z0-9-]+)$/i);
+  return match?.[1] ?? null;
+}
+
+function resolveScaleByIdentifier(
+  advancements: Array<{
+    type?: string;
+    configuration?: {
+      identifier?: string;
+      scale?: Record<string, { value?: number }>;
+    };
+  }>,
+  identifier: string,
+  level: number,
+): number {
+  const match = advancements.find((entry) =>
+    entry.type === "ScaleValue" && entry.configuration?.identifier === identifier
+  );
+  return resolveScaleValue(match?.configuration?.scale, level);
+}
+
+function resolveScaleValue(
+  scale: Record<string, { value?: number }> | undefined,
+  level: number,
+): number {
+  if (!scale) return 0;
+
+  const matchingLevels = Object.keys(scale)
+    .map((key) => Number.parseInt(key, 10))
+    .filter((key) => !Number.isNaN(key) && key <= level)
+    .sort((a, b) => b - a);
+
+  const matchedLevel = matchingLevels[0];
+  if (matchedLevel === undefined) return 0;
+
+  const value = scale[String(matchedLevel)]?.value;
+  return typeof value === "number" ? value : 0;
+}
+
+function iterateActorItems(actor: FoundryDocument): SpellItemLike[] {
+  const items = Reflect.get(actor as object, "items");
+  if (!items || typeof items !== "object") return [];
+  if (Symbol.iterator in items) {
+    return Array.from(items as Iterable<SpellItemLike>);
+  }
+  return [];
+}
+
+function findActorClassItem(
+  actor: FoundryDocument,
+  classIdentifier: string | undefined,
+): ClassDocumentLike | null {
+  for (const item of iterateActorItems(actor)) {
+    if (item.type !== "class") continue;
+    if (!classIdentifier || item.system?.identifier === classIdentifier) {
+      return item as ClassDocumentLike;
+    }
+  }
+  return null;
+}
+
+function getActorClassLevel(
+  actor: FoundryDocument,
+  classItem: ClassDocumentLike | null,
+  fallbackLevel: number,
+): number {
+  const classLevel = Reflect.get(classItem?.system ?? {}, "levels");
+  if (typeof classLevel === "number" && classLevel > 0) return classLevel;
+
+  const actorLevel = Reflect.get(actor as object, "system.details.level");
+  if (typeof actorLevel === "number" && actorLevel > 0) return actorLevel;
+
+  return fallbackLevel;
+}
+
+function getUpdateEmbeddedDocuments(
+  actor: FoundryDocument,
+): ((embeddedName: string, updates: Array<Record<string, unknown>>) => Promise<unknown>) | null {
+  const fn = Reflect.get(actor as object, "updateEmbeddedDocuments");
+  return typeof fn === "function"
+    ? fn.bind(actor) as (embeddedName: string, updates: Array<Record<string, unknown>>) => Promise<unknown>
+    : null;
+}
+
 /* ── Step 4: Apply Proficiencies ─────────────────────────── */
+
+async function applyInitialFeatureGrants(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const featureUuids = new Set<string>();
+  const classFeatures = await resolveGrantedFeaturesForDocument(state.selections.class?.uuid, { level: 1 });
+  const subclassFeatures = await resolveGrantedFeaturesForDocument(state.selections.subclass?.uuid, { maxLevel: 1 });
+
+  for (const feature of [...classFeatures, ...subclassFeatures]) {
+    featureUuids.add(feature.uuid);
+  }
+
+  if (featureUuids.size === 0) return;
+
+  await grantItemsByUuid(actor, [...featureUuids]);
+  Log.debug(`ActorCreationEngine: Granted ${featureUuids.size} baseline class features`);
+}
 
 async function applyProficiencies(
   actor: FoundryDocument,
   sel: WizardState["selections"],
 ): Promise<void> {
+  const backgroundSkills = sel.background?.grants.skillProficiencies ?? [];
+  const classSkills = sel.skills?.chosen ?? [];
+  const speciesSkills = [
+    ...(sel.species?.skillGrants ?? []),
+    ...(sel.speciesChoices?.chosenSkills ?? []),
+  ];
+  let appliedViaAdvancement = false;
+
+  appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
+    itemTypes: ["background"],
+    advancementTitleIncludes: "proficiencies",
+    chosen: prefixTraitKeys(backgroundSkills, "skills"),
+    level: 0,
+    includeConfigurationGrants: true,
+  }) || appliedViaAdvancement;
+
+  appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
+    itemTypes: ["class"],
+    advancementTitleIncludes: "skill proficiencies",
+    chosen: prefixTraitKeys(classSkills, "skills"),
+    level: 1,
+    itemIdentifier: sel.class?.identifier,
+  }) || appliedViaAdvancement;
+
+  appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
+    itemTypes: ["race", "species"],
+    advancementTitleIncludes: "proficien",
+    chosen: prefixTraitKeys(speciesSkills, "skills"),
+    level: 0,
+    includeConfigurationGrants: true,
+  }) || appliedViaAdvancement;
+
+  if (appliedViaAdvancement) {
+    Log.debug("ActorCreationEngine: Applied skill proficiencies via dnd5e advancements");
+    return;
+  }
+
   const skillUpdates: Record<string, unknown> = {};
 
   // Background-granted skills
-  for (const key of sel.background?.grants.skillProficiencies ?? []) {
+  for (const key of backgroundSkills) {
     skillUpdates[`system.skills.${key}.proficient`] = 1;
   }
   // Class-chosen skills
-  for (const key of sel.skills?.chosen ?? []) {
+  for (const key of classSkills) {
+    skillUpdates[`system.skills.${key}.proficient`] = 1;
+  }
+  // Species-granted/chosen skills
+  for (const key of speciesSkills) {
     skillUpdates[`system.skills.${key}.proficient`] = 1;
   }
 
@@ -199,7 +638,31 @@ async function applyLanguages(
 ): Promise<void> {
   const fixed = sel.background?.languages.fixed ?? [];
   const chosen = sel.background?.languages.chosen ?? [];
-  const allLanguages = [...fixed, ...chosen];
+  const speciesLanguages = sel.species?.languageGrants ?? [];
+  const speciesChosen = sel.speciesChoices?.chosenLanguages ?? [];
+  const allLanguages = [...new Set([...speciesLanguages, ...speciesChosen, ...fixed, ...chosen])];
+
+  let appliedViaAdvancement = false;
+  appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
+    itemTypes: ["background"],
+    advancementTitleIncludes: "language",
+    chosen: prefixTraitKeys([...fixed, ...chosen], "languages:standard"),
+    level: 0,
+    includeConfigurationGrants: true,
+  }) || appliedViaAdvancement;
+
+  appliedViaAdvancement = await applyTraitAdvancementSelection(actor, {
+    itemTypes: ["race", "species"],
+    advancementTitleIncludes: "language",
+    chosen: prefixTraitKeys([...speciesLanguages, ...speciesChosen], "languages:standard"),
+    level: 0,
+    includeConfigurationGrants: true,
+  }) || appliedViaAdvancement;
+
+  if (appliedViaAdvancement) {
+    Log.debug(`ActorCreationEngine: Applied ${allLanguages.length} languages via dnd5e advancements`);
+    return;
+  }
 
   if (allLanguages.length > 0) {
     await actor.update({ "system.traits.languages.value": allLanguages });
@@ -207,7 +670,330 @@ async function applyLanguages(
   }
 }
 
-/* ── Step 6: Portrait Upload ─────────────────────────────── */
+/* ── Step 6: Starting Details ────────────────────────────── */
+
+async function applyStartingDetails(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  await applyLevel1HitPoints(actor, state);
+  await applyStartingCurrency(actor, state);
+  await actor.update({ "system.details.level": 1 });
+}
+
+async function applyLevel1HitPoints(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const hitDie = await getClassHitDie(state.selections.class?.uuid);
+  const maxHitPoints = calculateLevel1HitPoints(hitDie, state);
+
+  await actor.update({
+    "system.attributes.hp.max": maxHitPoints,
+    "system.attributes.hp.value": maxHitPoints,
+  });
+  Log.debug(`ActorCreationEngine: Applied level 1 HP (${state.config.level1HpMethod})`, {
+    hitDie,
+    maxHitPoints,
+  });
+}
+
+async function applyStartingCurrency(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const equipment = state.selections.equipment;
+  if (!equipment) return;
+
+  const fallbackGold = getStartingGoldForSelections(state.selections);
+  const grantedGold = equipment.method === "gold"
+    ? Math.max(0, equipment.goldAmount ?? fallbackGold)
+    : fallbackGold;
+
+  await actor.update({ "system.currency.gp": grantedGold });
+  Log.debug("ActorCreationEngine: Applied starting currency", {
+    method: equipment.method,
+    grantedGold,
+  });
+}
+
+async function getClassHitDie(classUuid: string | undefined): Promise<string> {
+  if (!classUuid) return "d8";
+  const classDoc = await fromUuid(classUuid) as ClassDocumentLike | null;
+  return classDoc?.system?.hitDice
+    ?? classDoc?.system?.hd?.denomination
+    ?? "d8";
+}
+
+function calculateLevel1HitPoints(hitDie: string, state: WizardState): number {
+  const dieSize = Number.parseInt(hitDie.replace("d", ""), 10);
+  const safeDieSize = Number.isNaN(dieSize) ? 8 : dieSize;
+  const conScore = buildSelectedConScore(state, 1);
+  const conModifier = Math.floor((conScore - 10) / 2);
+  const baseHp = state.config.level1HpMethod === "roll"
+    ? Math.floor(Math.random() * safeDieSize) + 1
+    : safeDieSize;
+  return Math.max(1, baseHp + conModifier);
+}
+
+async function applyStartingLevelProgression(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const startingLevel = state.config.startingLevel;
+  if (startingLevel <= 1) return;
+
+  for (let targetLevel = 2; targetLevel <= startingLevel; targetLevel++) {
+    const classInfo = getSelectedClassInfo(actor, state);
+    if (!classInfo) {
+      throw new Error("ActorCreationEngine: Could not resolve created class item for higher-level progression");
+    }
+
+    const levelUpState = buildCreationLevelUpState(actor, state, classInfo, targetLevel);
+    const success = await applyLevelUp(levelUpState);
+    if (!success) {
+      throw new Error(`ActorCreationEngine: Failed to apply creation progression for level ${targetLevel}`);
+    }
+  }
+
+  await actor.update({ "system.details.level": startingLevel });
+  Log.info(`ActorCreationEngine: Applied higher-level progression through level ${startingLevel}`);
+}
+
+function buildCreationLevelUpState(
+  actor: FoundryDocument,
+  wizardState: WizardState,
+  classInfo: ClassItemInfo,
+  targetLevel: number,
+): LevelUpState {
+  const currentLevel = targetLevel - 1;
+  const hpGained = calculateAverageLevelUpHp(classInfo.hitDie, wizardState, targetLevel);
+
+  return {
+    actorId: actor.id,
+    currentLevel,
+    targetLevel,
+    applicableSteps: [],
+    currentStep: 0,
+    stepStatus: new Map(),
+    classItems: getClassItems(actor),
+    selections: {
+      classChoice: {
+        mode: "existing",
+        classItemId: classInfo.itemId,
+        className: classInfo.name,
+        classIdentifier: classInfo.identifier,
+      },
+      hp: {
+        method: "average",
+        hpGained,
+        hitDie: classInfo.hitDie,
+      },
+      features: buildFeatureSelectionForLevel(classInfo, targetLevel),
+      subclass: wizardState.selections.subclass,
+      feats: buildCreationFeatSelection(wizardState, targetLevel),
+    },
+  };
+}
+
+function getSelectedClassInfo(
+  actor: FoundryDocument,
+  state: WizardState,
+): ClassItemInfo | undefined {
+  const classIdentifier = state.selections.class?.identifier ?? "";
+  const classItems = getClassItems(actor);
+  return classItems.find((item) => item.identifier === classIdentifier) ?? classItems[0];
+}
+
+function calculateAverageLevelUpHp(
+  hitDie: string,
+  state: WizardState,
+  targetLevel: number,
+): number {
+  const conScore = buildSelectedConScore(state, targetLevel);
+  const conModifier = Math.floor((conScore - 10) / 2);
+  return Math.max(1, averageHpForHitDie(hitDie) + conModifier);
+}
+
+function buildSelectedAbilityScores(
+  selections: WizardState["selections"],
+): Record<AbilityKey, number> {
+  const baseScores = selections.abilities?.scores ?? ({} as Partial<Record<AbilityKey, number>>);
+  const backgroundAsi = selections.background?.asi?.assignments ?? {};
+  const featAsi = buildFeatAsiAssignments(selections.feats);
+  const scores = {} as Record<AbilityKey, number>;
+
+  for (const key of ABILITY_KEYS) {
+    scores[key] = (baseScores[key] ?? 10) + (backgroundAsi[key] ?? 0) + (featAsi[key] ?? 0);
+  }
+
+  return scores;
+}
+
+function buildFeatAsiAssignments(
+  feats: WizardState["selections"]["feats"] | undefined,
+): Partial<Record<AbilityKey, number>> {
+  if (feats?.choice !== "asi" || !feats.asiAbilities?.length) return {};
+
+  const bonus = feats.asiAbilities.length === 1 ? 2 : 1;
+  return feats.asiAbilities.reduce<Partial<Record<AbilityKey, number>>>((acc, key) => {
+    acc[key] = (acc[key] ?? 0) + bonus;
+    return acc;
+  }, {});
+}
+
+function buildSelectedConScore(state: WizardState, targetLevel: number): number {
+  const baseScores = state.selections.abilities?.scores ?? ({} as Partial<Record<AbilityKey, number>>);
+  const backgroundAsi = state.selections.background?.asi?.assignments ?? {};
+  const featAsi = targetLevel >= 4 ? buildFeatAsiAssignments(state.selections.feats) : {};
+  return (baseScores.con ?? 10) + (backgroundAsi.con ?? 0) + (featAsi.con ?? 0);
+}
+
+function buildCreationFeatSelection(
+  state: WizardState,
+  targetLevel: number,
+): LevelUpState["selections"]["feats"] | undefined {
+  if (targetLevel !== 4) return undefined;
+  const feats = state.selections.feats;
+  if (!feats || feats.choice !== "asi") return undefined;
+
+  return {
+    choice: "asi",
+    asiAbilities: feats.asiAbilities,
+  };
+}
+
+async function applyFinalCharacterSelections(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  await applyAbilityScores(actor, state.selections);
+  await applyProficiencies(actor, state.selections);
+  await applyLanguages(actor, state.selections);
+  await applyFinalHitPoints(actor, state);
+}
+
+async function applyFinalHitPoints(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const hitDie = await getClassHitDie(state.selections.class?.uuid);
+  const finalLevel = Math.max(1, state.config.startingLevel);
+  const finalConModifier = Math.floor((buildSelectedAbilityScores(state.selections).con - 10) / 2);
+  const dieSize = Number.parseInt(hitDie.replace("d", ""), 10);
+  const safeDieSize = Number.isNaN(dieSize) ? 8 : dieSize;
+  const level1Base = state.config.level1HpMethod === "roll" ? 1 : safeDieSize;
+  const laterLevelsBase = Math.max(0, finalLevel - 1) * averageHpForHitDie(hitDie);
+  const maxHitPoints = Math.max(1, level1Base + laterLevelsBase + (finalConModifier * finalLevel));
+
+  await actor.update({
+    "system.attributes.hp.max": maxHitPoints,
+    "system.attributes.hp.value": maxHitPoints,
+  });
+  Log.debug("ActorCreationEngine: Reapplied final hit points", {
+    finalLevel,
+    hitDie,
+    maxHitPoints,
+  });
+}
+
+interface TraitAdvancementSelectionOptions {
+  itemTypes: string[];
+  advancementTitleIncludes: string;
+  chosen: string[];
+  level: number;
+  itemIdentifier?: string;
+  includeConfigurationGrants?: boolean;
+}
+
+async function applyTraitAdvancementSelection(
+  actor: FoundryDocument,
+  options: TraitAdvancementSelectionOptions,
+): Promise<boolean> {
+  const item = findActorItemWithAdvancement(actor, options.itemTypes, options.itemIdentifier);
+  if (!item) return false;
+
+  const advancement = item.system?.advancement?.find((entry) =>
+    entry.type === "Trait"
+    && (entry.title ?? "").toLowerCase().includes(options.advancementTitleIncludes.toLowerCase())
+    && typeof entry.apply === "function"
+  );
+
+  if (!advancement) return false;
+
+  const chosen = new Set(options.chosen);
+  if (options.includeConfigurationGrants) {
+    for (const grant of getAdvancementGrantKeys(advancement)) {
+      chosen.add(grant);
+    }
+  }
+
+  if (chosen.size === 0) return false;
+
+  await advancement.apply?.(options.level, { chosen });
+  await persistAdvancementSelections(item);
+  return true;
+}
+
+function findActorItemWithAdvancement(
+  actor: FoundryDocument,
+  itemTypes: string[],
+  itemIdentifier?: string,
+): ItemWithAdvancementLike | undefined {
+  const items = Array.from(actor.items as Iterable<unknown>) as ItemWithAdvancementLike[];
+  return items.find((item) => {
+    if (!itemTypes.includes(item.type ?? "")) return false;
+    if (itemIdentifier && item.system?.identifier && item.system.identifier !== itemIdentifier) {
+      return false;
+    }
+    return Array.isArray(item.system?.advancement);
+  });
+}
+
+async function persistAdvancementSelections(item: ItemWithAdvancementLike): Promise<void> {
+  const advancements = item.system?.advancement;
+  if (!Array.isArray(advancements)) return;
+
+  const serialized = advancements.map((entry) => entry.toObject ? entry.toObject() : entry);
+  await item.update({ "system.advancement": serialized });
+}
+
+function prefixTraitKeys(values: string[], prefix: string): string[] {
+  const chosen = new Set<string>();
+  for (const value of values) {
+    if (!value) continue;
+    chosen.add(value.startsWith(`${prefix}:`) ? value : `${prefix}:${value}`);
+  }
+  return Array.from(chosen);
+}
+
+function getAdvancementGrantKeys(advancement: TraitAdvancementLike): string[] {
+  const grants = advancement.configuration?.grants;
+  if (Array.isArray(grants)) return [...grants];
+  if (grants instanceof Set) return Array.from(grants);
+  return [];
+}
+
+async function grantItemsByUuid(
+  actor: FoundryDocument,
+  uuids: string[],
+): Promise<void> {
+  const items: Record<string, unknown>[] = [];
+
+  for (const uuid of uuids) {
+    const doc = await fromUuid(uuid);
+    if (!doc) continue;
+
+    const obj = doc.toObject();
+    delete obj._id;
+    items.push(obj);
+  }
+
+  if (items.length === 0) return;
+  await actor.createEmbeddedDocuments("Item", items);
+}
+
+/* ── Step 8: Portrait Upload ─────────────────────────────── */
 
 async function applyPortrait(
   actor: FoundryDocument,
@@ -256,7 +1042,7 @@ async function applyPortrait(
   }
 }
 
-/* ── Step 7: Set Ownership ───────────────────────────────── */
+/* ── Step 9: Set Ownership ───────────────────────────────── */
 
 async function setOwnership(actor: FoundryDocument): Promise<void> {
   const userId = getGame()?.userId as string | undefined;

@@ -2,7 +2,7 @@
  * Character Creator — Step 5: Subclass
  *
  * Card grid of available subclasses filtered by the selected class's identifier.
- * Only applicable at level 3+.
+ * Applicable when the chosen class gains its subclass by the configured starting level.
  */
 
 import { MOD } from "../../logger";
@@ -15,6 +15,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
+import { isSubclassLevel } from "../level-up/level-up-detection";
 
 interface DatasetElementLike extends Element {
   dataset: DOMStringMap;
@@ -41,7 +42,14 @@ export function createSubclassStep(): WizardStepDefinition {
     dependencies: ["class"],
 
     isApplicable(state: WizardState): boolean {
-      return state.config.startingLevel >= 3;
+      const classIdentifier = state.selections.class?.identifier ?? "";
+      if (!classIdentifier) return false;
+
+      for (let level = 1; level <= state.config.startingLevel; level++) {
+        if (isSubclassLevel(classIdentifier, level)) return true;
+      }
+
+      return false;
     },
 
     isComplete(state: WizardState): boolean {

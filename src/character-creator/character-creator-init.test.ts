@@ -63,9 +63,17 @@ describe("character creator init shell", () => {
     vi.clearAllMocks();
 
     const loadTemplatesMock = vi.fn();
+    const namespacedLoadTemplatesMock = vi.fn();
     const hooksOn = vi.fn();
 
     (globalThis as Record<string, unknown>).loadTemplates = loadTemplatesMock;
+    (globalThis as Record<string, unknown>).foundry = {
+      applications: {
+        handlebars: {
+          loadTemplates: namespacedLoadTemplatesMock,
+        },
+      },
+    };
     (globalThis as Record<string, unknown>).Hooks = {
       on: hooksOn,
     };
@@ -85,6 +93,11 @@ describe("character creator init shell", () => {
 
   it("builds app classes, registers steps/level-up hooks, preloads templates, and hooks scene controls", async () => {
     const mod = await import("./character-creator-init");
+    const namespacedLoadTemplatesMock = (
+      (globalThis as Record<string, unknown>).foundry as {
+        applications: { handlebars: { loadTemplates: ReturnType<typeof vi.fn> } };
+      }
+    ).applications.handlebars.loadTemplates;
     const loadTemplatesMock = (globalThis as Record<string, unknown>).loadTemplates as ReturnType<typeof vi.fn>;
     const hooksOn = ((globalThis as Record<string, unknown>).Hooks as { on: ReturnType<typeof vi.fn> }).on;
 
@@ -94,12 +107,14 @@ describe("character creator init shell", () => {
     expect(buildCharacterCreatorAppClassMock).toHaveBeenCalledTimes(1);
     expect(registerAllStepsMock).toHaveBeenCalledTimes(1);
     expect(registerLevelUpHooksMock).toHaveBeenCalledTimes(1);
-    expect(loadTemplatesMock).toHaveBeenCalledWith(
+    expect(namespacedLoadTemplatesMock).toHaveBeenCalledWith(
       expect.arrayContaining([
         "modules/foundry-tabletop-helpers/templates/character-creator/cc-shell.hbs",
-        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-background-grants.hbs",
+        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-origin-choices.hbs",
+        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-species-choices.hbs",
       ]),
     );
+    expect(loadTemplatesMock).not.toHaveBeenCalled();
     expect(hooksOn).toHaveBeenCalledWith(
       "getSceneControlButtons",
       expect.any(Function),

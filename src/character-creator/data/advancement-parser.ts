@@ -11,7 +11,7 @@
 
 import type { FoundryDocument } from "../../types";
 import { fromUuid } from "../../types";
-import type { BackgroundGrants } from "../character-creator-types";
+import type { BackgroundGrants, SpeciesItemChoiceGroup } from "../character-creator-types";
 import { ABILITY_KEYS, SKILLS } from "./dnd5e-constants";
 
 /* ── Internal Types ─────────────────────────────────────── */
@@ -316,6 +316,13 @@ export interface SpeciesLanguageGrants {
   choicePool: string[];
 }
 
+/** Parsed species proficiency grants and choices. */
+export interface SpeciesProficiencyGrants {
+  fixedSkills: string[];
+  skillChoiceCount: number;
+  skillChoicePool: string[];
+}
+
 /**
  * Parse a species document's language advancement.
  *
@@ -354,4 +361,109 @@ export function parseSpeciesLanguages(doc: FoundryDocument): SpeciesLanguageGran
   }
 
   return result;
+}
+
+export function parseSpeciesProficiencies(doc: FoundryDocument): SpeciesProficiencyGrants {
+  const advancements = getAdvancementArray(doc);
+  const result: SpeciesProficiencyGrants = {
+    fixedSkills: [],
+    skillChoiceCount: 0,
+    skillChoicePool: [],
+  };
+
+  const proficiencyAdvancements = advancements.filter((entry) =>
+    entry.type === "Trait" && (entry.title ?? "").toLowerCase().includes("proficien")
+  );
+
+  for (const advancement of proficiencyAdvancements) {
+    if (!advancement.configuration) continue;
+
+    const grants = Array.isArray(advancement.configuration.grants)
+      ? advancement.configuration.grants as string[]
+      : [];
+    for (const grant of grants) {
+      if (typeof grant !== "string" || !grant.startsWith("skills:")) continue;
+      const parsed = parseGrantKey(grant);
+      if (parsed) result.fixedSkills.push(parsed);
+    }
+
+    const choices = Array.isArray(advancement.configuration.choices)
+      ? advancement.configuration.choices as Array<Record<string, unknown>>
+      : [];
+    for (const choice of choices) {
+      const count = typeof choice.count === "number" ? choice.count : 0;
+      const pool = Array.isArray(choice.pool) ? choice.pool as string[] : [];
+      const skillPool = pool
+        .filter((entry) => typeof entry === "string" && entry.startsWith("skills:"))
+        .map((entry) => parseGrantKey(entry))
+        .filter(Boolean);
+
+      if (skillPool.length > 0) {
+        result.skillChoiceCount += count;
+        result.skillChoicePool.push(...skillPool);
+      }
+    }
+  }
+
+  result.fixedSkills = [...new Set(result.fixedSkills)];
+  result.skillChoicePool = [...new Set(result.skillChoicePool)];
+  return result;
+}
+
+export async function parseSpeciesItemChoices(doc: FoundryDocument): Promise<SpeciesItemChoiceGroup[]> {
+  const advancements = getAdvancementArray(doc);
+  const groups: SpeciesItemChoiceGroup[] = [];
+
+  for (const [index, entry] of advancements.entries()) {
+    if (entry.type !== "ItemGrant" || !entry.configuration) continue;
+    const title = typeof entry.title === "string" ? entry.title.trim() : "";
+    const items = Array.isArray(entry.configuration.items)
+      ? entry.configuration.items as Array<Record<string, unknown>>
+      : [];
+    if (items.length <= 1) continue;
+
+    const configuredCount = typeof entry.configuration.count === "number" && entry.configuration.count > 0
+      ? entry.configuration.count
+      : typeof entry.configuration.choices === "number" && entry.configuration.choices > 0
+        ? entry.configuration.choices
+        : 1;
+    const count = Math.min(configuredCount, items.length);
+    const choiceLikeTitle = /spell|cantrip|feat|choice|choose|pick|selection|option/i.test(title);
+    const explicitChoice = count < items.length
+      || typeof entry.configuration.prompt === "string"
+      || typeof entry.configuration.hint === "string"
+      || Array.isArray(entry.configuration.pool);
+    if (!choiceLikeTitle && !explicitChoice) continue;
+
+    const rawOptions = items
+      .filter((item): item is { uuid: string; name?: string } => typeof item.uuid === "string" && item.uuid.length > 0);
+    const options: SpeciesItemChoiceGroup["options"] = [];
+    for (const item of rawOptions) {
+      let name = item.name ?? "";
+      if (!name) {
+        try {
+          const choiceDoc = await fromUuid(item.uuid);
+          name = choiceDoc?.name ?? "";
+        } catch {
+          name = "";
+        }
+      }
+
+      options.push({
+        uuid: item.uuid,
+        name: name || item.uuid.split(".").at(-1) || "Choice",
+      });
+    }
+    if (options.length <= 1) continue;
+
+    const baseTitle = title || `Species Choice ${index + 1}`;
+    groups.push({
+      id: `${baseTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
+      title: baseTitle,
+      count,
+      options,
+    });
+  }
+
+  return groups;
 }

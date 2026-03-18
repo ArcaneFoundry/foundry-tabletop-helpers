@@ -51,7 +51,7 @@ describe("actor update engine helpers", () => {
   });
 
   it("builds class, hp, and ASI update payloads", () => {
-    expect(buildClassLevelUpdatePayload(4)).toEqual({
+    expect(buildClassLevelUpdatePayload(5)).toEqual({
       "system.levels": 5,
     });
 

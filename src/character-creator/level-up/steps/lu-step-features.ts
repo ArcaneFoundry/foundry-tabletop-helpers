@@ -8,6 +8,7 @@
 import { MOD } from "../../../logger";
 import type { FoundryDocument } from "../../../types";
 import type { LevelUpState, LevelUpFeaturesChoice } from "../level-up-types";
+import { getGrantedFeaturesForLevel } from "../level-up-feature-helpers";
 import type { LevelUpStepDef } from "./lu-step-class-choice";
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -34,23 +35,9 @@ export function createFeaturesStep(): LevelUpStepDef {
         ? 1
         : (classInfo?.levels ?? 0) + 1;
 
-      // Find advancement entries for this level
-      const advancement = classInfo?.advancement ?? [];
-      const levelFeatures = advancement.filter((a) => {
-        // ItemGrant advancement at this level
-        if (a.type === "ItemGrant" && a.level === newClassLevel) return true;
-        return false;
-      });
+      const features = getGrantedFeaturesForLevel(classInfo, newClassLevel);
 
-      // Extract feature info from advancement configuration
-      const features = levelFeatures.map((a) => {
-        const items = (a.configuration?.items as Array<{ uuid?: string; name?: string }>) ?? [];
-        return items.map((item) => ({
-          uuid: item.uuid ?? "",
-          name: item.name ?? "Feature",
-          fromAdvancement: true,
-        }));
-      }).flat();
+      const advancement = classInfo?.advancement ?? [];
 
       // ScaleValue changes at this level
       const scaleValues = advancement.filter((a) =>

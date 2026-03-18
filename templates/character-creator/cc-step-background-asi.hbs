@@ -1,0 +1,38 @@
+<div class="cc-bg-asi-step" data-step="backgroundAsi">
+  {{#if hasBackground}}
+  <div class="cc-step-intro">
+    <p>Choose how your background shapes your starting abilities.</p>
+  </div>
+
+  <section class="cc-panel">
+    <h3>{{backgroundName}}</h3>
+    {{#if hasASI}}
+    <p><strong>Allowed patterns:</strong>
+      {{#each choiceModes}}
+      <span class="cc-chip{{#if selected}} cc-chip--locked{{/if}}">{{label}}</span>
+      {{/each}}
+    </p>
+    <p><strong>Assigned:</strong> {{asiPointsUsed}} / {{asiPoints}}</p>
+    <div class="cc-bg-grants__asi-grid">
+      {{#each asiAbilities}}
+      <div class="cc-bg-grants__asi-row{{#if suggested}} cc-bg-grants__asi-row--suggested{{/if}}">
+        <label>{{label}}</label>
+        <select data-asi-ability="{{key}}">
+          {{#each options}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <p>This background doesn't grant configurable ability increases.</p>
+    {{/if}}
+  </section>
+  {{else}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-arrow-left"></i>
+    <p>Go back and select a background first.</p>
+  </div>
+  {{/if}}
+</div>

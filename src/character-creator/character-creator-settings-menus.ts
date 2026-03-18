@@ -13,11 +13,21 @@ import {
   getMaxRerolls,
   getPackSources,
   getStartingLevel,
+  setAllowedAbilityMethods,
+  setEquipmentMethod,
+  setLevel1HpMethod,
+  setMaxRerolls,
   setPackSources,
+  setStartingLevel,
 } from "./character-creator-settings-accessors";
 import { CC_SETTINGS } from "./character-creator-settings-shared";
+import {
+  normalizeAbilityMethods,
+} from "./character-creator-settings-normalization";
 
 interface FormAppLike {
+  activateListeners?(html: unknown): void;
+  close?(): Promise<void>;
   getData?(): Promise<Record<string, unknown>> | Record<string, unknown>;
   _updateObject?(event: Event, formData: Record<string, unknown>): Promise<void> | void;
 }
@@ -151,30 +161,30 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
         if (formData.method_4d6) methods.push("4d6");
         if (formData.method_pointBuy) methods.push("pointBuy");
         if (formData.method_standardArray) methods.push("standardArray");
-
-        if (methods.length === 0) {
-          getUI()?.notifications?.warn?.("At least one ability score method must be enabled. Defaulting to Roll 4d6.");
-          methods.push("4d6");
+        const normalizedMethods = normalizeAbilityMethods(methods);
+        if (normalizedMethods.usedFallback) {
+          getUI()?.notifications?.warn?.(
+            "At least one ability score method must be enabled. Defaulting to all standard methods.",
+          );
         }
-
-        const rawLevel = Number(formData.startingLevel) || 1;
-        const startingLevel = Math.max(1, Math.min(20, rawLevel));
-        const rawRerolls = Number(formData.maxRerolls) || 0;
-        const maxRerolls = Math.max(0, Math.floor(rawRerolls));
-
         await Promise.all([
           setSetting(MOD, CC_SETTINGS.ENABLED, !!formData.ccEnabled),
           setSetting(MOD, CC_SETTINGS.AUTO_OPEN, !!formData.ccAutoOpen),
           setSetting(MOD, CC_SETTINGS.LEVEL_UP_ENABLED, !!formData.ccLevelUpEnabled),
-          setSetting(MOD, CC_SETTINGS.ALLOWED_ABILITY_METHODS, JSON.stringify(methods)),
-          setSetting(MOD, CC_SETTINGS.MAX_REROLLS, maxRerolls),
-          setSetting(MOD, CC_SETTINGS.STARTING_LEVEL, startingLevel),
+          setAllowedAbilityMethods(normalizedMethods.methods),
+          setMaxRerolls(Number(formData.maxRerolls)),
+          setStartingLevel(Number(formData.startingLevel)),
           setSetting(MOD, CC_SETTINGS.ALLOW_MULTICLASS, !!formData.allowMulticlass),
-          setSetting(MOD, CC_SETTINGS.EQUIPMENT_METHOD, String(formData.equipmentMethod || "both")),
-          setSetting(MOD, CC_SETTINGS.LEVEL1_HP_METHOD, String(formData.level1HpMethod || "max")),
+          setEquipmentMethod(String(formData.equipmentMethod ?? "")),
+          setLevel1HpMethod(String(formData.level1HpMethod ?? "")),
         ]);
 
         getUI()?.notifications?.info?.("Character Creator settings saved.");
+      }
+
+      activateListeners(html: unknown): void {
+        super.activateListeners?.(html);
+        bindExplicitFormSubmit(this, html);
       }
     }
 
@@ -245,6 +255,11 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
         compendiumIndexer.invalidate();
         getUI()?.notifications?.info?.("Compendium sources updated. Changes take effect on next wizard open.");
       }
+
+      activateListeners(html: unknown): void {
+        super.activateListeners?.(html);
+        bindExplicitFormSubmit(this, html);
+      }
     }
 
     settings.registerMenu(MOD, "ccCompendiumSelectMenu", {
@@ -262,6 +277,68 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
 
 function getFormAppBase(FormAppBase: unknown): FormAppConstructor {
   return typeof FormAppBase === "function" ? (FormAppBase as FormAppConstructor) : class {} as FormAppConstructor;
+}
+
+function bindExplicitFormSubmit(app: FormAppLike, html: unknown): void {
+  const root = getRootElement(html);
+  const form = root?.querySelector("form");
+  if (!form || form.dataset.fthExplicitSubmitBound === "true") return;
+
+  form.dataset.fthExplicitSubmitBound = "true";
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await app._updateObject?.(event, extractFormData(form));
+    await app.close?.();
+  });
+}
+
+function getRootElement(html: unknown): HTMLElement | null {
+  if (typeof HTMLElement !== "undefined" && html instanceof HTMLElement) return html;
+  if (html && typeof html === "object" && typeof (html as { querySelector?: unknown }).querySelector === "function") {
+    return html as HTMLElement;
+  }
+  if (html && typeof html === "object") {
+    const maybeJQuery = html as { 0?: unknown; length?: number };
+    if (
+      typeof maybeJQuery.length === "number"
+      && typeof HTMLElement !== "undefined"
+      && maybeJQuery[0] instanceof HTMLElement
+    ) {
+      return maybeJQuery[0];
+    }
+  }
+  return null;
+}
+
+function extractFormData(form: HTMLFormElement): Record<string, unknown> {
+  const formData: Record<string, unknown> = {};
+  const elements = Array.from(form.elements);
+
+  for (const element of elements) {
+    if (!isFormValueElement(element)) continue;
+    if (!element.name || element.disabled) continue;
+
+    if (element.type === "checkbox") {
+      formData[element.name] = element.checked;
+      continue;
+    }
+
+    formData[element.name] = element.value;
+  }
+
+  return formData;
+}
+
+interface FormValueElementLike {
+  checked?: boolean;
+  disabled?: boolean;
+  name?: string;
+  type?: string;
+  value?: string;
+}
+
+function isFormValueElement(element: unknown): element is FormValueElementLike {
+  return !!element && typeof element === "object" && "name" in element && "disabled" in element;
 }
 
 function getPackIterable(packs: unknown): CompendiumPackLike[] {

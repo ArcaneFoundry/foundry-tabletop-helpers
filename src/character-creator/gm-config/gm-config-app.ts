@@ -29,12 +29,18 @@ import {
   getAllowedAbilityMethods,
   setAllowedAbilityMethods,
   getStartingLevel,
+  setStartingLevel,
   allowMulticlass,
   getEquipmentMethod,
+  setEquipmentMethod,
   getLevel1HpMethod,
+  setLevel1HpMethod,
   allowCustomBackgrounds,
   CC_SETTINGS,
 } from "../character-creator-settings";
+import {
+  normalizeAbilityMethods,
+} from "../character-creator-settings-normalization";
 import { setSetting } from "../../types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { ContentFilter } from "../data/content-filter";
@@ -423,20 +429,21 @@ export function buildGMConfigAppClass(): void {
       if (getChecked(form, '[name="method-4d6"]')) methods.push("4d6");
       if (getChecked(form, '[name="method-pointBuy"]')) methods.push("pointBuy");
       if (getChecked(form, '[name="method-standardArray"]')) methods.push("standardArray");
-      await setAllowedAbilityMethods(methods as import("../character-creator-types").AbilityScoreMethod[]);
+      const normalizedMethods = normalizeAbilityMethods(methods);
+      if (normalizedMethods.usedFallback) {
+        getUI()?.notifications?.warn?.("At least one ability score method must remain enabled. Defaulting to all standard methods.");
+      }
+      await setAllowedAbilityMethods(normalizedMethods.methods);
 
       // Scalar settings
-      const level = Number(getInputValue(form, '[name="startingLevel"]')) || 1;
-      await setSetting(MOD, CC_SETTINGS.STARTING_LEVEL, Math.max(1, Math.min(20, level)));
+      await setStartingLevel(Number(getInputValue(form, '[name="startingLevel"]')));
 
       const multiclass = getChecked(form, '[name="allowMulticlass"]');
       await setSetting(MOD, CC_SETTINGS.ALLOW_MULTICLASS, multiclass);
 
-      const equipMethod = getInputValue(form, '[name="equipmentMethod"]:checked') ?? "both";
-      await setSetting(MOD, CC_SETTINGS.EQUIPMENT_METHOD, equipMethod);
+      await setEquipmentMethod(getInputValue(form, '[name="equipmentMethod"]:checked'));
 
-      const hpMethod = getInputValue(form, '[name="level1HpMethod"]:checked') ?? "max";
-      await setSetting(MOD, CC_SETTINGS.LEVEL1_HP_METHOD, hpMethod);
+      await setLevel1HpMethod(getInputValue(form, '[name="level1HpMethod"]:checked'));
 
       const customBg = getChecked(form, '[name="allowCustomBackgrounds"]');
       await setSetting(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS, customBg);

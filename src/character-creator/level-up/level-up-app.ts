@@ -12,7 +12,10 @@ import { LevelUpStateMachine } from "./level-up-state-machine";
 import { applyLevelUp } from "./actor-update-engine";
 import { shouldShowLevelUp } from "./level-up-detection";
 import { getStepAtmosphere } from "../wizard/step-registry";
-import { allowMulticlass as getAllowMulticlass } from "../character-creator-settings";
+import {
+  allowMulticlass as getAllowMulticlass,
+  ccLevelUpEnabled,
+} from "../character-creator-settings";
 import {
   activateLevelUpStep,
   applyLevelUpAtmosphere,
@@ -275,6 +278,11 @@ export function buildLevelUpAppClass(): void {
 export function openLevelUpWizard(actorId: string): void {
   if (!_LevelUpAppClass) {
     Log.warn("Level-Up Manager: LevelUpApp not available");
+    return;
+  }
+
+  if (!ccLevelUpEnabled()) {
+    Log.info("Level-Up Manager: feature disabled in settings");
     return;
   }
 

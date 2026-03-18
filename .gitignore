@@ -44,6 +44,8 @@ modules/
 # Optional test/coverage
 coverage/
 *.lcov
+.Codex/
+.playwright-cli/
 
 # Temporary files
 tmp/

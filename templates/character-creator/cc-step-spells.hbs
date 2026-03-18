@@ -19,7 +19,9 @@
         <i class="fa-solid fa-fire"></i>
         Cantrips
       </h3>
-      <span class="cc-spell-section__count">{{cantripCount}} selected</span>
+      <span class="cc-spell-section__count" data-cantrip-limit="{{maxCantrips}}">
+        {{#if maxCantrips}}{{cantripCount}} / {{maxCantrips}} selected{{else}}{{cantripCount}} selected{{/if}}
+      </span>
     </div>
     <div class="cc-spell-grid">
       {{#each cantrips}}
@@ -79,6 +81,14 @@
           <i class="fa-solid fa-check"></i>
         </div>
         {{/if}}
+        {{#if ../../showPreparedPicker}}
+        <button class="cc-spell-card__prep-toggle{{#if prepared}} cc-spell-card__prep-toggle--active{{/if}}"
+                type="button"
+                data-prepared-uuid="{{uuid}}"
+                {{#unless selected}}disabled{{/unless}}>
+          {{#if prepared}}Prepared{{else}}Prepare{{/if}}
+        </button>
+        {{/if}}
       </div>
       {{/each}}
     </div>
@@ -106,9 +116,28 @@
   {{/if}}
   {{/unless}}
 
+  {{#if hasPreparationNotice}}
+  <div class="cc-spells-notice">
+    <i class="fa-solid fa-circle-info"></i>
+    <span>{{preparationNotice}}</span>
+  </div>
+  {{/if}}
+
   <div class="cc-spells-summary">
     <span class="cc-spells-summary__label">Selected:</span>
-    <span class="cc-spells-summary__value">{{cantripCount}} cantrips, {{spellCount}} spells</span>
+    <span class="cc-spells-summary__value"
+          data-cantrip-limit="{{maxCantrips}}"
+          data-spell-limit="{{maxSpells}}"
+          data-prepared-limit="{{preparedLimit}}">
+      {{selectionSummary}}
+    </span>
   </div>
+
+  {{#if showPreparedPicker}}
+  <div class="cc-spells-summary" data-prepared-picker="true">
+    <span class="cc-spells-summary__label">Prepared:</span>
+    <span class="cc-spells-summary__value">{{preparedCount}} / {{preparedLimit}} spells</span>
+  </div>
+  {{/if}}
 
 </div>

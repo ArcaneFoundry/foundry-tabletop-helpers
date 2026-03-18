@@ -1,0 +1,107 @@
+<div class="cc-species-choices" data-step="speciesChoices">
+  <div class="cc-step-intro">
+    <p>Species-specific options will appear here whenever the selected species grants extra picks.</p>
+  </div>
+
+  <section class="cc-panel">
+    <h3>{{speciesName}}</h3>
+    {{#if hasTraits}}
+    <div class="cc-chip-row">
+      {{#each traits}}
+      <span class="cc-chip">{{this}}</span>
+      {{/each}}
+    </div>
+    {{/if}}
+    <p>{{note}}</p>
+    {{#if fixedLanguages.length}}
+    <p><strong>Granted Languages:</strong></p>
+    <div class="cc-chip-row">
+      {{#each fixedLanguages}}
+      <span class="cc-chip cc-chip--locked">{{this}}</span>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{#if hasLanguageChoices}}
+    <div class="cc-bg-grants__lang-picks">
+      {{#each languageSlots}}
+      <select class="cc-bg-grants__lang-select" data-species-lang-slot="{{index}}">
+        <option value="">— Choose —</option>
+        {{#each options}}
+        <option value="{{id}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{#if fixedSkills.length}}
+    <p><strong>Granted Skills:</strong></p>
+    <div class="cc-chip-row">
+      {{#each fixedSkills}}
+      <span class="cc-chip cc-chip--locked">{{this}}</span>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{#if hasSkillChoices}}
+    <p><strong>Choose {{skillChoiceCount}} additional species skills:</strong></p>
+    <div class="cc-skills__counter">
+      <span class="cc-skills__count">{{chosenSkillCount}}</span>
+      <span class="cc-skills__sep">/</span>
+      <span class="cc-skills__max">{{skillChoiceCount}}</span>
+      <span class="cc-skills__counter-label">species skills</span>
+    </div>
+    {{#if hasAvailableSpeciesSkills}}
+    <div class="cc-skills__grid">
+      {{#each availableSpeciesSkills}}
+      <label class="cc-skill-row{{#if checked}} cc-skill-row--checked{{/if}}">
+        <input type="checkbox" class="cc-skill-row__checkbox" data-species-skill="{{key}}" {{#if checked}}checked{{/if}} {{#if disabled}}disabled{{/if}}>
+        <span class="cc-skill-row__name">{{label}}</span>
+        <span class="cc-skill-row__ability">({{abilityAbbrev}})</span>
+      </label>
+      {{/each}}
+    </div>
+    {{else}}
+    <p class="cc-card-detail__hint">No legal species skill options are currently available after your other skill picks.</p>
+    {{/if}}
+    {{/if}}
+    {{#if hasItemChoices}}
+    <p><strong>Choose {{chosenItemChoiceCount}} / {{requiredItemChoiceCount}} spell or item options:</strong></p>
+    {{#each itemChoiceGroups}}
+    <div class="cc-panel">
+      <p><strong>{{title}}</strong></p>
+      <p class="cc-card-detail__hint">{{selectedCount}} / {{count}} selected</p>
+      {{#if options.length}}
+      <div class="cc-skills__grid">
+        {{#each options}}
+        <label class="cc-skill-row{{#if selected}} cc-skill-row--checked{{/if}}">
+          <input
+            type="checkbox"
+            class="cc-skill-row__checkbox"
+            data-species-choice-group="{{../id}}"
+            data-species-choice-uuid="{{uuid}}"
+            {{#if selected}}checked{{/if}}
+            {{#if disabled}}disabled{{/if}}>
+          <span class="cc-skill-row__name">{{name}}</span>
+        </label>
+        {{/each}}
+      </div>
+      {{else}}
+      <p class="cc-card-detail__hint">{{../../itemChoiceEmptyMessage}}</p>
+      {{/if}}
+    </div>
+    {{/each}}
+    {{/if}}
+  </section>
+
+  {{#if validationMessages.length}}
+  <section class="cc-panel">
+    <h3>Validation Notes</h3>
+    <div class="cc-review-grants">
+      {{#each validationMessages}}
+      <div class="cc-review-grant">
+        <span class="cc-review-grant__value">{{this}}</span>
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+</div>

@@ -1,0 +1,126 @@
+<div class="cc-origin-choices" data-step="originChoices">
+  <div class="cc-step-intro">
+    <p>Finalize the shared origin picks that depend on both your class and background.</p>
+  </div>
+
+  <section class="cc-panel">
+    <h3>Class Skills</h3>
+    <p>{{skillSelectionMessage}}</p>
+    {{#if backgroundSkillChips.length}}
+    <div class="cc-review-grant">
+      <span class="cc-review-grant__label">Background:</span>
+      <span class="cc-review-grant__chips">
+        {{#each backgroundSkillChips}}<span class="cc-chip cc-chip--locked">{{this}}</span>{{/each}}
+      </span>
+    </div>
+    {{/if}}
+    <div class="cc-skills__counter{{#if atMax}} cc-skills__counter--full{{/if}}">
+      <span class="cc-skills__count" data-skill-count>{{chosenCount}}</span>
+      <span class="cc-skills__sep">/</span>
+      <span class="cc-skills__max">{{maxPicks}}</span>
+      <span class="cc-skills__counter-label">class skills</span>
+    </div>
+    {{#if maxPicks}}
+    {{#if hasAvailableSkills}}
+    <div class="cc-skills__grid">
+      {{#each availableSkills}}
+      <label class="cc-skill-row{{#if checked}} cc-skill-row--checked{{/if}}">
+        <input type="checkbox" class="cc-skill-row__checkbox" data-skill="{{key}}" {{#if checked}}checked{{/if}} {{#if disabled}}disabled{{/if}}>
+        <span class="cc-skill-row__name">{{label}}</span>
+        <span class="cc-skill-row__ability">({{abilityAbbrev}})</span>
+      </label>
+      {{/each}}
+    </div>
+    {{else}}
+    <p class="cc-card-detail__hint">No legal class skill options are currently available for this class/background combination.</p>
+    {{/if}}
+    {{/if}}
+  </section>
+
+  <section class="cc-panel">
+    <h3>Background Grants</h3>
+    {{#if toolProficiency}}<p><strong>Tool Proficiency:</strong> {{toolProficiency}}</p>{{/if}}
+    {{#if originFeatName}}
+    <div class="cc-review-simple">
+      {{#if originFeatImg}}<img class="cc-review-simple__img" src="{{originFeatImg}}" alt="{{originFeatName}}">{{/if}}
+      <span class="cc-review-simple__text"><strong>Origin Feat:</strong> {{originFeatName}}</span>
+    </div>
+    {{#if allowOriginFeatSwap}}
+    <p>
+      {{#if isCustomOriginFeat}}
+      You swapped away from {{defaultOriginFeatName}}. Pick any allowed feat below to change it again.
+      {{else}}
+      Your background grants {{defaultOriginFeatName}} by default. You can keep it or swap to another allowed feat.
+      {{/if}}
+    </p>
+    {{#if hasOriginFeats}}
+    <div class="cc-card-select">
+      <div class="cc-card-select__layout">
+        <div class="cc-card-select__grid-pane">
+          <div class="cc-card-grid">
+            {{#each availableOriginFeats}}
+            <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}"
+                 data-card-uuid="{{uuid}}"
+                 data-card-name="{{name}}"
+                 data-card-img="{{img}}"
+                 role="button"
+                 tabindex="0"
+                 aria-selected="{{selected}}"
+                 style="--cc-card-index: {{@index}}">
+              <div class="cc-select-card__img-wrap">
+                <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+              </div>
+              <div class="cc-select-card__info">
+                <div class="cc-select-card__name">{{name}}</div>
+                <div class="cc-select-card__source">{{packLabel}}</div>
+              </div>
+              {{#if selected}}
+              <div class="cc-select-card__check">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              {{/if}}
+            </div>
+            {{/each}}
+          </div>
+        </div>
+
+        <div class="cc-card-detail-pane">
+          {{#if selectedOriginFeat}}
+          <div class="cc-card-detail cc-card-detail--active">
+            <div class="cc-card-detail__header">
+              <img class="cc-card-detail__img" src="{{selectedOriginFeat.img}}" alt="{{selectedOriginFeat.name}}">
+              <div class="cc-card-detail__title">
+                <h3>{{selectedOriginFeat.name}}</h3>
+                <span class="cc-card-detail__source">{{selectedOriginFeat.packLabel}}</span>
+              </div>
+            </div>
+            {{#if selectedOriginFeat.description}}
+            <div class="cc-card-detail__description">{{{selectedOriginFeat.description}}}</div>
+            {{else}}
+            <p class="cc-card-detail__hint">No description available.</p>
+            {{/if}}
+          </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+    {{else}}
+    <p class="cc-card-detail__hint">{{originFeatEmptyMessage}}</p>
+    {{/if}}
+    {{/if}}
+    {{/if}}
+  </section>
+
+  {{#if validationMessages.length}}
+  <section class="cc-panel">
+    <h3>Validation Notes</h3>
+    <div class="cc-review-grants">
+      {{#each validationMessages}}
+      <div class="cc-review-grant">
+        <span class="cc-review-grant__value">{{this}}</span>
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+</div>

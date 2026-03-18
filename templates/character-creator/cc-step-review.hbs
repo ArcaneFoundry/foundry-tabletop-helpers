@@ -123,9 +123,29 @@
             </span>
           </div>
           {{/if}}
+          {{#if hasSpeciesSkills}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Species:</span>
+            <span class="cc-review-grant__chips">
+              {{#each speciesSkills}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
+          {{#if hasSpeciesItems}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Species Choices:</span>
+            <span class="cc-review-grant__chips">
+              {{#each speciesItems}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
           {{#unless hasClassSkills}}
           {{#unless hasBackgroundSkills}}
+          {{#unless hasSpeciesSkills}}
+          {{#unless hasSpeciesItems}}
           <span class="cc-review-simple__text">None selected</span>
+          {{/unless}}
+          {{/unless}}
           {{/unless}}
           {{/unless}}
         </div>
@@ -155,6 +175,13 @@
           {{/if}}
           <span class="cc-review-simple__text">{{summary}}</span>
         </div>
+        {{#if detail}}
+        <div class="cc-review-grants">
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__value">{{detail}}</span>
+          </div>
+        </div>
+        {{/if}}
         {{/if}}
 
       </div>
@@ -166,7 +193,9 @@
   {{#unless allComplete}}
   <div class="cc-review-warning">
     <i class="fa-solid fa-triangle-exclamation"></i>
-    <span>Some sections are incomplete. Go back to fill them in before creating your character.</span>
+    <span>Some sections are incomplete:
+      {{#each incompleteSectionLabels}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}.
+      Go back to fill them in before creating your character.</span>
   </div>
   {{/unless}}
 

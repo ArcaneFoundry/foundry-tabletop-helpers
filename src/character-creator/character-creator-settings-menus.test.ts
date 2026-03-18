@@ -8,14 +8,19 @@ const setSettingMock = vi.fn(async () => {});
 const getPackSourcesMock = vi.fn();
 const setPackSourcesMock = vi.fn(async () => {});
 const getAllowedAbilityMethodsMock = vi.fn();
+const setAllowedAbilityMethodsMock = vi.fn(async () => {});
 const getStartingLevelMock = vi.fn();
+const setStartingLevelMock = vi.fn(async () => {});
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
+const setEquipmentMethodMock = vi.fn(async () => {});
 const getLevel1HpMethodMock = vi.fn();
+const setLevel1HpMethodMock = vi.fn(async () => {});
 const ccEnabledMock = vi.fn();
 const ccAutoOpenMock = vi.fn();
 const ccLevelUpEnabledMock = vi.fn();
 const getMaxRerollsMock = vi.fn();
+const setMaxRerollsMock = vi.fn(async () => {});
 const loadPacksInvalidateMock = vi.fn();
 
 vi.mock("../logger", () => ({
@@ -43,7 +48,12 @@ vi.mock("./character-creator-settings-accessors", () => ({
   getMaxRerolls: getMaxRerollsMock,
   getPackSources: getPackSourcesMock,
   getStartingLevel: getStartingLevelMock,
+  setAllowedAbilityMethods: setAllowedAbilityMethodsMock,
+  setEquipmentMethod: setEquipmentMethodMock,
+  setLevel1HpMethod: setLevel1HpMethodMock,
+  setMaxRerolls: setMaxRerollsMock,
   setPackSources: setPackSourcesMock,
+  setStartingLevel: setStartingLevelMock,
 }));
 
 vi.mock("./data/compendium-indexer", () => ({
@@ -68,6 +78,8 @@ vi.mock("./character-creator-settings-shared", () => ({
 
 class FakeFormApplication {
   static defaultOptions = { base: true };
+  activateListeners(_html: unknown): void {}
+  close = vi.fn(async () => {});
 }
 
 function installFoundryUtils(): void {
@@ -206,17 +218,68 @@ describe("character creator settings menus", () => {
     });
 
     expect(notifications.warn).toHaveBeenCalledWith(
-      "At least one ability score method must be enabled. Defaulting to Roll 4d6.",
+      "At least one ability score method must be enabled. Defaulting to all standard methods.",
     );
-    expect(setSettingMock).toHaveBeenCalledWith(
-      "foundry-tabletop-helpers",
-      "allowedAbilityMethods",
-      JSON.stringify(["4d6"]),
-    );
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "maxRerolls", 4);
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "startingLevel", 20);
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "equipmentMethod", "gold");
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "level1HpMethod", "roll");
+    expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "pointBuy", "standardArray"]);
+    expect(setMaxRerollsMock).toHaveBeenCalledWith(4.7);
+    expect(setStartingLevelMock).toHaveBeenCalledWith(25);
+    expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
+    expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
+    expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
+  });
+
+  it("binds explicit submit handling so live form submission persists settings", async () => {
+    const registrations: Array<{ key: string; data: Record<string, unknown> }> = [];
+    const notifications = { warn: vi.fn(), info: vi.fn() };
+    getUIMock.mockReturnValue({ notifications });
+
+    const mod = await import("./character-creator-settings-menus");
+    mod.registerCharacterCreatorSettingsMenus({
+      registerMenu: (_module, key, data) => {
+        registrations.push({ key, data });
+      },
+    });
+
+    const SettingsForm = registrations.find((entry) => entry.key === "ccSettingsMenu")?.data.type as
+      new () => FakeFormApplication & {
+        activateListeners(html: unknown): void;
+      };
+    const formApp = new SettingsForm();
+
+    const listeners = new Map<string, (event: Event) => void | Promise<void>>();
+    const form = {
+      dataset: {} as Record<string, string>,
+      elements: [
+        { name: "ccEnabled", disabled: false, type: "checkbox", checked: true },
+        { name: "ccAutoOpen", disabled: false, type: "checkbox", checked: false },
+        { name: "ccLevelUpEnabled", disabled: false, type: "checkbox", checked: true },
+        { name: "method_4d6", disabled: false, type: "checkbox", checked: false },
+        { name: "method_pointBuy", disabled: false, type: "checkbox", checked: false },
+        { name: "method_standardArray", disabled: false, type: "checkbox", checked: true },
+        { name: "maxRerolls", disabled: false, value: "2.9" },
+        { name: "startingLevel", disabled: false, value: "6" },
+        { name: "allowMulticlass", disabled: false, type: "checkbox", checked: true },
+        { name: "equipmentMethod", disabled: false, value: "gold" },
+        { name: "level1HpMethod", disabled: false, value: "roll" },
+      ],
+      addEventListener: vi.fn((type: string, listener: (event: Event) => void | Promise<void>) => {
+        listeners.set(type, listener);
+      }),
+    };
+    const host = {
+      querySelector: vi.fn(() => form),
+    };
+
+    formApp.activateListeners(host);
+    const submitEvent = { preventDefault: vi.fn() } as unknown as Event;
+    await listeners.get("submit")?.(submitEvent);
+
+    expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["standardArray"]);
+    expect(setMaxRerollsMock).toHaveBeenCalledWith(2.9);
+    expect(setStartingLevelMock).toHaveBeenCalledWith(6);
+    expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
+    expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
+    expect(formApp.close).toHaveBeenCalled();
     expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
   });
 

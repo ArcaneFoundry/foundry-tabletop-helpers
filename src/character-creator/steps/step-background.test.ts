@@ -63,7 +63,7 @@ class FakeElement {
 function makeState(overrides: Partial<WizardState> = {}): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["background", "backgroundGrants", "review"],
+    applicableSteps: ["background", "backgroundAsi", "originChoices", "species", "originSummary", "review"],
     selections: {},
     stepStatus: new Map(),
     config: {

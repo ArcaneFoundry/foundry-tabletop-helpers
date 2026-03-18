@@ -1,0 +1,35 @@
+<div class="cc-class-choices">
+  <div class="cc-step-intro">
+    <p>
+      {{className}} comes with class-specific decisions. This step now anchors those choices in the
+      class-first flow.
+    </p>
+    {{#if primaryAbilityHint}}
+    <p><strong>Primary Ability:</strong> {{primaryAbilityHint}}</p>
+    {{/if}}
+  </div>
+
+  {{#if hasSkillChoices}}
+  <section class="cc-panel">
+    <h3>Class Skill Options</h3>
+    <p>You'll eventually choose {{skillCount}} class skill proficiencies from this list.</p>
+    <div class="cc-chip-row">
+      {{#each skillPool}}
+      <span class="cc-chip">{{label}}</span>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+
+  {{#if hasWeaponMastery}}
+  <section class="cc-panel">
+    <h3>Weapon Mastery</h3>
+    <p>This class appears to grant weapon mastery choices. The selection UI will live in this step as the class-flow refactor continues.</p>
+  </section>
+  {{/if}}
+
+  <section class="cc-panel">
+    <h3>Implementation Note</h3>
+    <p>{{implementationNote}}</p>
+  </section>
+</div>

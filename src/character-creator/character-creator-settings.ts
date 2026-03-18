@@ -25,7 +25,11 @@ export {
   getStartingLevel,
   setAllowedAbilityMethods,
   setDisabledContentUUIDs,
+  setEquipmentMethod,
+  setLevel1HpMethod,
+  setMaxRerolls,
   setPackSources,
+  setStartingLevel,
 } from "./character-creator-settings-accessors";
 
 /* ── Registration ─────────────────────────────────────────── */

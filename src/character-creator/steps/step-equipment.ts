@@ -14,26 +14,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-
-/* ── Constants ───────────────────────────────────────────── */
-
-/** Starting gold by class (PHB standard). */
-const CLASS_STARTING_GOLD: Record<string, number> = {
-  barbarian: 40,
-  bard: 100,
-  cleric: 125,
-  druid: 50,
-  fighter: 150,
-  monk: 13,
-  paladin: 150,
-  ranger: 125,
-  rogue: 100,
-  sorcerer: 75,
-  warlock: 100,
-  wizard: 100,
-};
-
-const DEFAULT_STARTING_GOLD = 100;
+import { getStartingGoldForSelections } from "../starting-resources";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -43,11 +24,17 @@ function getAvailableEquipment(state: WizardState): CreatorIndexEntry[] {
 }
 
 function getStartingGold(state: WizardState): number {
-  const classId = state.selections.class?.identifier?.toLowerCase();
-  if (classId && CLASS_STARTING_GOLD[classId]) {
-    return CLASS_STARTING_GOLD[classId];
-  }
-  return DEFAULT_STARTING_GOLD;
+  return getStartingGoldForSelections(state.selections);
+}
+
+function buildDefaultEquipmentSelection(state: WizardState): EquipmentSelection {
+  const startingGold = getStartingGold(state);
+  const preferredMethod = state.config.equipmentMethod === "gold" ? "gold" : "equipment";
+
+  return {
+    method: preferredMethod,
+    goldAmount: preferredMethod === "gold" ? startingGold : undefined,
+  };
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -70,7 +57,7 @@ export function createEquipmentStep(): WizardStepDefinition {
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       await compendiumIndexer.loadPacks(state.config.packSources);
 
-      const data = state.selections.equipment;
+      const data = state.selections.equipment ?? buildDefaultEquipmentSelection(state);
       const equipment = getAvailableEquipment(state);
       const startingGold = getStartingGold(state);
       const gmMethod = state.config.equipmentMethod;
@@ -87,6 +74,7 @@ export function createEquipmentStep(): WizardStepDefinition {
         allowEquipment: gmMethod === "equipment" || gmMethod === "both",
         allowGold: gmMethod === "gold" || gmMethod === "both",
         startingGold,
+        equipmentFallbackGold: startingGold,
         goldAmount: data?.goldAmount ?? startingGold,
         weapons: weapons.slice(0, 50), // Limit for performance
         armor: armor.slice(0, 50),
@@ -99,6 +87,10 @@ export function createEquipmentStep(): WizardStepDefinition {
     },
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
+      if (!state.selections.equipment) {
+        callbacks.setDataSilent(buildDefaultEquipmentSelection(state));
+      }
+
       // Method tabs
       el.querySelectorAll("[data-equip-method]").forEach((tab) => {
         tab.addEventListener("click", () => {

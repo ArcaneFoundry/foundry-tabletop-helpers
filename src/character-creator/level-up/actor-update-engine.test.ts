@@ -60,7 +60,13 @@ function makeActor() {
   const spellShield = { id: "spell-shield", type: "spell", name: "Shield" };
   const spellMagicMissile = { id: "spell-mm", type: "spell", name: "Magic Missile" };
 
-  const items = [classItem, spellShield, spellMagicMissile];
+  const items: Array<{
+    id?: string;
+    type?: string;
+    name?: string;
+    system?: Record<string, unknown>;
+    update?: ReturnType<typeof vi.fn>;
+  }> = [classItem, spellShield, spellMagicMissile];
   const itemCollection = {
     get(id: string) {
       return items.find((item) => item.id === id) ?? null;
@@ -73,6 +79,7 @@ function makeActor() {
   return {
     id: "actor-1",
     name: "Tarin",
+    itemsList: items,
     system: {
       attributes: {
         hp: {
@@ -94,14 +101,20 @@ function makeActor() {
 }
 
 function makeCompendiumDoc(name: string, data: Record<string, unknown> = {}) {
+  const topLevelType = typeof data.type === "string" ? data.type : "feat";
+  const topLevelSystem = typeof data.system === "object" && data.system !== null
+    ? data.system as Record<string, unknown>
+    : {};
   return {
     name,
+    type: topLevelType,
+    system: topLevelSystem,
     toObject() {
       return {
         _id: `${name}-id`,
         name,
-        type: "feat",
-        system: {},
+        type: topLevelType,
+        system: topLevelSystem,
         ...data,
       };
     },
@@ -208,8 +221,23 @@ describe("actor update engine", () => {
       if (uuid === "Compendium.class.wizard") {
         return makeCompendiumDoc("Wizard", {
           type: "class",
-          system: { identifier: "wizard", levels: 7 },
+          system: {
+            identifier: "wizard",
+            levels: 7,
+            advancement: [
+              {
+                type: "ItemGrant",
+                level: 1,
+                configuration: {
+                  items: [{ uuid: "Compendium.feature.arcane-recovery", name: "Arcane Recovery" }],
+                },
+              },
+            ],
+          },
         });
+      }
+      if (uuid === "Compendium.feature.arcane-recovery") {
+        return makeCompendiumDoc("Arcane Recovery");
       }
       if (uuid === "Compendium.feat.alert") {
         return makeCompendiumDoc("Alert");
@@ -243,8 +271,191 @@ describe("actor update engine", () => {
     expect(actor.createEmbeddedDocuments).toHaveBeenNthCalledWith(
       2,
       "Item",
+      [expect.objectContaining({ name: "Arcane Recovery" })]
+    );
+    expect(actor.createEmbeddedDocuments).toHaveBeenNthCalledWith(
+      3,
+      "Item",
       [expect.objectContaining({ name: "Alert" })]
     );
+  });
+
+  it("grants subclass features for the current target level without duplicating an existing subclass item", async () => {
+    const actor = makeActor();
+    actor.itemsList.push({
+      id: "subclass-1",
+      type: "subclass",
+      name: "Bladesinger",
+      system: { classIdentifier: "wizard", identifier: "bladesinger" },
+      update: vi.fn(async () => null),
+    });
+
+    getGameMock.mockReturnValue({
+      actors: {
+        get: () => actor,
+      },
+    });
+
+    fromUuidMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "Compendium.subclass.bladesinger") {
+        return makeCompendiumDoc("Bladesinger", {
+          type: "subclass",
+          system: {
+            classIdentifier: "wizard",
+            advancement: [
+              {
+                type: "ItemGrant",
+                level: 3,
+                configuration: {
+                  items: [
+                    { uuid: "Compendium.feature.bladesong", name: "Bladesong" },
+                    { uuid: "Compendium.feature.training-in-war-and-song", name: "Training in War and Song" },
+                  ],
+                },
+              },
+            ],
+          },
+        });
+      }
+      if (uuid === "Compendium.feature.bladesong") {
+        return makeCompendiumDoc("Bladesong");
+      }
+      if (uuid === "Compendium.feature.training-in-war-and-song") {
+        return makeCompendiumDoc("Training in War and Song");
+      }
+      return null;
+    });
+
+    const { applyLevelUp } = await import("./actor-update-engine");
+    const success = await applyLevelUp(makeState({
+      currentLevel: 2,
+      targetLevel: 3,
+      selections: {
+        classChoice: {
+          mode: "existing",
+          classItemId: "fighter-1",
+          className: "Wizard",
+          classIdentifier: "wizard",
+        },
+        subclass: {
+          uuid: "Compendium.subclass.bladesinger",
+          name: "Bladesinger",
+          img: "bladesinger.png",
+        },
+      },
+    }));
+
+    expect(success).toBe(true);
+    expect(actor.createEmbeddedDocuments).toHaveBeenCalledTimes(1);
+    expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith(
+      "Item",
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Bladesong" }),
+        expect.objectContaining({ name: "Training in War and Song" }),
+      ]),
+    );
+  });
+
+  it("skips duplicate subclass spell grants when matching spell items already exist on the actor", async () => {
+    const actor = makeActor();
+    actor.itemsList.push(
+      {
+        id: "subclass-life-domain",
+        type: "subclass",
+        name: "Life Domain",
+        system: { classIdentifier: "cleric", identifier: "life-domain" },
+      },
+      {
+        id: "spell-bless",
+        type: "spell",
+        name: "Bless",
+        system: { identifier: "bless" },
+      },
+      {
+        id: "spell-cure-wounds",
+        type: "spell",
+        name: "Cure Wounds",
+        system: { identifier: "cure-wounds" },
+      },
+      {
+        id: "spell-aid",
+        type: "spell",
+        name: "Aid",
+        system: { identifier: "aid" },
+      },
+      {
+        id: "spell-lesser-restoration",
+        type: "spell",
+        name: "Lesser Restoration",
+        system: { identifier: "lesser-restoration" },
+      },
+    );
+
+    getGameMock.mockReturnValue({
+      actors: {
+        get: () => actor,
+      },
+    });
+
+    fromUuidMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "Compendium.subclass.life-domain") {
+        return makeCompendiumDoc("Life Domain", {
+          type: "subclass",
+          system: {
+            classIdentifier: "cleric",
+            advancement: [
+              {
+                type: "ItemGrant",
+                level: 3,
+                configuration: {
+                  items: [
+                    { uuid: "Compendium.spell.bless", name: "Bless" },
+                    { uuid: "Compendium.spell.cure-wounds", name: "Cure Wounds" },
+                    { uuid: "Compendium.spell.aid", name: "Aid" },
+                    { uuid: "Compendium.spell.lesser-restoration", name: "Lesser Restoration" },
+                  ],
+                },
+              },
+            ],
+          },
+        });
+      }
+      if (uuid === "Compendium.spell.bless") {
+        return makeCompendiumDoc("Bless", { type: "spell", system: { identifier: "bless" } });
+      }
+      if (uuid === "Compendium.spell.cure-wounds") {
+        return makeCompendiumDoc("Cure Wounds", { type: "spell", system: { identifier: "cure-wounds" } });
+      }
+      if (uuid === "Compendium.spell.aid") {
+        return makeCompendiumDoc("Aid", { type: "spell", system: { identifier: "aid" } });
+      }
+      if (uuid === "Compendium.spell.lesser-restoration") {
+        return makeCompendiumDoc("Lesser Restoration", { type: "spell", system: { identifier: "lesser-restoration" } });
+      }
+      return null;
+    });
+
+    const { applyLevelUp } = await import("./actor-update-engine");
+    const success = await applyLevelUp(makeState({
+      currentLevel: 2,
+      targetLevel: 3,
+      selections: {
+        classChoice: {
+          mode: "existing",
+          classItemId: "fighter-1",
+          className: "Cleric",
+          classIdentifier: "cleric",
+        },
+        subclass: {
+          uuid: "Compendium.subclass.life-domain",
+          name: "Life Domain",
+          img: "life-domain.png",
+        },
+      },
+    }));
+
+    expect(success).toBe(true);
+    expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled();
   });
 
   it("returns false when the actor does not exist", async () => {
@@ -257,5 +468,35 @@ describe("actor update engine", () => {
     const { applyLevelUp } = await import("./actor-update-engine");
     await expect(applyLevelUp(makeState())).resolves.toBe(false);
     expect(logErrorMock).toHaveBeenCalledWith("ActorUpdateEngine: Actor not found", { actorId: "actor-1" });
+  });
+
+  it("sets an existing class directly to the requested target level", async () => {
+    const actor = makeActor();
+    actor.classItem.system.levels = 1;
+
+    getGameMock.mockReturnValue({
+      actors: {
+        get(id: string) {
+          return id === actor.id ? actor : null;
+        },
+      },
+    });
+
+    const { applyLevelUp } = await import("./actor-update-engine");
+    const success = await applyLevelUp(makeState({
+      currentLevel: 2,
+      targetLevel: 3,
+      selections: {
+        classChoice: {
+          mode: "existing",
+          classItemId: "fighter-1",
+          className: "Fighter",
+          classIdentifier: "fighter",
+        },
+      },
+    }));
+
+    expect(success).toBe(true);
+    expect(actor.classItem.update).toHaveBeenCalledWith({ "system.levels": 3 });
   });
 });

@@ -79,6 +79,12 @@ export type AbilityKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
 /** Six ability scores. */
 export type AbilityScores = Record<AbilityKey, number>;
 
+/** Parsed level-gated class feature summary entry. */
+export interface ClassFeatureSummary {
+  title: string;
+  level?: number;
+}
+
 /** Frozen snapshot of all GM configuration at wizard open time. */
 export interface GMConfig {
   packSources: PackSourceConfig;
@@ -208,6 +214,28 @@ export interface SpeciesSelection {
   languageGrants?: string[];
   /** Number of additional language choices from species. */
   languageChoiceCount?: number;
+  /** Pool of choosable species languages. */
+  languageChoicePool?: string[];
+  /** Skill proficiencies auto-granted by species. */
+  skillGrants?: string[];
+  /** Number of additional skill choices from species. */
+  skillChoiceCount?: number;
+  /** Pool of choosable species skills. */
+  skillChoicePool?: string[];
+  /** Species level-0 item/spell choice groups parsed from ItemGrant advancements. */
+  itemChoiceGroups?: SpeciesItemChoiceGroup[];
+}
+
+export interface SpeciesItemChoiceOption {
+  uuid: string;
+  name: string;
+}
+
+export interface SpeciesItemChoiceGroup {
+  id: string;
+  title: string;
+  count: number;
+  options: SpeciesItemChoiceOption[];
 }
 
 /** What a background grants — parsed from advancement data. */
@@ -263,6 +291,22 @@ export interface OriginFeatSelection {
   isCustom: boolean;
 }
 
+/** Summary state for the combined origin-choices step. */
+export interface OriginChoicesState {
+  classSkills: string[];
+  chosenLanguages: string[];
+  originFeatUuid?: string;
+}
+
+/** Summary state for species-specific option handling. */
+export interface SpeciesChoicesState {
+  hasChoices: boolean;
+  note?: string;
+  chosenLanguages?: string[];
+  chosenSkills?: string[];
+  chosenItems?: Record<string, string[]>;
+}
+
 /** Background selection state (2024 PHB — enriched with grants and sub-selections). */
 export interface BackgroundSelection {
   uuid: string;
@@ -293,6 +337,22 @@ export interface ClassSelection {
   spellcastingAbility: string;
   /** Spell slot progression: "full", "half", "third", "pact", or "". */
   spellcastingProgression: string;
+  /** Recommended primary abilities for this class. */
+  primaryAbilities?: AbilityKey[];
+  /** UI hint for class/background/ability synergy. */
+  primaryAbilityHint?: string;
+  /** Hit die denomination (e.g., "d10"). */
+  hitDie?: string;
+  /** Saving throw proficiencies granted by the class. */
+  savingThrowProficiencies?: AbilityKey[];
+  /** Armor proficiency summary strings. */
+  armorProficiencies?: string[];
+  /** Weapon proficiency summary strings. */
+  weaponProficiencies?: string[];
+  /** Feature summary entries through the configured starting level. */
+  classFeatures?: ClassFeatureSummary[];
+  /** Whether the class appears to support weapon mastery choices. */
+  hasWeaponMastery?: boolean;
 }
 
 /** Subclass selection state. */
@@ -321,6 +381,14 @@ export interface SpellSelection {
   cantrips: string[];
   /** Selected spell UUIDs. */
   spells: string[];
+  /** Explicitly prepared leveled spell UUIDs for classes that prepare on create. */
+  preparedSpells?: string[];
+  /** Class-driven cantrip target, when the system exposes one. */
+  maxCantrips?: number;
+  /** Class-driven leveled-spell target, when the system exposes one. */
+  maxSpells?: number;
+  /** Class-driven prepared-spell target, when the system exposes one. */
+  maxPreparedSpells?: number;
 }
 
 /** Equipment selection state. */
@@ -373,8 +441,11 @@ export interface WizardSelections {
   background?: BackgroundSelection;
   class?: ClassSelection;
   subclass?: SubclassSelection;
+  backgroundAsi?: BackgroundASI;
+  originChoices?: OriginChoicesState;
   skills?: SkillSelection;
   originFeat?: OriginFeatSelection;
+  speciesChoices?: SpeciesChoicesState;
   feats?: FeatSelection;
   spells?: SpellSelection;
   equipment?: EquipmentSelection;

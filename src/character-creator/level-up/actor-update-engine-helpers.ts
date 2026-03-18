@@ -30,9 +30,9 @@ export function collectLevelUpItemOperations(state: LevelUpState): LevelUpItemOp
   };
 }
 
-export function buildClassLevelUpdatePayload(currentLevels: number): Record<string, number> {
+export function buildClassLevelUpdatePayload(targetLevel: number): Record<string, number> {
   return {
-    "system.levels": currentLevels + 1,
+    "system.levels": targetLevel,
   };
 }
 
