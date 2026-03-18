@@ -10,12 +10,15 @@ import { MOD } from "../../logger";
 import type { WizardStepDefinition, WizardState } from "../character-creator-types";
 import { createAbilitiesStep } from "../steps/step-abilities";
 import { createSpeciesStep } from "../steps/step-species";
-import { createOriginFeatStep } from "../steps/step-origin-feat";
 import { createBackgroundStep } from "../steps/step-background";
-import { createBackgroundGrantsStep } from "../steps/step-background-grants";
+import { createBackgroundAsiStep } from "../steps/step-background-asi";
 import { createClassStep } from "../steps/step-class";
-import { createSkillsStep } from "../steps/step-skills";
+import { createClassChoicesStep } from "../steps/step-class-choices";
+import { createClassSummaryStep } from "../steps/step-class-summary";
+import { createOriginChoicesStep } from "../steps/step-origin-choices";
 import { createSubclassStep } from "../steps/step-subclass";
+import { createSpeciesChoicesStep } from "../steps/step-species-choices";
+import { createOriginSummaryStep } from "../steps/step-origin-summary";
 import { createFeatsStep } from "../steps/step-feats";
 import { createSpellsStep } from "../steps/step-spells";
 import { createEquipmentStep } from "../steps/step-equipment";
@@ -26,17 +29,20 @@ import { createReviewStep } from "../steps/step-review";
 
 /** Canonical step order. Steps not in this list sort to the end. */
 const STEP_ORDER = [
-  "species",
-  "background",
-  "backgroundGrants",
-  "originFeat",
   "class",
+  "classChoices",
+  "classSummary",
   "subclass",
+  "background",
+  "backgroundAsi",
+  "originChoices",
+  "species",
+  "speciesChoices",
+  "originSummary",
   "abilities",
-  "skills",
   "feats",
-  "spells",
   "equipment",
+  "spells",
   "portrait",
   "review",
 ];
@@ -82,14 +88,17 @@ export function getStep(id: string): WizardStepDefinition | undefined {
 
 /** Atmospheric gradient class per step (maps to CSS). */
 const STEP_ATMOSPHERES: Record<string, string> = {
-  species: "cc-atmosphere--nature",
-  background: "cc-atmosphere--shadow",
-  backgroundGrants: "cc-atmosphere--shadow",
-  originFeat: "cc-atmosphere--crimson",
   class: "cc-atmosphere--forge",
+  classChoices: "cc-atmosphere--forge",
+  classSummary: "cc-atmosphere--gold",
   subclass: "cc-atmosphere--forge",
+  background: "cc-atmosphere--shadow",
+  backgroundAsi: "cc-atmosphere--shadow",
+  originChoices: "cc-atmosphere--crimson",
+  species: "cc-atmosphere--nature",
+  speciesChoices: "cc-atmosphere--nature",
+  originSummary: "cc-atmosphere--gold",
   abilities: "cc-atmosphere--arcane",
-  skills: "cc-atmosphere--arcane",
   feats: "cc-atmosphere--crimson",
   spells: "cc-atmosphere--arcane",
   equipment: "cc-atmosphere--forge",
@@ -140,18 +149,17 @@ export function createPlaceholderStep(
  * Phases 3 & 4 steps are fully implemented; portrait remains as placeholder.
  */
 export function registerAllSteps(): void {
-  registerStep(createSpeciesStep());
-
-  // Core steps
-  registerStep(createBackgroundStep());
-  registerStep(createBackgroundGrantsStep());
-
-  registerStep(createOriginFeatStep());
-
   registerStep(createClassStep());
+  registerStep(createClassChoicesStep());
+  registerStep(createClassSummaryStep());
   registerStep(createSubclassStep());
+  registerStep(createBackgroundStep());
+  registerStep(createBackgroundAsiStep());
+  registerStep(createOriginChoicesStep());
+  registerStep(createSpeciesStep());
+  registerStep(createSpeciesChoicesStep());
+  registerStep(createOriginSummaryStep());
   registerStep(createAbilitiesStep());
-  registerStep(createSkillsStep());
   registerStep(createFeatsStep());
   registerStep(createSpellsStep());
   registerStep(createEquipmentStep());

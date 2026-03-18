@@ -1,0 +1,58 @@
+<div class="cc-class-summary">
+  <div class="cc-step-intro">
+    <p>Review the core grants from {{className}} before moving into your origin choices.</p>
+  </div>
+
+  <section class="cc-panel">
+    <h3>Core Stats</h3>
+    <p><strong>Hit Die:</strong> {{hitDie}}</p>
+    <p>
+      <strong>Level 1 Max HP Preview:</strong> {{startingHpPreview}}
+      {{#unless usesAssignedCon}}<span>(assuming CON 10 for now)</span>{{/unless}}
+    </p>
+  </section>
+
+  {{#if hasSavingThrows}}
+  <section class="cc-panel">
+    <h3>Saving Throws</h3>
+    <div class="cc-chip-row">
+      {{#each savingThrows}}
+      <span class="cc-chip">{{this}}</span>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+
+  {{#if hasArmorProficiencies}}
+  <section class="cc-panel">
+    <h3>Armor Proficiencies</h3>
+    <div class="cc-chip-row">
+      {{#each armorProficiencies}}
+      <span class="cc-chip">{{this}}</span>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+
+  {{#if hasWeaponProficiencies}}
+  <section class="cc-panel">
+    <h3>Weapon Proficiencies</h3>
+    <div class="cc-chip-row">
+      {{#each weaponProficiencies}}
+      <span class="cc-chip">{{this}}</span>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+
+  {{#if hasFeatures}}
+  <section class="cc-panel">
+    <h3>Features Through Starting Level</h3>
+    <ul class="cc-list">
+      {{#each features}}
+      <li>{{title}}</li>
+      {{/each}}
+    </ul>
+  </section>
+  {{/if}}
+</div>

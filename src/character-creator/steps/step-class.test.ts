@@ -125,6 +125,23 @@ beforeEach(() => {
     ability: "int",
     progression: "full",
   });
+  fetchDocumentMock.mockResolvedValue({
+    system: {
+      hitDice: "d10",
+      saves: ["str", "con"],
+      traits: {
+        armorProf: { value: ["light", "medium", "shield"] },
+        weaponProf: { value: ["simple", "martial"] },
+      },
+      advancement: [
+        { title: "Fighting Style", level: 1 },
+        { title: "Second Wind", level: 1 },
+        { title: "Skill Proficiencies", level: 1 },
+        { title: "Weapon Mastery", level: 1 },
+        { title: "Action Surge", level: 2 },
+      ],
+    },
+  });
 });
 
 describe("step class", () => {
@@ -158,10 +175,12 @@ describe("step class", () => {
       selectedEntry: expect.objectContaining({
         uuid: "Compendium.class.wizard",
         description: "<p>Class details</p>",
+        primaryAbilityHint: "Intelligence recommended, with Constitution helping concentration.",
       }),
       hasEntries: true,
       emptyMessage: "No classes available. Check your GM configuration.",
     });
+    expect((viewModel.entries as Array<Record<string, string>>)[0]?.primaryAbilityText).toBe("Intelligence / Constitution");
   });
 
   it("exposes enabled classes through the internal helper", async () => {
@@ -187,7 +206,20 @@ describe("step class", () => {
     const root = new FakeElement();
     root.setQuerySelectorAll("[data-card-uuid]", [card]);
 
-    fetchDocumentMock.mockResolvedValue({ id: "doc-wizard" });
+    fetchDocumentMock.mockResolvedValue({
+      system: {
+        hitDice: "d6",
+        saves: ["int", "wis"],
+        traits: {
+          armorProf: { value: [] },
+          weaponProf: { value: ["dagger", "quarterstaff"] },
+        },
+        advancement: [
+          { title: "Spellcasting", level: 1 },
+          { title: "Arcane Recovery", level: 1 },
+        ],
+      },
+    });
 
     step.onActivate?.(makeState(), root as unknown as HTMLElement, {
       setData: vi.fn(),
@@ -215,6 +247,17 @@ describe("step class", () => {
       isSpellcaster: true,
       spellcastingAbility: "int",
       spellcastingProgression: "full",
+      primaryAbilities: ["int", "con"],
+      primaryAbilityHint: "Intelligence recommended, with Constitution helping concentration.",
+      hitDie: "d6",
+      savingThrowProficiencies: ["int", "wis"],
+      armorProficiencies: [],
+      weaponProficiencies: ["Dagger", "Quarterstaff"],
+      hasWeaponMastery: false,
+      classFeatures: [
+        { title: "Spellcasting", level: 1 },
+        { title: "Arcane Recovery", level: 1 },
+      ],
     });
 
     vi.clearAllMocks();
@@ -244,6 +287,48 @@ describe("step class", () => {
       isSpellcaster: false,
       spellcastingAbility: "",
       spellcastingProgression: "",
+      primaryAbilities: ["str", "dex"],
+      primaryAbilityHint: "Strength or Dexterity recommended.",
+      hasWeaponMastery: true,
     });
+  });
+
+  it("exposes parsing helpers for recommendations, trait summaries, and feature filtering", async () => {
+    const { __classStepInternals } = await import("./step-class");
+
+    expect(__classStepInternals.getClassRecommendation("fighter")).toMatchObject({
+      primaryAbilities: ["str", "dex"],
+      hasWeaponMastery: true,
+    });
+    expect(__classStepInternals.getHitDie({
+      system: {
+        hd: { denomination: "d12" },
+      },
+    })).toBe("d12");
+    expect(__classStepInternals.getSavingThrowProficiencies({
+      system: {
+        saves: { dex: true, wis: true, con: false },
+      },
+    })).toEqual(["dex", "wis"]);
+    expect(__classStepInternals.getTraitSummary({
+      system: {
+        traits: {
+          weaponProf: { value: ["martial-weapons"], custom: "Firearms" },
+        },
+      },
+    }, "weaponProf")).toEqual(["Martial Weapons", "Firearms"]);
+    expect(__classStepInternals.getFeatureSummary({
+      system: {
+        advancement: [
+          { title: "Skill Proficiencies", level: 1 },
+          { title: "Sneak Attack", level: 1 },
+          { title: "Cunning Action", level: 2 },
+          { title: "Uncanny Dodge", level: 5 },
+        ],
+      },
+    }, 2)).toEqual([
+      { title: "Sneak Attack", level: 1 },
+      { title: "Cunning Action", level: 2 },
+    ]);
   });
 });

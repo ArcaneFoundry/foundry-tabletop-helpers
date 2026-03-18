@@ -66,23 +66,23 @@ describe("wizard state machine", () => {
   it("cascades invalidation to completed dependent steps", () => {
     const machine = new WizardStateMachine(makeConfig(), [
       makeStep("background", { isComplete: (state) => !!state.selections.background }),
-      makeStep("backgroundGrants", { isComplete: (state) => !!state.selections.backgroundGrants }),
-      makeStep("originFeat", { isComplete: (state) => !!state.selections.originFeat }),
-      makeStep("skills", { isComplete: (state) => !!state.selections.skills }),
+      makeStep("backgroundAsi", { isComplete: (state) => !!state.selections.backgroundAsi }),
+      makeStep("originChoices", { isComplete: (state) => !!state.selections.originChoices }),
+      makeStep("originSummary", { isComplete: (state) => !!state.selections.originSummary }),
       makeStep("abilities", { isComplete: (state) => !!state.selections.abilities }),
     ]);
 
-    machine.updateSelection("backgroundGrants", { tool: "smith" });
-    machine.updateSelection("originFeat", { uuid: "feat-1" });
-    machine.updateSelection("skills", { chosen: ["arc"] });
+    machine.updateSelection("backgroundAsi", { wis: 2, int: 1 });
+    machine.updateSelection("originChoices", { classSkills: ["arc"] });
+    machine.updateSelection("originSummary", { ready: true });
     machine.updateSelection("abilities", { str: 15 });
 
     const invalidated = machine.updateSelection("background", { uuid: "bg-1" });
 
-    expect([...invalidated].sort()).toEqual(["abilities", "backgroundGrants", "originFeat", "skills"]);
+    expect([...invalidated].sort()).toEqual(["abilities", "backgroundAsi", "originChoices", "originSummary"]);
     expect(machine.state.stepStatus.get("background")).toBe("complete");
-    expect(machine.state.stepStatus.get("originFeat")).toBe("pending");
-    expect(machine.state.selections.originFeat).toBeUndefined();
+    expect(machine.state.stepStatus.get("originChoices")).toBe("pending");
+    expect(machine.state.selections.originChoices).toBeUndefined();
     expect(machine.state.selections.abilities).toBeUndefined();
   });
 
