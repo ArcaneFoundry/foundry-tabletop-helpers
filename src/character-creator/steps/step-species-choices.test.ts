@@ -146,6 +146,38 @@ describe("step species choices", () => {
     expect((vm.availableSpeciesSkills as Array<{ key: string }>).map((skill) => skill.key)).toEqual(["prc"]);
   });
 
+  it("surfaces validation warnings when legal species choices are missing", async () => {
+    const { createSpeciesChoicesStep } = await import("./step-species-choices");
+    const state = makeState();
+    state.selections.species = {
+      ...state.selections.species!,
+      skillChoiceCount: 2,
+      skillChoicePool: ["arc", "sur"],
+      itemChoiceGroups: [
+        {
+          id: "empty-group",
+          title: "Mysterious Legacy",
+          count: 1,
+          options: [],
+        },
+      ],
+    };
+
+    const step = createSpeciesChoicesStep();
+    const vm = await step.buildViewModel(state);
+
+    expect(vm).toMatchObject({
+      hasAvailableSpeciesSkills: false,
+      validationMessages: [
+        "No legal species skill options remain after your background and class picks. Choose a different species, class, or background to continue.",
+        "Mysterious Legacy has no selectable options in the enabled compendium data.",
+      ],
+    });
+    expect(step.getStatusHint?.(state)).toBe(
+      "No legal species skill options remain after your background and class picks. Choose a different species, class, or background to continue.",
+    );
+  });
+
   it("stores selected species languages, skills, and item choices and completes when the slots are filled", async () => {
     const { createSpeciesChoicesStep } = await import("./step-species-choices");
     const step = createSpeciesChoicesStep();
@@ -200,5 +232,21 @@ describe("step species choices", () => {
     expect(item2.disabled).toBe(true);
     expect(step.isComplete(state)).toBe(true);
     expect(setDataSilent).toHaveBeenCalled();
+  });
+
+  it("reports the next missing species choice in the status hint", async () => {
+    const { createSpeciesChoicesStep } = await import("./step-species-choices");
+    const step = createSpeciesChoicesStep();
+    const state = makeState();
+
+    expect(step.getStatusHint?.(state)).toBe("Choose 1 more species language");
+
+    state.selections.speciesChoices = {
+      hasChoices: true,
+      chosenLanguages: ["elvish"],
+      chosenSkills: [],
+      chosenItems: {},
+    };
+    expect(step.getStatusHint?.(state)).toBe("Choose 1 more species skill");
   });
 });

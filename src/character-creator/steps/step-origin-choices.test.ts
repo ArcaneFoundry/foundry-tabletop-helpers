@@ -170,8 +170,32 @@ describe("step origin choices", () => {
       maxPicks: 2,
       toolProficiency: "Art: Calligrapher",
       originFeatName: "Magic Initiate",
+      skillSelectionMessage: "Choose 2 class skills. Background skills are locked out automatically.",
     });
     expect((vm.availableSkills as Array<{ key: string }>).map((skill) => skill.key)).toEqual(["his", "ins"]);
+  });
+
+  it("surfaces a validation warning when background overlap leaves too few class skill options", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.selections.class = {
+      ...state.selections.class!,
+      skillPool: ["arc", "his"],
+      skillCount: 2,
+    };
+
+    const step = createOriginChoicesStep();
+    const vm = await step.buildViewModel(state);
+
+    expect(vm).toMatchObject({
+      hasAvailableSkills: true,
+      validationMessages: [
+        "Only 1 legal class skill option remain, but 2 selections are required.",
+      ],
+    });
+    expect(step.getStatusHint?.(state)).toBe(
+      "Not enough legal class skill options remain for this class/background combination",
+    );
   });
 
   it("shows custom origin feat choices when feat swapping is enabled", async () => {
@@ -329,5 +353,24 @@ describe("step origin choices", () => {
       originFeatUuid: "feat.alert",
     });
     expect(rerender).toHaveBeenCalled();
+  });
+
+  it("shows a fallback message when no alternative origin feats are available", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.config.allowCustomBackgrounds = true;
+    state.config.packSources = {
+      ...state.config.packSources,
+      backgrounds: ["test.backgrounds.empty"],
+      feats: ["test.feats.empty"],
+    };
+
+    const vm = await createOriginChoicesStep().buildViewModel(state);
+
+    expect(vm).toMatchObject({
+      hasOriginFeats: false,
+      originFeatEmptyMessage:
+        "No alternative 2024 origin feats were found in the enabled feat packs, so the background's default feat will be used.",
+    });
   });
 });

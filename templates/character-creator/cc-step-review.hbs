@@ -193,7 +193,9 @@
   {{#unless allComplete}}
   <div class="cc-review-warning">
     <i class="fa-solid fa-triangle-exclamation"></i>
-    <span>Some sections are incomplete. Go back to fill them in before creating your character.</span>
+    <span>Some sections are incomplete:
+      {{#each incompleteSectionLabels}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}.
+      Go back to fill them in before creating your character.</span>
   </div>
   {{/unless}}
 

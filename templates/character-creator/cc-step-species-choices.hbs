@@ -49,6 +49,7 @@
       <span class="cc-skills__max">{{skillChoiceCount}}</span>
       <span class="cc-skills__counter-label">species skills</span>
     </div>
+    {{#if hasAvailableSpeciesSkills}}
     <div class="cc-skills__grid">
       {{#each availableSpeciesSkills}}
       <label class="cc-skill-row{{#if checked}} cc-skill-row--checked{{/if}}">
@@ -58,6 +59,9 @@
       </label>
       {{/each}}
     </div>
+    {{else}}
+    <p class="cc-card-detail__hint">No legal species skill options are currently available after your other skill picks.</p>
+    {{/if}}
     {{/if}}
     {{#if hasItemChoices}}
     <p><strong>Choose {{chosenItemChoiceCount}} / {{requiredItemChoiceCount}} spell or item options:</strong></p>
@@ -65,6 +69,7 @@
     <div class="cc-panel">
       <p><strong>{{title}}</strong></p>
       <p class="cc-card-detail__hint">{{selectedCount}} / {{count}} selected</p>
+      {{#if options.length}}
       <div class="cc-skills__grid">
         {{#each options}}
         <label class="cc-skill-row{{#if selected}} cc-skill-row--checked{{/if}}">
@@ -79,8 +84,24 @@
         </label>
         {{/each}}
       </div>
+      {{else}}
+      <p class="cc-card-detail__hint">{{../../itemChoiceEmptyMessage}}</p>
+      {{/if}}
     </div>
     {{/each}}
     {{/if}}
   </section>
+
+  {{#if validationMessages.length}}
+  <section class="cc-panel">
+    <h3>Validation Notes</h3>
+    <div class="cc-review-grants">
+      {{#each validationMessages}}
+      <div class="cc-review-grant">
+        <span class="cc-review-grant__value">{{this}}</span>
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
 </div>

@@ -330,12 +330,14 @@ export function createReviewStep(): WizardStepDefinition {
         isSimple: true,
       });
 
-      const allComplete = sections.every((s) => s.complete);
+      const incompleteSections = sections.filter((section) => !section.complete);
+      const allComplete = incompleteSections.length === 0;
 
       return {
         characterName: reviewData?.characterName ?? "",
         sections,
         allComplete,
+        incompleteSectionLabels: incompleteSections.map((section) => section.label),
         isReview: true,
         startingLevel: state.config.startingLevel,
       };

@@ -5,7 +5,7 @@
 
   <section class="cc-panel">
     <h3>Class Skills</h3>
-    <p>{{className}} lets you choose {{maxPicks}} skill proficiencies. Background skills are locked out automatically.</p>
+    <p>{{skillSelectionMessage}}</p>
     {{#if backgroundSkillChips.length}}
     <div class="cc-review-grant">
       <span class="cc-review-grant__label">Background:</span>
@@ -20,6 +20,8 @@
       <span class="cc-skills__max">{{maxPicks}}</span>
       <span class="cc-skills__counter-label">class skills</span>
     </div>
+    {{#if maxPicks}}
+    {{#if hasAvailableSkills}}
     <div class="cc-skills__grid">
       {{#each availableSkills}}
       <label class="cc-skill-row{{#if checked}} cc-skill-row--checked{{/if}}">
@@ -29,6 +31,10 @@
       </label>
       {{/each}}
     </div>
+    {{else}}
+    <p class="cc-card-detail__hint">No legal class skill options are currently available for this class/background combination.</p>
+    {{/if}}
+    {{/if}}
   </section>
 
   <section class="cc-panel">
@@ -99,9 +105,22 @@
       </div>
     </div>
     {{else}}
-    <p>No origin feats are available in the configured feat packs.</p>
+    <p class="cc-card-detail__hint">{{originFeatEmptyMessage}}</p>
     {{/if}}
     {{/if}}
     {{/if}}
   </section>
+
+  {{#if validationMessages.length}}
+  <section class="cc-panel">
+    <h3>Validation Notes</h3>
+    <div class="cc-review-grants">
+      {{#each validationMessages}}
+      <div class="cc-review-grant">
+        <span class="cc-review-grant__value">{{this}}</span>
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
 </div>

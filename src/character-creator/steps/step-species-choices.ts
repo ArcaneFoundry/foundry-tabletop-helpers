@@ -30,6 +30,40 @@ function getRequiredSpeciesItemChoiceCount(state: WizardState): number {
     .reduce((sum, group) => sum + group.count, 0);
 }
 
+function getSpeciesChoiceValidationMessages(state: WizardState): string[] {
+  const messages: string[] = [];
+  const chosenSkills = state.selections.speciesChoices?.chosenSkills ?? [];
+  const fixedSkills = new Set(state.selections.species?.skillGrants ?? []);
+  const takenSkills = new Set([
+    ...(state.selections.background?.grants.skillProficiencies ?? []),
+    ...(state.selections.skills?.chosen ?? []),
+    ...fixedSkills,
+  ]);
+  const availableSkillCount = (state.selections.species?.skillChoicePool ?? [])
+    .filter((skill) => skill in SKILLS)
+    .filter((skill) => chosenSkills.includes(skill) || !takenSkills.has(skill))
+    .length;
+  const requiredSkillCount = state.selections.species?.skillChoiceCount ?? 0;
+
+  if (requiredSkillCount > 0 && availableSkillCount === 0) {
+    messages.push("No legal species skill options remain after your background and class picks. Choose a different species, class, or background to continue.");
+  } else if (availableSkillCount > 0 && availableSkillCount < requiredSkillCount) {
+    messages.push(`Only ${availableSkillCount} legal species skill option${availableSkillCount === 1 ? "" : "s"} remain, but ${requiredSkillCount} selection${requiredSkillCount === 1 ? "" : "s"} are required.`);
+  }
+
+  for (const group of state.selections.species?.itemChoiceGroups ?? []) {
+    if (group.options.length === 0) {
+      messages.push(`${group.title} has no selectable options in the enabled compendium data.`);
+      continue;
+    }
+    if (group.options.length < group.count) {
+      messages.push(`${group.title} only exposes ${group.options.length} option${group.options.length === 1 ? "" : "s"}, but ${group.count} selection${group.count === 1 ? "" : "s"} are required.`);
+    }
+  }
+
+  return messages;
+}
+
 interface SelectElementLike {
   dataset: DOMStringMap;
   value: string;
@@ -62,6 +96,35 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
       return (state.selections.speciesChoices?.chosenLanguages?.length ?? 0) >= neededLanguages
         && (state.selections.speciesChoices?.chosenSkills?.length ?? 0) >= neededSkills
         && itemGroups.every((group) => (chosenItems[group.id]?.length ?? 0) >= group.count);
+    },
+    getStatusHint(state) {
+      const validationMessages = getSpeciesChoiceValidationMessages(state);
+      if (validationMessages.length > 0) return validationMessages[0];
+
+      const neededLanguages = state.selections.species?.languageChoiceCount ?? 0;
+      const chosenLanguages = state.selections.speciesChoices?.chosenLanguages?.length ?? 0;
+      if (chosenLanguages < neededLanguages) {
+        const remaining = neededLanguages - chosenLanguages;
+        return `Choose ${remaining} more species language${remaining === 1 ? "" : "s"}`;
+      }
+
+      const neededSkills = state.selections.species?.skillChoiceCount ?? 0;
+      const chosenSkills = state.selections.speciesChoices?.chosenSkills?.length ?? 0;
+      if (chosenSkills < neededSkills) {
+        const remaining = neededSkills - chosenSkills;
+        return `Choose ${remaining} more species skill${remaining === 1 ? "" : "s"}`;
+      }
+
+      const itemGroups = state.selections.species?.itemChoiceGroups ?? [];
+      for (const group of itemGroups) {
+        const chosenCount = state.selections.speciesChoices?.chosenItems?.[group.id]?.length ?? 0;
+        if (chosenCount < group.count) {
+          const remaining = group.count - chosenCount;
+          return `Choose ${remaining} more option${remaining === 1 ? "" : "s"} for ${group.title}`;
+        }
+      }
+
+      return "";
     },
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       const stepState = buildSpeciesChoicesState(state);
@@ -125,11 +188,14 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
         skillChoiceCount,
         chosenSkillCount: chosenSkills.length,
         availableSpeciesSkills,
+        hasAvailableSpeciesSkills: availableSpeciesSkills.length > 0,
         hasItemChoices: itemChoiceGroups.length > 0,
         requiredItemChoiceCount: getRequiredSpeciesItemChoiceCount(state),
         chosenItemChoiceCount: Object.values(state.selections.speciesChoices?.chosenItems ?? {})
           .reduce((sum, group) => sum + group.length, 0),
         itemChoiceGroups,
+        itemChoiceEmptyMessage: "This species grants extra spell or item picks, but no selectable options were found in the enabled compendium data.",
+        validationMessages: getSpeciesChoiceValidationMessages(state),
         ...stepState,
       };
     },

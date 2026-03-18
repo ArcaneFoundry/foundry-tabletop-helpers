@@ -219,4 +219,23 @@ describe("step review", () => {
       img: "alert.png",
     });
   });
+
+  it("lists incomplete section labels in the review warning context", async () => {
+    const { createReviewStep } = await import("./step-review");
+    const step = createReviewStep();
+    const state = makeState();
+    state.selections.speciesChoices = {
+      hasChoices: true,
+      chosenLanguages: [],
+      chosenSkills: [],
+      chosenItems: {},
+    };
+
+    const viewModel = await step.buildViewModel(state);
+
+    expect(viewModel).toMatchObject({
+      allComplete: false,
+      incompleteSectionLabels: expect.arrayContaining(["Species Choices"]),
+    });
+  });
 });
