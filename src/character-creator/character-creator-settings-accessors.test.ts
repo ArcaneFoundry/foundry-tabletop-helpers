@@ -83,9 +83,32 @@ describe("character creator settings accessors", () => {
     expect(getPackSources().classes.length).toBeGreaterThan(0);
     expect(getDisabledContentUUIDs()).toEqual([]);
     expect(getAllowedAbilityMethods()).toEqual(["4d6", "pointBuy", "standardArray"]);
-    expect(getStartingLevel()).toBe(1);
+    expect(getStartingLevel()).toBe(20);
     expect(getEquipmentMethod()).toBe("both");
     expect(getLevel1HpMethod()).toBe("max");
     expect(getMaxRerolls()).toBe(0);
+  });
+
+  it("normalizes partial serialized pack sources and invalid ability method entries", () => {
+    (globalThis as Record<string, unknown>).game = {
+      settings: {
+        get(module: string, key: string) {
+          if (module !== MOD) return undefined;
+          if (key === CC_SETTINGS.PACK_SOURCES) {
+            return '{"classes":["world.classes","world.classes",42],"spells":"bad","items":["world.items"]}';
+          }
+          if (key === CC_SETTINGS.ALLOWED_ABILITY_METHODS) {
+            return '["weird","pointBuy",3]';
+          }
+          return undefined;
+        },
+      },
+    };
+
+    expect(getPackSources()).toMatchObject({
+      classes: ["world.classes"],
+      items: ["world.items"],
+    });
+    expect(getAllowedAbilityMethods()).toEqual(["pointBuy"]);
   });
 });

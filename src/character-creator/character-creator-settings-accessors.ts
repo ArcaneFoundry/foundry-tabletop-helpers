@@ -1,10 +1,15 @@
 import { MOD } from "../logger";
 import { getSetting, setSetting } from "../types";
 import type { AbilityScoreMethod, EquipmentMethod, HpMethod, PackSourceConfig } from "./character-creator-types";
-import { DEFAULT_PACK_SOURCES } from "./data/dnd5e-constants";
 import { CC_SETTINGS } from "./character-creator-settings-shared";
-
-const DEFAULT_ABILITY_METHODS: AbilityScoreMethod[] = ["4d6", "pointBuy", "standardArray"];
+import {
+  normalizeAbilityMethods,
+  normalizeEquipmentMethod,
+  normalizeLevel1HpMethod,
+  normalizeMaxRerolls,
+  normalizePackSources,
+  normalizeStartingLevel,
+} from "./character-creator-settings-normalization";
 
 export function ccEnabled(): boolean {
   return getSetting<boolean>(MOD, CC_SETTINGS.ENABLED) ?? true;
@@ -22,23 +27,14 @@ export function getPackSources(): PackSourceConfig {
   const raw = getSetting<string>(MOD, CC_SETTINGS.PACK_SOURCES) ?? "{}";
   try {
     const parsed = JSON.parse(raw) as Partial<PackSourceConfig>;
-    if (!parsed || Object.keys(parsed).length === 0) return { ...DEFAULT_PACK_SOURCES };
-    return {
-      classes: parsed.classes ?? DEFAULT_PACK_SOURCES.classes,
-      subclasses: parsed.subclasses ?? DEFAULT_PACK_SOURCES.subclasses,
-      races: parsed.races ?? DEFAULT_PACK_SOURCES.races,
-      backgrounds: parsed.backgrounds ?? DEFAULT_PACK_SOURCES.backgrounds,
-      feats: parsed.feats ?? DEFAULT_PACK_SOURCES.feats,
-      spells: parsed.spells ?? DEFAULT_PACK_SOURCES.spells,
-      items: parsed.items ?? DEFAULT_PACK_SOURCES.items,
-    };
+    return normalizePackSources(parsed);
   } catch {
-    return { ...DEFAULT_PACK_SOURCES };
+    return normalizePackSources({});
   }
 }
 
 export async function setPackSources(config: PackSourceConfig): Promise<void> {
-  await setSetting(MOD, CC_SETTINGS.PACK_SOURCES, JSON.stringify(config));
+  await setSetting(MOD, CC_SETTINGS.PACK_SOURCES, JSON.stringify(normalizePackSources(config)));
 }
 
 export function getDisabledContentUUIDs(): string[] {
@@ -56,22 +52,25 @@ export async function setDisabledContentUUIDs(uuids: string[]): Promise<void> {
 }
 
 export function getAllowedAbilityMethods(): AbilityScoreMethod[] {
-  const raw = getSetting<string>(MOD, CC_SETTINGS.ALLOWED_ABILITY_METHODS) ?? JSON.stringify(DEFAULT_ABILITY_METHODS);
+  const raw = getSetting<string>(MOD, CC_SETTINGS.ALLOWED_ABILITY_METHODS) ?? '["4d6","pointBuy","standardArray"]';
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed as AbilityScoreMethod[] : DEFAULT_ABILITY_METHODS;
+    return normalizeAbilityMethods(parsed).methods;
   } catch {
-    return DEFAULT_ABILITY_METHODS;
+    return normalizeAbilityMethods([]).methods;
   }
 }
 
 export async function setAllowedAbilityMethods(methods: AbilityScoreMethod[]): Promise<void> {
-  await setSetting(MOD, CC_SETTINGS.ALLOWED_ABILITY_METHODS, JSON.stringify(methods));
+  await setSetting(MOD, CC_SETTINGS.ALLOWED_ABILITY_METHODS, JSON.stringify(normalizeAbilityMethods(methods).methods));
 }
 
 export function getStartingLevel(): number {
-  const value = getSetting<number>(MOD, CC_SETTINGS.STARTING_LEVEL);
-  return typeof value === "number" && value >= 1 && value <= 20 ? value : 1;
+  return normalizeStartingLevel(getSetting<number>(MOD, CC_SETTINGS.STARTING_LEVEL));
+}
+
+export async function setStartingLevel(level: unknown): Promise<void> {
+  await setSetting(MOD, CC_SETTINGS.STARTING_LEVEL, normalizeStartingLevel(level));
 }
 
 export function allowMulticlass(): boolean {
@@ -79,20 +78,27 @@ export function allowMulticlass(): boolean {
 }
 
 export function getEquipmentMethod(): EquipmentMethod {
-  const value = getSetting<string>(MOD, CC_SETTINGS.EQUIPMENT_METHOD);
-  if (value === "equipment" || value === "gold" || value === "both") return value;
-  return "both";
+  return normalizeEquipmentMethod(getSetting<string>(MOD, CC_SETTINGS.EQUIPMENT_METHOD));
+}
+
+export async function setEquipmentMethod(method: unknown): Promise<void> {
+  await setSetting(MOD, CC_SETTINGS.EQUIPMENT_METHOD, normalizeEquipmentMethod(method));
 }
 
 export function getLevel1HpMethod(): HpMethod {
-  const value = getSetting<string>(MOD, CC_SETTINGS.LEVEL1_HP_METHOD);
-  if (value === "max" || value === "roll") return value;
-  return "max";
+  return normalizeLevel1HpMethod(getSetting<string>(MOD, CC_SETTINGS.LEVEL1_HP_METHOD));
+}
+
+export async function setLevel1HpMethod(method: unknown): Promise<void> {
+  await setSetting(MOD, CC_SETTINGS.LEVEL1_HP_METHOD, normalizeLevel1HpMethod(method));
 }
 
 export function getMaxRerolls(): number {
-  const value = getSetting<number>(MOD, CC_SETTINGS.MAX_REROLLS);
-  return typeof value === "number" && value >= 0 ? value : 0;
+  return normalizeMaxRerolls(getSetting<number>(MOD, CC_SETTINGS.MAX_REROLLS));
+}
+
+export async function setMaxRerolls(count: unknown): Promise<void> {
+  await setSetting(MOD, CC_SETTINGS.MAX_REROLLS, normalizeMaxRerolls(count));
 }
 
 export function allowCustomBackgrounds(): boolean {

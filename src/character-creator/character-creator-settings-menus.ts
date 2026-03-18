@@ -13,9 +13,17 @@ import {
   getMaxRerolls,
   getPackSources,
   getStartingLevel,
+  setAllowedAbilityMethods,
+  setEquipmentMethod,
+  setLevel1HpMethod,
+  setMaxRerolls,
   setPackSources,
+  setStartingLevel,
 } from "./character-creator-settings-accessors";
 import { CC_SETTINGS } from "./character-creator-settings-shared";
+import {
+  normalizeAbilityMethods,
+} from "./character-creator-settings-normalization";
 
 interface FormAppLike {
   getData?(): Promise<Record<string, unknown>> | Record<string, unknown>;
@@ -151,27 +159,22 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
         if (formData.method_4d6) methods.push("4d6");
         if (formData.method_pointBuy) methods.push("pointBuy");
         if (formData.method_standardArray) methods.push("standardArray");
-
-        if (methods.length === 0) {
-          getUI()?.notifications?.warn?.("At least one ability score method must be enabled. Defaulting to Roll 4d6.");
-          methods.push("4d6");
+        const normalizedMethods = normalizeAbilityMethods(methods);
+        if (normalizedMethods.usedFallback) {
+          getUI()?.notifications?.warn?.(
+            "At least one ability score method must be enabled. Defaulting to all standard methods.",
+          );
         }
-
-        const rawLevel = Number(formData.startingLevel) || 1;
-        const startingLevel = Math.max(1, Math.min(20, rawLevel));
-        const rawRerolls = Number(formData.maxRerolls) || 0;
-        const maxRerolls = Math.max(0, Math.floor(rawRerolls));
-
         await Promise.all([
           setSetting(MOD, CC_SETTINGS.ENABLED, !!formData.ccEnabled),
           setSetting(MOD, CC_SETTINGS.AUTO_OPEN, !!formData.ccAutoOpen),
           setSetting(MOD, CC_SETTINGS.LEVEL_UP_ENABLED, !!formData.ccLevelUpEnabled),
-          setSetting(MOD, CC_SETTINGS.ALLOWED_ABILITY_METHODS, JSON.stringify(methods)),
-          setSetting(MOD, CC_SETTINGS.MAX_REROLLS, maxRerolls),
-          setSetting(MOD, CC_SETTINGS.STARTING_LEVEL, startingLevel),
+          setAllowedAbilityMethods(normalizedMethods.methods),
+          setMaxRerolls(Number(formData.maxRerolls)),
+          setStartingLevel(Number(formData.startingLevel)),
           setSetting(MOD, CC_SETTINGS.ALLOW_MULTICLASS, !!formData.allowMulticlass),
-          setSetting(MOD, CC_SETTINGS.EQUIPMENT_METHOD, String(formData.equipmentMethod || "both")),
-          setSetting(MOD, CC_SETTINGS.LEVEL1_HP_METHOD, String(formData.level1HpMethod || "max")),
+          setEquipmentMethod(String(formData.equipmentMethod ?? "")),
+          setLevel1HpMethod(String(formData.level1HpMethod ?? "")),
         ]);
 
         getUI()?.notifications?.info?.("Character Creator settings saved.");

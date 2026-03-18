@@ -10,9 +10,12 @@ const setDisabledContentUUIDsMock = vi.fn(async () => {});
 const getAllowedAbilityMethodsMock = vi.fn();
 const setAllowedAbilityMethodsMock = vi.fn(async () => {});
 const getStartingLevelMock = vi.fn();
+const setStartingLevelMock = vi.fn(async () => {});
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
+const setEquipmentMethodMock = vi.fn(async () => {});
 const getLevel1HpMethodMock = vi.fn();
+const setLevel1HpMethodMock = vi.fn(async () => {});
 const allowCustomBackgroundsMock = vi.fn();
 const setSettingMock = vi.fn(async () => {});
 const loadPacksMock = vi.fn(async () => new Map());
@@ -41,9 +44,12 @@ vi.mock("../character-creator-settings", () => ({
   getAllowedAbilityMethods: getAllowedAbilityMethodsMock,
   setAllowedAbilityMethods: setAllowedAbilityMethodsMock,
   getStartingLevel: getStartingLevelMock,
+  setStartingLevel: setStartingLevelMock,
   allowMulticlass: allowMulticlassMock,
   getEquipmentMethod: getEquipmentMethodMock,
+  setEquipmentMethod: setEquipmentMethodMock,
   getLevel1HpMethod: getLevel1HpMethodMock,
+  setLevel1HpMethod: setLevel1HpMethodMock,
   allowCustomBackgrounds: allowCustomBackgroundsMock,
   CC_SETTINGS: {
     STARTING_LEVEL: "startingLevel",
@@ -239,7 +245,7 @@ describe("gm config app shell", () => {
   });
 
   it("saves rule settings from the form and shows a confirmation", async () => {
-    const notifications = { info: vi.fn() };
+    const notifications = { info: vi.fn(), warn: vi.fn() };
     getUIMock.mockReturnValue({ notifications });
 
     const mod = await import("./gm-config-app");
@@ -273,11 +279,54 @@ describe("gm config app shell", () => {
     await ctor._onSaveRules.call(app, new Event("submit"), {} as HTMLElement);
 
     expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "standardArray"]);
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "startingLevel", 5);
+    expect(setStartingLevelMock).toHaveBeenCalledWith(5);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowMulticlass", true);
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "equipmentMethod", "gold");
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "level1HpMethod", "roll");
+    expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
+    expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowCustomBackgrounds", true);
     expect(notifications.info).toHaveBeenCalledWith("Character Creator configuration saved.");
+  });
+
+  it("normalizes invalid rule combinations before saving from the GM rules tab", async () => {
+    const notifications = { info: vi.fn(), warn: vi.fn() };
+    getUIMock.mockReturnValue({ notifications });
+
+    const mod = await import("./gm-config-app");
+    mod.buildGMConfigAppClass();
+    const AppClass = mod.getGMConfigAppClass()!;
+    const app = new AppClass() as FakeBaseApplication;
+
+    const form = {
+      querySelector: (selector: string) => {
+        switch (selector) {
+          case '[name="method-4d6"]': return checkbox(false);
+          case '[name="method-pointBuy"]': return checkbox(false);
+          case '[name="method-standardArray"]': return checkbox(false);
+          case '[name="startingLevel"]': return valueInput("99");
+          case '[name="allowMulticlass"]': return checkbox(false);
+          case '[name="equipmentMethod"]:checked': return valueInput("weird");
+          case '[name="level1HpMethod"]:checked': return valueInput("weird");
+          case '[name="allowCustomBackgrounds"]': return checkbox(false);
+          default: return null;
+        }
+      },
+    };
+    app.element = {
+      querySelector: (selector: string) => (selector === ".cc-rules-form" ? (form as unknown as Element) : null),
+    } as Element;
+
+    const ctor = AppClass as typeof AppClass & {
+      _onSaveRules(this: FakeBaseApplication, event: Event, target: HTMLElement): Promise<void>;
+    };
+
+    await ctor._onSaveRules.call(app, new Event("submit"), {} as HTMLElement);
+
+    expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "pointBuy", "standardArray"]);
+    expect(setStartingLevelMock).toHaveBeenCalledWith(99);
+    expect(setEquipmentMethodMock).toHaveBeenCalledWith("weird");
+    expect(setLevel1HpMethodMock).toHaveBeenCalledWith("weird");
+    expect(notifications.warn).toHaveBeenCalledWith(
+      "At least one ability score method must remain enabled. Defaulting to all standard methods.",
+    );
   });
 });

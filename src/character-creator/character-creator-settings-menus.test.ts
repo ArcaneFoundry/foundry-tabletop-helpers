@@ -8,14 +8,19 @@ const setSettingMock = vi.fn(async () => {});
 const getPackSourcesMock = vi.fn();
 const setPackSourcesMock = vi.fn(async () => {});
 const getAllowedAbilityMethodsMock = vi.fn();
+const setAllowedAbilityMethodsMock = vi.fn(async () => {});
 const getStartingLevelMock = vi.fn();
+const setStartingLevelMock = vi.fn(async () => {});
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
+const setEquipmentMethodMock = vi.fn(async () => {});
 const getLevel1HpMethodMock = vi.fn();
+const setLevel1HpMethodMock = vi.fn(async () => {});
 const ccEnabledMock = vi.fn();
 const ccAutoOpenMock = vi.fn();
 const ccLevelUpEnabledMock = vi.fn();
 const getMaxRerollsMock = vi.fn();
+const setMaxRerollsMock = vi.fn(async () => {});
 const loadPacksInvalidateMock = vi.fn();
 
 vi.mock("../logger", () => ({
@@ -43,7 +48,12 @@ vi.mock("./character-creator-settings-accessors", () => ({
   getMaxRerolls: getMaxRerollsMock,
   getPackSources: getPackSourcesMock,
   getStartingLevel: getStartingLevelMock,
+  setAllowedAbilityMethods: setAllowedAbilityMethodsMock,
+  setEquipmentMethod: setEquipmentMethodMock,
+  setLevel1HpMethod: setLevel1HpMethodMock,
+  setMaxRerolls: setMaxRerollsMock,
   setPackSources: setPackSourcesMock,
+  setStartingLevel: setStartingLevelMock,
 }));
 
 vi.mock("./data/compendium-indexer", () => ({
@@ -206,17 +216,13 @@ describe("character creator settings menus", () => {
     });
 
     expect(notifications.warn).toHaveBeenCalledWith(
-      "At least one ability score method must be enabled. Defaulting to Roll 4d6.",
+      "At least one ability score method must be enabled. Defaulting to all standard methods.",
     );
-    expect(setSettingMock).toHaveBeenCalledWith(
-      "foundry-tabletop-helpers",
-      "allowedAbilityMethods",
-      JSON.stringify(["4d6"]),
-    );
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "maxRerolls", 4);
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "startingLevel", 20);
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "equipmentMethod", "gold");
-    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "level1HpMethod", "roll");
+    expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "pointBuy", "standardArray"]);
+    expect(setMaxRerollsMock).toHaveBeenCalledWith(4.7);
+    expect(setStartingLevelMock).toHaveBeenCalledWith(25);
+    expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
+    expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
     expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
   });
 
