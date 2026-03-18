@@ -121,6 +121,7 @@ function createActor() {
   const buildMockTraitAdvancement = (
     entry: Record<string, unknown>,
   ) => {
+    const isMasteryAdvancement = (entry.configuration as { mode?: string } | undefined)?.mode === "mastery";
     const advancement = {
       ...entry,
       value: {
@@ -137,7 +138,9 @@ function createActor() {
         }
       }),
       apply: vi.fn(async (_level: number, data: { chosen: Set<string> }) => {
-        advancement.value.chosen = new Set(data.chosen);
+        if (!isMasteryAdvancement) {
+          advancement.value.chosen = new Set(data.chosen);
+        }
         for (const key of data.chosen) {
           if (key.startsWith("skills:")) {
             const skillKey = key.slice("skills:".length);
