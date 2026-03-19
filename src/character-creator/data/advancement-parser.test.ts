@@ -92,4 +92,62 @@ describe("advancement parser", () => {
       },
     ]);
   });
+
+  it("parses weapon mastery counts and pool keys through the configured starting level", async () => {
+    const { parseClassWeaponMasteryAdvancement } = await import("./advancement-parser");
+
+    const result = parseClassWeaponMasteryAdvancement({
+      system: {
+        advancement: [
+          {
+            type: "Trait",
+            title: "Weapon Mastery",
+            level: 1,
+            configuration: {
+              mode: "mastery",
+              choices: [{ count: 3, pool: ["weapon:sim:*", "weapon:mar:*"] }],
+            },
+          },
+          {
+            type: "Trait",
+            title: "Weapon Mastery",
+            level: 4,
+            configuration: {
+              mode: "mastery",
+              choices: [{ count: 1, pool: ["weapon:sim:*", "weapon:mar:*"] }],
+            },
+          },
+        ],
+      },
+    } as never, 4);
+
+    expect(result).toEqual({
+      count: 4,
+      pool: ["weapon:sim:*", "weapon:mar:*"],
+    });
+  });
+
+  it("parses class skill pools when Foundry stores the pool as a Set", async () => {
+    const { parseClassSkillAdvancement } = await import("./advancement-parser");
+
+    const result = parseClassSkillAdvancement({
+      system: {
+        advancement: [
+          {
+            type: "Trait",
+            title: "Skill Proficiencies",
+            configuration: {
+              mode: "default",
+              choices: [{ count: 2, pool: new Set(["skills:ath", "skills:sur"]) }],
+            },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result).toEqual({
+      skillPool: ["ath", "sur"],
+      skillCount: 2,
+    });
+  });
 });

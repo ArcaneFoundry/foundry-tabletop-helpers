@@ -26,6 +26,15 @@ function makeState(): WizardState {
           { title: "Second Wind", level: 1 },
         ],
       },
+      classChoices: {
+        chosenSkills: ["ath", "sur"],
+        chosenWeaponMasteries: ["longsword", "shortbow"],
+        chosenWeaponMasteryDetails: [
+          { id: "longsword", label: "Longsword", mastery: "Sap" },
+          { id: "shortbow", label: "Shortbow", mastery: "Vex" },
+        ],
+      },
+      skills: { chosen: ["ath", "sur"] },
       abilities: {
         method: "standardArray",
         scores: { str: 15, dex: 14, con: 14, int: 10, wis: 12, cha: 8 },
@@ -60,9 +69,13 @@ describe("step class summary", () => {
       startingHpPreview: 12,
       usesAssignedCon: true,
       savingThrows: ["STR", "CON"],
+      chosenSkills: ["Athletics", "Survival"],
+      chosenWeaponMasteries: ["Longsword (Sap)", "Shortbow (Vex)"],
       armorProficiencies: ["Light", "Medium", "Shield"],
       weaponProficiencies: ["Simple", "Martial"],
       hasFeatures: true,
+      hasChosenSkills: true,
+      hasChosenWeaponMasteries: true,
     });
     expect((viewModel.features as Array<{ title: string }>).map((feature) => feature.title)).toEqual([
       "Fighting Style (Level 1)",

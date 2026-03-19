@@ -7,6 +7,7 @@
  */
 
 import { Log, MOD } from "../../logger";
+import { renderTemplate } from "../../types";
 import type {
   AbilityKey,
   ClassFeatureSummary,
@@ -17,9 +18,9 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseClassSkillAdvancement, parseClassSpellcasting } from "../data/advancement-parser";
+import { parseClassSkillAdvancement, parseClassSpellcasting, parseClassWeaponMasteryAdvancement } from "../data/advancement-parser";
 import { ABILITY_LABELS } from "../data/dnd5e-constants";
-import { patchCardSelection } from "./card-select-utils";
+import { beginCardSelectionUpdate, isCurrentCardSelectionUpdate, patchCardDetailFromTemplate } from "./card-select-utils";
 
 interface DatasetElementLike extends Element {
   dataset: DOMStringMap;
@@ -34,6 +35,12 @@ function getAvailableClasses(state: WizardState): CreatorIndexEntry[] {
 
 type ClassDocumentLike = {
   system?: Record<string, unknown>;
+};
+
+type DescriptionSystemLike = {
+  description?: {
+    value?: unknown;
+  };
 };
 
 type ClassRecommendation = {
@@ -131,7 +138,9 @@ function getFeatureSummary(doc: ClassDocumentLike | null, startingLevel: number)
     const level = typeof entry.level === "number" ? entry.level : undefined;
     if (level && level > startingLevel) continue;
 
-    if (title.toLowerCase() === "skill proficiencies") continue;
+    const normalizedTitle = title.toLowerCase();
+    if (normalizedTitle === "skill proficiencies") continue;
+    if (normalizedTitle.includes("class features")) continue;
 
     features.push({ title, level });
   }
@@ -145,12 +154,216 @@ function getFeatureSummary(doc: ClassDocumentLike | null, startingLevel: number)
   });
 }
 
+function getHitPointFeatureLabel(hitDie: string, level: number | undefined): string {
+  const maxHp = Number.parseInt(hitDie.replace("d", ""), 10) || 8;
+  return level && level > 1 ? `Hitpoints: +${maxHp}` : `Hitpoints: ${maxHp}`;
+}
+
+function normalizeDescriptionText(text: string): string {
+  return text
+    .replace(/[\u00ad\u200b-\u200d\ufeff]/g, "")
+    .replace(/@UUID\[[^\]]+\]\{([^}]+)\}/g, "$1")
+    .replace(/\[\[\/award\s+([^[\]]+)\]\]/gi, "$1")
+    .replace(/\b(\d+)(GP|SP|CP|EP|PP)\b/g, "$1 $2");
+}
+
+function formatEquipmentChoicesInHtml(html: string): string {
+  const normalized = normalizeDescriptionText(html);
+  return normalized
+    .replace(
+      /(Choose\s+[A-Z](?:\s*,\s*[A-Z])*(?:\s*,?\s*or\s+[A-Z])?:)/gi,
+      "<strong class=\"cc-card-detail__choice-heading\">$1</strong>",
+    )
+    .replace(/:\s*(\([A-Z]\))/g, ":<br>$1")
+    .replace(/;\s*(?:or\s+)?(\([A-Z]\))/g, "<br>$1")
+    .replace(
+      /(\([A-Z]\))/g,
+      "<strong class=\"cc-card-detail__choice-marker\">$1</strong>",
+    );
+}
+
+function postprocessDescriptionHtml(html: string): string {
+  if (!html) return "";
+  return formatEquipmentChoicesInHtml(html);
+}
+
 function getEntryPrimaryAbilityText(entry: CreatorIndexEntry): string {
   const recommendation = getClassRecommendation(entry.identifier ?? "");
   if (recommendation.primaryAbilities.length === 0) return "";
   return recommendation.primaryAbilities
     .map((ability) => ABILITY_LABELS[ability])
     .join(" / ");
+}
+
+function getRawDescription(doc: ClassDocumentLike | null): string {
+  const system = doc?.system as DescriptionSystemLike | undefined;
+  const value = system?.description?.value;
+  return typeof value === "string" ? value : "";
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getLeadingParagraphText(html: string): string {
+  const match = html.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i);
+  return match ? stripHtml(match[1]) : "";
+}
+
+function getSubtitleFromDescription(html: string): string {
+  const leadingParagraph = getLeadingParagraphText(html);
+  if (leadingParagraph) return leadingParagraph;
+
+  const plainText = html
+    .replace(/<\/(p|div|section|article|blockquote|h[1-6]|li|tr|table)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n+/g, "\n")
+    .trim()
+    .split("\n")
+    .map((line) => line.trim())
+    .find(Boolean) ?? "";
+  if (!plainText) return "";
+
+  const [firstSentence] = plainText.split(/(?<=[.!?])\s+/);
+  return firstSentence?.trim() ?? plainText;
+}
+
+function getClassSubtitle(doc: ClassDocumentLike | null, entry: CreatorIndexEntry): string {
+  const fromDescription = getSubtitleFromDescription(getRawDescription(doc));
+  if (fromDescription) return fromDescription;
+  return getClassRecommendation(entry.identifier ?? "").hint;
+}
+
+function getSpellcastingSummary(selection: ClassSelection): string {
+  if (!selection.isSpellcaster) return "Martial or non-spellcasting focus";
+
+  const progressionLabel = selection.spellcastingProgression === "full"
+    ? "Full caster"
+    : selection.spellcastingProgression === "half"
+      ? "Half caster"
+      : selection.spellcastingProgression === "third"
+        ? "Third caster"
+        : selection.spellcastingProgression === "pact"
+          ? "Pact magic"
+          : "Spellcaster";
+
+  const abilityLabel = selection.spellcastingAbility && selection.spellcastingAbility in ABILITY_LABELS
+    ? ABILITY_LABELS[selection.spellcastingAbility as AbilityKey]
+    : "";
+
+  return abilityLabel ? `${progressionLabel} • ${abilityLabel}` : progressionLabel;
+}
+
+function getClassHeroImage(entry: CreatorIndexEntry): string {
+  const identifier = entry.identifier?.trim().toLowerCase();
+  if (!identifier) return entry.img;
+  return `systems/dnd5e/ui/official/classes/${identifier}.webp`;
+}
+
+async function buildSelectedClassViewModel(
+  state: WizardState,
+  entry: CreatorIndexEntry,
+  selectionOverride?: ClassSelection,
+  docOverride?: ClassDocumentLike | null,
+): Promise<Record<string, unknown>> {
+  const selected = selectionOverride ?? state.selections.class;
+  let doc: ClassDocumentLike | null = docOverride ?? null;
+
+  if (!doc) {
+    try {
+      doc = await compendiumIndexer.fetchDocument(entry.uuid) as ClassDocumentLike | null;
+    } catch (err) {
+      Log.warn("Failed to load class document for detail view", err);
+    }
+  }
+
+  const description = postprocessDescriptionHtml(await compendiumIndexer.getCachedDescription(entry.uuid));
+  const recommendation = getClassRecommendation(entry.identifier ?? "");
+  const selection = selected?.uuid === entry.uuid ? selected : undefined;
+  const primaryAbilities = selection?.primaryAbilities ?? recommendation.primaryAbilities;
+  const primaryAbilityText = primaryAbilities.length > 0
+    ? primaryAbilities.map((ability) => ABILITY_LABELS[ability]).join(" / ")
+    : "";
+
+  const hitDie = selection?.hitDie ?? getHitDie(doc);
+  const savingThrowProficiencies = (selection?.savingThrowProficiencies ?? getSavingThrowProficiencies(doc))
+    .map((ability) => ABILITY_LABELS[ability] ?? ability.toUpperCase());
+  const armorProficiencies = selection?.armorProficiencies ?? getTraitSummary(doc, "armorProf");
+  const weaponProficiencies = selection?.weaponProficiencies ?? getTraitSummary(doc, "weaponProf");
+  const classFeatures = selection?.classFeatures ?? getFeatureSummary(doc, state.config.startingLevel);
+  const isSpellcaster = selection?.isSpellcaster ?? false;
+  const spellcastingAbility = selection?.spellcastingAbility ?? "";
+  const spellcastingProgression = selection?.spellcastingProgression ?? "";
+  const hasWeaponMastery = selection?.hasWeaponMastery ?? recommendation.hasWeaponMastery;
+
+  return {
+    ...entry,
+    description,
+    heroImg: getClassHeroImage(entry),
+    subtitle: getClassSubtitle(doc, entry),
+    isSpellcaster,
+    primaryAbilityText,
+    primaryAbilityHint: selection?.primaryAbilityHint ?? recommendation.hint,
+    hitDie,
+    hitPointsAtFirstLevel: `${hitDie.replace("d", "") || "8"} + CON modifier`,
+    spellcastingSummary: getSpellcastingSummary({
+      uuid: entry.uuid,
+      name: entry.name,
+      img: entry.img,
+      identifier: entry.identifier ?? "",
+      skillPool: [],
+      skillCount: 0,
+      isSpellcaster,
+      spellcastingAbility,
+      spellcastingProgression,
+      primaryAbilities,
+      primaryAbilityHint: selection?.primaryAbilityHint ?? recommendation.hint,
+      hitDie,
+      savingThrowProficiencies: [],
+      armorProficiencies: [],
+      weaponProficiencies: [],
+      classFeatures: [],
+      hasWeaponMastery,
+    }),
+    hasWeaponMastery,
+    savingThrowProficiencies,
+    armorProficiencies,
+    weaponProficiencies,
+    classFeatures: classFeatures.map((feature) => ({
+      ...feature,
+      displayLabel: feature.title.toLowerCase() === "hit points"
+        ? getHitPointFeatureLabel(hitDie, feature.level)
+        : feature.level ? `Level ${feature.level} • ${feature.title}` : feature.title,
+    })),
+    featureHeading: state.config.startingLevel > 1
+      ? `Features Through Level ${state.config.startingLevel}`
+      : "Starting Features",
+    hasDescription: description.length > 0,
+    hasPrimaryAbilities: primaryAbilityText.length > 0,
+    hasSavingThrows: savingThrowProficiencies.length > 0,
+    hasArmorProficiencies: armorProficiencies.length > 0,
+    hasWeaponProficiencies: weaponProficiencies.length > 0,
+    hasFeatures: classFeatures.length > 0,
+  };
+}
+
+async function renderClassDetailPane(selectedEntry: Record<string, unknown> | null): Promise<string> {
+  return renderTemplate(`modules/${MOD}/templates/character-creator/cc-step-class-detail.hbs`, {
+    selectedEntry,
+  });
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -160,7 +373,7 @@ export function createClassStep(): WizardStepDefinition {
     id: "class",
     label: "Class",
     icon: "fa-solid fa-shield-halved",
-    templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
+    templatePath: `modules/${MOD}/templates/character-creator/cc-step-class-select.hbs`,
     dependencies: [],
     isApplicable: () => true,
 
@@ -172,31 +385,28 @@ export function createClassStep(): WizardStepDefinition {
       await compendiumIndexer.loadPacks(state.config.packSources);
       const entries = getAvailableClasses(state);
       const selected = state.selections.class;
-      const selectedEntry = selected
+      const selectedEntryRef = selected
         ? entries.find((e) => e.uuid === selected.uuid) ?? null
+        : null;
+      const selectedEntry = selectedEntryRef
+        ? await buildSelectedClassViewModel(state, selectedEntryRef)
         : null;
 
       return {
         stepId: "class",
         stepTitle: "Class",
-        stepLabel: "",
+        stepLabel: "Choose Your Calling",
         stepIcon: "fa-solid fa-shield-halved",
         stepDescription:
-          "Select the class that defines your character's abilities and fighting style.",
+          "Choose the path that will shape your legend, battle style, and defining talents.",
         entries: entries.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
           primaryAbilityText: getEntryPrimaryAbilityText(e),
           primaryAbilityHint: getClassRecommendation(e.identifier ?? "").hint,
         })),
-        selectedEntry: selectedEntry
-          ? {
-            ...selectedEntry,
-            description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid),
-            primaryAbilityText: getEntryPrimaryAbilityText(selectedEntry),
-            primaryAbilityHint: getClassRecommendation(selectedEntry.identifier ?? "").hint,
-          }
-          : null,
+        selectedEntry,
+        detailPaneHtml: await renderClassDetailPane(selectedEntry),
         hasEntries: entries.length > 0,
         emptyMessage: "No classes available. Check your GM configuration.",
       };
@@ -210,6 +420,7 @@ export function createClassStep(): WizardStepDefinition {
           const entries = getAvailableClasses(state);
           const entry = entries.find((e) => e.uuid === uuid);
           if (!entry) return;
+          const requestId = beginCardSelectionUpdate(el, uuid, entry);
 
           const selection: ClassSelection = {
             uuid: entry.uuid,
@@ -229,12 +440,16 @@ export function createClassStep(): WizardStepDefinition {
           selection.hasWeaponMastery = recommendation.hasWeaponMastery;
 
           // Fetch full document to parse advancement data
+          let doc: ClassDocumentLike | null = null;
           try {
-            const doc = await compendiumIndexer.fetchDocument(uuid) as ClassDocumentLike | null;
+            doc = await compendiumIndexer.fetchDocument(uuid) as ClassDocumentLike | null;
             if (doc) {
               const { skillPool, skillCount } = parseClassSkillAdvancement(doc as never);
               selection.skillPool = skillPool;
               selection.skillCount = skillCount;
+              const weaponMastery = parseClassWeaponMasteryAdvancement(doc as never, state.config.startingLevel);
+              selection.weaponMasteryCount = weaponMastery.count;
+              selection.weaponMasteryPool = weaponMastery.pool;
 
               const sc = parseClassSpellcasting(doc as never);
               selection.isSpellcaster = sc.isSpellcaster;
@@ -250,8 +465,13 @@ export function createClassStep(): WizardStepDefinition {
             Log.warn("Failed to parse class advancement data", err);
           }
 
-          // Patch DOM directly instead of full re-render
-          patchCardSelection(el, uuid, entry);
+          const selectedEntry = await buildSelectedClassViewModel(state, entry, selection, doc);
+          await patchCardDetailFromTemplate(el, {
+            requestId,
+            templatePath: `modules/${MOD}/templates/character-creator/cc-step-class-detail.hbs`,
+            data: { selectedEntry },
+          });
+          if (!isCurrentCardSelectionUpdate(el, requestId)) return;
           callbacks.setDataSilent(selection);
         });
       });
@@ -274,4 +494,13 @@ export const __classStepInternals = {
   getSavingThrowProficiencies,
   getTraitSummary,
   getFeatureSummary,
+  getRawDescription,
+  getLeadingParagraphText,
+  getSubtitleFromDescription,
+  getClassSubtitle,
+  getClassHeroImage,
+  getHitPointFeatureLabel,
+  normalizeDescriptionText,
+  formatEquipmentChoicesInHtml,
+  postprocessDescriptionHtml,
 };

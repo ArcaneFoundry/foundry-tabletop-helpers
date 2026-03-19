@@ -353,6 +353,28 @@ export interface ClassSelection {
   classFeatures?: ClassFeatureSummary[];
   /** Whether the class appears to support weapon mastery choices. */
   hasWeaponMastery?: boolean;
+  /** Number of weapon mastery picks granted through current starting level. */
+  weaponMasteryCount?: number;
+  /** Raw weapon mastery pool keys from class advancements (e.g. weapon:sim:*). */
+  weaponMasteryPool?: string[];
+}
+
+/** Player-facing selections made in the class choices step. */
+export interface ClassChoicesState {
+  /** Class skill keys chosen during the class step flow. */
+  chosenSkills: string[];
+  /** Weapon identifiers chosen for weapon mastery, if any. */
+  chosenWeaponMasteries?: string[];
+  /** Display metadata for chosen weapon masteries. */
+  chosenWeaponMasteryDetails?: Array<{
+    id: string;
+    label: string;
+    img?: string;
+    mastery?: string;
+    tooltip?: string;
+  }>;
+  /** Number of mastery options currently surfaced by enabled item packs. */
+  availableWeaponMasteries?: number;
 }
 
 /** Subclass selection state. */
@@ -440,6 +462,7 @@ export interface WizardSelections {
   species?: SpeciesSelection;
   background?: BackgroundSelection;
   class?: ClassSelection;
+  classChoices?: ClassChoicesState;
   subclass?: SubclassSelection;
   backgroundAsi?: BackgroundASI;
   originChoices?: OriginChoicesState;

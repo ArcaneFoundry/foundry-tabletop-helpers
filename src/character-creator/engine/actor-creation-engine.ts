@@ -74,9 +74,19 @@ interface TraitAdvancementLike {
   type?: string;
   level?: number;
   configuration?: {
+    mode?: string;
+    choices?: Array<{
+      count?: number;
+    }>;
     grants?: Set<string> | string[];
   };
   value?: AdvancementValueLike;
+  updateSource?(updateData: Record<string, unknown>): void;
+  _source?: {
+    value?: {
+      chosen?: string[];
+    };
+  };
   apply?(level: number, data: { chosen: Set<string> }): Promise<void> | void;
   toObject?(): Record<string, unknown>;
 }
@@ -869,8 +879,55 @@ async function applyFinalCharacterSelections(
 ): Promise<void> {
   await applyAbilityScores(actor, state.selections);
   await applyProficiencies(actor, state.selections);
+  await applyWeaponMasteries(actor, state);
   await applyLanguages(actor, state.selections);
   await applyFinalHitPoints(actor, state);
+}
+
+async function applyWeaponMasteries(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const chosenMasteries = state.selections.classChoices?.chosenWeaponMasteries ?? [];
+  if (chosenMasteries.length === 0) return;
+
+  const classItem = findActorItemWithAdvancement(actor, ["class"], state.selections.class?.identifier);
+  let appliedViaAdvancement = false;
+
+  if (classItem && Array.isArray(classItem.system?.advancement)) {
+    const masteryAdvancements = classItem.system.advancement
+      .filter((entry) =>
+        entry.type === "Trait"
+        && (entry.title ?? "").toLowerCase() === "weapon mastery"
+        && entry.configuration?.mode === "mastery"
+        && typeof entry.apply === "function"
+        && (typeof entry.level !== "number" || entry.level <= state.config.startingLevel)
+      )
+      .sort((left, right) => (left.level ?? 0) - (right.level ?? 0));
+
+    const remaining = [...chosenMasteries];
+    for (const advancement of masteryAdvancements) {
+      const count = getTraitAdvancementChoiceCount(advancement);
+      if (count <= 0 || remaining.length === 0) continue;
+      const chunk = remaining.splice(0, count);
+      if (chunk.length === 0) continue;
+      const chosenKeys = new Set(chunk.map((id) => id.startsWith("weapon:") ? id : `weapon:${id}`));
+      await advancement.apply?.(advancement.level ?? 1, {
+        chosen: chosenKeys,
+      });
+      syncAdvancementChosenKeys(advancement, chosenKeys);
+      appliedViaAdvancement = true;
+    }
+
+    if (appliedViaAdvancement) {
+      await persistAdvancementSelections(classItem);
+    }
+  }
+
+  await actor.update({
+    "system.traits.weaponProf.mastery.value": chosenMasteries,
+  });
+  Log.debug(`ActorCreationEngine: Applied ${chosenMasteries.length} weapon masteries${appliedViaAdvancement ? " via advancements and actor traits" : ""}`);
 }
 
 async function applyFinalHitPoints(
@@ -931,6 +988,7 @@ async function applyTraitAdvancementSelection(
   if (chosen.size === 0) return false;
 
   await advancement.apply?.(options.level, { chosen });
+  syncAdvancementChosenKeys(advancement, chosen);
   await persistAdvancementSelections(item);
   return true;
 }
@@ -972,6 +1030,43 @@ function getAdvancementGrantKeys(advancement: TraitAdvancementLike): string[] {
   if (Array.isArray(grants)) return [...grants];
   if (grants instanceof Set) return Array.from(grants);
   return [];
+}
+
+function getTraitAdvancementChoiceCount(advancement: TraitAdvancementLike): number {
+  const choices = Array.isArray(advancement.configuration?.choices)
+    ? advancement.configuration?.choices ?? []
+    : [];
+  return choices.reduce((sum, choice) => sum + (typeof choice.count === "number" ? choice.count : 0), 0);
+}
+
+function syncAdvancementChosenKeys(
+  advancement: TraitAdvancementLike,
+  chosen: ReadonlySet<string>,
+): void {
+  const serialized = [...chosen];
+
+  if (advancement.value?.chosen instanceof Set) {
+    advancement.value.chosen = new Set(serialized);
+  } else if (Array.isArray(advancement.value?.chosen)) {
+    advancement.value.chosen = [...serialized];
+  } else if (advancement.value && typeof advancement.value === "object") {
+    advancement.value.chosen = [...serialized];
+  } else {
+    advancement.value = { chosen: [...serialized] };
+  }
+
+  if (typeof advancement.updateSource === "function") {
+    try {
+      advancement.updateSource({ "value.chosen": serialized });
+    } catch {
+      advancement.updateSource({ value: { chosen: serialized } });
+    }
+  } else if (advancement._source && typeof advancement._source === "object") {
+    if (!advancement._source.value || typeof advancement._source.value !== "object") {
+      advancement._source.value = {};
+    }
+    advancement._source.value.chosen = [...serialized];
+  }
 }
 
 async function grantItemsByUuid(

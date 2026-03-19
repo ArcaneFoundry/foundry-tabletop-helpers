@@ -80,6 +80,8 @@ export function registerCharacterCreatorHooks(): void {
     `modules/${MOD}/templates/character-creator/cc-shell.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-abilities.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
+    `modules/${MOD}/templates/character-creator/cc-step-class-detail.hbs`,
+    `modules/${MOD}/templates/character-creator/cc-step-class-select.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-background.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-background-asi.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-class-choices.hbs`,

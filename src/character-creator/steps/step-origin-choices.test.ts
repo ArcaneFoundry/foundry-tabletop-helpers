@@ -20,42 +20,7 @@ vi.mock("../data/compendium-indexer", () => ({
   },
 }));
 
-class FakeClassList {
-  private readonly values = new Set<string>();
-  toggle(token: string, force?: boolean): boolean {
-    if (force === true) return this.values.add(token), true;
-    if (force === false) return this.values.delete(token), false;
-    if (this.values.has(token)) return this.values.delete(token), false;
-    this.values.add(token);
-    return true;
-  }
-}
-
-class FakeRow {
-  classList = new FakeClassList();
-}
-
-class FakeCheckbox {
-  dataset: Record<string, string> = {};
-  checked = false;
-  disabled = false;
-  row = new FakeRow();
-  private readonly listeners = new Map<string, Array<() => void>>();
-  addEventListener(event: string, handler: () => void): void {
-    const list = this.listeners.get(event) ?? [];
-    list.push(handler);
-    this.listeners.set(event, list);
-  }
-  trigger(event: string): void {
-    for (const handler of this.listeners.get(event) ?? []) handler();
-  }
-  closest(selector: string): FakeRow | null {
-    return selector === ".cc-skill-row" ? this.row : null;
-  }
-}
-
 class FakeElement {
-  textContent: string | null = null;
   private readonly selectorMap = new Map<string, unknown>();
   private readonly selectorAllMap = new Map<string, unknown[]>();
   querySelector<T = unknown>(selector: string): T | null {
@@ -166,46 +131,16 @@ describe("step origin choices", () => {
     expect(vm).toMatchObject({
       className: "Wizard",
       backgroundName: "Sage",
-      chosenCount: 0,
-      maxPicks: 2,
+      chosenClassSkillChips: [],
       toolProficiency: "Art: Calligrapher",
       originFeatName: "Magic Initiate",
-      skillSelectionMessage: "Choose 2 class skills. Background skills are locked out automatically.",
     });
-    expect((vm.availableSkills as Array<{ key: string }>).map((skill) => skill.key)).toEqual(["his", "ins"]);
+    expect(vm.backgroundSkillChips).toEqual(["Arcana"]);
   });
 
-  it("surfaces a validation warning when background overlap leaves too few class skill options", async () => {
+  it("is complete once the origin feat is confirmed", async () => {
     const { createOriginChoicesStep } = await import("./step-origin-choices");
     const state = makeState();
-    state.selections.class = {
-      ...state.selections.class!,
-      skillPool: ["arc", "his"],
-      skillCount: 2,
-    };
-
-    const step = createOriginChoicesStep();
-    const vm = await step.buildViewModel(state);
-
-    expect(vm).toMatchObject({
-      hasAvailableSkills: true,
-      validationMessages: [
-        "Only 1 legal class skill option remain, so this step will accept fewer picks than the class normally grants.",
-      ],
-      maxPicks: 1,
-    });
-    expect(step.getStatusHint?.(state)).toBe("Choose 1 more class skill");
-  });
-
-  it("treats reduced legal class skill pools as completable once the available picks are chosen", async () => {
-    const { createOriginChoicesStep } = await import("./step-origin-choices");
-    const state = makeState();
-    state.selections.class = {
-      ...state.selections.class!,
-      skillPool: ["arc", "his"],
-      skillCount: 2,
-    };
-    state.selections.skills = { chosen: ["his"] };
     state.selections.originFeat = {
       uuid: "feat.magic-initiate",
       name: "Magic Initiate",
@@ -305,19 +240,13 @@ describe("step origin choices", () => {
     });
   });
 
-  it("updates class skills and default origin feat in place", async () => {
+  it("sets the default origin feat on activate", async () => {
     const { createOriginChoicesStep } = await import("./step-origin-choices");
     const step = createOriginChoicesStep();
     const state = makeState();
     const setDataSilent = vi.fn();
-    const his = new FakeCheckbox();
-    his.dataset.skill = "his";
-    const ins = new FakeCheckbox();
-    ins.dataset.skill = "ins";
-    const countEl = new FakeElement();
     const root = new FakeElement();
-    root.setQuerySelectorAll("[data-skill]", [his, ins]);
-    root.setQuerySelector("[data-skill-count]", countEl);
+    root.setQuerySelectorAll("[data-card-uuid]", []);
 
     step.onActivate?.(state, root as unknown as HTMLElement, {
       setData: vi.fn(),
@@ -325,15 +254,7 @@ describe("step origin choices", () => {
       rerender: vi.fn(),
     });
 
-    his.checked = true;
-    his.trigger("change");
-    ins.checked = true;
-    ins.trigger("change");
-
     expect(state.selections.originFeat).toMatchObject({ uuid: "feat.magic-initiate" });
-    expect(state.selections.skills).toEqual({ chosen: ["his", "ins"] });
-    expect(countEl.textContent).toBe("2");
-    expect(step.isComplete(state)).toBe(true);
     expect(setDataSilent).toHaveBeenCalled();
   });
 

@@ -9,13 +9,21 @@ const getCachedDescriptionMock = vi.fn();
 const fetchDocumentMock = vi.fn();
 const parseClassSkillAdvancementMock = vi.fn();
 const parseClassSpellcastingMock = vi.fn();
-const patchCardSelectionMock = vi.fn();
+const parseClassWeaponMasteryAdvancementMock = vi.fn();
+const renderTemplateMock = vi.fn();
+const beginCardSelectionUpdateMock = vi.fn();
+const isCurrentCardSelectionUpdateMock = vi.fn();
+const patchCardDetailFromTemplateMock = vi.fn();
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
   Log: {
     warn: logWarnMock,
   },
+}));
+
+vi.mock("../../types", () => ({
+  renderTemplate: renderTemplateMock,
 }));
 
 vi.mock("../data/compendium-indexer", () => ({
@@ -30,10 +38,13 @@ vi.mock("../data/compendium-indexer", () => ({
 vi.mock("../data/advancement-parser", () => ({
   parseClassSkillAdvancement: parseClassSkillAdvancementMock,
   parseClassSpellcasting: parseClassSpellcastingMock,
+  parseClassWeaponMasteryAdvancement: parseClassWeaponMasteryAdvancementMock,
 }));
 
 vi.mock("./card-select-utils", () => ({
-  patchCardSelection: patchCardSelectionMock,
+  beginCardSelectionUpdate: beginCardSelectionUpdateMock,
+  isCurrentCardSelectionUpdate: isCurrentCardSelectionUpdateMock,
+  patchCardDetailFromTemplate: patchCardDetailFromTemplateMock,
 }));
 
 class FakeElement {
@@ -116,6 +127,7 @@ beforeEach(() => {
     },
   ]);
   getCachedDescriptionMock.mockResolvedValue("<p>Class details</p>");
+  renderTemplateMock.mockResolvedValue("<div>detail</div>");
   parseClassSkillAdvancementMock.mockReturnValue({
     skillPool: ["arc", "his"],
     skillCount: 2,
@@ -125,8 +137,15 @@ beforeEach(() => {
     ability: "int",
     progression: "full",
   });
+  parseClassWeaponMasteryAdvancementMock.mockReturnValue({
+    count: 2,
+    pool: ["weapon:sim:*", "weapon:mar:*"],
+  });
   fetchDocumentMock.mockResolvedValue({
     system: {
+      description: {
+        value: "<p>Scholars of war who stand as living bulwarks.</p><p>More details follow.</p>",
+      },
       hitDice: "d10",
       saves: ["str", "con"],
       traits: {
@@ -142,6 +161,9 @@ beforeEach(() => {
       ],
     },
   });
+  beginCardSelectionUpdateMock.mockReturnValue("request-1");
+  isCurrentCardSelectionUpdateMock.mockReturnValue(true);
+  patchCardDetailFromTemplateMock.mockResolvedValue(true);
 });
 
 describe("step class", () => {
@@ -172,9 +194,12 @@ describe("step class", () => {
     expect(loadPacksMock).toHaveBeenCalled();
     expect((viewModel.entries as Array<{ name: string }>).map((entry) => entry.name)).toEqual(["Wizard"]);
     expect(viewModel).toMatchObject({
+      stepLabel: "Choose Your Calling",
       selectedEntry: expect.objectContaining({
         uuid: "Compendium.class.wizard",
         description: "<p>Class details</p>",
+        heroImg: "systems/dnd5e/ui/official/classes/wizard.webp",
+        subtitle: "Scholars of war who stand as living bulwarks.",
         primaryAbilityHint: "Intelligence recommended, with Constitution helping concentration.",
       }),
       hasEntries: true,
@@ -232,10 +257,17 @@ describe("step class", () => {
     expect(fetchDocumentMock).toHaveBeenCalledWith("Compendium.class.wizard");
     expect(parseClassSkillAdvancementMock).toHaveBeenCalled();
     expect(parseClassSpellcastingMock).toHaveBeenCalled();
-    expect(patchCardSelectionMock).toHaveBeenCalledWith(
+    expect(beginCardSelectionUpdateMock).toHaveBeenCalledWith(
       root,
       "Compendium.class.wizard",
-      expect.objectContaining({ name: "Wizard" })
+      expect.objectContaining({ name: "Wizard" }),
+    );
+    expect(patchCardDetailFromTemplateMock).toHaveBeenCalledWith(
+      root,
+      expect.objectContaining({
+        requestId: "request-1",
+        templatePath: "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-class-detail.hbs",
+      }),
     );
     expect(setDataSilent).toHaveBeenCalledWith({
       uuid: "Compendium.class.wizard",
@@ -254,6 +286,8 @@ describe("step class", () => {
       armorProficiencies: [],
       weaponProficiencies: ["Dagger", "Quarterstaff"],
       hasWeaponMastery: false,
+      weaponMasteryCount: 2,
+      weaponMasteryPool: ["weapon:sim:*", "weapon:mar:*"],
       classFeatures: [
         { title: "Spellcasting", level: 1 },
         { title: "Arcane Recovery", level: 1 },
@@ -262,6 +296,9 @@ describe("step class", () => {
 
     vi.clearAllMocks();
     fetchDocumentMock.mockRejectedValue(new Error("boom"));
+    beginCardSelectionUpdateMock.mockReturnValue("request-2");
+    isCurrentCardSelectionUpdateMock.mockReturnValue(true);
+    patchCardDetailFromTemplateMock.mockResolvedValue(true);
     const setDataSilentFallback = vi.fn();
     const fallbackCard = new FakeElement();
     fallbackCard.dataset.cardUuid = "Compendium.class.fighter";
@@ -317,10 +354,37 @@ describe("step class", () => {
         },
       },
     }, "weaponProf")).toEqual(["Martial Weapons", "Firearms"]);
+    expect(__classStepInternals.getLeadingParagraphText("<p>Bound by oath.</p><h2>Features</h2>")).toBe("Bound by oath.");
+    expect(__classStepInternals.getSubtitleFromDescription("<p>Bound by oath.</p><h2>Features</h2>")).toBe("Bound by oath.");
+    expect(__classStepInternals.getClassSubtitle({
+      system: {
+        description: {
+          value: "<p>Wield ancient magic.</p>",
+        },
+      },
+    }, {
+      uuid: "Compendium.class.wizard",
+      name: "Wizard",
+      img: "wizard.png",
+      packId: "pack.classes",
+      packLabel: "PHB",
+      type: "class",
+      identifier: "wizard",
+    })).toBe("Wield ancient magic.");
+    expect(__classStepInternals.getClassHeroImage({
+      uuid: "Compendium.class.wizard",
+      name: "Wizard",
+      img: "wizard.png",
+      packId: "pack.classes",
+      packLabel: "PHB",
+      type: "class",
+      identifier: "wizard",
+    })).toBe("systems/dnd5e/ui/official/classes/wizard.webp");
     expect(__classStepInternals.getFeatureSummary({
       system: {
         advancement: [
           { title: "Skill Proficiencies", level: 1 },
+          { title: "Level 1 Class Features", level: 1 },
           { title: "Sneak Attack", level: 1 },
           { title: "Cunning Action", level: 2 },
           { title: "Uncanny Dodge", level: 5 },
@@ -330,5 +394,16 @@ describe("step class", () => {
       { title: "Sneak Attack", level: 1 },
       { title: "Cunning Action", level: 2 },
     ]);
+    expect(__classStepInternals.getHitPointFeatureLabel("d10", 1)).toBe("Hitpoints: 10");
+    expect(__classStepInternals.getHitPointFeatureLabel("d10", 2)).toBe("Hitpoints: +10");
+    expect(__classStepInternals.normalizeDescriptionText(
+      "@UUID[Compendium.dnd-players-handbook.equipment.Item.phbarmChainMail0]{Chain Mail} and [[/award 11GP]] and Short\u00adsword",
+    )).toBe("Chain Mail and 11 GP and Shortsword");
+    expect(__classStepInternals.formatEquipmentChoicesInHtml(
+      "<p>Choose A, B, or C: (A) Chain Mail; (B) Studded Leather; or (C) 155 GP</p>",
+    )).toContain("<strong class=\"cc-card-detail__choice-marker\">(A)</strong>");
+    expect(__classStepInternals.postprocessDescriptionHtml(
+      "<p>Choose A, B, or C: (A) Chain Mail; (B) Studded Leather; or (C) 155 GP</p>",
+    )).toContain("cc-card-detail__choice-heading");
   });
 });

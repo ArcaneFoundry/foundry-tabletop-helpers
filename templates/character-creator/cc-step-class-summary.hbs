@@ -12,6 +12,28 @@
     </p>
   </section>
 
+  {{#if hasChosenSkills}}
+  <section class="cc-panel">
+    <h3>Selected Class Skills</h3>
+    <div class="cc-chip-row">
+      {{#each chosenSkills}}
+      <span class="cc-chip">{{this}}</span>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+
+  {{#if hasChosenWeaponMasteries}}
+  <section class="cc-panel">
+    <h3>Chosen Weapon Masteries</h3>
+    <div class="cc-chip-row">
+      {{#each chosenWeaponMasteries}}
+      <span class="cc-chip">{{this}}</span>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+
   {{#if hasSavingThrows}}
   <section class="cc-panel">
     <h3>Saving Throws</h3>

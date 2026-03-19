@@ -43,6 +43,17 @@ function languageName(key: string): string {
   return LANGUAGE_LABELS[key] ?? key;
 }
 
+function weaponMasteryName(entry: { label?: string; mastery?: string } | string): string {
+  if (typeof entry !== "string") {
+    return entry.mastery ? `${entry.label ?? "Weapon"} (${entry.mastery})` : (entry.label ?? "Weapon");
+  }
+  return entry
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 /** Format ASI assignments as "WIS +2, CHA +1". */
 function formatASI(assignments: Partial<Record<AbilityKey, number>>): string {
   const parts: string[] = [];
@@ -192,9 +203,30 @@ export function createReviewStep(): WizardStepDefinition {
         isSimple: true,
       };
 
+      const requiredClassSkills = Math.min(sel.class?.skillCount ?? 0, sel.class?.skillPool?.length ?? 0);
+      const availableWeaponMasteries = sel.classChoices?.availableWeaponMasteries ?? (sel.class?.weaponMasteryCount ?? 0);
+      const requiredWeaponMasteries = Math.min(sel.class?.weaponMasteryCount ?? 0, availableWeaponMasteries);
+      const classSkillNames = (sel.skills?.chosen ?? []).map(skillName);
+      const weaponMasteryNames = (sel.classChoices?.chosenWeaponMasteryDetails ?? []).length > 0
+        ? (sel.classChoices?.chosenWeaponMasteryDetails ?? []).map(weaponMasteryName)
+        : (sel.classChoices?.chosenWeaponMasteries ?? []).map(weaponMasteryName);
+      const classChoicesSection = {
+        id: "classChoices",
+        label: "Class Choices",
+        icon: "fa-solid fa-list-check",
+        complete: classSkillNames.length >= requiredClassSkills
+          && weaponMasteryNames.length >= requiredWeaponMasteries,
+        classSkills: classSkillNames,
+        weaponMasteries: weaponMasteryNames,
+        hasClassSkills: classSkillNames.length > 0,
+        hasWeaponMasteries: weaponMasteryNames.length > 0,
+        isClassChoices: true,
+      };
+
       /* ── 5. Subclass (conditional) ──────────────────────── */
       const sections: Record<string, unknown>[] = [
         classSection,
+        classChoicesSection,
         backgroundSection,
         backgroundAsiSection,
         originChoicesSection,
@@ -243,7 +275,6 @@ export function createReviewStep(): WizardStepDefinition {
       });
 
       /* ── 7. Skills ──────────────────────────────────────── */
-      const classSkills = sel.skills?.chosen.map(skillName) ?? [];
       const backgroundSkills = bg?.grants.skillProficiencies.map(skillName) ?? [];
       const speciesSkills = [
         ...(sel.species?.skillGrants ?? []),
@@ -263,11 +294,9 @@ export function createReviewStep(): WizardStepDefinition {
         label: "Origin Summary",
         icon: "fa-solid fa-layer-group",
         complete: !!bg?.uuid && !!sel.species?.uuid,
-        classSkills,
         backgroundSkills,
         speciesSkills,
         speciesItems,
-        hasClassSkills: classSkills.length > 0,
         hasBackgroundSkills: backgroundSkills.length > 0,
         hasSpeciesSkills: speciesSkills.length > 0,
         hasSpeciesItems: speciesItems.length > 0,

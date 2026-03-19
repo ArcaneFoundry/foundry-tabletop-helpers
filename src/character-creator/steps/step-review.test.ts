@@ -74,6 +74,13 @@ function makeState(): WizardState {
         isSpellcaster: true,
         spellcastingAbility: "int",
         spellcastingProgression: "full",
+        weaponMasteryCount: 1,
+      },
+      classChoices: {
+        chosenSkills: ["arc", "his"],
+        chosenWeaponMasteries: ["dagger"],
+        chosenWeaponMasteryDetails: [{ id: "dagger", label: "Dagger", mastery: "Nick" }],
+        availableWeaponMasteries: 1,
       },
       abilities: { method: "standardArray", scores: { str: 8, dex: 14, con: 13, int: 14, wis: 12, cha: 10 }, assignments: { str: 5, dex: 0, con: 2, int: 1, wis: 3, cha: 4 } },
       skills: { chosen: ["arc", "his"] },
@@ -133,10 +140,16 @@ describe("step review", () => {
     const spellsSection = sections.find((section) => section.id === "spells");
     const originSummarySection = sections.find((section) => section.id === "originSummary");
     const speciesChoicesSection = sections.find((section) => section.id === "speciesChoices");
+    const classChoicesSection = sections.find((section) => section.id === "classChoices");
 
     expect(spellsSection).toMatchObject({
       summary: "4 cantrips, 14 spells, 9 prepared",
       detail: "Choose which 9 leveled spells start prepared for this Wizard. You can change them later on the sheet.",
+    });
+    expect(classChoicesSection).toMatchObject({
+      classSkills: ["Arcana", "History"],
+      weaponMasteries: ["Dagger (Nick)"],
+      hasWeaponMasteries: true,
     });
     expect(originSummarySection).toMatchObject({
       speciesSkills: ["Perception", "Nature"],
