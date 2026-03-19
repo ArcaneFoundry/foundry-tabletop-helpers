@@ -1,105 +1,202 @@
 # Foundry Tabletop Helpers
 
-A set of quality-of-life helpers for Foundry VTT, optimized for touchscreen tabletop play and physical printing.
+Foundry Tabletop Helpers is a Foundry VTT v13 module for in-person D&D play. It is built around a simple idea: keep Foundry useful at a physical table whether your players prefer paper, tablets, phones, a TV table display, or a GM-operated control surface.
 
-## Features
+The module currently targets Foundry VTT v13 and is primarily designed for the `dnd5e` system. A few utilities are system-agnostic, but the live sheet, print pipeline, combat tools, rules reference, and character workflows are all centered on modern dnd5e play.
 
-### 📱 Live Play Character Sheets
-Touch-optimized character sheets designed for tablets and phones, making Foundry VTT practical for in-person play. Players can view and interact with their characters directly on mobile devices without needing a full desktop setup.
+## Current Feature Set
 
-- **Touch-first design** — large tap targets (44×44px minimum) and a dark theme built for tablet and phone screens
-- **Compact layout** — everything fits in a 520×780px window optimized for portrait-mode tablets
-- **Live updates** — changes sync in real time across all connected devices
-- **Full character interaction** — ability checks, saving throws, skill rolls, hit point tracking, rests, and more — all from a streamlined mobile interface
-- **Complements print sheets** — use live sheets for players going digital and print sheets for players who prefer paper
+### Live Play Character Sheet
 
-### 🖨️ Print & Preview Sheets
-Generate print-ready sheets for your characters, NPCs, encounters, and party — optimized for physical use at the table or as a digital PDF reference.
+A touch-first character sheet for tablets and phones.
 
-- **Premium layout** — clean, light-themed design that saves ink and stays readable at the table
-- **Everything in one place** — ability scores, saves, combat stats, actions, spellcasting, skills, features, inventory, and backstory all on a single organized sheet
-- **Smart feature summaries** — class features and feats are automatically condensed into concise, table-ready descriptions that show your character's actual values (e.g. "Sneak Attack: 3d6", "Ki Points: 5")
-- **Currency tracking widget** — write-in boxes for tracking gold, silver, and copper during a session
-- **Configurable sections** — choose exactly which sections to include each time you print
+- Compact portrait layout tuned for shared-table play
+- Large tap targets and mobile-friendly navigation
+- HP management, rests, death saves, conditions, inventory, spells, features, and core rolls
+- Auto-open support for assigned player characters
+- Kiosk mode for dedicated player devices
 
-**Supported sheet types:**
-- **Characters** — full character sheets with all details
-- **NPCs** — monster/NPC stat blocks
-- **Parties** — a summary table of all party members
-- **Encounters** — multiple NPC stat blocks grouped on one sheet
+### Kiosk Mode
 
-**How to use:**
-1. Right-click any Actor in the sidebar → **"FTTH - Print"** or **"FTTH - Preview"**
-2. Select which sections to include and your paper size
-3. Print, or save as PDF from your browser's print dialog
+A stripped-down player experience for tablets and always-on table devices.
 
-### 🔄 Window Rotation
-- Adds a Rotate/Flip control to application windows. Default rotates 90° per press; optionally switch to 180° flip in settings.
-- Includes prebuilt macros to rotate all open windows (90° clockwise/counterclockwise, and 180°). A world compendium "FTH Macros" is auto-created for drag-and-drop.
+- Hides Foundry chrome for designated players
+- Can disable the canvas entirely or force low-performance mode
+- Opens the Live Play Character Sheet in a focused, fullscreen-friendly flow
+- Adds a fullscreen button for mobile browsers that require a user gesture
 
-## Settings
-- **Live Play Character Sheet** *(GM only)* — Enable the touch-optimized character sheet for in-person play on tablets and phones.
-- **Print Access** *(GM only)* — Control who can use the print and preview features: everyone (default) or GM only.
-- **Print Defaults** — Set default paper size and which sections are pre-selected for each sheet type.
-- **Rotation** — Choose how much each press rotates: 90° steps (default) or 180° flip.
-- **Animations** — Enable or disable snappy rotation animations (default: enabled).
-- **Log Level** — Controls console verbosity (set to "debug" when troubleshooting).
-## Macros
-- On world load, if you are the GM, the module ensures a world compendium named "FTH Macros" containing:
-  - Rotate All 90° (CW)
-  - Rotate All 90° (CCW)
-  - Rotate All 180°
-- Drag any of these macros from the compendium to your hotbar to use them.
-- These macros act on all currently displayed windows and persist the new orientation.
-- Advanced: you can also call the API from a script macro or console:
+### Print And Preview Sheets
+
+Print-ready or PDF-ready output for multiple actor types.
+
+- Character sheets
+- NPC stat blocks
+- Party summaries
+- Encounter sheets
+- Per-sheet default section selection and paper settings
+- Preview and print actions from supported sheets
+- Smart feature summaries that resolve common dnd5e values into table-ready text
+
+### Combat Command Center
+
+GM-facing combat helpers built for fast live play.
+
+- Batch initiative with normal / advantage / disadvantage handling
+- Quick damage, healing, save, and condition workflows against selected tokens
+- Token health indicators for NPCs
+- Monster Preview panel with live refresh and quick actions
+- Party Summary panel for player character combat stats
+- Quick Rules Reference panel for D&D 2024 lookups
+
+### Asset Vault
+
+A FilePicker replacement for GMs with a companion server for heavier media workflows.
+
+- Thumbnail grid and list views
+- Virtual scrolling for large folders
+- Search, sorting, selection, and preview workflows
+- Upload presets for images, audio, video, portraits, tokens, and maps
+- Optional server-backed optimization and thumbnail generation
+- Folder creation and file/folder deletion through the companion server
+
+### Character Creator And Level-Up Manager
+
+Wizard-style dnd5e character workflows for onboarding and progression.
+
+- Class-first character creation flow for 2024 rules content
+- GM configuration for curated sources and behavior
+- Character creation from wizard selections into a real actor
+- Level-up flow for existing characters
+- Optional portrait generation through the companion server
+
+### Window Rotation
+
+Utilities for rotating Foundry windows on shared displays.
+
+- Rotate windows in 90 degree steps or flip them 180 degrees
+- Per-user rotate button visibility controls
+- Rotation macros and API helpers for rotating all open windows
+- State persistence across reopen cycles
+
+## Settings Overview
+
+The module now exposes settings across several areas:
+
+- Core utilities: log level, rotation mode, animations, legacy V1 window support
+- Print: print access, print defaults, print options dialog behavior
+- Kiosk: kiosk players and kiosk canvas mode
+- Live Play Character Sheet: enable, auto-open, default tab, death save mode
+- Combat: initiative dialog, damage workflows, monster preview, party summary, rules reference, token health
+- Asset Vault: enable, server URL/token, optimization behavior, preset overrides
+- Character Creator: enablement, auto-open, GM config, source selection, rules options
+
+## Public API
+
+The module attaches a small API to `window.fth` for macros and debugging.
 
 ```js
 window.fth.rotateAll90CW();
 window.fth.rotateAll90CCW();
 window.fth.rotateAll180();
+
+window.fth.quickDamage();
+window.fth.partySummary();
+window.fth.rulesReference();
+window.fth.batchInitiative();
+
+window.fth.assetManager();
+window.fth.characterCreator();
+window.fth.characterCreatorConfig();
+window.fth.levelUp("ACTOR_ID");
 ```
 
-- Add header button to V1 windows (legacy): Only if you need the rotation button on V1 apps (deprecated since V13).
+You can also adjust logging from the console:
 
+```js
+window.fth.setLevel("debug");
+```
 
-## Install (Stable Manifest URL)
-Use the stable manifest URL so Foundry always sees new releases when you click "Check for Updates":
+## Install
 
-https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/main/module.json
+Use the stable manifest URL:
 
-In Foundry: Add-on Modules → Install Module → paste the URL above.
+[https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/main/module.json](https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/main/module.json)
+
+In Foundry:
+
+1. Open Add-on Modules
+2. Click Install Module
+3. Paste the manifest URL above
+
+## Server Companion
+
+The optional server companion powers media optimization, thumbnail generation, file management helpers, and portrait generation.
+
+Current server capabilities:
+
+- Image optimization via Sharp
+- Audio and video optimization via FFmpeg when available
+- Thumbnail generation and thumbnail cache inspection
+- Folder creation and file/folder deletion scoped to the configured Foundry data path
+- Portrait generation through Gemini when configured
+
+Local development setup:
+
+1. Install root dependencies with `npm ci`
+2. Install server companion dependencies with `cd server-companion && npm ci`
+3. Build the server companion with `npm run build`
+4. Copy `server-companion/config/fth-optimizer.example.env` to a local `.env`
+5. Configure at least `FTH_AUTH_TOKEN`, `FTH_ALLOWED_ORIGINS`, and any optional `FTH_FOUNDRY_DATA_PATH` or Gemini settings
+
+The packaged Linux installer at `server-companion/scripts/install.sh` is intended for systemd-based deployments.
+
+Current live deployment note for `foundry.digitalframeworks.org`:
+
+- Foundry itself is managed by `systemd` as `foundry.service`
+- The companion server is managed by `systemd` as `fth-optimizer.service`
+- Companion deploys update `/opt/fth-optimizer/dist` and then restart `fth-optimizer.service`
 
 ## Development
+
 ### Prerequisites
+
 - Node.js 20+
 - npm 10+
 - Git
 
 ### Setup
-- Clone this repository
-- Install dependencies:
-  - `npm ci`
 
-### Build
-- One-off build: `npm run build`
-- Watch mode (rebuild on changes): `npm run dev`
+1. Clone the repository
+2. Run `npm ci`
+3. Run `cd server-companion && npm ci`
 
-### Link into Foundry for local testing
-- On Windows, you can create a symlink into your Foundry Data folder:
-  - `npm run link:foundry`
-  - This links the `dist/` folder to `%USERPROFILE%\AppData\Local\FoundryVTT\Data\modules\foundry-tabletop-helpers`.
-- On macOS/Linux, manually symlink `dist/` into your Foundry Data `modules/` directory (path varies by install).
+### Commands
 
-Then, start Foundry → Manage Modules → enable "Foundry Tabletop Helpers".
+- `npm run typecheck` - Type-check the module
+- `npm run test` - Run the Vitest suite
+- `npm run build` - Build the module into `dist/`
+- `npm run ci` - Type-check, test, and build
+- `npm run build:server` - Build the server companion
+- `npm run package:server` - Create the server companion package
+- `npm run dev` - Rebuild the module on changes
+- `npm run zip` - Build a module zip from `dist/`
 
-### Packaging (optional)
-- Create a development zip from the built `dist/` contents: `npm run zip`
+### Link Into Foundry
 
-### Troubleshooting / Debug logs
-If you run into issues (e.g., the rotate/flip button not appearing or not rotating/flipping):
-- In Foundry, go to Module Settings → Foundry Tabletop Helpers → set "Log Level" to "debug".
-- Try the action again, then open your browser console and copy the logs prefixed with "foundry-tabletop-helpers".
-- Alternatively, in the console you can run `fth.setLevel('debug')` to enable verbose logs.
-- Please include which window you were using (screenshot or name) and the Foundry core version.
+- Windows: `npm run link:foundry`
+- macOS/Linux: manually symlink `dist/` into your Foundry Data `modules/` directory
 
-> Note: Releases are produced by CI when you push a version tag (e.g., `v0.1.10-alpha`). The published manifest always points to the stable URL above, while downloads point to the exact tagged release.
+Then enable **Foundry Tabletop Helpers** from Manage Modules.
+
+## Troubleshooting
+
+- Set **Log Level** to `debug` in module settings when investigating issues
+- Check browser console logs prefixed with `foundry-tabletop-helpers`
+- For server companion issues, verify `/health` first and confirm the configured URL, token, and allowed origin list
+- If media optimization is unavailable, confirm FFmpeg is installed and reachable by the companion server
+
+## Notes
+
+- Most feature areas assume a dnd5e world
+- The server companion is powerful and should only be exposed to trusted clients
+- Releases are built from the repository source, and the manifest in `dist/` is generated from `module.template.json`

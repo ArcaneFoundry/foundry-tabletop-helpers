@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
+    "test": "vitest run",
     "package": "node build.mjs"
   },
   "dependencies": {
@@ -22,7 +23,8 @@
   "devDependencies": {
     "@types/fluent-ffmpeg": "^2.1.0",
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=20.0.0"

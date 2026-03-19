@@ -59,7 +59,7 @@ export async function createServer(config: Config) {
   // Video routes get a longer timeout
   app.addHook("onRequest", async (request) => {
     if (request.url === "/optimize/video") {
-      request.socket.setTimeout(300_000); // 5 minutes
+      request.socket?.setTimeout?.(300_000); // 5 minutes
     }
   });
 

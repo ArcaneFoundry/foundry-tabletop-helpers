@@ -1,7 +1,7 @@
 {
     "id": "foundry-tabletop-helpers",
     "title": "Foundry Tabletop Helpers",
-    "description": "QoL helpers for Foundry VTT. Generates print-ready character sheets, NPC stat blocks, party summaries, and encounter sheets with intelligent feature summaries, live variable resolution, and runtime structural parsing of PHB/homebrew content. Also adds a Rotate/Flip control to application windows.",
+    "description": "In-person play helpers for Foundry VTT v13 and dnd5e: live mobile character sheets, kiosk mode, print-ready character/NPC/party/encounter sheets, combat workflow tools, an asset vault with optional server companion, a character creator and level-up manager, and window rotation utilities.",
     "version": "0.0.0-PLACEHOLDER",
     "authors": [
         {

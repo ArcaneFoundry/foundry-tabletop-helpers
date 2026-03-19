@@ -55,14 +55,14 @@ export async function registerDeleteRoute(
 
         // Also delete matching thumbnail cache subtree
         const thumbDir = resolve(dataRoot, ".fth-thumbs", normalize(filePath));
-        rm(thumbDir, { recursive: true, force: true }).catch(() => { /* may not exist */ });
+        await rm(thumbDir, { recursive: true, force: true }).catch(() => { /* may not exist */ });
       } else {
         await unlink(resolved);
         app.log.info(`Deleted file: ${resolved}`);
 
         // Also delete cached thumbnail if it exists
         const thumbPath = resolve(dataRoot, ".fth-thumbs", normalize(filePath) + ".webp");
-        unlink(thumbPath).catch(() => { /* thumbnail may not exist */ });
+        await unlink(thumbPath).catch(() => { /* thumbnail may not exist */ });
       }
 
       reply.send({ ok: true, path: filePath });
