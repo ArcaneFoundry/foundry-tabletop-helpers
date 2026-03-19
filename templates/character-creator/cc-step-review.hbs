@@ -115,18 +115,8 @@
             </span>
           </div>
           {{/if}}
-          {{#if hasWeaponMasteries}}
-          <div class="cc-review-grant">
-            <span class="cc-review-grant__label">Weapon Masteries:</span>
-            <span class="cc-review-grant__chips">
-              {{#each weaponMasteries}}<span class="cc-review-chip">{{this}}</span>{{/each}}
-            </span>
-          </div>
-          {{/if}}
           {{#unless hasClassSkills}}
-          {{#unless hasWeaponMasteries}}
           <span class="cc-review-simple__text">None selected</span>
-          {{/unless}}
           {{/unless}}
         </div>
 

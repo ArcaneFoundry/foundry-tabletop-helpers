@@ -91,6 +91,7 @@ export function registerCharacterCreatorHooks(): void {
     `modules/${MOD}/templates/character-creator/cc-step-origin-summary.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-spells.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-species-choices.hbs`,
+    `modules/${MOD}/templates/character-creator/cc-step-weapon-masteries.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-equipment.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-review.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-portrait.hbs`,

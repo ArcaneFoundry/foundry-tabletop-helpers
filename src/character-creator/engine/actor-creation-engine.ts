@@ -888,7 +888,7 @@ async function applyWeaponMasteries(
   actor: FoundryDocument,
   state: WizardState,
 ): Promise<void> {
-  const chosenMasteries = state.selections.classChoices?.chosenWeaponMasteries ?? [];
+  const chosenMasteries = state.selections.weaponMasteries?.chosenWeaponMasteries ?? [];
   if (chosenMasteries.length === 0) return;
 
   const classItem = findActorItemWithAdvancement(actor, ["class"], state.selections.class?.identifier);

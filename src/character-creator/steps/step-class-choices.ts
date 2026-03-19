@@ -5,7 +5,6 @@ import type {
   WizardState,
   WizardStepDefinition,
 } from "../character-creator-types";
-import { compendiumIndexer } from "../data/compendium-indexer";
 import { ABILITY_ABBREVS, SKILLS } from "../data/dnd5e-constants";
 
 interface DatasetElementLike {
@@ -18,29 +17,6 @@ interface ToggleInputLike extends DatasetElementLike {
   checked: boolean;
   disabled: boolean;
 }
-
-type WeaponDocumentLike = {
-  system?: {
-    description?: { value?: string };
-    mastery?: string;
-    weaponType?: string;
-    type?: { value?: string };
-    identifier?: string;
-  };
-};
-
-interface ChosenWeaponMasteryDetail {
-  id: string;
-  label: string;
-  img?: string;
-  mastery?: string;
-  tooltip?: string;
-}
-const WEAPON_ITEM_PACK_FALLBACKS = [
-  "dnd-players-handbook.equipment",
-  "dnd5e.equipment24",
-  "dnd5e.items",
-] as const;
 
 const SKILL_META: Record<string, { icon: string; description: string }> = {
   acr: { icon: "fa-person-running", description: "Balance, tumble, dive, and keep your footing when the battlefield turns treacherous." },
@@ -79,118 +55,10 @@ function getRequiredSkillCount(state: WizardState): number {
   return Math.min(state.selections.class?.skillCount ?? 0, getAvailableSkillKeys(state).length);
 }
 
-function getWeaponMasteryChoiceCount(state: WizardState): number {
-  return state.selections.class?.weaponMasteryCount ?? 0;
-}
-
-function normalizeWeaponType(weaponType: string | undefined): string {
-  switch (weaponType) {
-    case "simpleM": return "Simple Melee";
-    case "simpleR": return "Simple Ranged";
-    case "martialM": return "Martial Melee";
-    case "martialR": return "Martial Ranged";
-    default: return weaponType ?? "Weapon";
-  }
-}
-
-function getWeaponMasteryPoolKeys(state: WizardState): string[] {
-  return state.selections.class?.weaponMasteryPool ?? [];
-}
-
 function buildClassChoicesState(state: WizardState): ClassChoicesState {
   return {
     chosenSkills: getChosenSkills(state),
-    chosenWeaponMasteries: state.selections.classChoices?.chosenWeaponMasteries ?? [],
-    chosenWeaponMasteryDetails: state.selections.classChoices?.chosenWeaponMasteryDetails ?? [],
-    availableWeaponMasteries: state.selections.classChoices?.availableWeaponMasteries ?? 0,
   };
-}
-
-async function getWeaponMasteryOptions(state: WizardState): Promise<Array<{
-  id: string;
-  uuid: string;
-  identifier: string;
-  name: string;
-  img: string;
-  weaponType: string;
-  mastery: string;
-  tooltip: string;
-}>> {
-  const requiredCount = getWeaponMasteryChoiceCount(state);
-  if (requiredCount <= 0 || !state.selections.class?.hasWeaponMastery) return [];
-  const poolKeys = getWeaponMasteryPoolKeys(state);
-  if (poolKeys.length === 0) return [];
-
-  const sourceIds = [...new Set([
-    ...(state.config.packSources.items ?? []),
-    ...WEAPON_ITEM_PACK_FALLBACKS,
-  ])];
-  const entries = [];
-  for (const packId of sourceIds) {
-    const loaded = await compendiumIndexer.loadPack(packId, "item");
-    entries.push(...loaded);
-  }
-
-  const weaponEntries = entries.filter((entry) => entry.itemType === "weapon");
-
-  const options = await Promise.all(weaponEntries.map(async (entry) => {
-    const doc = await compendiumIndexer.fetchDocument(entry.uuid) as WeaponDocumentLike | null;
-    const system = doc?.system;
-    const resolvedWeaponType = typeof system?.weaponType === "string" && system.weaponType
-      ? system.weaponType
-      : typeof system?.type?.value === "string" && system.type.value
-        ? system.type.value
-        : entry.weaponType;
-    const rawMastery = typeof system?.mastery === "string" ? system.mastery.trim() : "";
-    const identifier = typeof system?.identifier === "string" && system.identifier.trim().length > 0
-      ? system.identifier.trim()
-      : entry.identifier ?? "";
-    if (!identifier) return null;
-    if (!rawMastery) return null;
-    if (!matchesWeaponMasteryPool(identifier, resolvedWeaponType, poolKeys)) return null;
-    const rawDescription = typeof system?.description?.value === "string" ? system.description.value : "";
-    const plainDescription = rawDescription
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    return {
-      id: identifier,
-      uuid: entry.uuid,
-      identifier,
-      name: entry.name,
-      img: entry.img,
-      weaponType: normalizeWeaponType(resolvedWeaponType),
-      mastery: rawMastery.charAt(0).toUpperCase() + rawMastery.slice(1),
-      tooltip: plainDescription
-        ? `${entry.name} • ${normalizeWeaponType(resolvedWeaponType)} • ${rawMastery.charAt(0).toUpperCase() + rawMastery.slice(1)} mastery. ${plainDescription}`
-        : `${entry.name} • ${normalizeWeaponType(resolvedWeaponType)} • ${rawMastery.charAt(0).toUpperCase() + rawMastery.slice(1)} mastery.`,
-    };
-  }));
-
-  return options
-    .filter((option): option is NonNullable<typeof option> => !!option)
-    .filter((option, index, arr) => arr.findIndex((candidate) => candidate.id === option.id) === index)
-    .sort((left, right) => left.name.localeCompare(right.name));
-}
-
-function matchesWeaponMasteryPool(
-  identifier: string,
-  weaponType: string | undefined,
-  poolKeys: string[],
-): boolean {
-  for (const poolKey of poolKeys) {
-    if (!poolKey.startsWith("weapon:")) continue;
-    const [, family, scope] = poolKey.split(":");
-    if (scope === "*") {
-      if (family === "sim" && weaponType?.startsWith("simple")) return true;
-      if (family === "mar" && weaponType?.startsWith("martial")) return true;
-      continue;
-    }
-    const normalized = poolKey.slice("weapon:".length);
-    if (normalized === identifier) return true;
-  }
-  return false;
 }
 
 function patchToggleRows(
@@ -216,36 +84,6 @@ function patchSectionCount(el: HTMLElement, section: string, value: number): voi
   if (countEl) countEl.textContent = String(value);
 }
 
-function patchSelectedChips(
-  el: HTMLElement,
-  section: string,
-  entries: Array<{ label: string; iconClass?: string; img?: string; tooltip: string }>,
-): void {
-  const host = el.querySelector<HTMLElement>(`[data-selected-chips="${section}"]`);
-  if (!host) return;
-  host.innerHTML = entries.map((entry) => {
-    const iconHtml = entry.img
-      ? `<img class="cc-choice-chip__img" src="${entry.img}" alt="${entry.label}">`
-      : entry.iconClass
-        ? `<i class="fa-solid ${entry.iconClass}"></i>`
-        : "";
-    return `<span class="cc-choice-chip cc-tooltip-anchor" tabindex="0" data-tooltip="${escapeHtml(entry.tooltip)}">${iconHtml}<span>${escapeHtml(entry.label)}</span></span>`;
-  }).join("");
-}
-
-function collectChosenWeaponMasteryDetails(el: HTMLElement, chosen: Set<string>): ChosenWeaponMasteryDetail[] {
-  return getToggleInputs(el, "[data-choice-section='weaponMasteries']")
-    .filter((entry) => chosen.has(entry.dataset.choiceValue ?? ""))
-    .map((entry) => ({
-      id: entry.dataset.choiceValue ?? "",
-      label: entry.dataset.choiceLabel ?? "",
-      img: entry.dataset.choiceImg ?? "",
-      mastery: entry.dataset.choiceMastery ?? "",
-      tooltip: entry.dataset.choiceTooltip ?? entry.dataset.choiceLabel ?? "",
-    }))
-    .filter((entry) => entry.id.length > 0);
-}
-
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -255,10 +93,22 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function patchSelectedChips(
+  el: HTMLElement,
+  section: string,
+  entries: Array<{ label: string; iconClass?: string; tooltip: string }>,
+): void {
+  const host = el.querySelector<HTMLElement>(`[data-selected-chips="${section}"]`);
+  if (!host) return;
+  host.innerHTML = entries.map((entry) =>
+    `<span class="cc-choice-chip cc-tooltip-anchor" tabindex="0" data-tooltip="${escapeHtml(entry.tooltip)}"><i class="fa-solid ${entry.iconClass ?? "fa-book"}"></i><span>${escapeHtml(entry.label)}</span></span>`
+  ).join("");
+}
+
 export function createClassChoicesStep(): WizardStepDefinition {
   return {
     id: "classChoices",
-    label: "Class Choices",
+    label: "Class Skills",
     icon: "fa-solid fa-list-check",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-class-choices.hbs`,
     dependencies: ["class"],
@@ -266,11 +116,7 @@ export function createClassChoicesStep(): WizardStepDefinition {
 
     isComplete(state: WizardState): boolean {
       if (!state.selections.class?.uuid) return false;
-      const skillsComplete = getChosenSkills(state).length >= getRequiredSkillCount(state);
-      const availableMasteries = state.selections.classChoices?.availableWeaponMasteries ?? getWeaponMasteryChoiceCount(state);
-      const requiredMasteries = Math.min(getWeaponMasteryChoiceCount(state), availableMasteries);
-      const chosenMasteries = state.selections.classChoices?.chosenWeaponMasteries?.length ?? 0;
-      return skillsComplete && chosenMasteries >= requiredMasteries;
+      return getChosenSkills(state).length >= getRequiredSkillCount(state);
     },
 
     getStatusHint(state: WizardState): string {
@@ -280,15 +126,6 @@ export function createClassChoicesStep(): WizardStepDefinition {
         const remaining = requiredSkills - chosenSkills;
         return `Choose ${remaining} more class skill${remaining === 1 ? "" : "s"}`;
       }
-
-      const chosenMasteries = state.selections.classChoices?.chosenWeaponMasteries?.length ?? 0;
-      const availableMasteries = state.selections.classChoices?.availableWeaponMasteries ?? getWeaponMasteryChoiceCount(state);
-      const requiredMasteries = Math.min(getWeaponMasteryChoiceCount(state), availableMasteries);
-      if (chosenMasteries < requiredMasteries) {
-        const remaining = requiredMasteries - chosenMasteries;
-        return `Choose ${remaining} more weapon master${remaining === 1 ? "y" : "ies"}`;
-      }
-
       return "";
     },
 
@@ -306,11 +143,6 @@ export function createClassChoicesStep(): WizardStepDefinition {
         tooltip: `${skillLabel(key)} (${ABILITY_ABBREVS[SKILLS[key]?.ability ?? "int"]}) — ${SKILL_META[key]?.description ?? "Class skill option."}`,
       }));
 
-      const weaponMasteryOptions = await getWeaponMasteryOptions(state);
-      const chosenWeaponMasteries = new Set(state.selections.classChoices?.chosenWeaponMasteries ?? []);
-      const requiredWeaponMasteries = Math.min(getWeaponMasteryChoiceCount(state), weaponMasteryOptions.length);
-      const chosenWeaponMasteryDetails = state.selections.classChoices?.chosenWeaponMasteryDetails ?? [];
-
       return {
         className: classSelection?.name ?? "Class",
         primaryAbilityHint: classSelection?.primaryAbilityHint ?? "",
@@ -323,32 +155,6 @@ export function createClassChoicesStep(): WizardStepDefinition {
             .map((entry) => ({ label: entry.label, iconClass: entry.iconClass, tooltip: entry.tooltip })),
           options: skillPool,
           emptyMessage: "This class does not expose additional class skill choices.",
-        },
-        weaponMasterySection: {
-          hasChoices: requiredWeaponMasteries > 0,
-          chosenCount: chosenWeaponMasteries.size,
-          maxCount: requiredWeaponMasteries,
-          selectedEntries: chosenWeaponMasteryDetails.length > 0
-            ? chosenWeaponMasteryDetails.map((entry) => ({
-                label: entry.mastery ? `${entry.label} (${entry.mastery})` : entry.label,
-                img: entry.img,
-                tooltip: entry.tooltip ?? entry.label,
-              }))
-            : weaponMasteryOptions
-              .filter((entry) => chosenWeaponMasteries.has(entry.id))
-              .map((entry) => ({
-                label: `${entry.name} (${entry.mastery})`,
-                img: entry.img,
-                tooltip: entry.tooltip,
-              })),
-          options: weaponMasteryOptions.map((entry) => ({
-            ...entry,
-            checked: chosenWeaponMasteries.has(entry.id),
-            disabled: !chosenWeaponMasteries.has(entry.id) && chosenWeaponMasteries.size >= requiredWeaponMasteries,
-          })),
-          emptyMessage: classSelection?.hasWeaponMastery
-            ? "This class grants weapon mastery, but no matching mastery-bearing weapons were exposed by the current item packs."
-            : "This class does not grant weapon mastery selections.",
         },
       };
     },
@@ -373,11 +179,7 @@ export function createClassChoicesStep(): WizardStepDefinition {
 
           const chosenSkills = [...chosen];
           state.selections.skills = { chosen: chosenSkills };
-          state.selections.classChoices = {
-            ...buildClassChoicesState(state),
-            chosenSkills,
-            availableWeaponMasteries: getToggleInputs(el, "[data-choice-section='weaponMasteries']").length,
-          };
+          state.selections.classChoices = { chosenSkills };
 
           patchToggleRows(el, "[data-choice-section='skills']", chosen, limit);
           patchSectionCount(el, "skills", chosen.size);
@@ -394,54 +196,7 @@ export function createClassChoicesStep(): WizardStepDefinition {
         });
       });
 
-      getToggleInputs(el, "[data-choice-section='weaponMasteries']").forEach((input) => {
-        input.addEventListener("change", () => {
-          const masteryId = input.dataset.choiceValue;
-          if (!masteryId) return;
-
-          const chosen = new Set(state.selections.classChoices?.chosenWeaponMasteries ?? []);
-          const limit = Math.min(getWeaponMasteryChoiceCount(state), getToggleInputs(el, "[data-choice-section='weaponMasteries']").length);
-          if (input.checked) {
-            if (chosen.size >= limit) {
-              input.checked = false;
-              return;
-            }
-            chosen.add(masteryId);
-          } else {
-            chosen.delete(masteryId);
-          }
-
-          const chosenWeaponMasteries = [...chosen];
-          const chosenWeaponMasteryDetails = collectChosenWeaponMasteryDetails(el, chosen);
-          state.selections.classChoices = {
-            ...buildClassChoicesState(state),
-            chosenSkills: getChosenSkills(state),
-            chosenWeaponMasteries,
-            chosenWeaponMasteryDetails,
-            availableWeaponMasteries: getToggleInputs(el, "[data-choice-section='weaponMasteries']").length,
-          };
-
-          patchToggleRows(el, "[data-choice-section='weaponMasteries']", chosen, limit);
-          patchSectionCount(el, "weaponMasteries", chosen.size);
-          const selectedEntries = chosenWeaponMasteryDetails.map((entry) => ({
-            label: entry.mastery ? `${entry.label} (${entry.mastery})` : entry.label,
-            img: entry.img ?? "",
-            tooltip: entry.tooltip ?? entry.label,
-          }));
-          patchSelectedChips(el, "weaponMasteries", selectedEntries);
-          callbacks.setDataSilent(buildClassChoicesState(state));
-        });
-      });
-
-      state.selections.classChoices = {
-        ...buildClassChoicesState(state),
-        chosenSkills: getChosenSkills(state),
-        chosenWeaponMasteryDetails: collectChosenWeaponMasteryDetails(
-          el,
-          new Set(state.selections.classChoices?.chosenWeaponMasteries ?? []),
-        ),
-        availableWeaponMasteries: getToggleInputs(el, "[data-choice-section='weaponMasteries']").length,
-      };
+      state.selections.classChoices = buildClassChoicesState(state);
       callbacks.setDataSilent(buildClassChoicesState(state));
     },
   };

@@ -18,7 +18,12 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseClassSkillAdvancement, parseClassSpellcasting, parseClassWeaponMasteryAdvancement } from "../data/advancement-parser";
+import {
+  parseClassSkillAdvancement,
+  parseClassSpellcasting,
+  parseClassWeaponMasteryAdvancement,
+  parseDocumentWeaponProficiencies,
+} from "../data/advancement-parser";
 import { ABILITY_LABELS } from "../data/dnd5e-constants";
 import { beginCardSelectionUpdate, isCurrentCardSelectionUpdate, patchCardDetailFromTemplate } from "./card-select-utils";
 
@@ -459,6 +464,7 @@ export function createClassStep(): WizardStepDefinition {
               selection.savingThrowProficiencies = getSavingThrowProficiencies(doc);
               selection.armorProficiencies = getTraitSummary(doc, "armorProf");
               selection.weaponProficiencies = getTraitSummary(doc, "weaponProf");
+              selection.weaponProficiencyKeys = parseDocumentWeaponProficiencies(doc as never);
               selection.classFeatures = getFeatureSummary(doc, state.config.startingLevel);
             }
           } catch (err) {

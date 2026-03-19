@@ -150,4 +150,65 @@ describe("advancement parser", () => {
       skillCount: 2,
     });
   });
+
+  it("parses background weapon proficiency grants from trait advancements", async () => {
+    const { parseBackgroundGrants } = await import("./advancement-parser");
+
+    const result = await parseBackgroundGrants({
+      system: {
+        advancement: [
+          {
+            type: "Trait",
+            title: "Battle Training",
+            configuration: {
+              grants: ["weapon:mar:*", "skills:ath"],
+            },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result.weaponProficiencies).toEqual(["weapon:mar:*"]);
+  });
+
+  it("parses document weapon proficiencies from fixed traits and trait grants", async () => {
+    const { parseDocumentWeaponProficiencies } = await import("./advancement-parser");
+
+    const result = parseDocumentWeaponProficiencies({
+      system: {
+        traits: {
+          weaponProf: {
+            value: ["simpleM", "longsword"],
+          },
+        },
+        advancement: [
+          {
+            type: "Trait",
+            configuration: {
+              grants: ["weapon:mar:*", "weapon:shortbow"],
+            },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result).toEqual(["weapon:sim:*", "weapon:longsword", "weapon:mar:*", "weapon:shortbow"]);
+  });
+
+  it("parses species fixed weapon proficiencies", async () => {
+    const { parseSpeciesProficiencies } = await import("./advancement-parser");
+
+    const result = parseSpeciesProficiencies({
+      system: {
+        traits: {
+          weaponProf: {
+            value: ["martialR", "handcrossbow"],
+          },
+        },
+        advancement: [],
+      },
+    } as never);
+
+    expect(result.fixedWeaponProficiencies).toEqual(["weapon:mar:*", "weapon:handcrossbow"]);
+  });
 });

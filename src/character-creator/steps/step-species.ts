@@ -112,6 +112,7 @@ export function createSpeciesStep(): WizardStepDefinition {
               selection.languageChoicePool = langs.choicePool;
               const profs = parseSpeciesProficiencies(doc);
               selection.skillGrants = profs.fixedSkills;
+              selection.weaponProficiencies = profs.fixedWeaponProficiencies;
               selection.skillChoiceCount = profs.skillChoiceCount;
               selection.skillChoicePool = profs.skillChoicePool;
               selection.itemChoiceGroups = await parseSpeciesItemChoices(doc);

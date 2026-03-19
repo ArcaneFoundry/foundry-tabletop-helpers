@@ -114,6 +114,7 @@ describe("character creator init shell", () => {
         "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-class-select.hbs",
         "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-origin-choices.hbs",
         "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-species-choices.hbs",
+        "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-weapon-masteries.hbs",
       ]),
     );
     expect(loadTemplatesMock).not.toHaveBeenCalled();

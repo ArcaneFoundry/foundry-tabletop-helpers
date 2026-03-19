@@ -58,15 +58,15 @@ export function createClassSummaryStep(): WizardStepDefinition {
         startingHpPreview: calculateStartingHpPreview(state),
         usesAssignedCon: !!state.selections.abilities?.scores?.con,
         chosenSkills: (state.selections.skills?.chosen ?? []).map(skillLabel),
-        chosenWeaponMasteries: (state.selections.classChoices?.chosenWeaponMasteryDetails ?? []).length > 0
-          ? (state.selections.classChoices?.chosenWeaponMasteryDetails ?? []).map(formatWeaponMasteryLabel)
-          : (state.selections.classChoices?.chosenWeaponMasteries ?? []).map(formatWeaponMasteryLabel),
+        chosenWeaponMasteries: (state.selections.weaponMasteries?.chosenWeaponMasteryDetails ?? []).length > 0
+          ? (state.selections.weaponMasteries?.chosenWeaponMasteryDetails ?? []).map(formatWeaponMasteryLabel)
+          : (state.selections.weaponMasteries?.chosenWeaponMasteries ?? []).map(formatWeaponMasteryLabel),
         savingThrows: (classSelection?.savingThrowProficiencies ?? []).map(saveLabel),
         armorProficiencies: classSelection?.armorProficiencies ?? [],
         weaponProficiencies: classSelection?.weaponProficiencies ?? [],
         features,
         hasChosenSkills: (state.selections.skills?.chosen?.length ?? 0) > 0,
-        hasChosenWeaponMasteries: (state.selections.classChoices?.chosenWeaponMasteries?.length ?? 0) > 0,
+        hasChosenWeaponMasteries: (state.selections.weaponMasteries?.chosenWeaponMasteries?.length ?? 0) > 0,
         hasSavingThrows: (classSelection?.savingThrowProficiencies?.length ?? 0) > 0,
         hasArmorProficiencies: (classSelection?.armorProficiencies?.length ?? 0) > 0,
         hasWeaponProficiencies: (classSelection?.weaponProficiencies?.length ?? 0) > 0,

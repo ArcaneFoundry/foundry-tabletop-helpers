@@ -95,6 +95,7 @@ function makeState(): WizardState {
         img: "sage.png",
         grants: {
           skillProficiencies: ["arc"],
+          weaponProficiencies: [],
           toolProficiency: null,
           originFeatUuid: null,
           originFeatName: null,

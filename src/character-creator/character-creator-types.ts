@@ -212,6 +212,8 @@ export interface SpeciesSelection {
   traits?: string[];
   /** Languages auto-granted by species (e.g., ["common"]). */
   languageGrants?: string[];
+  /** Weapon proficiencies auto-granted by species. */
+  weaponProficiencies?: string[];
   /** Number of additional language choices from species. */
   languageChoiceCount?: number;
   /** Pool of choosable species languages. */
@@ -242,6 +244,8 @@ export interface SpeciesItemChoiceGroup {
 export interface BackgroundGrants {
   /** Skill proficiency keys granted by this background. */
   skillProficiencies: string[];
+  /** Fixed weapon proficiency keys granted by this background. */
+  weaponProficiencies: string[];
   /** Tool proficiency key (e.g., "art:calligrapher") or null. */
   toolProficiency: string | null;
   /** UUID of the origin feat, or null if none (homebrew/legacy). */
@@ -349,6 +353,8 @@ export interface ClassSelection {
   armorProficiencies?: string[];
   /** Weapon proficiency summary strings. */
   weaponProficiencies?: string[];
+  /** Weapon proficiency keys usable for matching weapon pools. */
+  weaponProficiencyKeys?: string[];
   /** Feature summary entries through the configured starting level. */
   classFeatures?: ClassFeatureSummary[];
   /** Whether the class appears to support weapon mastery choices. */
@@ -363,6 +369,10 @@ export interface ClassSelection {
 export interface ClassChoicesState {
   /** Class skill keys chosen during the class step flow. */
   chosenSkills: string[];
+}
+
+/** Player-facing selections made in the weapon mastery step. */
+export interface WeaponMasterySelectionState {
   /** Weapon identifiers chosen for weapon mastery, if any. */
   chosenWeaponMasteries?: string[];
   /** Display metadata for chosen weapon masteries. */
@@ -463,6 +473,7 @@ export interface WizardSelections {
   background?: BackgroundSelection;
   class?: ClassSelection;
   classChoices?: ClassChoicesState;
+  weaponMasteries?: WeaponMasterySelectionState;
   subclass?: SubclassSelection;
   backgroundAsi?: BackgroundASI;
   originChoices?: OriginChoicesState;

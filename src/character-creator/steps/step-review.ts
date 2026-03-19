@@ -204,22 +204,19 @@ export function createReviewStep(): WizardStepDefinition {
       };
 
       const requiredClassSkills = Math.min(sel.class?.skillCount ?? 0, sel.class?.skillPool?.length ?? 0);
-      const availableWeaponMasteries = sel.classChoices?.availableWeaponMasteries ?? (sel.class?.weaponMasteryCount ?? 0);
+      const availableWeaponMasteries = sel.weaponMasteries?.availableWeaponMasteries ?? (sel.class?.weaponMasteryCount ?? 0);
       const requiredWeaponMasteries = Math.min(sel.class?.weaponMasteryCount ?? 0, availableWeaponMasteries);
       const classSkillNames = (sel.skills?.chosen ?? []).map(skillName);
-      const weaponMasteryNames = (sel.classChoices?.chosenWeaponMasteryDetails ?? []).length > 0
-        ? (sel.classChoices?.chosenWeaponMasteryDetails ?? []).map(weaponMasteryName)
-        : (sel.classChoices?.chosenWeaponMasteries ?? []).map(weaponMasteryName);
+      const weaponMasteryNames = (sel.weaponMasteries?.chosenWeaponMasteryDetails ?? []).length > 0
+        ? (sel.weaponMasteries?.chosenWeaponMasteryDetails ?? []).map(weaponMasteryName)
+        : (sel.weaponMasteries?.chosenWeaponMasteries ?? []).map(weaponMasteryName);
       const classChoicesSection = {
         id: "classChoices",
-        label: "Class Choices",
+        label: "Class Skills",
         icon: "fa-solid fa-list-check",
-        complete: classSkillNames.length >= requiredClassSkills
-          && weaponMasteryNames.length >= requiredWeaponMasteries,
+        complete: classSkillNames.length >= requiredClassSkills,
         classSkills: classSkillNames,
-        weaponMasteries: weaponMasteryNames,
         hasClassSkills: classSkillNames.length > 0,
-        hasWeaponMasteries: weaponMasteryNames.length > 0,
         isClassChoices: true,
       };
 
@@ -233,6 +230,17 @@ export function createReviewStep(): WizardStepDefinition {
         speciesSection,
         speciesChoicesSection,
       ];
+
+      if (state.applicableSteps.includes("weaponMasteries")) {
+        sections.push({
+          id: "weaponMasteries",
+          label: "Weapon Masteries",
+          icon: "fa-solid fa-swords",
+          complete: weaponMasteryNames.length >= requiredWeaponMasteries,
+          summary: weaponMasteryNames.join(", ") || "Not selected",
+          isSimple: true,
+        });
+      }
 
       if (state.applicableSteps.includes("subclass")) {
         sections.push({

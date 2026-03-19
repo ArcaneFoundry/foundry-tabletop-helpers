@@ -1,6 +1,6 @@
 <div class="cc-class-choices" data-step="classChoices">
   <div class="cc-step-intro">
-    <p>Shape how {{className}} enters the world. Commit your class training here before moving into background and origin details.</p>
+    <p>Shape how {{className}} enters the world. Choose the skills your class training grants before moving into background and origin details.</p>
     {{#if primaryAbilityHint}}
     <p><strong>Prime Attribute Guidance:</strong> {{primaryAbilityHint}}</p>
     {{/if}}
@@ -58,63 +58,6 @@
     </div>
     {{else}}
     <p class="cc-card-detail__hint">{{skillSection.emptyMessage}}</p>
-    {{/if}}
-  </section>
-
-  <section class="cc-panel cc-choice-section cc-choice-section--mastery">
-    <div class="cc-choice-section__header">
-      <div class="cc-choice-section__heading">
-        <h3>Weapon Masteries</h3>
-        <p>Choose the weapons this class can wield with signature mastery techniques.</p>
-      </div>
-      <div class="cc-choice-section__status">
-        <div class="cc-skills__counter">
-          <span class="cc-skills__count" data-choice-count="weaponMasteries">{{weaponMasterySection.chosenCount}}</span>
-          <span class="cc-skills__sep">/</span>
-          <span class="cc-skills__max">{{weaponMasterySection.maxCount}}</span>
-          <span class="cc-skills__counter-label">selected</span>
-        </div>
-        <div class="cc-choice-section__selected" data-selected-chips="weaponMasteries">
-          {{#each weaponMasterySection.selectedEntries}}
-          <span class="cc-choice-chip cc-tooltip-anchor" tabindex="0" data-tooltip="{{tooltip}}">
-            {{#if img}}<img class="cc-choice-chip__img" src="{{img}}" alt="{{label}}">{{/if}}
-            <span>{{label}}</span>
-          </span>
-          {{/each}}
-        </div>
-      </div>
-    </div>
-
-    {{#if weaponMasterySection.hasChoices}}
-    <div class="cc-choice-grid cc-choice-grid--mastery">
-      {{#each weaponMasterySection.options}}
-      <label class="cc-choice-option cc-choice-option--mastery cc-tooltip-anchor{{#if checked}} cc-choice-option--selected{{/if}}" data-tooltip="{{tooltip}}">
-        <input
-          type="checkbox"
-          class="cc-choice-option__checkbox"
-          data-choice-section="weaponMasteries"
-          data-choice-value="{{id}}"
-          data-choice-label="{{name}}"
-          data-choice-img="{{img}}"
-          data-choice-mastery="{{mastery}}"
-          data-choice-tooltip="{{tooltip}}"
-          {{#if checked}}checked{{/if}}
-          {{#if disabled}}disabled{{/if}}>
-        <div class="cc-choice-option__icon cc-choice-option__icon--img">
-          <img src="{{img}}" alt="{{name}}">
-        </div>
-        <div class="cc-choice-option__body">
-          <div class="cc-choice-option__title-row">
-            <span class="cc-choice-option__title">{{name}}</span>
-            <span class="cc-choice-option__meta">{{mastery}}</span>
-          </div>
-          <p class="cc-choice-option__copy">{{weaponType}} weapon</p>
-        </div>
-      </label>
-      {{/each}}
-    </div>
-    {{else}}
-    <p class="cc-card-detail__hint">{{weaponMasterySection.emptyMessage}}</p>
     {{/if}}
   </section>
 </div>

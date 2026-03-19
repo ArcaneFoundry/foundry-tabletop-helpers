@@ -15,6 +15,7 @@ import { createBackgroundAsiStep } from "../steps/step-background-asi";
 import { createClassStep } from "../steps/step-class";
 import { createClassChoicesStep } from "../steps/step-class-choices";
 import { createClassSummaryStep } from "../steps/step-class-summary";
+import { createWeaponMasteriesStep } from "../steps/step-weapon-masteries";
 import { createOriginChoicesStep } from "../steps/step-origin-choices";
 import { createSubclassStep } from "../steps/step-subclass";
 import { createSpeciesChoicesStep } from "../steps/step-species-choices";
@@ -39,6 +40,7 @@ const STEP_ORDER = [
   "species",
   "speciesChoices",
   "originSummary",
+  "weaponMasteries",
   "abilities",
   "feats",
   "equipment",
@@ -98,6 +100,7 @@ const STEP_ATMOSPHERES: Record<string, string> = {
   species: "cc-atmosphere--nature",
   speciesChoices: "cc-atmosphere--nature",
   originSummary: "cc-atmosphere--gold",
+  weaponMasteries: "cc-atmosphere--forge",
   abilities: "cc-atmosphere--arcane",
   feats: "cc-atmosphere--crimson",
   spells: "cc-atmosphere--arcane",
@@ -159,6 +162,7 @@ export function registerAllSteps(): void {
   registerStep(createSpeciesStep());
   registerStep(createSpeciesChoicesStep());
   registerStep(createOriginSummaryStep());
+  registerStep(createWeaponMasteriesStep());
   registerStep(createAbilitiesStep());
   registerStep(createFeatsStep());
   registerStep(createSpellsStep());

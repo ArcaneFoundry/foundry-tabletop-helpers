@@ -94,6 +94,7 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
   // Defaults for a fully empty/missing advancement array
   const result: BackgroundGrants = {
     skillProficiencies: [],
+    weaponProficiencies: [],
     toolProficiency: null,
     originFeatUuid: null,
     originFeatName: null,
@@ -120,21 +121,26 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
   }
 
   // --- Skill & Tool Proficiencies ---
-  const proficiencies = findAdvancement(advancements, "Trait", "proficiencies");
-  if (proficiencies?.configuration) {
-    const grants = Array.isArray(proficiencies.configuration.grants)
-      ? (proficiencies.configuration.grants as string[])
+  for (const entry of advancements) {
+    if (entry.type !== "Trait" || !entry.configuration) continue;
+    const grants = Array.isArray(entry.configuration.grants)
+      ? (entry.configuration.grants as string[])
       : [];
 
     for (const grant of grants) {
       if (typeof grant !== "string") continue;
       if (grant.startsWith("skills:")) {
         result.skillProficiencies.push(parseGrantKey(grant));
-      } else if (grant.startsWith("tool:")) {
+      } else if (grant.startsWith("weapon:")) {
+        result.weaponProficiencies.push(grant);
+      } else if (grant.startsWith("tool:") && !result.toolProficiency) {
         result.toolProficiency = parseGrantKey(grant);
       }
     }
   }
+
+  result.skillProficiencies = [...new Set(result.skillProficiencies)];
+  result.weaponProficiencies = [...new Set(result.weaponProficiencies)];
 
   // --- Origin Feat (ItemGrant) ---
   const featGrant = findAdvancement(advancements, "ItemGrant", "feat");
@@ -362,8 +368,48 @@ export interface SpeciesLanguageGrants {
 /** Parsed species proficiency grants and choices. */
 export interface SpeciesProficiencyGrants {
   fixedSkills: string[];
+  fixedWeaponProficiencies: string[];
   skillChoiceCount: number;
   skillChoicePool: string[];
+}
+
+function normalizeWeaponProficiencyKey(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return "";
+  if (normalized.startsWith("weapon:")) return normalized;
+  if (normalized === "sim" || normalized === "simple" || normalized === "simplem" || normalized === "simpler") {
+    return "weapon:sim:*";
+  }
+  if (normalized === "mar" || normalized === "martial" || normalized === "martialm" || normalized === "martialr") {
+    return "weapon:mar:*";
+  }
+  return `weapon:${normalized}`;
+}
+
+export function parseDocumentWeaponProficiencies(doc: FoundryDocument): string[] {
+  const proficiencies = new Set<string>();
+  const system = doc.system as Record<string, unknown> | undefined;
+  const traits = system?.traits as Record<string, unknown> | undefined;
+  const weaponProf = traits?.weaponProf as { value?: unknown } | undefined;
+
+  for (const entry of toStringList(weaponProf?.value)) {
+    const normalized = normalizeWeaponProficiencyKey(entry);
+    if (normalized) proficiencies.add(normalized);
+  }
+
+  const advancements = getAdvancementArray(doc);
+  for (const advancement of advancements) {
+    if (advancement.type !== "Trait" || !advancement.configuration) continue;
+    const grants = Array.isArray(advancement.configuration.grants)
+      ? advancement.configuration.grants as string[]
+      : [];
+    for (const grant of grants) {
+      if (typeof grant !== "string" || !grant.startsWith("weapon:")) continue;
+      proficiencies.add(grant);
+    }
+  }
+
+  return [...proficiencies];
 }
 
 /**
@@ -410,6 +456,7 @@ export function parseSpeciesProficiencies(doc: FoundryDocument): SpeciesProficie
   const advancements = getAdvancementArray(doc);
   const result: SpeciesProficiencyGrants = {
     fixedSkills: [],
+    fixedWeaponProficiencies: parseDocumentWeaponProficiencies(doc),
     skillChoiceCount: 0,
     skillChoicePool: [],
   };
@@ -425,9 +472,13 @@ export function parseSpeciesProficiencies(doc: FoundryDocument): SpeciesProficie
       ? advancement.configuration.grants as string[]
       : [];
     for (const grant of grants) {
-      if (typeof grant !== "string" || !grant.startsWith("skills:")) continue;
-      const parsed = parseGrantKey(grant);
-      if (parsed) result.fixedSkills.push(parsed);
+      if (typeof grant !== "string") continue;
+      if (grant.startsWith("skills:")) {
+        const parsed = parseGrantKey(grant);
+        if (parsed) result.fixedSkills.push(parsed);
+      } else if (grant.startsWith("weapon:")) {
+        result.fixedWeaponProficiencies.push(grant);
+      }
     }
 
     const choices = Array.isArray(advancement.configuration.choices)
@@ -449,6 +500,7 @@ export function parseSpeciesProficiencies(doc: FoundryDocument): SpeciesProficie
   }
 
   result.fixedSkills = [...new Set(result.fixedSkills)];
+  result.fixedWeaponProficiencies = [...new Set(result.fixedWeaponProficiencies)];
   result.skillChoicePool = [...new Set(result.skillChoicePool)];
   return result;
 }

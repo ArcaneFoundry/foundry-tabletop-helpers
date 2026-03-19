@@ -61,6 +61,7 @@ function makeState(): WizardState {
         img: "sage.png",
         grants: {
           skillProficiencies: ["arc"],
+          weaponProficiencies: [],
           toolProficiency: "art:calligrapher",
           originFeatUuid: "feat.magic-initiate",
           originFeatName: "Magic Initiate",

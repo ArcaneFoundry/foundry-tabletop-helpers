@@ -144,6 +144,7 @@ describe("step background", () => {
           img: "sage.png",
           grants: {
             skillProficiencies: ["arc", "his"],
+            weaponProficiencies: [],
             toolProficiency: "art:calligrapher",
             originFeatUuid: "Compendium.feat.magic-initiate",
             originFeatName: "Magic Initiate",

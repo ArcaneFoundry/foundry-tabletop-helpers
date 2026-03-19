@@ -28,6 +28,8 @@ function makeState(): WizardState {
       },
       classChoices: {
         chosenSkills: ["ath", "sur"],
+      },
+      weaponMasteries: {
         chosenWeaponMasteries: ["longsword", "shortbow"],
         chosenWeaponMasteryDetails: [
           { id: "longsword", label: "Longsword", mastery: "Sap" },

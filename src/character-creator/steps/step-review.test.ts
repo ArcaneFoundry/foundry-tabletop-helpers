@@ -15,7 +15,7 @@ vi.mock("../../types", () => ({
 function makeState(): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["class", "spells", "review"],
+    applicableSteps: ["class", "classChoices", "weaponMasteries", "spells", "review"],
     selections: {
       review: { characterName: "Arannis Vale" },
       species: {
@@ -50,6 +50,7 @@ function makeState(): WizardState {
         grants: {
           skillProficiencies: ["arc"],
           toolProficiency: null,
+          weaponProficiencies: [],
           originFeatUuid: null,
           originFeatName: "Magic Initiate",
           originFeatImg: "feat.png",
@@ -74,10 +75,13 @@ function makeState(): WizardState {
         isSpellcaster: true,
         spellcastingAbility: "int",
         spellcastingProgression: "full",
+        hasWeaponMastery: true,
         weaponMasteryCount: 1,
       },
       classChoices: {
         chosenSkills: ["arc", "his"],
+      },
+      weaponMasteries: {
         chosenWeaponMasteries: ["dagger"],
         chosenWeaponMasteryDetails: [{ id: "dagger", label: "Dagger", mastery: "Nick" }],
         availableWeaponMasteries: 1,
@@ -141,6 +145,7 @@ describe("step review", () => {
     const originSummarySection = sections.find((section) => section.id === "originSummary");
     const speciesChoicesSection = sections.find((section) => section.id === "speciesChoices");
     const classChoicesSection = sections.find((section) => section.id === "classChoices");
+    const weaponMasteriesSection = sections.find((section) => section.id === "weaponMasteries");
 
     expect(spellsSection).toMatchObject({
       summary: "4 cantrips, 14 spells, 9 prepared",
@@ -148,8 +153,11 @@ describe("step review", () => {
     });
     expect(classChoicesSection).toMatchObject({
       classSkills: ["Arcana", "History"],
-      weaponMasteries: ["Dagger (Nick)"],
-      hasWeaponMasteries: true,
+      hasClassSkills: true,
+    });
+    expect(weaponMasteriesSection).toMatchObject({
+      summary: "Dagger (Nick)",
+      complete: true,
     });
     expect(originSummarySection).toMatchObject({
       speciesSkills: ["Perception", "Nature"],
@@ -196,6 +204,8 @@ describe("step review", () => {
       isSpellcaster: true,
       spellcastingAbility: "wis",
       spellcastingProgression: "full",
+      hasWeaponMastery: false,
+      weaponMasteryCount: 0,
     };
     state.selections.spells = {
       cantrips: ["spell.guidance", "spell.light", "spell.resistance", "spell.sacred-flame"],
