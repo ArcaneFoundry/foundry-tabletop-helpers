@@ -157,6 +157,17 @@ describe("step weapon masteries", () => {
           weaponType: "simpleR",
           identifier: "shortbow",
         },
+        {
+          uuid: "weapon.dagger-of-venom",
+          name: "Dagger of Venom",
+          img: "dagger-of-venom.png",
+          packId,
+          packLabel: "Equipment",
+          type: "item",
+          itemType: "weapon",
+          weaponType: "simpleM",
+          identifier: "dagger",
+        },
       ];
     });
 
@@ -178,6 +189,19 @@ describe("step weapon masteries", () => {
             description: { value: "<p>Simple ranged weapon.</p>" },
             identifier: "shortbow",
             weaponType: "simpleR",
+          },
+        };
+      }
+      if (uuid === "weapon.dagger-of-venom") {
+        return {
+          system: {
+            mastery: "nick",
+            description: { value: "<p>A poisoned magic dagger.</p>" },
+            identifier: "dagger",
+            weaponType: "simpleM",
+            rarity: "rare",
+            magicalBonus: 1,
+            properties: new Set(["fin", "mgc"]),
           },
         };
       }
@@ -218,6 +242,25 @@ describe("step weapon masteries", () => {
         mastery: "Vex",
         masteryDescription: expect.stringContaining("Advantage"),
       }),
+    ]);
+  });
+
+  it("filters out magical weapon variants even when they share a valid weapon identifier", async () => {
+    const { createWeaponMasteriesStep } = await import("./step-weapon-masteries");
+    const state = makeState();
+    state.selections.class = {
+      ...state.selections.class!,
+      weaponProficiencyKeys: ["weapon:sim:*", "weapon:mar:*"],
+    };
+
+    const vm = await createWeaponMasteriesStep().buildViewModel(state);
+    const section = vm.weaponMasterySection as {
+      options: Array<{ id: string; name: string }>;
+    };
+
+    expect(section.options.map((option) => option.name)).toEqual([
+      "Longsword",
+      "Shortbow",
     ]);
   });
 

@@ -26,6 +26,9 @@ type WeaponDocumentLike = {
     weaponType?: string;
     type?: { value?: string };
     identifier?: string;
+    rarity?: string;
+    magicalBonus?: number;
+    properties?: Iterable<string> | ArrayLike<string> | Record<string, boolean>;
   };
 };
 
@@ -120,6 +123,38 @@ function matchesWeaponProficiencyPool(
   return false;
 }
 
+function normalizeSystemProperties(
+  properties: NonNullable<WeaponDocumentLike["system"]>["properties"],
+): Set<string> {
+  if (!properties) return new Set();
+  if (Array.isArray(properties)) {
+    return new Set(properties.filter((value): value is string => typeof value === "string"));
+  }
+  if (typeof (properties as Iterable<string>)[Symbol.iterator] === "function") {
+    return new Set(Array.from(properties as Iterable<string>).filter((value): value is string => typeof value === "string"));
+  }
+  if (typeof properties === "object") {
+    return new Set(Object.entries(properties)
+      .filter(([, enabled]) => enabled === true)
+      .map(([key]) => key));
+  }
+  return new Set();
+}
+
+function isBaselineWeaponOption(doc: WeaponDocumentLike | null): boolean {
+  const system = doc?.system;
+  if (!system) return false;
+
+  const rarity = typeof system.rarity === "string" ? system.rarity.trim().toLowerCase() : "";
+  if (rarity && rarity !== "mundane") return false;
+  if (typeof system.magicalBonus === "number" && system.magicalBonus > 0) return false;
+
+  const properties = normalizeSystemProperties(system.properties);
+  if (properties.has("mgc")) return false;
+
+  return true;
+}
+
 async function getCurrentWeaponProficiencyKeys(state: WizardState): Promise<string[]> {
   const proficiencies = new Set<string>([
     ...(state.selections.class?.weaponProficiencyKeys ?? []),
@@ -172,6 +207,7 @@ async function getWeaponMasteryOptions(state: WizardState): Promise<Array<{
   const options = await Promise.all(weaponEntries.map(async (entry) => {
     const doc = await compendiumIndexer.fetchDocument(entry.uuid) as WeaponDocumentLike | null;
     const system = doc?.system;
+    if (!isBaselineWeaponOption(doc)) return null;
     const resolvedWeaponType = typeof system?.weaponType === "string" && system.weaponType
       ? system.weaponType
       : typeof system?.type?.value === "string" && system.type.value
