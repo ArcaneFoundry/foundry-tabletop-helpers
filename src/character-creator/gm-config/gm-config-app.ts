@@ -9,12 +9,9 @@
 
 import { MOD, Log } from "../../logger";
 import { getUI } from "../../types";
-import type { FoundryCompendiumCollection } from "../../types";
-import { getGame } from "../../types";
 import type {
   PackSourceConfig,
   CreatorContentType,
-  PackEntry,
   SourcesTabViewModel,
   CurationTabViewModel,
   CurationEntry,
@@ -44,6 +41,7 @@ import {
 import { setSetting } from "../../types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { ContentFilter } from "../data/content-filter";
+import { buildPackSourceGroups, invalidatePackAnalysisCache } from "../data/pack-analysis";
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
 
@@ -176,7 +174,7 @@ export function buildGMConfigAppClass(): void {
 
       // Build only the active tab's data
       if (activeTab === "sources") {
-        context.sources = this._buildSourcesViewModel();
+        context.sources = await this._buildSourcesViewModel();
       } else if (activeTab === "curation") {
         context.curation = this._buildCurationViewModel();
       } else if (activeTab === "rules") {
@@ -220,55 +218,10 @@ export function buildGMConfigAppClass(): void {
 
     /* ── Tab Data Builders ─────────────────────────────────── */
 
-    private _buildSourcesViewModel(): SourcesTabViewModel {
-      const game = getGame();
+    private async _buildSourcesViewModel(): Promise<SourcesTabViewModel> {
       const currentSources = getPackSources();
-      const allEnabledPacks = new Set<string>();
-
-      // Collect all currently enabled pack IDs
-      for (const packIds of Object.values(currentSources)) {
-        for (const id of packIds) allEnabledPacks.add(id);
-      }
-
-      // Build pack entries from available packs
-      const packsByType = new Map<CreatorContentType, PackEntry[]>();
-
-      if (game?.packs) {
-        for (const pack of game.packs) {
-          const cc = pack as FoundryCompendiumCollection;
-          if (cc.documentName !== "Item") continue;
-
-          const collection = cc.collection;
-          const contentTypes = this._detectContentTypes(cc);
-          if (contentTypes.length === 0) continue;
-
-          const entry: PackEntry = {
-            collection,
-            label: cc.metadata?.label ?? cc.metadata?.name ?? collection,
-            packageName: cc.metadata?.packageName ?? cc.metadata?.package ?? "",
-            itemCount: cc.size ?? 0,
-            enabled: allEnabledPacks.has(collection),
-            contentTypes,
-          };
-
-          // Group by primary content type
-          const primaryType = contentTypes[0];
-          const group = packsByType.get(primaryType) ?? [];
-          group.push(entry);
-          packsByType.set(primaryType, group);
-        }
-      }
-
-      // Build ordered groups
-      const typeOrder: CreatorContentType[] = ["class", "subclass", "race", "background", "feat", "spell", "item"];
-      const groups = typeOrder
-        .filter((t) => packsByType.has(t))
-        .map((t) => ({
-          type: t,
-          label: CONTENT_TYPE_LABELS[t],
-          packs: packsByType.get(t) ?? [],
-        }));
-
+      const groups = (await buildPackSourceGroups(currentSources))
+        .filter((group) => group.packs.length > 0);
       return { groups };
     }
 
@@ -329,34 +282,6 @@ export function buildGMConfigAppClass(): void {
       };
     }
 
-    /* ── Helpers ────────────────────────────────────────────── */
-
-    private _detectContentTypes(pack: FoundryCompendiumCollection): CreatorContentType[] {
-      const types: CreatorContentType[] = [];
-      const packType = pack.metadata?.type;
-
-      // Use metadata type hint if available
-      if (packType === "Item") {
-        // Check pack name/label for hints
-        const label = (pack.metadata?.label ?? "").toLowerCase();
-        const name = (pack.metadata?.name ?? "").toLowerCase();
-        const combined = `${label} ${name}`;
-
-        if (combined.includes("class") && !combined.includes("subclass")) types.push("class");
-        if (combined.includes("subclass")) types.push("subclass");
-        if (combined.includes("race") || combined.includes("species")) types.push("race");
-        if (combined.includes("background")) types.push("background");
-        if (combined.includes("feat")) types.push("feat");
-        if (combined.includes("spell")) types.push("spell");
-        if (combined.includes("item") || combined.includes("equipment")) types.push("item");
-
-        // If no specific match, mark as general item pack
-        if (types.length === 0) types.push("item");
-      }
-
-      return types;
-    }
-
     private async _loadCurationData(): Promise<void> {
       const sources = getPackSources();
       await compendiumIndexer.loadPacks(sources);
@@ -384,6 +309,7 @@ export function buildGMConfigAppClass(): void {
 
       await setPackSources(sources);
       compendiumIndexer.invalidate();
+      invalidatePackAnalysisCache();
       this._curationLoaded = false;
       this.render({ force: false });
     }

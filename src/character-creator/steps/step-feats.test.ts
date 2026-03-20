@@ -4,6 +4,8 @@ import type { WizardState } from "../character-creator-types";
 
 const loadPacksMock = vi.fn(async () => {});
 const getIndexedEntriesMock = vi.fn();
+const getPackAnalysisMapMock = vi.fn();
+const isEntryRelevantForWorkflowMock = vi.fn();
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -14,6 +16,11 @@ vi.mock("../data/compendium-indexer", () => ({
     loadPacks: loadPacksMock,
     getIndexedEntries: getIndexedEntriesMock,
   },
+}));
+
+vi.mock("../data/pack-analysis", () => ({
+  getPackAnalysisMap: getPackAnalysisMapMock,
+  isEntryRelevantForWorkflow: isEntryRelevantForWorkflowMock,
 }));
 
 class FakeClassList {
@@ -137,6 +144,10 @@ function makeState(overrides: Partial<WizardState> = {}): WizardState {
 beforeEach(() => {
   vi.clearAllMocks();
   (globalThis as Record<string, unknown>).Element = FakeElement;
+  getPackAnalysisMapMock.mockResolvedValue(new Map([
+    ["pack.feats", { collection: "pack.feats" }],
+  ]));
+  isEntryRelevantForWorkflowMock.mockReturnValue(true);
 
   getIndexedEntriesMock.mockReturnValue([
     {
@@ -194,7 +205,7 @@ describe("step feats", () => {
 
   it("exposes only enabled feats through the internal helper", async () => {
     const { __featsStepInternals } = await import("./step-feats");
-    const entries = __featsStepInternals.getAvailableFeats(makeState({
+    const entries = await __featsStepInternals.getAvailableFeats(makeState({
       config: {
         ...makeState().config,
         disabledUUIDs: new Set(["Compendium.feat.alert"]),
@@ -204,6 +215,13 @@ describe("step feats", () => {
     expect(entries).toEqual([
       expect.objectContaining({ uuid: "Compendium.feat.tough" }),
     ]);
+    expect(isEntryRelevantForWorkflowMock).toHaveBeenCalledWith(
+      expect.objectContaining({ uuid: "Compendium.feat.tough" }),
+      "creator-feat",
+      expect.objectContaining({
+        packAnalysis: expect.objectContaining({ collection: "pack.feats" }),
+      }),
+    );
   });
 
   it("rerenders through setData when asi toggles and feat-card selection change", async () => {
@@ -250,6 +268,8 @@ describe("step feats", () => {
     conBtn.trigger("click");
     wisBtn.trigger("click");
     toughCard.trigger("click");
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(setData).toHaveBeenNthCalledWith(1, { choice: "feat" });
     expect(setData).toHaveBeenNthCalledWith(2, {
@@ -271,5 +291,16 @@ describe("step feats", () => {
       featImg: "tough.png",
     });
     expect(setDataSilent).not.toHaveBeenCalled();
+  });
+
+  it("filters out feats from packs that are not creator-feat relevant", async () => {
+    isEntryRelevantForWorkflowMock.mockImplementation((entry: { uuid: string }) => entry.uuid === "Compendium.feat.tough");
+
+    const { createFeatsStep } = await import("./step-feats");
+    const viewModel = await createFeatsStep().buildViewModel(makeState());
+
+    expect((viewModel.feats as Array<{ uuid: string }>)).toEqual([
+      expect.objectContaining({ uuid: "Compendium.feat.tough" }),
+    ]);
   });
 });

@@ -6,9 +6,23 @@ const loadPacksMock = vi.fn();
 const getIndexedEntriesMock = vi.fn();
 const getCachedDescriptionMock = vi.fn();
 const fetchDocumentMock = vi.fn();
+const renderTemplateMock = vi.fn(async (_templatePath: string, data: Record<string, unknown>) => {
+  const selectedEntry = data.selectedEntry as { name?: string; description?: string } | undefined;
+  if (!selectedEntry) return "";
+  return `<div class="mock-detail">${selectedEntry.name ?? ""}${selectedEntry.description ?? ""}</div>`;
+});
+const beginCardSelectionUpdateMock = vi.fn(() => "request-1");
+const isCurrentCardSelectionUpdateMock = vi.fn(() => true);
+const patchCardDetailFromTemplateMock = vi.fn(async () => true);
+const getPackAnalysisMapMock = vi.fn();
+const isEntryRelevantForWorkflowMock = vi.fn();
 
 vi.mock("../data/advancement-parser", () => ({
   parseBackgroundGrants: vi.fn(async (doc: { mockGrants?: unknown }) => doc.mockGrants ?? null),
+}));
+
+vi.mock("../../types", () => ({
+  renderTemplate: renderTemplateMock,
 }));
 
 vi.mock("../data/compendium-indexer", () => ({
@@ -18,6 +32,17 @@ vi.mock("../data/compendium-indexer", () => ({
     getCachedDescription: getCachedDescriptionMock,
     fetchDocument: fetchDocumentMock,
   },
+}));
+
+vi.mock("../data/pack-analysis", () => ({
+  getPackAnalysisMap: getPackAnalysisMapMock,
+  isEntryRelevantForWorkflow: isEntryRelevantForWorkflowMock,
+}));
+
+vi.mock("./card-select-utils", () => ({
+  beginCardSelectionUpdate: beginCardSelectionUpdateMock,
+  isCurrentCardSelectionUpdate: isCurrentCardSelectionUpdateMock,
+  patchCardDetailFromTemplate: patchCardDetailFromTemplateMock,
 }));
 
 class FakeElement {
@@ -115,6 +140,11 @@ function makeState(): WizardState {
 describe("step origin choices", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
+    getPackAnalysisMapMock.mockResolvedValue(new Map([
+      ["dnd5e.feats", { collection: "dnd5e.feats" }],
+    ]));
+    isEntryRelevantForWorkflowMock.mockReturnValue(true);
     loadPacksMock.mockResolvedValue(new Map());
     getIndexedEntriesMock.mockImplementation((type: string) => {
       if (type === "background") return [];
@@ -123,6 +153,11 @@ describe("step origin choices", () => {
     });
     getCachedDescriptionMock.mockResolvedValue("");
     fetchDocumentMock.mockResolvedValue(null);
+    renderTemplateMock.mockImplementation(async (_templatePath: string, data: Record<string, unknown>) => {
+      const selectedEntry = data.selectedEntry as { name?: string; description?: string } | undefined;
+      if (!selectedEntry) return "";
+      return `<div class="mock-detail">${selectedEntry.name ?? ""}${selectedEntry.description ?? ""}</div>`;
+    });
   });
 
   it("builds the merged origin choice view model", async () => {
@@ -137,6 +172,7 @@ describe("step origin choices", () => {
       originFeatName: "Magic Initiate",
     });
     expect(vm.backgroundSkillChips).toEqual(["Arcana"]);
+    expect(vm.originFeatDetailPaneHtml).toContain("Magic Initiate");
   });
 
   it("is complete once the origin feat is confirmed", async () => {
@@ -239,6 +275,14 @@ describe("step origin choices", () => {
       uuid: "feat.magic-initiate",
       description: "<p>Stay sharp.</p>",
     });
+    expect(isEntryRelevantForWorkflowMock).toHaveBeenCalledWith(
+      expect.objectContaining({ uuid: "feat.alert" }),
+      "origin-feat",
+      expect.objectContaining({
+        packAnalysis: expect.objectContaining({ collection: "dnd5e.feats" }),
+        grantedOriginFeatUuids: expect.any(Set),
+      }),
+    );
   });
 
   it("sets the default origin feat on activate", async () => {
@@ -282,6 +326,7 @@ describe("step origin choices", () => {
     });
 
     alertCard.trigger("click");
+    await Promise.resolve();
 
     expect(state.selections.originFeat).toMatchObject({
       uuid: "feat.alert",
@@ -293,7 +338,21 @@ describe("step origin choices", () => {
       chosenLanguages: [],
       originFeatUuid: "feat.alert",
     });
-    expect(rerender).toHaveBeenCalled();
+    expect(rerender).not.toHaveBeenCalled();
+    expect(beginCardSelectionUpdateMock).toHaveBeenCalledWith(
+      root,
+      "feat.alert",
+      expect.objectContaining({
+        uuid: "feat.alert",
+        name: "Alert",
+      })
+    );
+    expect(patchCardDetailFromTemplateMock).toHaveBeenCalledWith(
+      root,
+      expect.objectContaining({
+        templatePath: "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-card-detail-pane.hbs",
+      })
+    );
   });
 
   it("shows a fallback message when no alternative origin feats are available", async () => {
@@ -313,5 +372,39 @@ describe("step origin choices", () => {
       originFeatEmptyMessage:
         "No alternative 2024 origin feats were found in the enabled feat packs, so the background's default feat will be used.",
     });
+  });
+
+  it("keeps only workflow-eligible granted origin feats when packs are mixed", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.config.allowCustomBackgrounds = true;
+
+    getIndexedEntriesMock.mockImplementation((type: string) => {
+      if (type === "background") {
+        return [
+          { uuid: "background.sage", name: "Sage", img: "sage.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+          { uuid: "background.guard", name: "Guard", img: "guard.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+        ];
+      }
+      if (type === "feat") {
+        return [
+          { uuid: "feat.magic-initiate", name: "Magic Initiate", img: "feat.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
+          { uuid: "feat.alert", name: "Alert", img: "alert.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
+        ];
+      }
+      return [];
+    });
+    fetchDocumentMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "background.sage") return { mockGrants: { originFeatUuid: "feat.magic-initiate" } };
+      if (uuid === "background.guard") return { mockGrants: { originFeatUuid: "feat.alert" } };
+      return { system: { type: { value: "feat" }, prerequisites: { level: null } } };
+    });
+    isEntryRelevantForWorkflowMock.mockImplementation((entry: { uuid: string }) => entry.uuid === "feat.magic-initiate");
+
+    const vm = await createOriginChoicesStep().buildViewModel(state);
+
+    expect((vm.availableOriginFeats as Array<{ uuid: string }>)).toEqual([
+      expect.objectContaining({ uuid: "feat.magic-initiate" }),
+    ]);
   });
 });

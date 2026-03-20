@@ -1,7 +1,8 @@
 import { Log, MOD } from "../logger";
-import { getFormApplicationClass, getGame, getUI, setSetting } from "../types";
+import { getFormApplicationClass, getUI, setSetting } from "../types";
 import type { AbilityScoreMethod, PackSourceConfig } from "./character-creator-types";
 import { compendiumIndexer } from "./data/compendium-indexer";
+import { buildPackSourceGroups, invalidatePackAnalysisCache } from "./data/pack-analysis";
 import {
   allowMulticlass,
   ccAutoOpen,
@@ -41,19 +42,6 @@ interface SettingsMenuRegistration {
   registerMenu(module: string, key: string, data: Record<string, unknown>): void;
 }
 
-interface CompendiumPackLike {
-  collection?: string;
-  documentName?: string;
-  metadata?: {
-    id?: string;
-    label?: string;
-    packageName?: string;
-    package?: string;
-  };
-  size?: number;
-  getIndex(options?: { fields?: string[] }): Promise<Array<{ type?: string }>>;
-}
-
 interface FoundryUtilsLike {
   mergeObject?(
     original: Record<string, unknown>,
@@ -62,60 +50,6 @@ interface FoundryUtilsLike {
   ): Record<string, unknown>;
 }
 
-const CONTENT_TYPE_ITEM_TYPES: Record<string, { types: Set<string>; label: string }> = {
-  classes: { types: new Set(["class"]), label: "Classes" },
-  subclasses: { types: new Set(["subclass"]), label: "Subclasses" },
-  races: { types: new Set(["race"]), label: "Species / Races" },
-  backgrounds: { types: new Set(["background"]), label: "Backgrounds" },
-  feats: { types: new Set(["feat"]), label: "Feats" },
-  spells: { types: new Set(["spell"]), label: "Spells" },
-  items: { types: new Set(["weapon", "equipment", "consumable", "tool", "loot"]), label: "Equipment" },
-};
-
-interface DetectedPack {
-  collection: string;
-  label: string;
-  packageName: string;
-  count: number;
-  enabled: boolean;
-}
-
-async function detectPacks(sourceKey: string, currentSources: string[]): Promise<DetectedPack[]> {
-  const game = getGame();
-  if (!game?.packs) return [];
-
-  const info = CONTENT_TYPE_ITEM_TYPES[sourceKey];
-  if (!info) return [];
-
-  const enabledSet = new Set(currentSources);
-  const results: DetectedPack[] = [];
-
-  for (const pack of getPackIterable(game.packs)) {
-    if (pack.documentName !== "Item") continue;
-
-    try {
-      const index = await pack.getIndex({ fields: ["type"] });
-      let count = 0;
-      for (const entry of index) {
-        if (info.types.has(entry.type as string)) count++;
-      }
-      if (count === 0) continue;
-
-      const collection = pack.collection ?? pack.metadata?.id ?? "";
-      results.push({
-        collection,
-        label: pack.metadata?.label ?? collection,
-        packageName: pack.metadata?.packageName ?? pack.metadata?.package ?? "unknown",
-        count,
-        enabled: enabledSet.has(collection),
-      });
-    } catch {
-      /* Skip packs that fail to index */
-    }
-  }
-
-  return results;
-}
 
 export function registerCharacterCreatorSettingsMenus(settings: SettingsMenuRegistration): void {
   registerSettingsMenu(settings);
@@ -220,14 +154,7 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
 
       async getData() {
         const currentSources = getPackSources();
-        const groups: Array<{ type: string; label: string; packs: DetectedPack[] }> = [];
-
-        for (const [sourceKey, info] of Object.entries(CONTENT_TYPE_ITEM_TYPES)) {
-          const currentIds = currentSources[sourceKey as keyof PackSourceConfig] ?? [];
-          const packs = await detectPacks(sourceKey, currentIds);
-          groups.push({ type: sourceKey, label: info.label, packs });
-        }
-
+        const groups = await buildPackSourceGroups(currentSources);
         return { groups };
       }
 
@@ -253,6 +180,7 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
 
         await setPackSources(newSources as unknown as PackSourceConfig);
         compendiumIndexer.invalidate();
+        invalidatePackAnalysisCache();
         getUI()?.notifications?.info?.("Compendium sources updated. Changes take effect on next wizard open.");
       }
 
@@ -339,15 +267,6 @@ interface FormValueElementLike {
 
 function isFormValueElement(element: unknown): element is FormValueElementLike {
   return !!element && typeof element === "object" && "name" in element && "disabled" in element;
-}
-
-function getPackIterable(packs: unknown): CompendiumPackLike[] {
-  if (!packs || typeof packs !== "object" || !(Symbol.iterator in packs)) return [];
-  return Array.from(packs as Iterable<unknown>).filter(isCompendiumPackLike);
-}
-
-function isCompendiumPackLike(value: unknown): value is CompendiumPackLike {
-  return typeof value === "object" && value !== null && typeof (value as CompendiumPackLike).getIndex === "function";
 }
 
 function mergeDefaultOptions(

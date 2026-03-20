@@ -10,10 +10,54 @@
     {{#if packs.length}}
     <div class="cc-compendium-select__packs">
       {{#each packs}}
-      <label class="cc-compendium-select__pack">
-        <input type="checkbox" name="pack__{{../type}}__{{collection}}" {{#if enabled}}checked{{/if}} />
-        <span class="cc-compendium-select__pack-name">{{label}}</span>
-        <span class="cc-compendium-select__pack-meta">({{packageName}}, {{count}} items)</span>
+      <label class="cc-compendium-select__pack cc-source-row">
+        <input type="checkbox" name="pack__{{../sourceKey}}__{{collection}}" {{#if enabled}}checked{{/if}} />
+        <span class="cc-source-row__body">
+          <span class="cc-source-row__title-line">
+            <span class="cc-compendium-select__pack-name">{{label}}</span>
+            <span class="cc-source-row__badges">
+              <span class="cc-source-row__badge cc-source-row__badge--source">{{sourceBadge}}</span>
+              {{#if mixedContent}}
+              <span class="cc-source-row__badge">Mixed</span>
+              {{/if}}
+            </span>
+          </span>
+          <span class="cc-compendium-select__pack-meta">{{packageLabel}} • {{previewSummary}} • {{itemCount}} items</span>
+          {{#if previewHint}}
+          <span class="cc-source-row__hint">{{previewHint}}</span>
+          {{/if}}
+        </span>
+        <span class="cc-source-preview" role="tooltip" aria-hidden="true">
+          <span class="cc-source-preview__title">{{label}}</span>
+          <span class="cc-source-preview__meta">
+            <span class="cc-source-row__badge cc-source-row__badge--source">{{sourceBadge}}</span>
+            {{#each contentBreakdown}}
+            <span class="cc-source-row__badge">{{count}} {{label}}</span>
+            {{/each}}
+          </span>
+          {{#if previewSummary}}
+          <span class="cc-source-preview__summary">{{previewSummary}}</span>
+          {{/if}}
+          {{#if sampleItems.length}}
+          <span class="cc-source-preview__section-label">Sample Items</span>
+          <ul class="cc-source-preview__list">
+            {{#each sampleItems}}
+            <li>{{this}}</li>
+            {{/each}}
+            {{#if sampleOverflow}}
+            <li>+{{sampleOverflow}} more</li>
+            {{/if}}
+          </ul>
+          {{/if}}
+          {{#if folderHints.length}}
+          <span class="cc-source-preview__section-label">Folder Hints</span>
+          <ul class="cc-source-preview__list">
+            {{#each folderHints}}
+            <li>{{this}}</li>
+            {{/each}}
+          </ul>
+          {{/if}}
+        </span>
       </label>
       {{/each}}
     </div>

@@ -111,6 +111,7 @@
   min-height: var(--cc-touch-min);
   cursor: pointer;
   transition: background-color var(--cc-duration-fast) var(--cc-ease-out);
+  position: relative;
 }
 
 .fth-gm-config .cc-gm-pack-label:hover {
@@ -118,7 +119,6 @@
 }
 
 .fth-gm-config .cc-gm-pack-name {
-  flex: 1;
   font-size: var(--cc-text-base);
   color: var(--cc-text-primary);
 }
@@ -126,7 +126,7 @@
 .fth-gm-config .cc-gm-pack-source {
   font-size: var(--cc-text-xs);
   color: var(--cc-text-secondary);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .fth-gm-config .cc-gm-pack-count {
@@ -135,6 +135,140 @@
   background: var(--cc-bg-glass);
   padding: var(--cc-space-2xs) var(--cc-space-xs);
   border-radius: 4px;
+}
+
+.cc-source-row {
+  position: relative;
+}
+
+.cc-source-row__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cc-source-row__title-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-space-sm);
+}
+
+.cc-source-row__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.cc-source-row__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--cc-border-subtle);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--cc-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cc-source-row__badge--source {
+  border-color: rgba(201, 160, 91, 0.45);
+  background: rgba(201, 160, 91, 0.14);
+  color: var(--cc-text-accent);
+}
+
+.cc-source-row__hint {
+  font-size: var(--cc-text-xs);
+  color: var(--cc-text-secondary);
+  opacity: 0.72;
+}
+
+.cc-source-preview {
+  position: absolute;
+  left: calc(100% + var(--cc-space-sm));
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  width: min(320px, calc(100vw - 80px));
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  border-radius: 10px;
+  border: 1px solid rgba(201, 160, 91, 0.22);
+  background:
+    linear-gradient(180deg, rgba(31, 27, 23, 0.98), rgba(23, 20, 17, 0.96));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  color: var(--cc-text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-xs);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity var(--cc-duration-fast) var(--cc-ease-out),
+    transform var(--cc-duration-fast) var(--cc-ease-out),
+    visibility var(--cc-duration-fast) var(--cc-ease-out);
+  z-index: 20;
+}
+
+.cc-source-row:hover .cc-source-preview,
+.cc-source-row:focus-within .cc-source-preview {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+.cc-source-preview__title {
+  font-size: var(--cc-text-sm);
+  font-weight: 700;
+  color: var(--cc-text-primary);
+}
+
+.cc-source-preview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cc-source-preview__summary {
+  font-size: var(--cc-text-xs);
+  color: var(--cc-text-secondary);
+}
+
+.cc-source-preview__section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cc-text-accent);
+}
+
+.cc-source-preview__list {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-xs);
+}
+
+@media (max-width: 960px) {
+  .cc-source-preview {
+    left: 0;
+    right: 0;
+    top: calc(100% + var(--cc-space-xs));
+    width: auto;
+    transform: translateY(-4px);
+  }
+
+  .cc-source-row:hover .cc-source-preview,
+  .cc-source-row:focus-within .cc-source-preview {
+    transform: translateY(0);
+  }
 }
 
 /* ── Content Curation ────────────────────────────────────── */
@@ -479,6 +613,7 @@
   border-radius: 4px;
   cursor: pointer;
   transition: background var(--cc-duration-fast) var(--cc-ease-out);
+  position: relative;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -494,12 +629,13 @@
 .cc-compendium-select__pack-name {
   font-size: var(--cc-text-base);
   color: var(--cc-text-primary);
+  font-weight: 600;
 }
 
 .cc-compendium-select__pack-meta {
   font-size: var(--cc-text-xs);
   color: var(--cc-text-secondary);
-  opacity: 0.7;
+  opacity: 0.82;
 }
 
 .cc-compendium-select__empty {

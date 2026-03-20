@@ -10,18 +10,60 @@
     <ul class="cc-gm-pack-list">
       {{#each packs}}
       <li class="cc-gm-pack-row">
-        <label class="cc-gm-pack-label">
+        <label class="cc-gm-pack-label cc-source-row">
           <input type="checkbox"
                  class="cc-gm-pack-toggle"
                  data-action="togglePack"
                  data-pack-id="{{collection}}"
-                 data-type-key="{{../type}}s"
+                 data-type-key="{{../sourceKey}}"
                  {{#if enabled}}checked{{/if}} />
-          <span class="cc-gm-pack-name">{{label}}</span>
-          {{#if packageName}}
-          <span class="cc-gm-pack-source">(Source: {{packageName}})</span>
-          {{/if}}
-          <span class="cc-gm-pack-count">&middot; {{itemCount}} items</span>
+          <span class="cc-source-row__body">
+            <span class="cc-source-row__title-line">
+              <span class="cc-gm-pack-name">{{label}}</span>
+              <span class="cc-source-row__badges">
+                <span class="cc-source-row__badge cc-source-row__badge--source">{{sourceBadge}}</span>
+                {{#if mixedContent}}
+                <span class="cc-source-row__badge">Mixed</span>
+                {{/if}}
+              </span>
+            </span>
+            <span class="cc-gm-pack-source">{{packageLabel}} • {{previewSummary}}</span>
+            {{#if previewHint}}
+            <span class="cc-source-row__hint">{{previewHint}}</span>
+            {{/if}}
+          </span>
+          <span class="cc-gm-pack-count">{{itemCount}} items</span>
+          <span class="cc-source-preview" role="tooltip" aria-hidden="true">
+            <span class="cc-source-preview__title">{{label}}</span>
+            <span class="cc-source-preview__meta">
+              <span class="cc-source-row__badge cc-source-row__badge--source">{{sourceBadge}}</span>
+              {{#each contentBreakdown}}
+              <span class="cc-source-row__badge">{{count}} {{label}}</span>
+              {{/each}}
+            </span>
+            {{#if previewSummary}}
+            <span class="cc-source-preview__summary">{{previewSummary}}</span>
+            {{/if}}
+            {{#if sampleItems.length}}
+            <span class="cc-source-preview__section-label">Sample Items</span>
+            <ul class="cc-source-preview__list">
+              {{#each sampleItems}}
+              <li>{{this}}</li>
+              {{/each}}
+              {{#if sampleOverflow}}
+              <li>+{{sampleOverflow}} more</li>
+              {{/if}}
+            </ul>
+            {{/if}}
+            {{#if folderHints.length}}
+            <span class="cc-source-preview__section-label">Folder Hints</span>
+            <ul class="cc-source-preview__list">
+              {{#each folderHints}}
+              <li>{{this}}</li>
+              {{/each}}
+            </ul>
+            {{/if}}
+          </span>
         </label>
       </li>
       {{/each}}

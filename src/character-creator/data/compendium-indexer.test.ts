@@ -118,12 +118,12 @@ describe("compendium indexer", () => {
       id: "uuid-1",
       system: {
         description: {
-          value: "<p>@UUID[Compendium.foo]</p>",
+          value: "Feat: @UUID[Compendium.foo]{Magic Initiate}\nEquipment: [[/award 13GP]]\nUses: [[lookup @prof]]",
         },
       },
     });
     (globalThis as Record<string, unknown>).TextEditor = {
-      enrichHTML: vi.fn(async (html: string) => `<section>${html}</section>`),
+      enrichHTML: vi.fn(async (html: string) => html),
     };
 
     const { CompendiumIndexer } = await import("./compendium-indexer");
@@ -135,7 +135,11 @@ describe("compendium indexer", () => {
 
     expect(first).toBe(second);
     expect(fromUuidMock).toHaveBeenCalledTimes(1);
-    expect(description).toBe("<section><p>@UUID[Compendium.foo]</p></section>");
+    expect(description).toBe(
+      "<p><strong class=\"cc-card-detail__fact-label\">Feat:</strong> Magic Initiate</p>"
+      + "<p><strong class=\"cc-card-detail__fact-label\">Equipment:</strong> 13 GP</p>"
+      + "<p><strong class=\"cc-card-detail__fact-label\">Uses:</strong> your proficiency bonus</p>"
+    );
   });
 
   it("falls back safely for missing packs, raw descriptions, and invalidate", async () => {

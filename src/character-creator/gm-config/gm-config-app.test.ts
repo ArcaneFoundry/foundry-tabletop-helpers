@@ -107,12 +107,19 @@ function installFoundryAppClasses(): void {
   };
 }
 
-function makePack(collection: string, label: string, size: number) {
+function makePack(
+  collection: string,
+  label: string,
+  size: number,
+  entries: Array<Record<string, unknown>>,
+  packageName = "dnd-players-handbook",
+) {
   return {
     collection,
     documentName: "Item",
-    metadata: { label, name: label, packageName: "test-module", type: "Item" },
+    metadata: { label, name: label, packageName, type: "Item" },
     size,
+    getIndex: vi.fn(async () => entries),
   };
 }
 
@@ -131,7 +138,7 @@ beforeEach(() => {
   FakeBaseApplication.instances = [];
 
   getPackSourcesMock.mockReturnValue({
-    classes: ["pack.classes"],
+    classes: ["dnd-players-handbook.classes"],
     subclasses: [],
     races: [],
     backgrounds: [],
@@ -147,8 +154,14 @@ beforeEach(() => {
   allowCustomBackgroundsMock.mockReturnValue(false);
   getGameMock.mockReturnValue({
     packs: [
-      makePack("pack.classes", "Core Classes", 12),
-      makePack("pack.spells", "Arcane Spells", 40),
+      makePack("dnd-players-handbook.classes", "Character Classes", 12, [
+        { _id: "class-1", name: "Wizard", type: "class" },
+        { _id: "spell-1", name: "Shield", type: "spell" },
+      ]),
+      makePack("dnd-players-handbook.spells", "Spells", 40, [
+        { _id: "spell-2", name: "Magic Missile", type: "spell" },
+        { _id: "spell-3", name: "Mage Armor", type: "spell" },
+      ]),
     ],
   });
   getUIMock.mockReturnValue({
@@ -191,14 +204,31 @@ describe("gm config app shell", () => {
     expect(sourceContext.sources).toEqual({
       groups: [
         {
+          sourceKey: "classes",
           type: "class",
           label: "Classes",
-          packs: [expect.objectContaining({ collection: "pack.classes", enabled: true })],
+          packs: [expect.objectContaining({
+            collection: "dnd-players-handbook.classes",
+            enabled: true,
+            sourceBadge: "Core 2024",
+          })],
         },
         {
+          sourceKey: "spells",
           type: "spell",
           label: "Spells",
-          packs: [expect.objectContaining({ collection: "pack.spells", enabled: false })],
+          packs: [
+            expect.objectContaining({
+              collection: "dnd-players-handbook.classes",
+              enabled: false,
+              previewSummary: "1 classes • 1 spells",
+            }),
+            expect.objectContaining({
+              collection: "dnd-players-handbook.spells",
+              enabled: false,
+              label: "Spells",
+            }),
+          ],
         },
       ],
     });
@@ -232,12 +262,12 @@ describe("gm config app shell", () => {
     };
 
     await ctor._onTogglePack.call(app, new Event("change"), {
-      dataset: { packId: "pack.spells", typeKey: "spells" },
+      dataset: { packId: "dnd-players-handbook.spells", typeKey: "spells" },
       checked: true,
     } as unknown as HTMLElement);
 
     expect(setPackSourcesMock).toHaveBeenCalledWith(expect.objectContaining({
-      spells: ["pack.spells"],
+      spells: ["dnd-players-handbook.spells"],
     }));
     expect(invalidateMock).toHaveBeenCalled();
     expect(app._curationLoaded).toBe(false);

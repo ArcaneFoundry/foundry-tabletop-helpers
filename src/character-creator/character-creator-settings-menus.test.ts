@@ -114,7 +114,7 @@ beforeEach(() => {
   ccLevelUpEnabledMock.mockReturnValue(true);
   getMaxRerollsMock.mockReturnValue(3);
   getPackSourcesMock.mockReturnValue({
-    classes: ["pack.classes"],
+    classes: ["dnd-players-handbook.classes"],
     subclasses: [],
     races: [],
     backgrounds: [],
@@ -125,18 +125,24 @@ beforeEach(() => {
   getGameMock.mockReturnValue({
     packs: [
       {
-        collection: "pack.classes",
+        collection: "dnd-players-handbook.classes",
         documentName: "Item",
-        metadata: { label: "Core Classes", packageName: "test-module" },
+        metadata: { label: "Character Classes", packageName: "dnd-players-handbook" },
         size: 12,
-        getIndex: vi.fn(async () => [{ type: "class" }, { type: "spell" }]),
+        getIndex: vi.fn(async () => [
+          { _id: "class-1", name: "Wizard", type: "class" },
+          { _id: "spell-1", name: "Shield", type: "spell" },
+        ]),
       },
       {
-        collection: "pack.spells",
+        collection: "dnd-players-handbook.spells",
         documentName: "Item",
-        metadata: { label: "Arcane Spells", package: "test-module" },
+        metadata: { label: "Spells", packageName: "dnd-players-handbook" },
         size: 40,
-        getIndex: vi.fn(async () => [{ type: "spell" }, { type: "spell" }]),
+        getIndex: vi.fn(async () => [
+          { _id: "spell-2", name: "Magic Missile", type: "spell" },
+          { _id: "spell-3", name: "Mage Armor", type: "spell" },
+        ]),
       },
     ],
   });
@@ -305,31 +311,46 @@ describe("character creator settings menus", () => {
     const data = await form.getData();
     expect(data.groups).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        type: "classes",
-        packs: [expect.objectContaining({ collection: "pack.classes", enabled: true, count: 1 })],
+        sourceKey: "classes",
+        type: "class",
+        packs: [expect.objectContaining({
+          collection: "dnd-players-handbook.classes",
+          enabled: true,
+          itemCount: 2,
+          sourceBadge: "Core 2024",
+        })],
       }),
       expect.objectContaining({
-        type: "spells",
+        sourceKey: "spells",
+        type: "spell",
         packs: expect.arrayContaining([
-          expect.objectContaining({ collection: "pack.classes", enabled: false, count: 1 }),
-          expect.objectContaining({ collection: "pack.spells", enabled: false, count: 2 }),
+          expect.objectContaining({
+            collection: "dnd-players-handbook.classes",
+            enabled: false,
+            previewSummary: "1 classes • 1 spells",
+          }),
+          expect.objectContaining({
+            collection: "dnd-players-handbook.spells",
+            enabled: false,
+            label: "Spells",
+          }),
         ]),
       }),
     ]));
 
     await form._updateObject(new Event("submit"), {
-      "pack__classes__pack.classes": true,
-      "pack__spells__pack.spells": true,
+      "pack__classes__dnd-players-handbook.classes": true,
+      "pack__spells__dnd-players-handbook.spells": true,
       ignore_me: true,
     });
 
     expect(setPackSourcesMock).toHaveBeenCalledWith({
-      classes: ["pack.classes"],
+      classes: ["dnd-players-handbook.classes"],
       subclasses: [],
       races: [],
       backgrounds: [],
       feats: [],
-      spells: ["pack.spells"],
+      spells: ["dnd-players-handbook.spells"],
       items: [],
     });
     expect(loadPacksInvalidateMock).toHaveBeenCalled();

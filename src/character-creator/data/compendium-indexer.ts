@@ -9,6 +9,7 @@ import { Log } from "../../logger";
 import { getGame, fromUuid } from "../../types";
 import type { FoundryCompendiumCollection, FoundryDocument, FoundryIndexEntry } from "../../types";
 import type { CreatorContentType, CreatorIndexEntry, PackSourceConfig } from "../character-creator-types";
+import { formatInjectedDescriptionHtml } from "../utils/description-formatting";
 
 interface TextEditorLike {
   enrichHTML?(html: string, options: { async: boolean }): Promise<string>;
@@ -147,10 +148,10 @@ export class CompendiumIndexer {
     try {
       const TextEditor = getTextEditor();
       if (TextEditor?.enrichHTML) {
-        return await TextEditor.enrichHTML(raw, { async: true });
+        return formatInjectedDescriptionHtml(await TextEditor.enrichHTML(raw, { async: true }));
       }
     } catch { /* fall through to raw */ }
-    return raw;
+    return formatInjectedDescriptionHtml(raw);
   }
 
   /**

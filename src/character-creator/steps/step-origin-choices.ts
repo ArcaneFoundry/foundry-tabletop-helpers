@@ -1,4 +1,5 @@
 import { MOD } from "../../logger";
+import { renderTemplate } from "../../types";
 import type {
   CreatorIndexEntry,
   OriginFeatSelection,
@@ -9,6 +10,8 @@ import type {
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseBackgroundGrants } from "../data/advancement-parser";
 import { SKILLS } from "../data/dnd5e-constants";
+import { getPackAnalysisMap, isEntryRelevantForWorkflow } from "../data/pack-analysis";
+import { beginCardSelectionUpdate, isCurrentCardSelectionUpdate, patchCardDetailFromTemplate } from "./card-select-utils";
 
 interface DatasetElementLike {
   dataset: DOMStringMap;
@@ -81,6 +84,7 @@ async function getAvailableOriginFeats(state: WizardState): Promise<CreatorIndex
     const backgroundEntries = compendiumIndexer.getIndexedEntries("background", state.config.packSources);
     const featEntriesByUuid = new Map(featEntries.map((entry) => [entry.uuid, entry]));
     const originFeatUuids = new Set<string>();
+    const packAnalysisMap = await getPackAnalysisMap();
 
     for (const backgroundEntry of backgroundEntries) {
       const backgroundDoc = await compendiumIndexer.fetchDocument(backgroundEntry.uuid);
@@ -95,6 +99,11 @@ async function getAvailableOriginFeats(state: WizardState): Promise<CreatorIndex
       if (!entry) continue;
       const featDoc = await compendiumIndexer.fetchDocument(uuid) as FeatDocumentLike | null;
       if (!isEligibleOriginFeatDocument(featDoc)) continue;
+      if (!isEntryRelevantForWorkflow(entry, "origin-feat", {
+        packAnalysis: packAnalysisMap.get(entry.packId) ?? null,
+        prerequisiteLevel: featDoc?.system?.prerequisites?.level,
+        grantedOriginFeatUuids: originFeatUuids,
+      })) continue;
       entries.push(entry);
     }
 
@@ -112,6 +121,14 @@ function buildStepData(state: WizardState): Record<string, unknown> {
     chosenLanguages: [],
     originFeatUuid: state.selections.originFeat?.uuid,
   };
+}
+
+async function renderOriginFeatDetailPane(
+  selectedEntry: (CreatorIndexEntry & { description?: string }) | null,
+): Promise<string> {
+  return renderTemplate(`modules/${MOD}/templates/character-creator/cc-step-card-detail-pane.hbs`, {
+    selectedEntry,
+  });
 }
 
 function getOriginChoiceValidationMessages(state: WizardState): string[] {
@@ -161,6 +178,22 @@ export function createOriginChoicesStep(): WizardStepDefinition {
       const selectedFeatDescription = selectedFeatEntry?.uuid
         ? await compendiumIndexer.getCachedDescription(selectedFeatEntry.uuid)
         : "";
+      const selectedOriginFeat = selectedFeatEntry
+        ? {
+            ...selectedFeatEntry,
+            description: selectedFeatDescription,
+          }
+        : featSelection
+          ? {
+              uuid: featSelection.uuid,
+              name: featSelection.name,
+              img: featSelection.img,
+              packId: "",
+              packLabel: "",
+              type: "feat" as const,
+              description: "",
+            }
+        : null;
 
       return {
         className: state.selections.class?.name ?? "",
@@ -175,12 +208,8 @@ export function createOriginChoicesStep(): WizardStepDefinition {
         originFeatName: featSelection?.name ?? state.selections.background?.grants.originFeatName ?? null,
         originFeatImg: featSelection?.img ?? state.selections.background?.grants.originFeatImg ?? "",
         isCustomOriginFeat: !!featSelection?.isCustom,
-        selectedOriginFeat: selectedFeatEntry
-          ? {
-              ...selectedFeatEntry,
-              description: selectedFeatDescription,
-            }
-          : null,
+        selectedOriginFeat,
+        originFeatDetailPaneHtml: await renderOriginFeatDetailPane(selectedOriginFeat),
         availableOriginFeats: feats.map((entry) => ({
           ...entry,
           selected: entry.uuid === featSelection?.uuid,
@@ -222,7 +251,32 @@ export function createOriginChoicesStep(): WizardStepDefinition {
           };
           state.selections.originFeat = originFeat;
           callbacks.setDataSilent(buildStepData(state));
-          callbacks.rerender();
+          const patchEntry: CreatorIndexEntry = {
+            uuid: entry.uuid,
+            name: entry.name,
+            img: entry.img,
+            packLabel: card.dataset.cardPackLabel ?? "",
+            packId: "",
+            type: "feat" as const,
+          };
+          const requestId = beginCardSelectionUpdate(el, uuid, patchEntry);
+
+          void (async () => {
+            const description = patchEntry.uuid
+              ? await compendiumIndexer.getCachedDescription(patchEntry.uuid)
+              : "";
+            if (!isCurrentCardSelectionUpdate(el, requestId)) return;
+            await patchCardDetailFromTemplate(el, {
+              templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-detail-pane.hbs`,
+              data: {
+                selectedEntry: {
+                  ...patchEntry,
+                  description,
+                },
+              },
+              requestId,
+            });
+          })();
         });
       });
 

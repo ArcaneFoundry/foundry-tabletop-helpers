@@ -16,6 +16,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
+import { getPackAnalysisMap, isEntryRelevantForWorkflow } from "../data/pack-analysis";
 import { ABILITY_KEYS, ABILITY_LABELS, abilityModifier, formatModifier } from "../data/dnd5e-constants";
 
 /* ── Constants ───────────────────────────────────────────── */
@@ -29,9 +30,14 @@ interface DatasetElementLike extends Element {
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
-function getAvailableFeats(state: WizardState): CreatorIndexEntry[] {
+async function getAvailableFeats(state: WizardState): Promise<CreatorIndexEntry[]> {
   const entries = compendiumIndexer.getIndexedEntries("feat", state.config.packSources);
-  return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
+  const packAnalysisMap = await getPackAnalysisMap();
+  return entries.filter((entry) =>
+    !state.config.disabledUUIDs.has(entry.uuid)
+    && isEntryRelevantForWorkflow(entry, "creator-feat", {
+      packAnalysis: packAnalysisMap.get(entry.packId) ?? null,
+    }));
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -61,7 +67,7 @@ export function createFeatsStep(): WizardStepDefinition {
       await compendiumIndexer.loadPacks(state.config.packSources);
 
       const data = state.selections.feats;
-      const feats = getAvailableFeats(state);
+      const feats = await getAvailableFeats(state);
       const scores = state.selections.abilities?.scores;
       const asiSet = new Set(data?.asiAbilities ?? []);
 
@@ -136,18 +142,20 @@ export function createFeatsStep(): WizardStepDefinition {
         card.addEventListener("click", () => {
           const uuid = card.dataset.cardUuid;
           if (!uuid) return;
-          const feats = getAvailableFeats(state);
-          const entry = feats.find((e) => e.uuid === uuid);
-          if (!entry) return;
+          void (async () => {
+            const feats = await getAvailableFeats(state);
+            const entry = feats.find((e) => e.uuid === uuid);
+            if (!entry) return;
 
-          const newData = {
-            choice: "feat" as const,
-            featUuid: entry.uuid,
-            featName: entry.name,
-            featImg: entry.img,
-          } satisfies FeatSelection;
+            const newData = {
+              choice: "feat" as const,
+              featUuid: entry.uuid,
+              featName: entry.name,
+              featImg: entry.img,
+            } satisfies FeatSelection;
 
-          callbacks.setData(newData);
+            callbacks.setData(newData);
+          })();
         });
       });
     },

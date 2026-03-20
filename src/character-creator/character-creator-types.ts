@@ -19,6 +19,22 @@ export type CreatorContentType =
   | "spell"
   | "item";
 
+/** Workflow-specific content filtering scopes. */
+export type CreatorWorkflow =
+  | "creator-feat"
+  | "origin-feat"
+  | "equipment"
+  | "spell";
+
+/** Compact source-vintage badges shown in source selectors. */
+export type PackSourceBadge =
+  | "SRD 2014"
+  | "SRD 2024"
+  | "Core 2024"
+  | "Premium 2024"
+  | "Mixed"
+  | "Unknown";
+
 /** Normalized compendium index entry. */
 export interface CreatorIndexEntry {
   /** Full UUID for fromUuid() lookups */
@@ -61,6 +77,9 @@ export interface PackSourceConfig {
   spells: string[];
   items: string[];
 }
+
+/** Source config keys for creator content packs. */
+export type PackSourceKey = keyof PackSourceConfig;
 
 /* ── GM Configuration ────────────────────────────────────── */
 
@@ -106,8 +125,12 @@ export interface GMConfig {
 export interface PackEntry {
   /** Pack collection ID */
   collection: string;
-  /** Human-readable label */
+  /** Display label used by source-selection UIs */
   label: string;
+  /** Raw pack label from metadata before any display enrichment */
+  rawLabel: string;
+  /** Optional source/module label shown alongside the row */
+  packageLabel: string;
   /** Source module/package name */
   packageName: string;
   /** Number of items in the pack */
@@ -116,12 +139,29 @@ export interface PackEntry {
   enabled: boolean;
   /** Content types detected in this pack */
   contentTypes: CreatorContentType[];
+  /** Compact source-vintage badge */
+  sourceBadge: PackSourceBadge;
+  /** Whether the pack mixes multiple creator-facing content buckets */
+  mixedContent: boolean;
+  /** Compact summary used in row metadata and previews */
+  previewSummary: string;
+  /** Compact content breakdown for badges and previews */
+  contentBreakdown: Array<{ type: CreatorContentType; label: string; count: number }>;
+  /** Sample item names from the pack index */
+  sampleItems: string[];
+  /** Additional sample count not shown inline */
+  sampleOverflow: number;
+  /** Folder-derived hints when Foundry exposes folder context */
+  folderHints: string[];
+  /** Compact preview header helper text */
+  previewHint?: string;
 }
 
 /** Grouped packs for the Sources tab. */
 export interface SourcesTabViewModel {
-  /** Packs grouped by primary content type */
+  /** Packs grouped by configurable source key */
   groups: Array<{
+    sourceKey: PackSourceKey;
     type: CreatorContentType;
     label: string;
     packs: PackEntry[];
