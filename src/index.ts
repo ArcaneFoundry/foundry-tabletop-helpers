@@ -8,6 +8,7 @@ import "./combat/styles/combat-party-summary.css";
 import "./combat/styles/combat-rules-reference.css";
 import "./asset-manager/styles/asset-manager.css";
 import "./character-creator/styles/character-creator-styles.css";
+import "./ui/styles/tailwind.css";
 import { attachFthApi } from "./fth-api";
 import { Log, MOD, type Level } from "./logger";
 import { registerSettings } from "./settings";

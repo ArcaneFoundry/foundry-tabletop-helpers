@@ -117,6 +117,10 @@ export interface GMConfig {
   level1HpMethod: HpMethod;
   /** Whether custom/homebrew backgrounds are permitted. Added for 2024 rules. */
   allowCustomBackgrounds: boolean;
+  /** Whether players may swap away from their background's assigned origin feat. */
+  allowOriginFeatChoice?: boolean;
+  /** Whether background ASIs can be assigned outside the background's allowed ability list. */
+  allowUnrestrictedBackgroundAsi?: boolean;
 }
 
 /* ── GM Config App ViewModels ────────────────────────────── */
@@ -200,6 +204,8 @@ export interface RulesConfigViewModel {
   equipmentMethod: EquipmentMethod;
   level1HpMethod: HpMethod;
   allowCustomBackgrounds: boolean;
+  allowOriginFeatChoice?: boolean;
+  allowUnrestrictedBackgroundAsi?: boolean;
 }
 
 /** Full GM Config App context. */
@@ -506,6 +512,19 @@ export interface StepCallbacks {
   rerender: () => void;
 }
 
+export interface WizardStepRenderController {
+  getState(): WizardState;
+  updateCurrentStepData(value: unknown, options?: { silent?: boolean }): void;
+  refresh(): Promise<void>;
+}
+
+export interface ReactWizardStepProps {
+  shellContext: WizardShellContext;
+  state: WizardState;
+  controller: WizardStepRenderController;
+  step: WizardStepDefinition;
+}
+
 /** All wizard selections, keyed by step ID. */
 export interface WizardSelections {
   abilities?: AbilityScoreState;
@@ -535,6 +554,8 @@ export interface WizardStepDefinition {
   label: string;
   /** FontAwesome icon class */
   icon: string;
+  /** Rendering strategy for this step during migration. */
+  renderMode?: "legacy" | "react";
   /** Template path for step content */
   templatePath: string;
   /** Step IDs this step depends on */
@@ -548,6 +569,8 @@ export interface WizardStepDefinition {
   getStatusHint?(state: WizardState): string;
   /** Build the template ViewModel */
   buildViewModel(state: WizardState): Promise<Record<string, unknown>>;
+  /** Optional React step entry point used when renderMode is "react". */
+  reactComponent?: ComponentType<ReactWizardStepProps>;
   /** Action handlers merged into the app's actions */
   actions?: Record<string, (app: unknown, event: Event, target: HTMLElement) => void>;
   /** Called when step gains focus (bind event listeners here) */
@@ -586,6 +609,11 @@ export interface WizardShellContext {
   headerSubtitle?: string;
   headerDescription?: string;
   headerIcon?: string;
+  hideStepIndicator?: boolean;
+  hideShellHeader?: boolean;
+  shellContentClass?: string;
+  /** Step view-model payload, used by React-rendered steps. */
+  stepViewModel?: Record<string, unknown>;
   /** Selected entry preview for card-select steps */
   selectedEntry?: { name: string; img: string; packLabel: string } | null;
 }
@@ -602,3 +630,4 @@ export const CONTENT_TYPE_LABELS: Record<CreatorContentType, string> = {
   spell: "Spells",
   item: "Equipment",
 };
+import type { ComponentType } from "react";

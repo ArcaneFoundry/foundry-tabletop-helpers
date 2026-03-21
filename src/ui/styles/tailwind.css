@@ -1,0 +1,90 @@
+@layer theme, base, components, utilities;
+
+@import "./design-tokens.css";
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@layer base {
+  /* Scoped control reset for our module UIs only.
+     Foundry applies default button chrome globally; this neutralizes it inside
+     our own app roots while letting each feature's local styles define the look.
+     Kept in the base layer so Tailwind utilities and feature CSS still win. */
+  .application[class*="fth-"] button,
+  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]),
+  .fth-ui-root button,
+  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]),
+  .lpcs-sheet button,
+  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]) {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    text-transform: inherit;
+    text-shadow: none;
+  }
+
+  .application[class*="fth-"] button:hover,
+  .application[class*="fth-"] button:active,
+  .application[class*="fth-"] button:focus,
+  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]):hover,
+  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]):active,
+  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]):focus,
+  .fth-ui-root button:hover,
+  .fth-ui-root button:active,
+  .fth-ui-root button:focus,
+  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]):hover,
+  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]):active,
+  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]):focus,
+  .lpcs-sheet button:hover,
+  .lpcs-sheet button:active,
+  .lpcs-sheet button:focus,
+  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]):hover,
+  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]):active,
+  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]):focus {
+    background: none;
+    box-shadow: none;
+  }
+}
+
+/* Foundry app-root normalization for React-hosted windows. */
+[data-fth-react-root] {
+  height: 100%;
+}
+
+.fth-react-app-shell {
+  height: 100%;
+  min-height: 0;
+}
+
+.fth-react-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 167 95 / 0.55) rgb(18 13 9 / 0.16);
+}
+
+.fth-react-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.fth-react-scrollbar::-webkit-scrollbar-track {
+  background: rgb(18 13 9 / 0.14);
+}
+
+.fth-react-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgb(239 215 162 / 0.72), rgb(143 99 51 / 0.9));
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}

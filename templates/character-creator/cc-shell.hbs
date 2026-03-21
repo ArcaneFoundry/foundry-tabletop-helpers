@@ -2,6 +2,7 @@
 <div class="cc-wizard-shell {{atmosphereClass}}" data-current-step="{{currentStepId}}">
 
   {{!-- Step Indicator Bar --}}
+  {{#unless hideStepIndicator}}
   <nav class="cc-step-indicator" aria-label="Wizard Steps">
     {{#each steps}}
     <div class="cc-step-indicator__step cc-step-indicator__step--{{status}}{{#if active}} cc-step-indicator__step--active{{/if}}"
@@ -15,8 +16,10 @@
     {{/unless}}
     {{/each}}
   </nav>
+  {{/unless}}
 
   {{!-- Step Header --}}
+  {{#unless hideShellHeader}}
   {{#if headerTitle}}
   <header class="cc-step-header cc-step-header--enhanced">
     {{#if headerIcon}}<i class="cc-step-header__icon cc-step-header__icon--lg {{headerIcon}}"></i>{{/if}}
@@ -33,9 +36,10 @@
     <h2 class="cc-step-header__title">{{currentStepLabel}}</h2>
   </header>
   {{/if}}
+  {{/unless}}
 
   {{!-- Step Content Area --}}
-  <section class="cc-step-content">
+  <section class="cc-step-content{{#if shellContentClass}} {{shellContentClass}}{{/if}}">
     {{{stepContentHtml}}}
   </section>
 

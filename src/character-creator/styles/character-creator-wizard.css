@@ -207,13 +207,14 @@
   display: flex;
   align-items: center;
   gap: var(--cc-space-md);
-  padding: var(--cc-space-md) var(--cc-space-lg);
+  padding: 10px 16px 8px;
 }
 
 .cc-step-header--enhanced {
   border-bottom: 1px solid var(--cc-border-subtle);
-  padding-bottom: var(--cc-space-md);
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 100%);
+  padding-bottom: 8px;
+  background:
+    linear-gradient(to bottom, rgba(47, 34, 27, 0.34) 0%, rgba(47, 34, 27, 0.08) 62%, transparent 100%);
   position: relative;
 }
 
@@ -234,23 +235,26 @@
 }
 
 .cc-step-header__icon--lg {
-  font-size: 2rem;
-  opacity: 0.85;
+  font-size: 1.55rem;
+  opacity: 0.95;
   align-self: center;
+  filter: drop-shadow(0 2px 8px rgba(200, 167, 93, 0.18));
 }
 
 .cc-step-header__text {
   flex: 1;
   min-width: 0;
+  --cc-step-header-description-gap: calc(var(--cc-space-2xs) * 0.7);
 }
 
 .cc-step-header__title {
-  font-size: var(--cc-text-lg);
+  font-size: 1rem;
   font-weight: 700;
   color: var(--cc-text-primary);
   margin: 0;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.28);
 }
 
 .cc-step-header__subtitle {
@@ -261,10 +265,11 @@
 }
 
 .cc-step-header__description {
-  font-size: var(--cc-text-sm);
+  font-size: 0.76rem;
   color: var(--cc-text-secondary);
-  margin: var(--cc-space-2xs) 0 0 0;
+  margin: var(--cc-step-header-description-gap) 0 0 0;
   line-height: 1.4;
+  max-width: 68ch;
 }
 
 /* ── Selection Preview Badge ─────────────────────────────── */
@@ -348,6 +353,37 @@
   animation: cc-step-fade-in var(--cc-duration-slow) var(--cc-ease-out) both;
 }
 
+.cc-step-content--class-select {
+  display: flex;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px 16px 12px;
+  background:
+    linear-gradient(180deg, rgba(247, 238, 221, 0.98) 0%, rgba(234, 219, 193, 0.98) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(111, 84, 48, 0.035) 0px,
+      rgba(111, 84, 48, 0.035) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(111, 84, 48, 0.018) 0px,
+      rgba(111, 84, 48, 0.018) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+  border: 1px solid rgba(138, 101, 49, 0.55);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 244, 220, 0.72),
+    inset 0 0 40px rgba(168, 123, 54, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
 .cc-step-content::-webkit-scrollbar {
   width: 6px;
 }
@@ -363,7 +399,7 @@
   display: flex;
   align-items: center;
   gap: var(--cc-space-md);
-  padding: var(--cc-space-md) var(--cc-space-lg);
+  padding: 10px 16px 12px;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, var(--cc-bg-glass) 100%);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
@@ -374,25 +410,30 @@
 .cc-navigation__status {
   flex: 1;
   text-align: center;
-  font-size: var(--cc-text-sm);
+  font-size: 0.8rem;
   color: var(--cc-text-secondary);
   font-style: italic;
   opacity: 0.85;
-  min-height: 2.5em;
+  min-height: 1.4em;
 }
 
 .cc-nav-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--cc-space-sm);
-  min-height: var(--cc-touch-min);
-  padding: var(--cc-space-sm) var(--cc-space-lg);
-  border-radius: 6px;
-  border: 1px solid var(--cc-border-subtle);
-  background: var(--cc-bg-glass);
-  color: var(--cc-text-primary);
-  font-size: var(--cc-text-base);
-  font-weight: 500;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 0;
+  border: 2px solid rgba(154, 114, 55, 0.72);
+  background:
+    linear-gradient(180deg, rgba(59, 48, 41, 0.96) 0%, rgba(34, 28, 24, 0.98) 100%);
+  color: #f2e5ce;
+  font-family: var(--cc-font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
   cursor: pointer;
   transition:
     border-color var(--cc-duration-fast) var(--cc-ease-out),
@@ -412,26 +453,31 @@
 
 /* Back button — subtle */
 .cc-nav-btn--back {
-  color: var(--cc-text-secondary);
+  min-width: 118px;
+  background:
+    linear-gradient(180deg, rgba(66, 84, 113, 0.98) 0%, rgba(47, 61, 84, 0.98) 100%);
+  color: #f5e9d3;
 }
 
 /* Next button — prominent */
 .cc-nav-btn--next {
-  border-color: var(--cc-border-accent);
-  background: linear-gradient(
-    135deg,
-    rgba(200, 167, 93, 0.12) 0%,
-    rgba(200, 167, 93, 0.04) 100%
-  );
-  color: var(--cc-accent-bronze);
+  min-width: 170px;
+  border-color: rgba(176, 125, 58, 0.92);
+  background:
+    linear-gradient(180deg, #d14d3b 0%, #9f231d 54%, #7f1715 100%);
+  color: #fff1dc;
 }
 
 .cc-nav-btn--next:not(:disabled) {
-  box-shadow: 0 0 8px rgba(200, 167, 93, 0.1);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 222, 196, 0.34),
+    inset 0 -1px 0 rgba(74, 10, 9, 0.25);
 }
 
 /* Create Character button — legendary gold CTA */
 .cc-nav-btn--create {
+  min-width: 170px;
   border-color: var(--cc-accent-gold);
   background: linear-gradient(
     135deg,
@@ -443,7 +489,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: var(--cc-text-sm);
+  font-size: 0.86rem;
 }
 
 .cc-nav-btn--create:not(:disabled) {
@@ -457,17 +503,24 @@
 /* Hover — fine pointer only */
 @media (hover: hover) and (pointer: fine) {
   .cc-nav-btn:not(:disabled):hover {
-    background: var(--cc-bg-glass-hover);
-    border-color: var(--cc-border-accent);
+    transform: translateY(-1px);
+    border-color: rgba(214, 173, 104, 0.82);
+  }
+
+  .cc-nav-btn--back:not(:disabled):hover {
+    background: linear-gradient(180deg, rgba(79, 101, 134, 1) 0%, rgba(55, 71, 96, 1) 100%);
+    box-shadow:
+      0 10px 18px rgba(0, 0, 0, 0.24),
+      inset 0 1px 0 rgba(255, 238, 207, 0.15);
   }
 
   .cc-nav-btn--next:not(:disabled):hover {
-    background: linear-gradient(
-      135deg,
-      rgba(200, 167, 93, 0.18) 0%,
-      rgba(200, 167, 93, 0.08) 100%
-    );
-    box-shadow: 0 0 12px rgba(200, 167, 93, 0.2);
+    background:
+      linear-gradient(180deg, #da5b48 0%, #b72f25 52%, #8d1917 100%);
+    box-shadow:
+      0 12px 22px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 233, 205, 0.38),
+      inset 0 -1px 0 rgba(74, 10, 9, 0.2);
   }
 
   .cc-nav-btn--create:not(:disabled):hover {

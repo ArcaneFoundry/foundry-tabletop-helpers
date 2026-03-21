@@ -25,6 +25,8 @@ import {
   getDisabledContentUUIDs,
   getAllowedAbilityMethods,
   getStartingLevel,
+  allowOriginFeatChoice,
+  allowUnrestrictedBackgroundAsi,
   allowMulticlass,
   getEquipmentMethod,
   getLevel1HpMethod,
@@ -158,6 +160,8 @@ export function buildCharacterCreatorAppClass(): void {
         equipmentMethod: getEquipmentMethod(),
         level1HpMethod: getLevel1HpMethod(),
         allowCustomBackgrounds: allowCustomBackgrounds(),
+        allowOriginFeatChoice: allowOriginFeatChoice(),
+        allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsi(),
       };
     }
 

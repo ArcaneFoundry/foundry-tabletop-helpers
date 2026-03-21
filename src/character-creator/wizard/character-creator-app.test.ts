@@ -14,6 +14,8 @@ const getPackSourcesMock = vi.fn();
 const getDisabledContentUUIDsMock = vi.fn();
 const getAllowedAbilityMethodsMock = vi.fn();
 const getStartingLevelMock = vi.fn();
+const allowOriginFeatChoiceMock = vi.fn();
+const allowUnrestrictedBackgroundAsiMock = vi.fn();
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
 const getLevel1HpMethodMock = vi.fn();
@@ -48,6 +50,8 @@ vi.mock("../character-creator-settings", () => ({
   getDisabledContentUUIDs: getDisabledContentUUIDsMock,
   getAllowedAbilityMethods: getAllowedAbilityMethodsMock,
   getStartingLevel: getStartingLevelMock,
+  allowOriginFeatChoice: allowOriginFeatChoiceMock,
+  allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
   allowMulticlass: allowMulticlassMock,
   getEquipmentMethod: getEquipmentMethodMock,
   getLevel1HpMethod: getLevel1HpMethodMock,
@@ -189,6 +193,8 @@ beforeEach(() => {
   getDisabledContentUUIDsMock.mockReturnValue(["Compendium.test.disabled"]);
   getAllowedAbilityMethodsMock.mockReturnValue(["4d6", "pointBuy"]);
   getStartingLevelMock.mockReturnValue(2);
+  allowOriginFeatChoiceMock.mockReturnValue(false);
+  allowUnrestrictedBackgroundAsiMock.mockReturnValue(false);
   allowMulticlassMock.mockReturnValue(true);
   getEquipmentMethodMock.mockReturnValue("both");
   getLevel1HpMethodMock.mockReturnValue("max");
@@ -246,6 +252,8 @@ describe("character creator app shell", () => {
       equipmentMethod: "both",
       level1HpMethod: "max",
       allowCustomBackgrounds: false,
+      allowOriginFeatChoice: false,
+      allowUnrestrictedBackgroundAsi: false,
       maxRerolls: 1,
     });
   });

@@ -16,12 +16,15 @@ import {
   ccAutoOpen,
 } from "./character-creator-settings";
 import { buildGMConfigAppClass } from "./gm-config/gm-config-app";
-import { buildCharacterCreatorAppClass, openCharacterCreatorWizard } from "./wizard/character-creator-app";
+import {
+  buildCharacterCreatorReactAppClass,
+  openCharacterCreatorWizard,
+} from "./react/character-creator-react-app";
 import { registerAllSteps } from "./wizard/step-registry";
 import { registerLevelUpHooks } from "./level-up/level-up-init";
 
 export { openGMConfigApp } from "./gm-config/gm-config-app";
-export { openCharacterCreatorWizard } from "./wizard/character-creator-app";
+export { openCharacterCreatorWizard } from "./react/character-creator-react-app";
 export { openLevelUpWizard } from "./level-up/level-up-init";
 export { shouldShowLevelUp } from "./level-up/level-up-detection";
 
@@ -63,7 +66,7 @@ export function registerCharacterCreatorSettings(settings: SettingsRegistrar): v
 export function registerCharacterCreatorHooks(): void {
   // Build ApplicationV2 classes
   buildGMConfigAppClass();
-  buildCharacterCreatorAppClass();
+  buildCharacterCreatorReactAppClass();
 
   // Register wizard steps
   registerAllSteps();
@@ -78,6 +81,7 @@ export function registerCharacterCreatorHooks(): void {
     `modules/${MOD}/templates/character-creator/cc-gm-curation.hbs`,
     `modules/${MOD}/templates/character-creator/cc-gm-rules.hbs`,
     `modules/${MOD}/templates/character-creator/cc-shell.hbs`,
+    `modules/${MOD}/templates/character-creator/cc-react-root.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-abilities.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-class-detail.hbs`,

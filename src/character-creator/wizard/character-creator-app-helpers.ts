@@ -12,13 +12,18 @@ export async function buildWizardShellContext(
 
   if (stepDef) {
     vmData = await stepDef.buildViewModel(machine.state);
-    stepContentHtml = await renderTemplateFn(stepDef.templatePath, vmData);
+    if (stepDef.renderMode !== "react") {
+      stepContentHtml = await renderTemplateFn(stepDef.templatePath, vmData);
+    }
   }
 
   const headerTitle = vmData.stepTitle as string | undefined;
   const headerSubtitle = vmData.stepLabel as string | undefined;
   const headerDescription = vmData.stepDescription as string | undefined;
   const headerIcon = vmData.stepIcon as string | undefined;
+  const hideStepIndicator = vmData.hideStepIndicator as boolean | undefined;
+  const hideShellHeader = vmData.hideShellHeader as boolean | undefined;
+  const shellContentClass = vmData.shellContentClass as string | undefined;
   const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
 
   return {
@@ -36,6 +41,10 @@ export async function buildWizardShellContext(
     headerSubtitle,
     headerDescription,
     headerIcon,
+    hideStepIndicator,
+    hideShellHeader,
+    shellContentClass,
+    stepViewModel: vmData,
     selectedEntry,
   };
 }
