@@ -68,6 +68,7 @@ Wizard-style dnd5e character workflows for onboarding and progression.
 - Character creation from wizard selections into a real actor
 - Level-up flow for existing characters
 - Optional portrait generation through the companion server
+- Character Creator is mid-transition to a React + Tailwind UI shell while keeping the existing wizard logic and step domain behavior intact
 
 ### Window Rotation
 
@@ -187,6 +188,60 @@ Current live deployment note for `foundry.digitalframeworks.org`:
 - macOS/Linux: manually symlink `dist/` into your Foundry Data `modules/` directory
 
 Then enable **Foundry Tabletop Helpers** from Manage Modules.
+
+### Recommended Development Workflow
+
+For module UI and gameplay changes, use this loop:
+
+1. Make the smallest change that moves the feature forward.
+2. Run the smallest relevant local checks first.
+3. Perform a live integration pass in Foundry when the change affects real UI, Foundry lifecycle behavior, compendium-backed flows, or deployment-sensitive behavior.
+4. Run `npm run build`.
+5. Deploy the built `dist/` output to the live Foundry server when you need real-world verification.
+
+Common local checks:
+
+- targeted tests: `npm run test -- path/to/test-file.test.ts`
+- typecheck: `npm run typecheck`
+- full module tests: `npm run test`
+- production build: `npm run build`
+
+Live integration testing currently happens against:
+
+- Foundry host: `https://foundry.digitalframeworks.org`
+- Module path: `/var/foundrydata/Data/modules/foundry-tabletop-helpers/`
+
+Example deploy command:
+
+```bash
+rsync -av --delete dist/ root@foundry.digitalframeworks.org:/var/foundrydata/Data/modules/foundry-tabletop-helpers/
+```
+
+After deploy, verify the feature in Foundry before calling the work done. If you changed only module assets, a service restart is usually not required.
+
+### Character Creator UI Architecture
+
+The character creator is being migrated incrementally from Handlebars and legacy CSS to a React + Tailwind UI system.
+
+Current approach:
+
+- Keep the existing `WizardStateMachine`, actor-creation engine, and step domain logic in place.
+- Let a React-owned Foundry `ApplicationV2` shell host the window.
+- Support both `react` and `legacy` step render modes during the transition.
+- Use Tailwind as the default styling layer.
+- Use handwritten CSS only for scoped resets and narrowly targeted Foundry-specific exceptions.
+
+Current migration status:
+
+- React/Tailwind tooling is installed and wired into the build.
+- A React Foundry app wrapper and wizard shell are in place.
+- Legacy Handlebars steps can still render inside the React shell through an adapter host.
+- The class-selection and class-summary pages are now React-native steps and are the current UI reference for the migration.
+- Class details were intentionally removed from the class page; richer recap content now lives on the class-summary step.
+- Class cards now carry compact portrait chips for hit die, curated primary ability display, and starting saving throw proficiencies.
+- The live Character Creator currently sources class data from the 2024 Player's Handbook pack configuration on `foundry.digitalframeworks.org`, so class-card summaries must stay compatible with current PHB 2024 document shapes as well as older SRD-style data.
+
+See [docs/development-workflow.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/development-workflow.md), [docs/character-creator-react-tailwind-migration-plan.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-react-tailwind-migration-plan.md), and [docs/character-creator-wizard-redesign-plan.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-wizard-redesign-plan.md) for the current workflow and status notes.
 
 ## Troubleshooting
 
