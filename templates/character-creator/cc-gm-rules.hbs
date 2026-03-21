@@ -80,7 +80,22 @@
       <input type="checkbox" name="allowCustomBackgrounds" {{#if allowCustomBackgrounds}}checked{{/if}} />
       <span>Allow custom backgrounds</span>
     </label>
-    <p class="cc-gm-hint">Let players swap the origin feat when creating characters.</p>
+    <p class="cc-gm-hint">Keeps legacy custom-background support available when you want it.</p>
+  </fieldset>
+
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Background Rule Flexibility</legend>
+    <label class="cc-gm-checkbox-label">
+      <input type="checkbox" name="allowOriginFeatChoice" {{#if allowOriginFeatChoice}}checked{{/if}} />
+      <span>Let players choose their origin feat</span>
+    </label>
+    <p class="cc-gm-hint">Default 2024 rules keep the background's assigned origin feat unless another rule says otherwise.</p>
+
+    <label class="cc-gm-checkbox-label">
+      <input type="checkbox" name="allowUnrestrictedBackgroundAsi" {{#if allowUnrestrictedBackgroundAsi}}checked{{/if}} />
+      <span>Let background ability boosts apply to any abilities</span>
+    </label>
+    <p class="cc-gm-hint">Default 2024 rules limit the +2/+1 or +1/+1/+1 boosts to the abilities listed by the background.</p>
   </fieldset>
 
   {{!-- Save Button --}}

@@ -8,7 +8,10 @@ const getIndexedEntriesMock = vi.fn();
 const getCachedDescriptionMock = vi.fn();
 const fetchDocumentMock = vi.fn();
 const parseBackgroundGrantsMock = vi.fn();
-const patchCardSelectionMock = vi.fn();
+const renderTemplateMock = vi.fn();
+const beginCardSelectionUpdateMock = vi.fn();
+const isCurrentCardSelectionUpdateMock = vi.fn();
+const patchCardDetailFromTemplateMock = vi.fn();
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -30,8 +33,14 @@ vi.mock("../data/advancement-parser", () => ({
   parseBackgroundGrants: parseBackgroundGrantsMock,
 }));
 
+vi.mock("../../types", () => ({
+  renderTemplate: renderTemplateMock,
+}));
+
 vi.mock("./card-select-utils", () => ({
-  patchCardSelection: patchCardSelectionMock,
+  beginCardSelectionUpdate: beginCardSelectionUpdateMock,
+  isCurrentCardSelectionUpdate: isCurrentCardSelectionUpdateMock,
+  patchCardDetailFromTemplate: patchCardDetailFromTemplateMock,
 }));
 
 class FakeElement {
@@ -112,6 +121,10 @@ beforeEach(() => {
     },
   ]);
   getCachedDescriptionMock.mockResolvedValue("<p>Background details</p>");
+  renderTemplateMock.mockResolvedValue("<div class=\"detail\">Background details</div>");
+  beginCardSelectionUpdateMock.mockReturnValue("request-1");
+  isCurrentCardSelectionUpdateMock.mockReturnValue(true);
+  patchCardDetailFromTemplateMock.mockResolvedValue(true);
   parseBackgroundGrantsMock.mockResolvedValue({
     skillProficiencies: ["arc", "his"],
     toolProficiency: "art:calligrapher",
@@ -165,6 +178,8 @@ describe("step background", () => {
     expect(loadPacksMock).toHaveBeenCalled();
     expect((viewModel.entries as Array<{ name: string }>).map((entry) => entry.name)).toEqual(["Sage"]);
     expect(viewModel).toMatchObject({
+      emptySelectionPrompt: "Choose the past that forged your instincts, outlook, and place in the world.",
+      detailPaneHtml: "<div class=\"detail\">Background details</div>",
       selectedEntry: expect.objectContaining({
         uuid: "Compendium.background.sage",
         description: "<p>Background details</p>",
@@ -209,10 +224,23 @@ describe("step background", () => {
 
     expect(fetchDocumentMock).toHaveBeenCalledWith("Compendium.background.sage");
     expect(parseBackgroundGrantsMock).toHaveBeenCalled();
-    expect(patchCardSelectionMock).toHaveBeenCalledWith(
+    expect(beginCardSelectionUpdateMock).toHaveBeenCalledWith(
       root,
       "Compendium.background.sage",
       expect.objectContaining({ name: "Sage" })
+    );
+    expect(patchCardDetailFromTemplateMock).toHaveBeenCalledWith(
+      root,
+      expect.objectContaining({
+        requestId: "request-1",
+        templatePath: "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-card-detail-pane.hbs",
+        data: {
+          selectedEntry: expect.objectContaining({
+            uuid: "Compendium.background.sage",
+            description: "<p>Background details</p>",
+          }),
+        },
+      }),
     );
     expect(setDataSilent).toHaveBeenCalledWith({
       uuid: "Compendium.background.sage",

@@ -6,6 +6,7 @@
  */
 
 import { Log, MOD } from "../../logger";
+import { renderTemplate } from "../../types";
 import type {
   WizardStepDefinition,
   WizardState,
@@ -15,7 +16,11 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseBackgroundGrants } from "../data/advancement-parser";
-import { patchCardSelection } from "./card-select-utils";
+import {
+  beginCardSelectionUpdate,
+  isCurrentCardSelectionUpdate,
+  patchCardDetailFromTemplate,
+} from "./card-select-utils";
 
 interface DatasetElementLike extends Element {
   dataset: DOMStringMap;
@@ -54,6 +59,9 @@ export function createBackgroundStep(): WizardStepDefinition {
       const selectedEntry = selected
         ? entries.find((e) => e.uuid === selected.uuid) ?? null
         : null;
+      const detailSelectedEntry = selectedEntry
+        ? { ...selectedEntry, description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid) }
+        : null;
 
       return {
         stepId: "background",
@@ -61,13 +69,15 @@ export function createBackgroundStep(): WizardStepDefinition {
         stepLabel: "Background",
         stepIcon: "fa-solid fa-scroll",
         stepDescription: "Select the background that shaped your character before they became an adventurer.",
+        emptySelectionPrompt: "Choose the past that forged your instincts, outlook, and place in the world.",
         entries: entries.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
-        selectedEntry: selectedEntry
-          ? { ...selectedEntry, description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid) }
-          : null,
+        selectedEntry: detailSelectedEntry,
+        detailPaneHtml: detailSelectedEntry
+          ? await renderBackgroundDetailPane(detailSelectedEntry)
+          : "",
         hasEntries: entries.length > 0,
         emptyMessage: "No backgrounds available. Check your GM configuration.",
       };
@@ -81,6 +91,7 @@ export function createBackgroundStep(): WizardStepDefinition {
           const entries = getAvailableBackgrounds(state);
           const entry = entries.find((e) => e.uuid === uuid);
           if (!entry) return;
+          const requestId = beginCardSelectionUpdate(el, uuid, entry);
 
           try {
             const doc = await compendiumIndexer.fetchDocument(uuid);
@@ -99,8 +110,16 @@ export function createBackgroundStep(): WizardStepDefinition {
               },
             };
 
-            // Patch DOM directly instead of full re-render
-            patchCardSelection(el, uuid, entry);
+            const selectedEntry = {
+              ...entry,
+              description: await compendiumIndexer.getCachedDescription(uuid),
+            };
+            await patchCardDetailFromTemplate(el, {
+              requestId,
+              templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-detail-pane.hbs`,
+              data: { selectedEntry },
+            });
+            if (!isCurrentCardSelectionUpdate(el, requestId)) return;
             callbacks.setDataSilent(selection);
           } catch (err) {
             Log.warn("Failed to parse background grants", err);
@@ -122,3 +141,10 @@ function isDatasetElementLike(value: unknown): value is DatasetElementLike {
 export const __backgroundStepInternals = {
   getAvailableBackgrounds,
 };
+
+async function renderBackgroundDetailPane(selectedEntry: Record<string, unknown>): Promise<string> {
+  return renderTemplate(
+    `modules/${MOD}/templates/character-creator/cc-step-card-detail-pane.hbs`,
+    { selectedEntry },
+  );
+}

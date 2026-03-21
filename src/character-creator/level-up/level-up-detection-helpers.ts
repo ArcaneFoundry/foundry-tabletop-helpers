@@ -1,7 +1,6 @@
 import type { AdvancementEntry, ClassItemInfo } from "./level-up-types";
 
-const LEVEL1_SUBCLASS_CLASSES = new Set(["cleric", "sorcerer", "warlock"]);
-const LEVEL2_SUBCLASS_CLASSES = new Set(["druid", "wizard"]);
+const STANDARD_SUBCLASS_LEVEL = 3;
 const STANDARD_ASI_LEVELS = new Set([4, 8, 12, 16, 19]);
 const FIGHTER_EXTRA_ASI_LEVELS = new Set([6, 14]);
 const ROGUE_EXTRA_ASI_LEVELS = new Set([10]);
@@ -96,7 +95,6 @@ export function isLevelUpAsiLevel(classIdentifier: string, classLevel: number): 
 }
 
 export function isLevelUpSubclassLevel(classIdentifier: string, classLevel: number): boolean {
-  if (LEVEL1_SUBCLASS_CLASSES.has(classIdentifier) && classLevel === 1) return true;
-  if (LEVEL2_SUBCLASS_CLASSES.has(classIdentifier) && classLevel === 2) return true;
-  return classLevel === 3;
+  void classIdentifier;
+  return classLevel === STANDARD_SUBCLASS_LEVEL;
 }

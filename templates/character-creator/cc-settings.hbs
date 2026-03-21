@@ -75,6 +75,18 @@
     </select>
   </div>
 
+  <div class="form-group">
+    <label>Let Players Choose Their Origin Feat</label>
+    <input type="checkbox" name="allowOriginFeatChoice" {{#if allowOriginFeatChoice}}checked{{/if}} />
+    <p class="notes">Off by default to follow 2024 background rules, where the background assigns the origin feat.</p>
+  </div>
+
+  <div class="form-group">
+    <label>Unrestricted Background Ability Boosts</label>
+    <input type="checkbox" name="allowUnrestrictedBackgroundAsi" {{#if allowUnrestrictedBackgroundAsi}}checked{{/if}} />
+    <p class="notes">Off by default to follow 2024 background rules, where boosts only apply to the abilities listed by the background.</p>
+  </div>
+
   <footer class="sheet-footer flexrow">
     <button type="submit" class="dialog-button default">
       <i class="fa-solid fa-save"></i> Save

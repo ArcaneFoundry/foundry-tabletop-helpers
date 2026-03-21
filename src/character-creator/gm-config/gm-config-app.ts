@@ -27,6 +27,8 @@ import {
   setAllowedAbilityMethods,
   getStartingLevel,
   setStartingLevel,
+  allowOriginFeatChoice,
+  allowUnrestrictedBackgroundAsi,
   allowMulticlass,
   getEquipmentMethod,
   setEquipmentMethod,
@@ -279,6 +281,8 @@ export function buildGMConfigAppClass(): void {
         equipmentMethod: getEquipmentMethod(),
         level1HpMethod: getLevel1HpMethod(),
         allowCustomBackgrounds: allowCustomBackgrounds(),
+        allowOriginFeatChoice: allowOriginFeatChoice(),
+        allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsi(),
       };
     }
 
@@ -373,6 +377,12 @@ export function buildGMConfigAppClass(): void {
 
       const customBg = getChecked(form, '[name="allowCustomBackgrounds"]');
       await setSetting(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS, customBg);
+
+      const originFeatChoice = getChecked(form, '[name="allowOriginFeatChoice"]');
+      await setSetting(MOD, CC_SETTINGS.ALLOW_ORIGIN_FEAT_CHOICE, originFeatChoice);
+
+      const unrestrictedBackgroundAsi = getChecked(form, '[name="allowUnrestrictedBackgroundAsi"]');
+      await setSetting(MOD, CC_SETTINGS.ALLOW_UNRESTRICTED_BACKGROUND_ASI, unrestrictedBackgroundAsi);
 
       getUI()?.notifications?.info("Character Creator configuration saved.");
     }

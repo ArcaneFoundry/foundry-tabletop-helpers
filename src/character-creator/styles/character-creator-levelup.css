@@ -265,6 +265,8 @@
 
 .cc-lu-feature-row__checkbox {
   accent-color: var(--cc-accent-bronze);
+  width: 16px;
+  height: 16px;
 }
 
 .cc-lu-feature-row {

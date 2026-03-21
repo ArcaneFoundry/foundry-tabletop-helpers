@@ -1,6 +1,7 @@
 import { MOD } from "../../logger";
 import type { AbilityKey, WizardState, WizardStepDefinition } from "../character-creator-types";
 import { SKILLS } from "../data/dnd5e-constants";
+import { ClassSummaryStepScreen } from "../react/steps/class/class-summary-step-screen";
 
 function calculateStartingHpPreview(state: WizardState): number {
   const hitDie = state.selections.class?.hitDie ?? "d8";
@@ -38,6 +39,8 @@ export function createClassSummaryStep(): WizardStepDefinition {
     id: "classSummary",
     label: "Class Summary",
     icon: "fa-solid fa-scroll",
+    renderMode: "react",
+    reactComponent: ClassSummaryStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-class-summary.hbs`,
     dependencies: ["class"],
     isApplicable: (state) => !!state.selections.class?.uuid,
@@ -54,9 +57,12 @@ export function createClassSummaryStep(): WizardStepDefinition {
 
       return {
         className: classSelection?.name ?? "Class",
+        classImage: classSelection?.img ?? "",
+        classIdentifier: classSelection?.identifier ?? "",
         hitDie: classSelection?.hitDie ?? "d8",
         startingHpPreview: calculateStartingHpPreview(state),
         usesAssignedCon: !!state.selections.abilities?.scores?.con,
+        featureCount: features.length,
         chosenSkills: (state.selections.skills?.chosen ?? []).map(skillLabel),
         chosenWeaponMasteries: (state.selections.weaponMasteries?.chosenWeaponMasteryDetails ?? []).length > 0
           ? (state.selections.weaponMasteries?.chosenWeaponMasteryDetails ?? []).map(formatWeaponMasteryLabel)

@@ -1,119 +1,122 @@
 {{#if selectedEntry}}
-<div class="cc-class-spotlight cc-class-spotlight--active">
-  <div class="cc-class-spotlight__bg" style="background-image: url('{{selectedEntry.heroImg}}');"></div>
-  <div class="cc-class-spotlight__overlay"></div>
+<div class="cc-class-detail-shell">
+  <div class="cc-class-detail__ornament" aria-hidden="true">
+    <i class="fa-solid fa-dice-d20 cc-class-detail__ornament-die cc-class-detail__ornament-die--primary"></i>
+    <i class="fa-solid fa-dice-d10 cc-class-detail__ornament-die cc-class-detail__ornament-die--mid"></i>
+    <i class="fa-solid fa-dice-d6 cc-class-detail__ornament-die cc-class-detail__ornament-die--small"></i>
+  </div>
 
-  <div class="cc-class-spotlight__content">
-    <section class="cc-class-spotlight__hero-card">
-      <div class="cc-class-spotlight__crest">
-        <img class="cc-class-spotlight__crest-img" src="{{selectedEntry.img}}" alt="{{selectedEntry.name}}">
-      </div>
-      <div class="cc-class-spotlight__title-block">
-        <div class="cc-class-spotlight__eyebrow">{{selectedEntry.packLabel}}</div>
-        <h3 class="cc-class-spotlight__title">{{selectedEntry.name}}</h3>
-        <p class="cc-class-spotlight__subtitle">{{selectedEntry.subtitle}}</p>
-      </div>
-    </section>
+  <button class="cc-class-detail-summary" type="button" data-class-detail-toggle aria-label="Expand class details">
+    <div class="cc-class-detail-summary__thumb">
+      <img src="{{selectedEntry.heroImg}}" alt="{{selectedEntry.name}}">
+    </div>
 
-    <div class="cc-class-spotlight__scroll">
-      <section class="cc-class-spotlight__panel cc-class-spotlight__panel--metrics">
-        <div class="cc-class-spotlight__metric">
-          <span class="cc-class-spotlight__metric-label">Hit Die</span>
-          <span class="cc-class-spotlight__metric-value">{{selectedEntry.hitDie}}</span>
+    <div class="cc-class-detail-summary__body">
+      <div class="cc-class-detail-summary__header">
+        <div>
+          <h3 class="cc-class-detail-summary__title">{{selectedEntry.name}}</h3>
+          <p class="cc-class-detail-summary__subtitle">Level {{selectedEntry.startingLevel}} • {{selectedEntry.packLabel}}</p>
         </div>
-        <div class="cc-class-spotlight__metric">
-          <span class="cc-class-spotlight__metric-label">Level 1 HP</span>
-          <span class="cc-class-spotlight__metric-value">{{selectedEntry.hitPointsAtFirstLevel}}</span>
+        <div class="cc-class-detail-summary__metrics">
+          <span class="cc-class-detail-summary__metric">Hit Die: {{selectedEntry.hitDie}}</span>
         </div>
-        <div class="cc-class-spotlight__metric">
-          <span class="cc-class-spotlight__metric-label">Spellcasting</span>
-          <span class="cc-class-spotlight__metric-value">{{selectedEntry.spellcastingSummary}}</span>
-        </div>
-      </section>
+      </div>
+
+      <p class="cc-class-detail-summary__blurb">{{selectedEntry.subtitle}}</p>
 
       {{#if selectedEntry.hasPrimaryAbilities}}
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">Prime Attributes</h4>
-        <p class="cc-class-spotlight__panel-copy"><strong>{{selectedEntry.primaryAbilityText}}</strong> — {{selectedEntry.primaryAbilityHint}}</p>
-      </section>
+      <div class="cc-class-detail-summary__facts">
+        <span class="cc-class-detail-summary__fact">
+          <i class="fa-solid fa-star" aria-hidden="true"></i>
+          <span><strong>Primary Ability:</strong> {{selectedEntry.primaryAbilityText}}</span>
+        </span>
+        {{#if selectedEntry.armorSummary}}<span class="cc-class-detail-summary__fact"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span><strong>Armor:</strong> {{selectedEntry.armorSummary}}</span></span>{{/if}}
+        {{#if selectedEntry.weaponSummary}}<span class="cc-class-detail-summary__fact"><i class="fa-solid fa-swords" aria-hidden="true"></i><span><strong>Weapons:</strong> {{selectedEntry.weaponSummary}}</span></span>{{/if}}
+      </div>
       {{/if}}
-
-      {{#if selectedEntry.hasSavingThrows}}
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">Saving Throw Training</h4>
-        <div class="cc-chip-row">
-          {{#each selectedEntry.savingThrowProficiencies}}
-          <span class="cc-chip">{{this}}</span>
-          {{/each}}
-        </div>
-      </section>
-      {{/if}}
-
-      {{#if selectedEntry.hasArmorProficiencies}}
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">Armor Training</h4>
-        <div class="cc-chip-row">
-          {{#each selectedEntry.armorProficiencies}}
-          <span class="cc-chip">{{this}}</span>
-          {{/each}}
-        </div>
-      </section>
-      {{/if}}
-
-      {{#if selectedEntry.hasWeaponProficiencies}}
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">Weapon Training</h4>
-        <div class="cc-chip-row">
-          {{#each selectedEntry.weaponProficiencies}}
-          <span class="cc-chip">{{this}}</span>
-          {{/each}}
-        </div>
-      </section>
-      {{/if}}
-
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">Battle Doctrine</h4>
-        <div class="cc-chip-row">
-          {{#if selectedEntry.hasWeaponMastery}}
-          <span class="cc-chip">Weapon Mastery</span>
-          {{else}}
-          <span class="cc-chip">No Weapon Mastery</span>
-          {{/if}}
-          {{#if selectedEntry.isSpellcaster}}
-          <span class="cc-chip">Spellcasting</span>
-          {{else}}
-          <span class="cc-chip">Steel and skill first</span>
-          {{/if}}
-        </div>
-      </section>
-
-      {{#if selectedEntry.hasFeatures}}
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">{{selectedEntry.featureHeading}}</h4>
-        <ul class="cc-class-spotlight__feature-list">
-          {{#each selectedEntry.classFeatures}}
-          <li class="cc-class-spotlight__feature-item">{{displayLabel}}</li>
-          {{/each}}
-        </ul>
-      </section>
-      {{/if}}
-
-      <section class="cc-class-spotlight__panel">
-        <h4 class="cc-class-spotlight__panel-title">Class Overview</h4>
-        {{#if selectedEntry.hasDescription}}
-        <div class="cc-card-detail__description">{{{selectedEntry.description}}}</div>
-        {{else}}
-        <p class="cc-class-spotlight__panel-copy">No compendium description is available for this class yet.</p>
-        {{/if}}
-      </section>
     </div>
-  </div>
+  </button>
+
+  <section class="cc-class-detail-expanded">
+    <button class="cc-class-detail-expanded__close" type="button" data-class-detail-close aria-label="Collapse class details">
+      <i class="fa-solid fa-xmark"></i>
+      <span>Close</span>
+    </button>
+
+    <div class="cc-class-detail-expanded__layout">
+      <div class="cc-class-detail-expanded__hero">
+        <img src="{{selectedEntry.heroImg}}" alt="{{selectedEntry.name}}">
+      </div>
+
+      <div class="cc-class-detail-expanded__content">
+        <div class="cc-class-detail-expanded__header">
+          <div>
+            <h3 class="cc-class-detail-expanded__title">{{selectedEntry.name}}</h3>
+            <p class="cc-class-detail-expanded__subtitle">Level {{selectedEntry.startingLevel}} • {{selectedEntry.packLabel}}</p>
+          </div>
+          <div class="cc-class-detail-expanded__metrics">
+            <span class="cc-class-detail-expanded__metric">Hit Die: {{selectedEntry.hitDie}}</span>
+            <span class="cc-class-detail-expanded__metric">HP: {{selectedEntry.hitPointsAtFirstLevel}}</span>
+          </div>
+        </div>
+
+        <div class="cc-class-detail-expanded__blurb">
+          <p>{{selectedEntry.subtitle}}</p>
+          {{#if selectedEntry.hasPrimaryAbilities}}
+          <p class="cc-class-detail-expanded__lead-fact"><i class="fa-solid fa-star" aria-hidden="true"></i><span><strong>Primary Ability:</strong> {{selectedEntry.primaryAbilityText}}</span></p>
+          {{/if}}
+        </div>
+
+        <div class="cc-class-detail-expanded__proficiencies">
+          {{#if selectedEntry.armorSummary}}
+          <div class="cc-class-detail-expanded__prof-group">
+            <div class="cc-class-detail-expanded__prof-label"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>Armor</span></div>
+            <div class="cc-class-detail-expanded__prof-value">{{selectedEntry.armorSummary}}</div>
+          </div>
+          {{/if}}
+
+          {{#if selectedEntry.weaponSummary}}
+          <div class="cc-class-detail-expanded__prof-group">
+            <div class="cc-class-detail-expanded__prof-label"><i class="fa-solid fa-swords" aria-hidden="true"></i><span>Weapons</span></div>
+            <div class="cc-class-detail-expanded__prof-value">{{selectedEntry.weaponSummary}}</div>
+          </div>
+          {{/if}}
+
+          {{#if selectedEntry.hasSavingThrows}}
+          <div class="cc-class-detail-expanded__prof-group">
+            <div class="cc-class-detail-expanded__prof-label"><i class="fa-solid fa-dice-d20" aria-hidden="true"></i><span>Saving Throws</span></div>
+            <div class="cc-class-detail-expanded__prof-value">{{selectedEntry.savingThrowsSummary}}</div>
+          </div>
+          {{/if}}
+        </div>
+
+        {{#if selectedEntry.hasFeatures}}
+        <div class="cc-class-detail-expanded__abilities">
+          <div class="cc-class-detail-expanded__abilities-label"><i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i><span>{{selectedEntry.featureHeading}}</span></div>
+          <ul class="cc-class-detail-expanded__abilities-list">
+            {{#each selectedEntry.classFeatures}}
+            <li class="cc-class-detail-expanded__abilities-item">{{displayLabel}}</li>
+            {{/each}}
+          </ul>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </section>
 </div>
 {{else}}
 <div class="cc-card-detail cc-card-detail--empty cc-class-detail--empty">
-  <div class="cc-card-detail__empty-icon">
-    <i class="fa-solid fa-sparkles"></i>
+  <div class="cc-class-detail__ornament" aria-hidden="true">
+    <i class="fa-solid fa-dice-d20 cc-class-detail__ornament-die cc-class-detail__ornament-die--primary"></i>
+    <i class="fa-solid fa-dice-d10 cc-class-detail__ornament-die cc-class-detail__ornament-die--mid"></i>
+    <i class="fa-solid fa-dice-d6 cc-class-detail__ornament-die cc-class-detail__ornament-die--small"></i>
   </div>
-  <p class="cc-card-detail__empty-text">Choose the class that will shape your legend. Its talents, battle doctrine, and signature features will gather here.</p>
+  <div class="cc-card-detail__empty-icon">
+    <i class="fa-solid fa-shield-halved"></i>
+  </div>
+  <div class="cc-card-detail__empty-copy">
+    <p class="cc-card-detail__empty-title">Class details will appear here</p>
+    <p class="cc-card-detail__empty-text">Choose the class that will shape your legend. Its talents, battle doctrine, and signature features will gather here.</p>
+  </div>
 </div>
 {{/if}}

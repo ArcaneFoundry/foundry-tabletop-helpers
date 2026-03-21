@@ -195,6 +195,16 @@ describe("step class", () => {
     expect((viewModel.entries as Array<{ name: string }>).map((entry) => entry.name)).toEqual(["Wizard"]);
     expect(viewModel).toMatchObject({
       stepLabel: "Choose Your Calling",
+      entries: [
+        expect.objectContaining({
+          name: "Wizard",
+          hitDie: "d10",
+          primaryAbilityText: "Intelligence",
+          primaryAbilityBadgeText: "INT",
+          savingThrowText: "Strength / Constitution",
+          savingThrowBadgeText: "STR / CON",
+        }),
+      ],
       selectedEntry: expect.objectContaining({
         uuid: "Compendium.class.wizard",
         description: "<p>Class details</p>",
@@ -205,7 +215,7 @@ describe("step class", () => {
       hasEntries: true,
       emptyMessage: "No classes available. Check your GM configuration.",
     });
-    expect((viewModel.entries as Array<Record<string, string>>)[0]?.primaryAbilityText).toBe("Intelligence / Constitution");
+    expect((viewModel.entries as Array<Record<string, string>>)[0]?.primaryAbilityText).toBe("Intelligence");
   });
 
   it("exposes enabled classes through the internal helper", async () => {
@@ -269,7 +279,7 @@ describe("step class", () => {
         templatePath: "modules/foundry-tabletop-helpers/templates/character-creator/cc-step-class-detail.hbs",
       }),
     );
-    expect(setDataSilent).toHaveBeenCalledWith({
+    expect(setDataSilent).toHaveBeenCalledWith(expect.objectContaining({
       uuid: "Compendium.class.wizard",
       name: "Wizard",
       img: "wizard.png",
@@ -279,7 +289,7 @@ describe("step class", () => {
       isSpellcaster: true,
       spellcastingAbility: "int",
       spellcastingProgression: "full",
-      primaryAbilities: ["int", "con"],
+      primaryAbilities: ["int"],
       primaryAbilityHint: "Intelligence recommended, with Constitution helping concentration.",
       hitDie: "d6",
       savingThrowProficiencies: ["int", "wis"],
@@ -288,11 +298,7 @@ describe("step class", () => {
       hasWeaponMastery: false,
       weaponMasteryCount: 2,
       weaponMasteryPool: ["weapon:sim:*", "weapon:mar:*"],
-      classFeatures: [
-        { title: "Spellcasting", level: 1 },
-        { title: "Arcane Recovery", level: 1 },
-      ],
-    });
+    }));
 
     vi.clearAllMocks();
     fetchDocumentMock.mockRejectedValue(new Error("boom"));
@@ -347,6 +353,28 @@ describe("step class", () => {
         saves: { dex: true, wis: true, con: false },
       },
     })).toEqual(["dex", "wis"]);
+    expect(__classStepInternals.getSavingThrowProficiencies({
+      system: {
+        advancement: [
+          {
+            type: "Trait",
+            title: "Saving Throw Proficiencies",
+            level: 1,
+            configuration: {
+              grants: ["saves:str", "saves:con", "weapon:mar"],
+            },
+          },
+          {
+            type: "Trait",
+            title: "Saving Throws",
+            level: 14,
+            configuration: {
+              grants: ["saves:wis"],
+            },
+          },
+        ],
+      },
+    })).toEqual(["str", "con"]);
     expect(__classStepInternals.getTraitSummary({
       system: {
         traits: {

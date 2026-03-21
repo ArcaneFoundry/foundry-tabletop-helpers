@@ -73,9 +73,10 @@ describe("level up detection", () => {
     expect(isAsiLevel("fighter", 6)).toBe(true);
     expect(isAsiLevel("rogue", 10)).toBe(true);
     expect(isAsiLevel("wizard", 5)).toBe(false);
-    expect(isSubclassLevel("cleric", 1)).toBe(true);
-    expect(isSubclassLevel("wizard", 2)).toBe(true);
-    expect(isSubclassLevel("fighter", 3)).toBe(true);
-    expect(isSubclassLevel("fighter", 2)).toBe(false);
+    for (const classIdentifier of ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"]) {
+      expect(isSubclassLevel(classIdentifier, 1)).toBe(false);
+      expect(isSubclassLevel(classIdentifier, 2)).toBe(false);
+      expect(isSubclassLevel(classIdentifier, 3)).toBe(true);
+    }
   });
 });

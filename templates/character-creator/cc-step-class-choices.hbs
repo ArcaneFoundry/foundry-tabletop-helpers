@@ -1,6 +1,6 @@
 <div class="cc-class-choices" data-step="classChoices">
   <div class="cc-step-intro">
-    <p>Shape how {{className}} enters the world. Choose the skills your class training grants before moving into background and origin details.</p>
+    <p>Choose the class skills that round out your <strong><u>{{className}}</u></strong> before moving into background and origin details.</p>
     {{#if primaryAbilityHint}}
     <p><strong>Prime Attribute Guidance:</strong> {{primaryAbilityHint}}</p>
     {{/if}}
@@ -21,7 +21,7 @@
         </div>
         <div class="cc-choice-section__selected" data-selected-chips="skills">
           {{#each skillSection.selectedEntries}}
-          <span class="cc-choice-chip cc-tooltip-anchor" tabindex="0" data-tooltip="{{tooltip}}">
+          <span class="cc-choice-chip">
             <i class="fa-solid {{iconClass}}"></i>
             <span>{{label}}</span>
           </span>
@@ -33,14 +33,13 @@
     {{#if skillSection.hasChoices}}
     <div class="cc-choice-grid cc-choice-grid--skills">
       {{#each skillSection.options}}
-      <label class="cc-choice-option cc-tooltip-anchor{{#if checked}} cc-choice-option--selected{{/if}}" data-tooltip="{{tooltip}}">
+      <label class="cc-choice-option{{#if checked}} cc-choice-option--selected{{/if}}">
         <input
           type="checkbox"
           class="cc-choice-option__checkbox"
           data-choice-section="skills"
           data-choice-value="{{key}}"
           data-choice-label="{{label}}"
-          data-choice-tooltip="{{tooltip}}"
           {{#if checked}}checked{{/if}}
           {{#if disabled}}disabled{{/if}}>
         <div class="cc-choice-option__icon">

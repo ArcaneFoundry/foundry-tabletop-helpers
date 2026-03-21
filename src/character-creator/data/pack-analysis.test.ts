@@ -199,4 +199,87 @@ describe("pack analysis", () => {
       "dnd-heroes-faerun.options",
     ]);
   });
+
+  it("allows origin-friendly premium feat packs to contribute ungranted origin-feat candidates", async () => {
+    const { isEntryRelevantForWorkflow } = await import("./pack-analysis");
+
+    expect(isEntryRelevantForWorkflow(
+      {
+        uuid: "feat.faerun-guide",
+        name: "Faerun Guide",
+        img: "faerun.png",
+        packId: "dnd-heroes-faerun.options",
+        packLabel: "Character Options",
+        type: "feat",
+        itemType: "feat",
+      },
+      "origin-feat",
+      {
+        prerequisiteLevel: null,
+        grantedOriginFeatUuids: new Set(["feat.magic-initiate"]),
+        packAnalysis: {
+          collection: "dnd-heroes-faerun.options",
+          rawLabel: "Character Options",
+          packageLabel: "Heroes of Faerun",
+          packageName: "dnd-heroes-faerun",
+          sourceBadge: "Premium 2024",
+          contentTypes: ["feat", "background"],
+          contentBreakdown: [
+            { type: "feat", label: "Feats", count: 3 },
+            { type: "background", label: "Backgrounds", count: 1 },
+          ],
+          sampleItems: ["Faerun Guide"],
+          sampleOverflow: 0,
+          folderHints: ["Origin Feats"],
+          dominantFolders: { feat: "Origin Feats" },
+          previewSummary: "3 feats • 1 backgrounds",
+          mixedContent: true,
+          metadataTypes: [],
+          totalEntries: 4,
+        },
+      },
+    )).toBe(true);
+  });
+
+  it("trusts explicit origin feat subtypes inside mixed premium packs", async () => {
+    const { isEntryRelevantForWorkflow } = await import("./pack-analysis");
+
+    expect(isEntryRelevantForWorkflow(
+      {
+        uuid: "feat.harper-agent",
+        name: "Harper Agent",
+        img: "harper.png",
+        packId: "dnd-heroes-faerun.options",
+        packLabel: "Character Options",
+        type: "feat",
+        itemType: "feat",
+      },
+      "origin-feat",
+      {
+        featCategory: "origin",
+        prerequisiteLevel: null,
+        packAnalysis: {
+          collection: "dnd-heroes-faerun.options",
+          rawLabel: "Character Options",
+          packageLabel: "Heroes of Faerun",
+          packageName: "dnd-heroes-faerun",
+          sourceBadge: "Premium 2024",
+          contentTypes: ["feat", "background", "subclass"],
+          contentBreakdown: [
+            { type: "feat", label: "Feats", count: 90 },
+            { type: "background", label: "Backgrounds", count: 8 },
+            { type: "subclass", label: "Subclasses", count: 6 },
+          ],
+          sampleItems: ["Harper Agent"],
+          sampleOverflow: 0,
+          folderHints: [],
+          dominantFolders: {},
+          previewSummary: "90 feats • 8 backgrounds • 6 subclasses",
+          mixedContent: true,
+          metadataTypes: [],
+          totalEntries: 104,
+        },
+      },
+    )).toBe(true);
+  });
 });

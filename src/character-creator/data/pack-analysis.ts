@@ -219,6 +219,7 @@ export function isEntryRelevantForWorkflow(
   options?: {
     packAnalysis?: PackAnalysis | null;
     prerequisiteLevel?: number | null;
+    featCategory?: string | null;
     grantedOriginFeatUuids?: Set<string>;
   },
 ): boolean {
@@ -233,15 +234,16 @@ export function isEntryRelevantForWorkflow(
 
   if (workflow === "origin-feat") {
     if (entry.type !== "feat") return false;
-    if (options?.grantedOriginFeatUuids && !options.grantedOriginFeatUuids.has(entry.uuid)) return false;
     if (options?.prerequisiteLevel !== null && options?.prerequisiteLevel !== undefined) return false;
+    if (options?.featCategory === "origin") return true;
     if (!packAnalysis) return true;
     if (!isPackRelevantForContentType(packAnalysis, "feat")) return false;
 
     const textSignals = getTextSignals(packAnalysis);
     const originFriendly = containsAny(textSignals, ["origin", "background", "character option", "player option"])
       || !!packAnalysis.dominantFolders.feat;
-    return originFriendly || (options?.grantedOriginFeatUuids?.has(entry.uuid) ?? false);
+    const grantedByBackground = options?.grantedOriginFeatUuids?.has(entry.uuid) ?? false;
+    return originFriendly || grantedByBackground;
   }
 
   return false;

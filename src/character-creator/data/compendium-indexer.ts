@@ -176,6 +176,13 @@ export class CompendiumIndexer {
       }
     }
 
+    Log.debug("CompendiumIndexer: queried indexed entries", {
+      type,
+      packIds,
+      totalEntries: entries.length,
+      byPack: summarizeEntriesByPack(entries),
+    });
+
     return entries;
   }
 
@@ -224,6 +231,14 @@ export class CompendiumIndexer {
       }
 
       Log.debug(`CompendiumIndexer: loaded ${entries.length} entries from "${packId}"`);
+      Log.debug("CompendiumIndexer: load summary", {
+        packId,
+        requestedType: type,
+        packLabel,
+        rawIndexCount: rawIndex.length,
+        byItemType: summarizeRawIndexTypes(rawIndex),
+        namedEntriesByItemType: summarizeEntryItemTypes(entries),
+      });
       return entries;
     } catch (err) {
       Log.error(`CompendiumIndexer: failed to load pack "${packId}"`, err);
@@ -301,6 +316,47 @@ export class CompendiumIndexer {
     const val = this.extractValue(raw, path);
     return typeof val === "number" ? val : undefined;
   }
+}
+
+function summarizeEntriesByPack(entries: CreatorIndexEntry[]): Array<{ packId: string; count: number; itemTypes: string[] }> {
+  const byPack = new Map<string, { count: number; itemTypes: Set<string> }>();
+
+  for (const entry of entries) {
+    const summary = byPack.get(entry.packId) ?? { count: 0, itemTypes: new Set<string>() };
+    summary.count += 1;
+    if (entry.itemType) summary.itemTypes.add(entry.itemType);
+    byPack.set(entry.packId, summary);
+  }
+
+  return Array.from(byPack.entries())
+    .map(([packId, summary]) => ({
+      packId,
+      count: summary.count,
+      itemTypes: Array.from(summary.itemTypes).sort(),
+    }))
+    .sort((left, right) => left.packId.localeCompare(right.packId));
+}
+
+function summarizeRawIndexTypes(entries: FoundryIndexEntry[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+
+  for (const entry of entries) {
+    const key = typeof entry.type === "string" && entry.type.trim() ? entry.type : "(missing)";
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+
+  return counts;
+}
+
+function summarizeEntryItemTypes(entries: CreatorIndexEntry[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+
+  for (const entry of entries) {
+    const key = entry.itemType?.trim() ? entry.itemType : "(missing)";
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+
+  return counts;
 }
 
 function getCompendiumPack(value: unknown): FoundryCompendiumCollection | undefined {

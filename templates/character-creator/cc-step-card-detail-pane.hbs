@@ -1,0 +1,19 @@
+{{#if selectedEntry}}
+<div class="cc-card-detail cc-card-detail--active">
+  <div class="cc-card-detail__header">
+    <img class="cc-card-detail__img" src="{{selectedEntry.img}}" alt="{{selectedEntry.name}}">
+    <div class="cc-card-detail__title">
+      <h3>{{selectedEntry.name}}</h3>
+      <span class="cc-card-detail__source">{{selectedEntry.packLabel}}</span>
+      {{#if selectedEntry.primaryAbilityHint}}
+      <p class="cc-card-detail__hint"><strong>Primary Ability:</strong> {{selectedEntry.primaryAbilityHint}}</p>
+      {{/if}}
+    </div>
+  </div>
+  {{#if selectedEntry.description}}
+  <div class="cc-card-detail__description">{{{selectedEntry.description}}}</div>
+  {{else}}
+  <p class="cc-card-detail__hint">No description available.</p>
+  {{/if}}
+</div>
+{{/if}}

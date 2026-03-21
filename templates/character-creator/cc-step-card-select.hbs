@@ -38,6 +38,9 @@
     {{!-- Right: Detail Panel (always visible) --}}
     <div class="cc-card-detail-pane">
       {{#if selectedEntry}}
+      {{#if detailPaneHtml}}
+      {{{detailPaneHtml}}}
+      {{else}}
       <div class="cc-card-detail cc-card-detail--active">
         <div class="cc-card-detail__header">
           <img class="cc-card-detail__img" src="{{selectedEntry.img}}" alt="{{selectedEntry.name}}">
@@ -55,12 +58,13 @@
         <p class="cc-card-detail__hint">No description available.</p>
         {{/if}}
       </div>
+      {{/if}}
       {{else}}
       <div class="cc-card-detail cc-card-detail--empty">
         <div class="cc-card-detail__empty-icon">
           <i class="fa-solid fa-arrow-left"></i>
         </div>
-        <p class="cc-card-detail__empty-text">Select a {{stepLabel}} to view details</p>
+        <p class="cc-card-detail__empty-text">{{emptySelectionPrompt}}</p>
       </div>
       {{/if}}
     </div>

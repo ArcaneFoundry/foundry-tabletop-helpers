@@ -104,3 +104,11 @@ export async function setMaxRerolls(count: unknown): Promise<void> {
 export function allowCustomBackgrounds(): boolean {
   return getSetting<boolean>(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS) ?? false;
 }
+
+export function allowOriginFeatChoice(): boolean {
+  return getSetting<boolean>(MOD, CC_SETTINGS.ALLOW_ORIGIN_FEAT_CHOICE) ?? false;
+}
+
+export function allowUnrestrictedBackgroundAsi(): boolean {
+  return getSetting<boolean>(MOD, CC_SETTINGS.ALLOW_UNRESTRICTED_BACKGROUND_ASI) ?? false;
+}

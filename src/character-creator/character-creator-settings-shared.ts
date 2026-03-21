@@ -15,5 +15,7 @@ export const CC_SETTINGS = {
   LEVEL1_HP_METHOD: "ccLevel1HpMethod",
   MAX_REROLLS: "ccMaxRerolls",
   ALLOW_CUSTOM_BACKGROUNDS: "ccAllowCustomBackgrounds",
+  ALLOW_ORIGIN_FEAT_CHOICE: "ccAllowOriginFeatChoice",
+  ALLOW_UNRESTRICTED_BACKGROUND_ASI: "ccAllowUnrestrictedBackgroundAsi",
   ARTWORK_OVERRIDES: "ccArtworkOverrides",
 } as const;

@@ -63,6 +63,9 @@ describe("step class summary", () => {
     const { createClassSummaryStep } = await import("./step-class-summary");
     const step = createClassSummaryStep();
 
+    expect(step.renderMode).toBe("react");
+    expect(step.reactComponent).toBeDefined();
+
     const viewModel = await step.buildViewModel(makeState());
 
     expect(viewModel).toMatchObject({

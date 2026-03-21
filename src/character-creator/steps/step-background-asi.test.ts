@@ -39,6 +39,19 @@ function makeState(): WizardState {
     currentStep: 0,
     applicableSteps: ["background", "backgroundAsi", "review"],
     selections: {
+      class: {
+        uuid: "class.wizard",
+        name: "Wizard",
+        img: "wizard.png",
+        identifier: "wizard",
+        skillPool: ["arc", "his"],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "int",
+        spellcastingProgression: "full",
+        primaryAbilities: ["int", "con"],
+        primaryAbilityHint: "Intelligence recommended, with Constitution helping concentration.",
+      },
       background: {
         uuid: "background.sage",
         name: "Sage",
@@ -88,7 +101,15 @@ describe("step background asi", () => {
       asiPoints: 3,
       asiPointsUsed: 0,
       hasASI: true,
+      hasClassRecommendations: true,
     });
+    expect(vm).toHaveProperty("asiAbilities");
+    const asiAbilities = (vm as { asiAbilities: Array<Record<string, unknown>> }).asiAbilities;
+    expect(asiAbilities.find((entry) => entry.key === "int")).toMatchObject({
+      classRecommended: true,
+      backgroundSuggested: true,
+    });
+    expect(asiAbilities.some((entry) => entry.key === "con")).toBe(false);
 
     const intSelect = new FakeSelect();
     intSelect.dataset.asiAbility = "int";
@@ -112,5 +133,34 @@ describe("step background asi", () => {
     expect(state.selections.background?.asi.assignments).toEqual({ int: 2, wis: 1 });
     expect(step.isComplete(state)).toBe(true);
     expect(setDataSilent).toHaveBeenCalledTimes(2);
+  });
+
+  it("restricts background ASI assignments to the background's allowed abilities by default", async () => {
+    const { createBackgroundAsiStep } = await import("./step-background-asi");
+    const step = createBackgroundAsiStep();
+    const state = makeState();
+
+    const vm = await step.buildViewModel(state);
+    const asiAbilities = (vm as { asiAbilities: Array<Record<string, unknown>> }).asiAbilities;
+    expect(asiAbilities.map((entry) => entry.key)).toEqual(["int", "wis"]);
+    expect(asiAbilities.find((entry) => entry.key === "str")).toBeUndefined();
+    expect(asiAbilities.find((entry) => entry.key === "int")).toMatchObject({
+      allowedByBackground: true,
+    });
+  });
+
+  it("allows unrestricted background ASI assignments when the module rule is enabled", async () => {
+    const { createBackgroundAsiStep } = await import("./step-background-asi");
+    const step = createBackgroundAsiStep();
+    const state = makeState();
+    state.config.allowUnrestrictedBackgroundAsi = true;
+
+    const vm = await step.buildViewModel(state);
+    const asiAbilities = (vm as { asiAbilities: Array<Record<string, unknown>> }).asiAbilities;
+    expect(asiAbilities).toHaveLength(6);
+    expect(asiAbilities.find((entry) => entry.key === "str")).toMatchObject({
+      allowedByBackground: true,
+      options: expect.arrayContaining([{ value: 1, label: "+1", selected: false }]),
+    });
   });
 });

@@ -11,6 +11,8 @@ const getAllowedAbilityMethodsMock = vi.fn();
 const setAllowedAbilityMethodsMock = vi.fn(async () => {});
 const getStartingLevelMock = vi.fn();
 const setStartingLevelMock = vi.fn(async () => {});
+const allowOriginFeatChoiceMock = vi.fn();
+const allowUnrestrictedBackgroundAsiMock = vi.fn();
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
 const setEquipmentMethodMock = vi.fn(async () => {});
@@ -45,6 +47,8 @@ vi.mock("../character-creator-settings", () => ({
   setAllowedAbilityMethods: setAllowedAbilityMethodsMock,
   getStartingLevel: getStartingLevelMock,
   setStartingLevel: setStartingLevelMock,
+  allowOriginFeatChoice: allowOriginFeatChoiceMock,
+  allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
   allowMulticlass: allowMulticlassMock,
   getEquipmentMethod: getEquipmentMethodMock,
   setEquipmentMethod: setEquipmentMethodMock,
@@ -53,6 +57,8 @@ vi.mock("../character-creator-settings", () => ({
   allowCustomBackgrounds: allowCustomBackgroundsMock,
   CC_SETTINGS: {
     STARTING_LEVEL: "startingLevel",
+    ALLOW_ORIGIN_FEAT_CHOICE: "allowOriginFeatChoice",
+    ALLOW_UNRESTRICTED_BACKGROUND_ASI: "allowUnrestrictedBackgroundAsi",
     ALLOW_MULTICLASS: "allowMulticlass",
     EQUIPMENT_METHOD: "equipmentMethod",
     LEVEL1_HP_METHOD: "level1HpMethod",
@@ -148,6 +154,8 @@ beforeEach(() => {
   });
   getAllowedAbilityMethodsMock.mockReturnValue(["4d6", "pointBuy"]);
   getStartingLevelMock.mockReturnValue(3);
+  allowOriginFeatChoiceMock.mockReturnValue(false);
+  allowUnrestrictedBackgroundAsiMock.mockReturnValue(false);
   allowMulticlassMock.mockReturnValue(true);
   getEquipmentMethodMock.mockReturnValue("both");
   getLevel1HpMethodMock.mockReturnValue("max");
@@ -242,6 +250,8 @@ describe("gm config app shell", () => {
         standardArray: false,
       },
       startingLevel: 3,
+      allowOriginFeatChoice: false,
+      allowUnrestrictedBackgroundAsi: false,
       allowMulticlass: true,
       equipmentMethod: "both",
       level1HpMethod: "max",
@@ -290,6 +300,8 @@ describe("gm config app shell", () => {
           case '[name="method-pointBuy"]': return checkbox(false);
           case '[name="method-standardArray"]': return checkbox(true);
           case '[name="startingLevel"]': return valueInput("5");
+          case '[name="allowOriginFeatChoice"]': return checkbox(true);
+          case '[name="allowUnrestrictedBackgroundAsi"]': return checkbox(true);
           case '[name="allowMulticlass"]': return checkbox(true);
           case '[name="equipmentMethod"]:checked': return valueInput("gold");
           case '[name="level1HpMethod"]:checked': return valueInput("roll");
@@ -310,6 +322,8 @@ describe("gm config app shell", () => {
 
     expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "standardArray"]);
     expect(setStartingLevelMock).toHaveBeenCalledWith(5);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowMulticlass", true);
     expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
     expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
@@ -333,6 +347,8 @@ describe("gm config app shell", () => {
           case '[name="method-pointBuy"]': return checkbox(false);
           case '[name="method-standardArray"]': return checkbox(false);
           case '[name="startingLevel"]': return valueInput("99");
+          case '[name="allowOriginFeatChoice"]': return checkbox(false);
+          case '[name="allowUnrestrictedBackgroundAsi"]': return checkbox(false);
           case '[name="allowMulticlass"]': return checkbox(false);
           case '[name="equipmentMethod"]:checked': return valueInput("weird");
           case '[name="level1HpMethod"]:checked': return valueInput("weird");

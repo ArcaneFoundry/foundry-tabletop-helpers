@@ -1,23 +1,69 @@
 <div class="cc-bg-asi-step" data-step="backgroundAsi">
   {{#if hasBackground}}
   <div class="cc-step-intro">
-    <p>Choose how your background shapes your starting abilities.</p>
+    <p>Shape the talents your background sharpened before your adventure began.</p>
   </div>
 
-  <section class="cc-panel">
-    <h3>{{backgroundName}}</h3>
+  <section class="cc-panel cc-bg-asi-panel">
+    <div class="cc-bg-asi-panel__header">
+      <div>
+        <p class="cc-bg-asi-panel__eyebrow">Background Ability Scores</p>
+        <h3>{{backgroundName}}</h3>
+        {{#if backgroundAsiRestricted}}
+        <p class="cc-bg-asi-panel__copy">Choose where your background adds its starting boosts from the abilities this background allows.</p>
+        {{else}}
+        <p class="cc-bg-asi-panel__copy">Choose where your background adds its starting boosts. This world allows those boosts on any ability.</p>
+        {{/if}}
+      </div>
+      <div class="cc-bg-asi-panel__summary">
+        <span class="cc-chip{{#if asiComplete}} cc-chip--locked{{/if}}">Assigned {{asiPointsUsed}} / {{asiPoints}}</span>
+      </div>
+    </div>
     {{#if hasASI}}
-    <p><strong>Allowed patterns:</strong>
-      {{#each choiceModes}}
-      <span class="cc-chip{{#if selected}} cc-chip--locked{{/if}}">{{label}}</span>
-      {{/each}}
-    </p>
-    <p><strong>Assigned:</strong> {{asiPointsUsed}} / {{asiPoints}}</p>
+    <div class="cc-bg-asi-panel__meta">
+      <div class="cc-bg-asi-panel__patterns">
+        <span class="cc-bg-asi-panel__meta-label">Allowed patterns</span>
+        <div class="cc-bg-asi-panel__chips">
+          {{#each choiceModes}}
+          <span class="cc-chip{{#if selected}} cc-chip--locked{{/if}}">{{label}}</span>
+          {{/each}}
+        </div>
+      </div>
+      <div class="cc-bg-asi-panel__patterns">
+        <span class="cc-bg-asi-panel__meta-label">Ability access</span>
+        <div class="cc-bg-asi-panel__chips">
+          {{#if backgroundAsiRestricted}}
+          <span class="cc-chip cc-chip--locked">Background list only</span>
+          {{else}}
+          <span class="cc-chip">Any ability</span>
+        {{/if}}
+        </div>
+      </div>
+      {{#if hasClassRecommendations}}
+      <div class="cc-bg-asi-panel__legend">
+        <span class="cc-chip cc-bg-asi-badge cc-bg-asi-badge--class">Class pick</span>
+        <span class="cc-chip cc-bg-asi-badge cc-bg-asi-badge--background">Background fit</span>
+      </div>
+      {{/if}}
+    </div>
     <div class="cc-bg-grants__asi-grid">
       {{#each asiAbilities}}
-      <div class="cc-bg-grants__asi-row{{#if suggested}} cc-bg-grants__asi-row--suggested{{/if}}">
-        <label>{{label}}</label>
-        <select data-asi-ability="{{key}}">
+      <div class="cc-bg-grants__asi-row{{#if emphasized}} cc-bg-grants__asi-row--emphasized{{/if}}{{#if classRecommended}} cc-bg-grants__asi-row--class{{/if}}{{#if backgroundSuggested}} cc-bg-grants__asi-row--background{{/if}}">
+        <div class="cc-bg-grants__asi-head">
+          <label for="cc-bg-asi-{{key}}" class="cc-bg-grants__asi-label">{{label}}</label>
+          <div class="cc-bg-grants__asi-badges">
+            {{#unless allowedByBackground}}
+            <span class="cc-chip">Unavailable</span>
+            {{/unless}}
+            {{#if classRecommended}}
+            <span class="cc-chip cc-bg-asi-badge cc-bg-asi-badge--class">Class pick</span>
+            {{/if}}
+            {{#if backgroundSuggested}}
+            <span class="cc-chip cc-bg-asi-badge cc-bg-asi-badge--background">Background fit</span>
+            {{/if}}
+          </div>
+        </div>
+        <select id="cc-bg-asi-{{key}}" data-asi-ability="{{key}}" aria-label="{{label}} modifier">
           {{#each options}}
           <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
           {{/each}}
@@ -26,7 +72,7 @@
       {{/each}}
     </div>
     {{else}}
-    <p>This background doesn't grant configurable ability increases.</p>
+    <p>This background doesn't grant configurable starting ability score increases.</p>
     {{/if}}
   </section>
   {{else}}

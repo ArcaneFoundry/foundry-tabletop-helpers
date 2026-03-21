@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   allowCustomBackgrounds,
+  allowOriginFeatChoice,
+  allowUnrestrictedBackgroundAsi,
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
@@ -40,6 +42,8 @@ describe("character creator settings accessors", () => {
     expect(getLevel1HpMethod()).toBe("max");
     expect(getMaxRerolls()).toBe(0);
     expect(allowCustomBackgrounds()).toBe(false);
+    expect(allowOriginFeatChoice()).toBe(false);
+    expect(allowUnrestrictedBackgroundAsi()).toBe(false);
   });
 
   it("parses pack sources, disabled content, and allowed methods safely", () => {

@@ -4,6 +4,8 @@ import type { AbilityScoreMethod, PackSourceConfig } from "./character-creator-t
 import { compendiumIndexer } from "./data/compendium-indexer";
 import { buildPackSourceGroups, invalidatePackAnalysisCache } from "./data/pack-analysis";
 import {
+  allowOriginFeatChoice,
+  allowUnrestrictedBackgroundAsi,
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
@@ -87,6 +89,8 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
           allowMulticlass: allowMulticlass(),
           equipmentMethod: getEquipmentMethod(),
           level1HpMethod: getLevel1HpMethod(),
+          allowOriginFeatChoice: allowOriginFeatChoice(),
+          allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsi(),
         };
       }
 
@@ -111,6 +115,8 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
           setSetting(MOD, CC_SETTINGS.ALLOW_MULTICLASS, !!formData.allowMulticlass),
           setEquipmentMethod(String(formData.equipmentMethod ?? "")),
           setLevel1HpMethod(String(formData.level1HpMethod ?? "")),
+          setSetting(MOD, CC_SETTINGS.ALLOW_ORIGIN_FEAT_CHOICE, !!formData.allowOriginFeatChoice),
+          setSetting(MOD, CC_SETTINGS.ALLOW_UNRESTRICTED_BACKGROUND_ASI, !!formData.allowUnrestrictedBackgroundAsi),
         ]);
 
         getUI()?.notifications?.info?.("Character Creator settings saved.");

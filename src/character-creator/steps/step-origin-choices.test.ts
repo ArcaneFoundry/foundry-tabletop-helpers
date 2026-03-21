@@ -4,6 +4,7 @@ import type { WizardState } from "../character-creator-types";
 
 const loadPacksMock = vi.fn();
 const getIndexedEntriesMock = vi.fn();
+const getAllIndexedEntriesMock = vi.fn();
 const getCachedDescriptionMock = vi.fn();
 const fetchDocumentMock = vi.fn();
 const renderTemplateMock = vi.fn(async (_templatePath: string, data: Record<string, unknown>) => {
@@ -29,6 +30,7 @@ vi.mock("../data/compendium-indexer", () => ({
   compendiumIndexer: {
     loadPacks: loadPacksMock,
     getIndexedEntries: getIndexedEntriesMock,
+    getAllIndexedEntries: getAllIndexedEntriesMock,
     getCachedDescription: getCachedDescriptionMock,
     fetchDocument: fetchDocumentMock,
   },
@@ -151,6 +153,7 @@ describe("step origin choices", () => {
       if (type === "feat") return [];
       return [];
     });
+    getAllIndexedEntriesMock.mockReturnValue([]);
     getCachedDescriptionMock.mockResolvedValue("");
     fetchDocumentMock.mockResolvedValue(null);
     renderTemplateMock.mockImplementation(async (_templatePath: string, data: Record<string, unknown>) => {
@@ -192,7 +195,7 @@ describe("step origin choices", () => {
   it("shows custom origin feat choices when feat swapping is enabled", async () => {
     const { createOriginChoicesStep } = await import("./step-origin-choices");
     const state = makeState();
-    state.config.allowCustomBackgrounds = true;
+    state.config.allowOriginFeatChoice = true;
     getIndexedEntriesMock.mockImplementation((type: string) => {
       if (type === "background") {
         return [
@@ -233,6 +236,37 @@ describe("step origin choices", () => {
       }
       return [];
     });
+    getAllIndexedEntriesMock.mockReturnValue([
+      { uuid: "background.sage", name: "Sage", img: "sage.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+      { uuid: "background.guard", name: "Guard", img: "guard.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+      {
+        uuid: "feat.magic-initiate",
+        name: "Magic Initiate",
+        img: "feat.png",
+        packId: "dnd5e.feats",
+        packLabel: "Feats",
+        type: "feat",
+        itemType: "feat",
+      },
+      {
+        uuid: "feat.alert",
+        name: "Alert",
+        img: "alert.png",
+        packId: "dnd5e.feats",
+        packLabel: "Feats",
+        type: "feat",
+        itemType: "feat",
+      },
+      {
+        uuid: "feat.boon",
+        name: "Boon of Combat Prowess",
+        img: "boon.png",
+        packId: "dnd5e.feats",
+        packLabel: "Feats",
+        type: "feat",
+        itemType: "feat",
+      },
+    ]);
     getCachedDescriptionMock.mockResolvedValue("<p>Stay sharp.</p>");
     fetchDocumentMock.mockImplementation(async (uuid: string) => {
       if (uuid === "background.sage") {
@@ -355,6 +389,53 @@ describe("step origin choices", () => {
     );
   });
 
+  it("shows origin feat choices when the dedicated origin-feat-choice rule is enabled", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.config.allowOriginFeatChoice = true;
+    getAllIndexedEntriesMock.mockReturnValue([
+      {
+        uuid: "feat.magic-initiate",
+        name: "Magic Initiate",
+        img: "feat.png",
+        packId: "dnd5e.feats",
+        packLabel: "Feats",
+        type: "feat",
+        itemType: "feat",
+      },
+      {
+        uuid: "feat.alert",
+        name: "Alert",
+        img: "alert.png",
+        packId: "dnd5e.feats",
+        packLabel: "Feats",
+        type: "feat",
+        itemType: "feat",
+      },
+    ]);
+    fetchDocumentMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "feat.magic-initiate" || uuid === "feat.alert") {
+        return { system: { type: { subtype: "origin" }, prerequisites: { level: null } } };
+      }
+      return null;
+    });
+
+    const vm = await createOriginChoicesStep().buildViewModel(state);
+
+    expect(vm).toMatchObject({
+      allowOriginFeatSwap: true,
+      hasOriginFeats: true,
+    });
+    expect(loadPacksMock).toHaveBeenCalledWith(state.config.packSources);
+  });
+
+  it("is not applicable when origin feat swapping is disabled", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+
+    expect(createOriginChoicesStep().isApplicable(state)).toBe(false);
+  });
+
   it("shows a fallback message when no alternative origin feats are available", async () => {
     const { createOriginChoicesStep } = await import("./step-origin-choices");
     const state = makeState();
@@ -379,21 +460,12 @@ describe("step origin choices", () => {
     const state = makeState();
     state.config.allowCustomBackgrounds = true;
 
-    getIndexedEntriesMock.mockImplementation((type: string) => {
-      if (type === "background") {
-        return [
-          { uuid: "background.sage", name: "Sage", img: "sage.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
-          { uuid: "background.guard", name: "Guard", img: "guard.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
-        ];
-      }
-      if (type === "feat") {
-        return [
-          { uuid: "feat.magic-initiate", name: "Magic Initiate", img: "feat.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
-          { uuid: "feat.alert", name: "Alert", img: "alert.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
-        ];
-      }
-      return [];
-    });
+    getAllIndexedEntriesMock.mockReturnValue([
+      { uuid: "background.sage", name: "Sage", img: "sage.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+      { uuid: "background.guard", name: "Guard", img: "guard.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+      { uuid: "feat.magic-initiate", name: "Magic Initiate", img: "feat.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
+      { uuid: "feat.alert", name: "Alert", img: "alert.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
+    ]);
     fetchDocumentMock.mockImplementation(async (uuid: string) => {
       if (uuid === "background.sage") return { mockGrants: { originFeatUuid: "feat.magic-initiate" } };
       if (uuid === "background.guard") return { mockGrants: { originFeatUuid: "feat.alert" } };
@@ -406,5 +478,71 @@ describe("step origin choices", () => {
     expect((vm.availableOriginFeats as Array<{ uuid: string }>)).toEqual([
       expect.objectContaining({ uuid: "feat.magic-initiate" }),
     ]);
+  });
+
+  it("includes workflow-eligible premium origin feats even when backgrounds do not grant them directly", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.config.allowCustomBackgrounds = true;
+
+    getPackAnalysisMapMock.mockResolvedValue(new Map([
+      ["dnd5e.feats", { collection: "dnd5e.feats" }],
+      ["dnd-heroes-faerun.options", { collection: "dnd-heroes-faerun.options" }],
+    ]));
+
+    getAllIndexedEntriesMock.mockReturnValue([
+      { uuid: "background.sage", name: "Sage", img: "sage.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+      { uuid: "feat.magic-initiate", name: "Magic Initiate", img: "feat.png", packId: "dnd5e.feats", packLabel: "Feats", type: "feat", itemType: "feat" },
+      { uuid: "feat.faerun-guide", name: "Faerun Guide", img: "faerun.png", packId: "dnd-heroes-faerun.options", packLabel: "Heroes of Faerun: Origin Feats", type: "feat", itemType: "feat" },
+    ]);
+    fetchDocumentMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "background.sage") return { mockGrants: { originFeatUuid: "feat.magic-initiate" } };
+      return { system: { type: { value: "feat" }, prerequisites: { level: null } } };
+    });
+    isEntryRelevantForWorkflowMock.mockImplementation((entry: { uuid: string }) =>
+      entry.uuid === "feat.magic-initiate" || entry.uuid === "feat.faerun-guide");
+
+    const vm = await createOriginChoicesStep().buildViewModel(state);
+
+    expect((vm.availableOriginFeats as Array<{ uuid: string }>).map((entry) => entry.uuid)).toEqual([
+      "feat.faerun-guide",
+      "feat.magic-initiate",
+    ]);
+  });
+
+  it("keeps origin-category feats with level-1-safe prerequisites", async () => {
+    const { createOriginChoicesStep } = await import("./step-origin-choices");
+    const state = makeState();
+    state.config.allowCustomBackgrounds = true;
+
+    getPackAnalysisMapMock.mockResolvedValue(new Map([
+      ["dnd-heroes-faerun.options", { collection: "dnd-heroes-faerun.options" }],
+    ]));
+
+    getAllIndexedEntriesMock.mockReturnValue([
+      { uuid: "background.sage", name: "Sage", img: "sage.png", packId: "dnd5e.backgrounds", packLabel: "Backgrounds", type: "background", itemType: "background" },
+      { uuid: "feat.faerun-guide", name: "Faerun Guide", img: "faerun.png", packId: "dnd-heroes-faerun.options", packLabel: "Heroes of Faerun: Origin Feats", type: "feat", itemType: "feat" },
+      { uuid: "feat.heroic-boon", name: "Heroic Boon", img: "boon.png", packId: "dnd-heroes-faerun.options", packLabel: "Heroes of Faerun: Origin Feats", type: "feat", itemType: "feat" },
+    ]);
+
+    fetchDocumentMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "background.sage") return { mockGrants: { originFeatUuid: "feat.magic-initiate" } };
+      if (uuid === "feat.faerun-guide") return { system: { type: { subtype: "origin" }, prerequisites: { level: 0 } } };
+      if (uuid === "feat.heroic-boon") return { system: { type: { subtype: "epicBoon" }, prerequisites: { level: 19 } } };
+      return null;
+    });
+
+    isEntryRelevantForWorkflowMock.mockReturnValue(true);
+
+    const vm = await createOriginChoicesStep().buildViewModel(state);
+
+    expect((vm.availableOriginFeats as Array<{ uuid: string }>).map((entry) => entry.uuid)).toEqual([
+      "feat.faerun-guide",
+    ]);
+    expect(isEntryRelevantForWorkflowMock).toHaveBeenCalledWith(
+      expect.objectContaining({ uuid: "feat.faerun-guide" }),
+      "origin-feat",
+      expect.objectContaining({ prerequisiteLevel: 0, featCategory: "origin" }),
+    );
   });
 });

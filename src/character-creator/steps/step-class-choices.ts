@@ -101,7 +101,7 @@ function patchSelectedChips(
   const host = el.querySelector<HTMLElement>(`[data-selected-chips="${section}"]`);
   if (!host) return;
   host.innerHTML = entries.map((entry) =>
-    `<span class="cc-choice-chip cc-tooltip-anchor" tabindex="0" data-tooltip="${escapeHtml(entry.tooltip)}"><i class="fa-solid ${entry.iconClass ?? "fa-book"}"></i><span>${escapeHtml(entry.label)}</span></span>`
+    `<span class="cc-choice-chip"><i class="fa-solid ${entry.iconClass ?? "fa-book"}"></i><span>${escapeHtml(entry.label)}</span></span>`
   ).join("");
 }
 

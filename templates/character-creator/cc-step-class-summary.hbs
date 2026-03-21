@@ -1,80 +1,149 @@
 <div class="cc-class-summary">
-  <div class="cc-step-intro">
-    <p>Review the core grants from {{className}} before moving into your origin choices.</p>
-  </div>
+  <section class="cc-class-summary__hero cc-panel">
+    <div class="cc-class-summary__hero-art">
+      {{#if classImage}}
+      <img src="{{classImage}}" alt="{{className}}">
+      {{else}}
+      <div class="cc-class-summary__hero-fallback">
+        <i class="fa-solid fa-hat-wizard"></i>
+      </div>
+      {{/if}}
+      <div class="cc-class-summary__hero-glow"></div>
+    </div>
 
-  <section class="cc-panel">
-    <h3>Core Stats</h3>
-    <p><strong>Hit Die:</strong> {{hitDie}}</p>
-    <p>
-      <strong>Level 1 Max HP Preview:</strong> {{startingHpPreview}}
-      {{#unless usesAssignedCon}}<span>(assuming CON 10 for now)</span>{{/unless}}
-    </p>
-  </section>
+    <div class="cc-class-summary__hero-copy">
+      <div class="cc-class-summary__kicker">Class Revelation</div>
+      <h2 class="cc-class-summary__title">{{className}}</h2>
+      <p class="cc-class-summary__subtitle">Review the signature strengths, battlefield tools, and opening talents your class brings into the adventure.</p>
 
-  {{#if hasChosenSkills}}
-  <section class="cc-panel">
-    <h3>Selected Class Skills</h3>
-    <div class="cc-chip-row">
-      {{#each chosenSkills}}
-      <span class="cc-chip">{{this}}</span>
-      {{/each}}
+      <div class="cc-class-summary__sigils">
+        <div class="cc-class-summary__sigil">
+          <div class="cc-class-summary__sigil-label">Hit Die</div>
+          <div class="cc-class-summary__sigil-value">{{hitDie}}</div>
+        </div>
+        <div class="cc-class-summary__sigil">
+          <div class="cc-class-summary__sigil-label">Level 1 HP</div>
+          <div class="cc-class-summary__sigil-value">{{startingHpPreview}}</div>
+          {{#unless usesAssignedCon}}
+          <div class="cc-class-summary__sigil-note">Assuming CON 10</div>
+          {{/unless}}
+        </div>
+        <div class="cc-class-summary__sigil">
+          <div class="cc-class-summary__sigil-label">Opening Features</div>
+          <div class="cc-class-summary__sigil-value">{{featureCount}}</div>
+        </div>
+      </div>
     </div>
   </section>
-  {{/if}}
 
-  {{#if hasChosenWeaponMasteries}}
-  <section class="cc-panel">
-    <h3>Chosen Weapon Masteries</h3>
-    <div class="cc-chip-row">
-      {{#each chosenWeaponMasteries}}
-      <span class="cc-chip">{{this}}</span>
-      {{/each}}
+  <section class="cc-class-summary__overview">
+    <div class="cc-class-summary__column">
+      {{#if hasChosenSkills}}
+      <section class="cc-class-summary__panel cc-panel">
+        <div class="cc-class-summary__panel-header">
+          <div>
+            <div class="cc-class-summary__eyebrow">Trained Instincts</div>
+            <h3>Class Skills</h3>
+          </div>
+        </div>
+        <div class="cc-chip-row cc-class-summary__chip-row">
+          {{#each chosenSkills}}
+          <span class="cc-chip cc-class-summary__chip">{{this}}</span>
+          {{/each}}
+        </div>
+      </section>
+      {{/if}}
+
+      {{#if hasSavingThrows}}
+      <section class="cc-class-summary__panel cc-panel">
+        <div class="cc-class-summary__panel-header">
+          <div>
+            <div class="cc-class-summary__eyebrow">Battle Tempering</div>
+            <h3>Saving Throws</h3>
+          </div>
+        </div>
+        <div class="cc-chip-row cc-class-summary__chip-row">
+          {{#each savingThrows}}
+          <span class="cc-chip cc-class-summary__chip cc-class-summary__chip--accent">{{this}}</span>
+          {{/each}}
+        </div>
+      </section>
+      {{/if}}
+
+      {{#if hasChosenWeaponMasteries}}
+      <section class="cc-class-summary__panel cc-panel">
+        <div class="cc-class-summary__panel-header">
+          <div>
+            <div class="cc-class-summary__eyebrow">Signature Arsenal</div>
+            <h3>Weapon Masteries</h3>
+          </div>
+        </div>
+        <div class="cc-chip-row cc-class-summary__chip-row">
+          {{#each chosenWeaponMasteries}}
+          <span class="cc-chip cc-class-summary__chip">{{this}}</span>
+          {{/each}}
+        </div>
+      </section>
+      {{/if}}
+    </div>
+
+    <div class="cc-class-summary__column">
+      {{#if hasArmorProficiencies}}
+      <section class="cc-class-summary__panel cc-panel">
+        <div class="cc-class-summary__panel-header">
+          <div>
+            <div class="cc-class-summary__eyebrow">Wardings</div>
+            <h3>Armor Proficiencies</h3>
+          </div>
+        </div>
+        <div class="cc-chip-row cc-class-summary__chip-row">
+          {{#each armorProficiencies}}
+          <span class="cc-chip cc-class-summary__chip">{{this}}</span>
+          {{/each}}
+        </div>
+      </section>
+      {{/if}}
+
+      {{#if hasWeaponProficiencies}}
+      <section class="cc-class-summary__panel cc-panel">
+        <div class="cc-class-summary__panel-header">
+          <div>
+            <div class="cc-class-summary__eyebrow">Arms Training</div>
+            <h3>Weapon Proficiencies</h3>
+          </div>
+        </div>
+        <div class="cc-chip-row cc-class-summary__chip-row">
+          {{#each weaponProficiencies}}
+          <span class="cc-chip cc-class-summary__chip">{{this}}</span>
+          {{/each}}
+        </div>
+      </section>
+      {{/if}}
     </div>
   </section>
-  {{/if}}
-
-  {{#if hasSavingThrows}}
-  <section class="cc-panel">
-    <h3>Saving Throws</h3>
-    <div class="cc-chip-row">
-      {{#each savingThrows}}
-      <span class="cc-chip">{{this}}</span>
-      {{/each}}
-    </div>
-  </section>
-  {{/if}}
-
-  {{#if hasArmorProficiencies}}
-  <section class="cc-panel">
-    <h3>Armor Proficiencies</h3>
-    <div class="cc-chip-row">
-      {{#each armorProficiencies}}
-      <span class="cc-chip">{{this}}</span>
-      {{/each}}
-    </div>
-  </section>
-  {{/if}}
-
-  {{#if hasWeaponProficiencies}}
-  <section class="cc-panel">
-    <h3>Weapon Proficiencies</h3>
-    <div class="cc-chip-row">
-      {{#each weaponProficiencies}}
-      <span class="cc-chip">{{this}}</span>
-      {{/each}}
-    </div>
-  </section>
-  {{/if}}
 
   {{#if hasFeatures}}
-  <section class="cc-panel">
-    <h3>Features Through Starting Level</h3>
-    <ul class="cc-list">
+  <section class="cc-class-summary__features cc-panel">
+    <div class="cc-class-summary__panel-header">
+      <div>
+        <div class="cc-class-summary__eyebrow">First Threads Of Power</div>
+        <h3>Features Through Starting Level</h3>
+      </div>
+      <div class="cc-class-summary__feature-count">{{featureCount}} unlocked</div>
+    </div>
+
+    <div class="cc-class-summary__feature-list">
       {{#each features}}
-      <li>{{title}}</li>
+      <div class="cc-class-summary__feature-card">
+        <div class="cc-class-summary__feature-sigil">
+          <i class="fa-solid fa-sparkles"></i>
+        </div>
+        <div class="cc-class-summary__feature-copy">
+          <div class="cc-class-summary__feature-title">{{title}}</div>
+        </div>
+      </div>
       {{/each}}
-    </ul>
+    </div>
   </section>
   {{/if}}
 </div>

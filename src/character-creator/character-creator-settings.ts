@@ -12,6 +12,8 @@ import { registerCharacterCreatorSettingsMenus } from "./character-creator-setti
 export { CC_SETTINGS } from "./character-creator-settings-shared";
 export {
   allowCustomBackgrounds,
+  allowOriginFeatChoice,
+  allowUnrestrictedBackgroundAsi,
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
@@ -115,6 +117,24 @@ export function registerCharacterCreatorSettings(settings: {
     });
 
     settings.register(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS, {
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
+      restricted: true,
+    });
+
+    settings.register(MOD, CC_SETTINGS.ALLOW_ORIGIN_FEAT_CHOICE, {
+      name: "Allow Origin Feat Choice",
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
+      restricted: true,
+    });
+
+    settings.register(MOD, CC_SETTINGS.ALLOW_UNRESTRICTED_BACKGROUND_ASI, {
+      name: "Allow Unrestricted Background Ability Score Increases",
       scope: "world",
       config: false,
       type: Boolean,

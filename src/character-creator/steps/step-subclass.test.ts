@@ -116,60 +116,159 @@ beforeEach(() => {
 });
 
 describe("step subclass", () => {
-  it("uses class-specific subclass timing instead of a hardcoded level 3 gate", async () => {
+  it("only applies subclass selection once the class reaches level 3", async () => {
     const { createSubclassStep } = await import("./step-subclass");
     const step = createSubclassStep();
 
-    expect(step.isApplicable(makeState({
-      config: { ...makeState().config, startingLevel: 2 },
-      selections: {
-        class: {
-          uuid: "Compendium.class.wizard",
-          name: "Wizard",
-          img: "wizard.png",
-          identifier: "wizard",
-          skillPool: [],
-          skillCount: 2,
-          isSpellcaster: true,
-          spellcastingAbility: "int",
-          spellcastingProgression: "full",
-        },
+    for (const classSelection of [
+      {
+        uuid: "Compendium.class.barbarian",
+        name: "Barbarian",
+        img: "barbarian.png",
+        identifier: "barbarian",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: false,
+        spellcastingAbility: "",
+        spellcastingProgression: "",
       },
-    }))).toBe(true);
+      {
+        uuid: "Compendium.class.bard",
+        name: "Bard",
+        img: "bard.png",
+        identifier: "bard",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "cha",
+        spellcastingProgression: "full",
+      },
+      {
+        uuid: "Compendium.class.cleric",
+        name: "Cleric",
+        img: "cleric.png",
+        identifier: "cleric",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "wis",
+        spellcastingProgression: "full",
+      },
+      {
+        uuid: "Compendium.class.druid",
+        name: "Druid",
+        img: "druid.png",
+        identifier: "druid",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "wis",
+        spellcastingProgression: "full",
+      },
+      {
+        uuid: "Compendium.class.fighter",
+        name: "Fighter",
+        img: "fighter.png",
+        identifier: "fighter",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: false,
+        spellcastingAbility: "",
+        spellcastingProgression: "",
+      },
+      {
+        uuid: "Compendium.class.monk",
+        name: "Monk",
+        img: "monk.png",
+        identifier: "monk",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: false,
+        spellcastingAbility: "",
+        spellcastingProgression: "",
+      },
+      {
+        uuid: "Compendium.class.paladin",
+        name: "Paladin",
+        img: "paladin.png",
+        identifier: "paladin",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "cha",
+        spellcastingProgression: "half",
+      },
+      {
+        uuid: "Compendium.class.ranger",
+        name: "Ranger",
+        img: "ranger.png",
+        identifier: "ranger",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "wis",
+        spellcastingProgression: "half",
+      },
+      {
+        uuid: "Compendium.class.rogue",
+        name: "Rogue",
+        img: "rogue.png",
+        identifier: "rogue",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: false,
+        spellcastingAbility: "",
+        spellcastingProgression: "",
+      },
+      {
+        uuid: "Compendium.class.sorcerer",
+        name: "Sorcerer",
+        img: "sorcerer.png",
+        identifier: "sorcerer",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "cha",
+        spellcastingProgression: "full",
+      },
+      {
+        uuid: "Compendium.class.warlock",
+        name: "Warlock",
+        img: "warlock.png",
+        identifier: "warlock",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "cha",
+        spellcastingProgression: "pact",
+      },
+      {
+        uuid: "Compendium.class.wizard",
+        name: "Wizard",
+        img: "wizard.png",
+        identifier: "wizard",
+        skillPool: [],
+        skillCount: 2,
+        isSpellcaster: true,
+        spellcastingAbility: "int",
+        spellcastingProgression: "full",
+      },
+    ]) {
+      expect(step.isApplicable(makeState({
+        config: { ...makeState().config, startingLevel: 1 },
+        selections: { class: classSelection },
+      }))).toBe(false);
 
-    expect(step.isApplicable(makeState({
-      config: { ...makeState().config, startingLevel: 1 },
-      selections: {
-        class: {
-          uuid: "Compendium.class.fighter",
-          name: "Fighter",
-          img: "fighter.png",
-          identifier: "fighter",
-          skillPool: [],
-          skillCount: 2,
-          isSpellcaster: false,
-          spellcastingAbility: "",
-          spellcastingProgression: "",
-        },
-      },
-    }))).toBe(false);
+      expect(step.isApplicable(makeState({
+        config: { ...makeState().config, startingLevel: 2 },
+        selections: { class: classSelection },
+      }))).toBe(false);
 
-    expect(step.isApplicable(makeState({
-      config: { ...makeState().config, startingLevel: 1 },
-      selections: {
-        class: {
-          uuid: "Compendium.class.cleric",
-          name: "Cleric",
-          img: "cleric.png",
-          identifier: "cleric",
-          skillPool: [],
-          skillCount: 2,
-          isSpellcaster: true,
-          spellcastingAbility: "wis",
-          spellcastingProgression: "full",
-        },
-      },
-    }))).toBe(true);
+      expect(step.isApplicable(makeState({
+        config: { ...makeState().config, startingLevel: 3 },
+        selections: { class: classSelection },
+      }))).toBe(true);
+    }
   });
 
   it("filters subclasses to the selected class and builds selected-entry details", async () => {

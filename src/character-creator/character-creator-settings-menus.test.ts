@@ -11,6 +11,8 @@ const getAllowedAbilityMethodsMock = vi.fn();
 const setAllowedAbilityMethodsMock = vi.fn(async () => {});
 const getStartingLevelMock = vi.fn();
 const setStartingLevelMock = vi.fn(async () => {});
+const allowOriginFeatChoiceMock = vi.fn();
+const allowUnrestrictedBackgroundAsiMock = vi.fn();
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
 const setEquipmentMethodMock = vi.fn(async () => {});
@@ -39,6 +41,8 @@ vi.mock("../types", () => ({
 
 vi.mock("./character-creator-settings-accessors", () => ({
   allowMulticlass: allowMulticlassMock,
+  allowOriginFeatChoice: allowOriginFeatChoiceMock,
+  allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
   ccAutoOpen: ccAutoOpenMock,
   ccEnabled: ccEnabledMock,
   ccLevelUpEnabled: ccLevelUpEnabledMock,
@@ -70,6 +74,8 @@ vi.mock("./character-creator-settings-shared", () => ({
     ALLOWED_ABILITY_METHODS: "allowedAbilityMethods",
     MAX_REROLLS: "maxRerolls",
     STARTING_LEVEL: "startingLevel",
+    ALLOW_ORIGIN_FEAT_CHOICE: "allowOriginFeatChoice",
+    ALLOW_UNRESTRICTED_BACKGROUND_ASI: "allowUnrestrictedBackgroundAsi",
     ALLOW_MULTICLASS: "allowMulticlass",
     EQUIPMENT_METHOD: "equipmentMethod",
     LEVEL1_HP_METHOD: "level1HpMethod",
@@ -106,6 +112,8 @@ beforeEach(() => {
   });
   getAllowedAbilityMethodsMock.mockReturnValue(["4d6", "pointBuy"]);
   getStartingLevelMock.mockReturnValue(2);
+  allowOriginFeatChoiceMock.mockReturnValue(false);
+  allowUnrestrictedBackgroundAsiMock.mockReturnValue(false);
   allowMulticlassMock.mockReturnValue(true);
   getEquipmentMethodMock.mockReturnValue("both");
   getLevel1HpMethodMock.mockReturnValue("max");
@@ -204,6 +212,8 @@ describe("character creator settings menus", () => {
       method_standardArray: false,
       maxRerolls: 3,
       startingLevel: 2,
+      allowOriginFeatChoice: false,
+      allowUnrestrictedBackgroundAsi: false,
       allowMulticlass: true,
       equipmentMethod: "both",
       level1HpMethod: "max",
@@ -218,6 +228,8 @@ describe("character creator settings menus", () => {
       method_standardArray: false,
       maxRerolls: "4.7",
       startingLevel: "25",
+      allowOriginFeatChoice: true,
+      allowUnrestrictedBackgroundAsi: true,
       allowMulticlass: false,
       equipmentMethod: "gold",
       level1HpMethod: "roll",
@@ -229,6 +241,8 @@ describe("character creator settings menus", () => {
     expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "pointBuy", "standardArray"]);
     expect(setMaxRerollsMock).toHaveBeenCalledWith(4.7);
     expect(setStartingLevelMock).toHaveBeenCalledWith(25);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
     expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
     expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
     expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
@@ -264,6 +278,8 @@ describe("character creator settings menus", () => {
         { name: "method_standardArray", disabled: false, type: "checkbox", checked: true },
         { name: "maxRerolls", disabled: false, value: "2.9" },
         { name: "startingLevel", disabled: false, value: "6" },
+        { name: "allowOriginFeatChoice", disabled: false, type: "checkbox", checked: true },
+        { name: "allowUnrestrictedBackgroundAsi", disabled: false, type: "checkbox", checked: true },
         { name: "allowMulticlass", disabled: false, type: "checkbox", checked: true },
         { name: "equipmentMethod", disabled: false, value: "gold" },
         { name: "level1HpMethod", disabled: false, value: "roll" },
@@ -283,6 +299,8 @@ describe("character creator settings menus", () => {
     expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["standardArray"]);
     expect(setMaxRerollsMock).toHaveBeenCalledWith(2.9);
     expect(setStartingLevelMock).toHaveBeenCalledWith(6);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
     expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
     expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
     expect(formApp.close).toHaveBeenCalled();
