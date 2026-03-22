@@ -6,7 +6,7 @@ import { buildClassFlowShellModel } from "./build-class-flow-shell-model";
 function createState(overrides?: Partial<WizardState>): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["class", "classChoices", "classSummary", "weaponMasteries", "review"],
+    applicableSteps: ["class", "classChoices", "classExpertise", "classLanguages", "weaponMasteries", "classSummary", "review"],
     selections: {},
     stepStatus: new Map(),
     config: {
@@ -36,9 +36,11 @@ function createSteps(overrides?: Partial<Record<string, { status: "pending" | "c
   const base = [
     { id: "class", label: "Class", icon: "fa-solid fa-shield-halved", status: "pending" as const, active: true },
     { id: "classChoices", label: "Skills", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
+    { id: "classExpertise", label: "Expertise", icon: "fa-solid fa-bullseye", status: "pending" as const, active: false },
+    { id: "classLanguages", label: "Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
     { id: "weaponMasteries", label: "Masteries", icon: "fa-solid fa-swords", status: "pending" as const, active: false },
-    { id: "classSummary", label: "Features", icon: "fa-solid fa-stars", status: "pending" as const, active: false },
-    { id: "review", label: "Review", icon: "fa-solid fa-scroll", status: "pending" as const, active: false },
+    { id: "classSummary", label: "Summary", icon: "fa-solid fa-scroll", status: "pending" as const, active: false },
+    { id: "review", label: "Review", icon: "fa-solid fa-stars", status: "pending" as const, active: false },
   ];
 
   return base.map((step) => ({
@@ -49,24 +51,24 @@ function createSteps(overrides?: Partial<Record<string, { status: "pending" | "c
 
 function createClassSelection(overrides?: Partial<ClassSelection>): ClassSelection {
   return {
-    uuid: "Compendium.test.classes.Item.fighter",
-    name: "Fighter",
-    img: "fighter.webp",
-    identifier: "fighter",
-    skillPool: ["ath", "sur"],
-    skillCount: 2,
+    uuid: "Compendium.test.classes.Item.rogue",
+    name: "Rogue",
+    img: "rogue.webp",
+    identifier: "rogue",
+    skillPool: ["acr", "ste", "inv", "prc"],
+    skillCount: 4,
     isSpellcaster: false,
     spellcastingAbility: "",
     spellcastingProgression: "",
     hasWeaponMastery: true,
-    weaponMasteryCount: 3,
-    weaponMasteryPool: ["weapon:sim:*", "weapon:mar:*"],
+    weaponMasteryCount: 2,
+    weaponMasteryPool: ["weapon:sim:*"],
     ...overrides,
   };
 }
 
 describe("buildClassFlowShellModel", () => {
-  it("keeps the class shell in its default tone before any class is selected", () => {
+  it("keeps the shell in its default tone before any class is selected", () => {
     const model = buildClassFlowShellModel(createState(), createSteps(), "class");
 
     expect(model.currentPane).toBe("class");
@@ -75,7 +77,7 @@ describe("buildClassFlowShellModel", () => {
     expect(model.selectedClassIdentifier).toBeNull();
   });
 
-  it("switches the class shell into the accent tone once a class is selected", () => {
+  it("switches into the accent tone once a class is selected", () => {
     const model = buildClassFlowShellModel(
       createState({
         selections: { class: createClassSelection() },
@@ -84,31 +86,12 @@ describe("buildClassFlowShellModel", () => {
       "class",
     );
 
-    expect(model.currentPane).toBe("class");
     expect(model.headerTone).toBe("accent");
-    expect(model.selectedClassIdentifier).toBe("fighter");
-    expect(model.aggregateStepper.main.status).toBe("selection-active");
+    expect(model.selectedClassIdentifier).toBe("rogue");
+    expect(model.aggregateStepper.milestones[0]).toMatchObject({ id: "class", status: "selection-active" });
   });
 
-  it("tracks the skills pane and keeps the shell accented while class work is in progress", () => {
-    const model = buildClassFlowShellModel(
-      createState({
-        selections: { class: createClassSelection() },
-      }),
-      createSteps({
-        class: { status: "complete", active: false },
-        classChoices: { status: "pending", active: true },
-      }),
-      "classChoices",
-    );
-
-    expect(model.currentPane).toBe("classChoices");
-    expect(model.title).toBe("Choose Your Skills");
-    expect(model.headerTone).toBe("accent");
-    expect(model.aggregateStepper.main.status).toBe("in-progress");
-  });
-
-  it("tracks the weapon masteries pane inside the mounted class shell", () => {
+  it("maps the expertise pane into the mounted class shell", () => {
     const model = buildClassFlowShellModel(
       createState({
         selections: { class: createClassSelection() },
@@ -116,14 +99,36 @@ describe("buildClassFlowShellModel", () => {
       createSteps({
         class: { status: "complete", active: false },
         classChoices: { status: "complete", active: false },
-        weaponMasteries: { status: "pending", active: true },
+        classExpertise: { status: "pending", active: true },
       }),
-      "weaponMasteries",
+      "classExpertise",
     );
 
-    expect(model.currentPane).toBe("weaponMasteries");
-    expect(model.title).toBe("Choose Your Weapon Masteries");
+    expect(model.currentPane).toBe("classExpertise");
+    expect(model.title).toBe("Choose Your Expertise");
     expect(model.headerTone).toBe("accent");
-    expect(model.aggregateStepper.main.status).toBe("in-progress");
+    expect(model.aggregateStepper.milestones[1]).toMatchObject({ id: "selections", status: "in-progress" });
+  });
+
+  it("keeps the mounted shell active through the class summary pane", () => {
+    const model = buildClassFlowShellModel(
+      createState({
+        selections: { class: createClassSelection() },
+      }),
+      createSteps({
+        class: { status: "complete", active: false },
+        classChoices: { status: "complete", active: false },
+        classExpertise: { status: "complete", active: false },
+        classLanguages: { status: "complete", active: false },
+        weaponMasteries: { status: "complete", active: false },
+        classSummary: { status: "pending", active: true },
+      }),
+      "classSummary",
+    );
+
+    expect(model.currentPane).toBe("classSummary");
+    expect(model.title).toBe("Class Summary");
+    expect(model.headerTone).toBe("accent");
+    expect(model.aggregateStepper.milestones[2]).toMatchObject({ id: "classSummary", status: "in-progress" });
   });
 });

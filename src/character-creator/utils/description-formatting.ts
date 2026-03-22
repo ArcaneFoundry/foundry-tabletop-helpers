@@ -12,6 +12,10 @@ function normalizeDescriptionTokens(text: string): string {
   return text
     .replace(/[\u00ad\u200b-\u200d\ufeff]/g, "")
     .replace(/@UUID\[[^\]]+\]\{([^}]+)\}/g, "$1")
+    .replace(/&(?:amp;)?Reference\[([^\]]+)\]/gi, (_match, value: string) => {
+      const label = value.split(/[|,]/)[0]?.replace(/[-_]+/g, " ").trim() ?? "";
+      return label;
+    })
     .replace(/\[\[\/award\s+([^[\]]+)\]\]/gi, "$1")
     .replace(/\[\[lookup\s+@name\s+lowercase\]\]/gi, "you")
     .replace(/\[\[lookup\s+@name\]\]/gi, "You")

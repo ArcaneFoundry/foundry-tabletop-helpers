@@ -11,15 +11,23 @@
 
 import type { FoundryDocument } from "../../types";
 import { fromUuid } from "../../types";
-import type { BackgroundGrants, SpeciesItemChoiceGroup } from "../character-creator-types";
+import type {
+  BackgroundGrants,
+  ClassAdvancementRequirement,
+  ClassAdvancementRequirementType,
+  SpeciesItemChoiceGroup,
+} from "../character-creator-types";
 import { ABILITY_KEYS, SKILLS } from "./dnd5e-constants";
 
 /* ── Internal Types ─────────────────────────────────────── */
 
 /** Shape of a single advancement entry in `system.advancement`. */
 interface AdvancementEntry {
+  _id?: string;
   type?: string;
   title?: string;
+  level?: number;
+  classRestriction?: string;
   configuration?: Record<string, unknown>;
 }
 
@@ -74,7 +82,77 @@ function parseGrantKey(key: string): string {
 function toStringList(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((entry): entry is string => typeof entry === "string");
   if (value instanceof Set) return [...value].filter((entry): entry is string => typeof entry === "string");
+  if (
+    value
+    && typeof value === "object"
+    && Symbol.iterator in value
+    && typeof (value as Iterable<unknown>)[Symbol.iterator] === "function"
+  ) {
+    return [...(value as Iterable<unknown>)].filter((entry): entry is string => typeof entry === "string");
+  }
   return [];
+}
+
+function getChoiceCount(value: unknown): number {
+  if (Array.isArray(value)) {
+    return value.reduce<number>((sum, choice) => {
+      if (!choice || typeof choice !== "object") return sum;
+      const count = (choice as { count?: unknown }).count;
+      return sum + (typeof count === "number" ? count : 0);
+    }, 0);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).reduce<number>((sum, choice) => {
+      if (!choice || typeof choice !== "object") return sum;
+      const count = (choice as { count?: unknown }).count;
+      return sum + (typeof count === "number" ? count : 0);
+    }, 0);
+  }
+
+  return 0;
+}
+
+function normalizePoolValues(value: unknown): string[] {
+  if (Array.isArray(value)) return toStringList(value);
+  if (value && typeof value === "object") {
+    const entries = Object.values(value as Record<string, unknown>);
+    if (entries.every((entry) => typeof entry === "string")) {
+      return entries as string[];
+    }
+  }
+  return [];
+}
+
+function classifyClassAdvancementRequirement(
+  entry: AdvancementEntry,
+): ClassAdvancementRequirementType | null {
+  const title = (entry.title ?? "").trim().toLowerCase();
+  const mode = typeof entry.configuration?.mode === "string" ? entry.configuration.mode.toLowerCase() : "";
+
+  if (entry.type === "ItemChoice") return "itemChoices";
+  if (entry.type !== "Trait") return null;
+  if ((entry.classRestriction ?? "").toLowerCase() === "secondary") return null;
+
+  if (title === "skill proficiencies" && mode === "default") return "skills";
+  if (title === "weapon mastery" && mode === "mastery") return "weaponMasteries";
+  if (mode === "expertise") return "expertise";
+  if (title.includes("cant") || title.includes("language")) return "languages";
+  if (title.includes("tool")) return "tools";
+  return null;
+}
+
+function buildImplicitPool(type: ClassAdvancementRequirementType): string[] {
+  switch (type) {
+    case "expertise":
+      return ["skills:proficient"];
+    case "languages":
+      return ["languages:standard:*"];
+    case "tools":
+      return ["tool:*"];
+    default:
+      return [];
+  }
 }
 
 /** All 18 skill abbreviation keys. */
@@ -278,6 +356,66 @@ export function parseClassWeaponMasteryAdvancement(
   };
 }
 
+export async function parseClassAdvancementRequirements(
+  doc: FoundryDocument,
+  maxLevel = 1,
+): Promise<ClassAdvancementRequirement[]> {
+  const advancements = getAdvancementArray(doc);
+  const requirements: ClassAdvancementRequirement[] = [];
+
+  for (const [index, entry] of advancements.entries()) {
+    const type = classifyClassAdvancementRequirement(entry);
+    if (!type) continue;
+
+    const level = typeof entry.level === "number" ? entry.level : 1;
+    if (level > maxLevel) continue;
+
+    const requiredCount = getChoiceCount(entry.configuration?.choices);
+    if (requiredCount <= 0) continue;
+
+    const explicitPool = normalizePoolValues(
+      type === "itemChoices"
+        ? entry.configuration?.pool
+        : Array.isArray(entry.configuration?.choices)
+          ? (entry.configuration?.choices as Array<Record<string, unknown>>).flatMap((choice) => normalizePoolValues(choice.pool))
+          : Object.values(entry.configuration?.choices as Record<string, unknown> ?? {}).flatMap((choice) =>
+            normalizePoolValues((choice as { pool?: unknown }).pool)
+          ),
+    );
+
+    const requirement: ClassAdvancementRequirement = {
+      id: entry._id ?? `${type}-${level}-${index}`,
+      type,
+      title: entry.title ?? "Class Choice",
+      level,
+      advancementType: entry.type ?? "Trait",
+      mode: typeof entry.configuration?.mode === "string" ? entry.configuration.mode : undefined,
+      classRestriction: entry.classRestriction,
+      requiredCount,
+      pool: explicitPool.length > 0 ? explicitPool : buildImplicitPool(type),
+      groupKey: type,
+    };
+
+    if (type === "itemChoices") {
+      const itemChoiceOptions = [];
+      for (const uuid of normalizePoolValues(entry.configuration?.pool)) {
+        const itemDoc = await fromUuid(uuid);
+        if (!itemDoc) continue;
+        itemChoiceOptions.push({
+          uuid,
+          name: itemDoc.name ?? uuid,
+          img: itemDoc.img ?? "",
+        });
+      }
+      requirement.itemChoices = itemChoiceOptions;
+    }
+
+    requirements.push(requirement);
+  }
+
+  return requirements;
+}
+
 /* ── Class Spellcasting ────────────────────────────────── */
 
 /** Parsed spellcasting configuration from a class document. */
@@ -400,10 +538,7 @@ export function parseDocumentWeaponProficiencies(doc: FoundryDocument): string[]
   const advancements = getAdvancementArray(doc);
   for (const advancement of advancements) {
     if (advancement.type !== "Trait" || !advancement.configuration) continue;
-    const grants = Array.isArray(advancement.configuration.grants)
-      ? advancement.configuration.grants as string[]
-      : [];
-    for (const grant of grants) {
+    for (const grant of toStringList(advancement.configuration.grants)) {
       if (typeof grant !== "string" || !grant.startsWith("weapon:")) continue;
       proficiencies.add(grant);
     }

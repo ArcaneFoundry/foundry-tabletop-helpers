@@ -13,6 +13,7 @@ const getStartingLevelMock = vi.fn();
 const setStartingLevelMock = vi.fn(async () => {});
 const allowOriginFeatChoiceMock = vi.fn();
 const allowUnrestrictedBackgroundAsiMock = vi.fn();
+const allowFirearmsMock = vi.fn();
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
 const setEquipmentMethodMock = vi.fn(async () => {});
@@ -24,6 +25,8 @@ const ccLevelUpEnabledMock = vi.fn();
 const getMaxRerollsMock = vi.fn();
 const setMaxRerollsMock = vi.fn(async () => {});
 const loadPacksInvalidateMock = vi.fn();
+const getCharacterCreatorIndexStatusMock = vi.fn();
+const rebuildCharacterCreatorIndexCacheMock = vi.fn(async () => {});
 
 vi.mock("../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -41,6 +44,7 @@ vi.mock("../types", () => ({
 
 vi.mock("./character-creator-settings-accessors", () => ({
   allowMulticlass: allowMulticlassMock,
+  allowFirearms: allowFirearmsMock,
   allowOriginFeatChoice: allowOriginFeatChoiceMock,
   allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
   ccAutoOpen: ccAutoOpenMock,
@@ -66,6 +70,11 @@ vi.mock("./data/compendium-indexer", () => ({
   },
 }));
 
+vi.mock("./character-creator-index-cache", () => ({
+  getCharacterCreatorIndexStatus: getCharacterCreatorIndexStatusMock,
+  rebuildCharacterCreatorIndexCache: rebuildCharacterCreatorIndexCacheMock,
+}));
+
 vi.mock("./character-creator-settings-shared", () => ({
   CC_SETTINGS: {
     ENABLED: "enabled",
@@ -77,6 +86,7 @@ vi.mock("./character-creator-settings-shared", () => ({
     ALLOW_ORIGIN_FEAT_CHOICE: "allowOriginFeatChoice",
     ALLOW_UNRESTRICTED_BACKGROUND_ASI: "allowUnrestrictedBackgroundAsi",
     ALLOW_MULTICLASS: "allowMulticlass",
+    ALLOW_FIREARMS: "allowFirearms",
     EQUIPMENT_METHOD: "equipmentMethod",
     LEVEL1_HP_METHOD: "level1HpMethod",
   },
@@ -114,6 +124,7 @@ beforeEach(() => {
   getStartingLevelMock.mockReturnValue(2);
   allowOriginFeatChoiceMock.mockReturnValue(false);
   allowUnrestrictedBackgroundAsiMock.mockReturnValue(false);
+  allowFirearmsMock.mockReturnValue(false);
   allowMulticlassMock.mockReturnValue(true);
   getEquipmentMethodMock.mockReturnValue("both");
   getLevel1HpMethodMock.mockReturnValue("max");
@@ -129,6 +140,12 @@ beforeEach(() => {
     feats: [],
     spells: [],
     items: [],
+  });
+  getCharacterCreatorIndexStatusMock.mockReturnValue({
+    state: "missing",
+    label: "Not indexed",
+    detail: "Build the cache.",
+    packCount: 0,
   });
   getGameMock.mockReturnValue({
     packs: [
@@ -214,6 +231,7 @@ describe("character creator settings menus", () => {
       startingLevel: 2,
       allowOriginFeatChoice: false,
       allowUnrestrictedBackgroundAsi: false,
+      allowFirearms: false,
       allowMulticlass: true,
       equipmentMethod: "both",
       level1HpMethod: "max",
@@ -230,6 +248,7 @@ describe("character creator settings menus", () => {
       startingLevel: "25",
       allowOriginFeatChoice: true,
       allowUnrestrictedBackgroundAsi: true,
+      allowFirearms: true,
       allowMulticlass: false,
       equipmentMethod: "gold",
       level1HpMethod: "roll",
@@ -243,6 +262,7 @@ describe("character creator settings menus", () => {
     expect(setStartingLevelMock).toHaveBeenCalledWith(25);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowFirearms", true);
     expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
     expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
     expect(notifications.info).toHaveBeenCalledWith("Character Creator settings saved.");
@@ -280,6 +300,7 @@ describe("character creator settings menus", () => {
         { name: "startingLevel", disabled: false, value: "6" },
         { name: "allowOriginFeatChoice", disabled: false, type: "checkbox", checked: true },
         { name: "allowUnrestrictedBackgroundAsi", disabled: false, type: "checkbox", checked: true },
+        { name: "allowFirearms", disabled: false, type: "checkbox", checked: true },
         { name: "allowMulticlass", disabled: false, type: "checkbox", checked: true },
         { name: "equipmentMethod", disabled: false, value: "gold" },
         { name: "level1HpMethod", disabled: false, value: "roll" },
@@ -301,6 +322,7 @@ describe("character creator settings menus", () => {
     expect(setStartingLevelMock).toHaveBeenCalledWith(6);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowFirearms", true);
     expect(setEquipmentMethodMock).toHaveBeenCalledWith("gold");
     expect(setLevel1HpMethodMock).toHaveBeenCalledWith("roll");
     expect(formApp.close).toHaveBeenCalled();
@@ -372,8 +394,15 @@ describe("character creator settings menus", () => {
       items: [],
     });
     expect(loadPacksInvalidateMock).toHaveBeenCalled();
-    expect(notifications.info).toHaveBeenCalledWith(
-      "Compendium sources updated. Changes take effect on next wizard open.",
-    );
+    expect(rebuildCharacterCreatorIndexCacheMock).toHaveBeenCalledWith({
+      classes: ["dnd-players-handbook.classes"],
+      subclasses: [],
+      races: [],
+      backgrounds: [],
+      feats: [],
+      spells: ["dnd-players-handbook.spells"],
+      items: [],
+    });
+    expect(notifications.info).toHaveBeenCalledWith("Compendium sources saved and indexed.");
   });
 });

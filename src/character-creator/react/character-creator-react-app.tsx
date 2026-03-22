@@ -18,8 +18,10 @@ import { ReactStepHost } from "./components/react-step-host";
 import { WizardControllerProvider } from "./wizard-context";
 import { CharacterCreatorWizardController } from "./wizard-controller";
 import { ClassFlowRouteHost, getClassFlowTransitionKey, isClassFlowStep } from "./steps/class/class-flow-route-host";
+import { hydrateCharacterCreatorIndexesFromSettings } from "../character-creator-index-cache";
 import {
   allowCustomBackgrounds,
+  allowFirearms,
   allowMulticlass,
   allowOriginFeatChoice,
   allowUnrestrictedBackgroundAsi,
@@ -104,6 +106,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
                 >
                   <ClassFlowRouteHost
                     controller={controller}
+                    pendingTransition={snapshot.pendingTransition}
                     shellContext={snapshot.shellContext}
                     state={snapshot.state}
                     step={snapshot.currentStepDef}
@@ -230,13 +233,16 @@ export function buildCharacterCreatorReactAppClass(): void {
     }
 
     private _snapshotGMConfig(): GMConfig {
+      const packSources = getPackSources();
+      hydrateCharacterCreatorIndexesFromSettings(packSources);
       return {
-        packSources: getPackSources(),
+        packSources,
         disabledUUIDs: new Set(getDisabledContentUUIDs()),
         allowedAbilityMethods: getAllowedAbilityMethods(),
         maxRerolls: getMaxRerolls(),
         startingLevel: getStartingLevel(),
         allowMulticlass: allowMulticlass(),
+        allowFirearms: allowFirearms(),
         equipmentMethod: getEquipmentMethod(),
         level1HpMethod: getLevel1HpMethod(),
         allowCustomBackgrounds: allowCustomBackgrounds(),

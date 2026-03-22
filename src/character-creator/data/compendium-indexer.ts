@@ -8,7 +8,12 @@
 import { Log } from "../../logger";
 import { getGame, fromUuid } from "../../types";
 import type { FoundryCompendiumCollection, FoundryDocument, FoundryIndexEntry } from "../../types";
-import type { CreatorContentType, CreatorIndexEntry, PackSourceConfig } from "../character-creator-types";
+import type {
+  CreatorContentType,
+  CreatorIndexEntry,
+  PackSourceConfig,
+  PersistentCompendiumIndexSnapshot,
+} from "../character-creator-types";
 import { formatInjectedDescriptionHtml } from "../utils/description-formatting";
 
 interface TextEditorLike {
@@ -21,6 +26,21 @@ interface DescriptionSystemData {
   };
 }
 
+interface WeaponDocumentSystemData extends DescriptionSystemData {
+  identifier?: string;
+  weaponType?: string;
+  type?: { value?: string };
+  ammunition?: { type?: string };
+  mastery?: string;
+  rarity?: string;
+  magicalBonus?: number;
+  properties?: Iterable<string> | ArrayLike<string> | Record<string, boolean>;
+}
+
+interface WeaponDocumentLike {
+  system?: WeaponDocumentSystemData;
+}
+
 /** Fields requested from compendium indexes for normalization. */
 const INDEX_FIELDS = [
   "name", "img", "type",
@@ -30,7 +50,14 @@ const INDEX_FIELDS = [
   "system.school",
   "system.armor.type",
   "system.weaponType",
+  "system.ammunition.type",
+  "system.mastery",
+  "system.rarity",
+  "system.magicalBonus",
+  "system.properties",
 ];
+
+export const PERSISTENT_INDEX_CACHE_FORMAT_VERSION = 3;
 
 /** Maps pack source config keys to content types. */
 const SOURCE_KEY_TO_TYPE: Record<keyof PackSourceConfig, CreatorContentType> = {
@@ -131,6 +158,126 @@ export class CompendiumIndexer {
       this.docCache.set(uuid, doc);
     }
     return doc;
+  }
+
+  hasPackCache(packId: string): boolean {
+    return this.indexCache.has(packId);
+  }
+
+  hasDocumentCache(uuid: string): boolean {
+    return this.docCache.has(uuid);
+  }
+
+  getMissingPackIds(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): string[] {
+    return this.getSelectedPackIds(sources, options).filter((packId) => !this.indexCache.has(packId));
+  }
+
+  async ensureIndexedSources(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig>; enrichWeaponMetadata?: boolean },
+  ): Promise<void> {
+    const packIds = this.getSelectedPackIds(sources, options);
+    for (const packId of packIds) {
+      if (this.indexCache.has(packId)) continue;
+      const type = this.getConfiguredTypeForPackId(packId, sources, options?.contentKeys);
+      if (!type) continue;
+      await this.loadPack(packId, type);
+    }
+
+    if (options?.enrichWeaponMetadata) {
+      await this.enrichIndexedWeaponMetadata(sources, options);
+    }
+  }
+
+  createPackSignature(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): string {
+    const keys = options?.contentKeys?.length
+      ? [...options.contentKeys]
+      : (Object.keys(SOURCE_KEY_TO_TYPE) as Array<keyof PackSourceConfig>);
+    const normalized = Object.fromEntries(keys
+      .sort()
+      .map((key) => [key, [...new Set(sources[key] ?? [])].sort()]));
+    return JSON.stringify(normalized);
+  }
+
+  validatePersistentSnapshot(
+    snapshot: PersistentCompendiumIndexSnapshot | null | undefined,
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): { valid: boolean; reason: string } {
+    if (!snapshot) return { valid: false, reason: "No cached compendium index was found." };
+    if (snapshot.formatVersion !== PERSISTENT_INDEX_CACHE_FORMAT_VERSION) {
+      return { valid: false, reason: "The cached compendium index uses an older schema and needs to be rebuilt." };
+    }
+
+    const game = getGame();
+    const moduleVersion = game?.modules?.get("foundry-tabletop-helpers")?.version ?? "0.0.0";
+    const foundryVersion = game?.version ?? "0.0.0";
+    const systemId = game?.system?.id ?? "unknown";
+    const systemVersion = game?.system?.version ?? "0.0.0";
+    const expectedSignature = this.createPackSignature(sources, options);
+
+    if (snapshot.moduleVersion !== moduleVersion) {
+      return { valid: false, reason: "The module version changed since the cache was built." };
+    }
+    if (snapshot.foundryVersion !== foundryVersion) {
+      return { valid: false, reason: "The Foundry core version changed since the cache was built." };
+    }
+    if (snapshot.systemId !== systemId || snapshot.systemVersion !== systemVersion) {
+      return { valid: false, reason: "The active game system changed since the cache was built." };
+    }
+    if (snapshot.packSignature !== expectedSignature) {
+      return { valid: false, reason: "The selected compendium sources changed since the cache was built." };
+    }
+
+    return { valid: true, reason: "ready" };
+  }
+
+  hydratePersistentSnapshot(
+    snapshot: PersistentCompendiumIndexSnapshot | null | undefined,
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): boolean {
+    const validation = this.validatePersistentSnapshot(snapshot, sources, options);
+    if (!validation.valid || !snapshot) return false;
+
+    for (const [packId, entries] of Object.entries(snapshot.packs ?? {})) {
+      if (!this.indexCache.has(packId)) {
+        this.indexCache.set(packId, entries);
+      }
+    }
+    Log.debug("CompendiumIndexer: hydrated persistent cache", {
+      packCount: Object.keys(snapshot.packs ?? {}).length,
+      generatedAt: snapshot.generatedAt,
+    });
+    return true;
+  }
+
+  async buildPersistentSnapshot(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): Promise<PersistentCompendiumIndexSnapshot> {
+    await this.ensureIndexedSources(sources, { ...options, enrichWeaponMetadata: true });
+    const game = getGame();
+    const packIds = this.getSelectedPackIds(sources, options);
+    const packs = Object.fromEntries(
+      packIds.map((packId) => [packId, this.indexCache.get(packId) ?? []]),
+    );
+    return {
+      formatVersion: PERSISTENT_INDEX_CACHE_FORMAT_VERSION,
+      moduleVersion: game?.modules?.get("foundry-tabletop-helpers")?.version ?? "0.0.0",
+      foundryVersion: game?.version ?? "0.0.0",
+      systemId: game?.system?.id ?? "unknown",
+      systemVersion: game?.system?.version ?? "0.0.0",
+      packSignature: this.createPackSignature(sources, options),
+      generatedAt: new Date().toISOString(),
+      packs,
+    };
   }
 
   /**
@@ -246,6 +393,134 @@ export class CompendiumIndexer {
     }
   }
 
+  private getSelectedPackIds(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): string[] {
+    const keys = options?.contentKeys?.length
+      ? [...options.contentKeys]
+      : (Object.keys(SOURCE_KEY_TO_TYPE) as Array<keyof PackSourceConfig>);
+    return [...new Set(keys.flatMap((key) => sources[key] ?? []))];
+  }
+
+  private getConfiguredTypeForPackId(
+    packId: string,
+    sources: PackSourceConfig,
+    contentKeys?: Array<keyof PackSourceConfig>,
+  ): CreatorContentType | undefined {
+    const keys = contentKeys?.length
+      ? [...contentKeys]
+      : (Object.keys(SOURCE_KEY_TO_TYPE) as Array<keyof PackSourceConfig>);
+    const matchedKey = keys.find((key) => (sources[key] ?? []).includes(packId));
+    return matchedKey ? SOURCE_KEY_TO_TYPE[matchedKey] : undefined;
+  }
+
+  private async enrichIndexedWeaponMetadata(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): Promise<void> {
+    const packIds = this.getSelectedPackIds(sources, options);
+    const stats = {
+      targetedWeapons: 0,
+      fetchedDocuments: 0,
+      enrichedEntries: 0,
+      unresolvedEntries: 0,
+      unresolvedSamples: [] as string[],
+    };
+
+    for (const packId of packIds) {
+      const type = this.getConfiguredTypeForPackId(packId, sources, options?.contentKeys);
+      if (type !== "item") continue;
+      const cached = this.indexCache.get(packId);
+      if (!cached?.length) continue;
+
+      const nextEntries = await Promise.all(cached.map(async (entry) => {
+        if (!this.needsWeaponMasteryEnrichment(entry)) return entry;
+        stats.targetedWeapons += 1;
+        const cachedDoc = this.docCache.get(entry.uuid);
+        const doc = (cachedDoc ?? await this.fetchDocument(entry.uuid)) as FoundryDocument | null;
+        if (!cachedDoc && doc) stats.fetchedDocuments += 1;
+        const enriched = this.enrichWeaponEntryFromDocument(entry, doc as WeaponDocumentLike | null);
+        if (enriched === entry) {
+          stats.unresolvedEntries += 1;
+          if (stats.unresolvedSamples.length < 8) stats.unresolvedSamples.push(entry.name);
+          return entry;
+        }
+        stats.enrichedEntries += 1;
+        return enriched;
+      }));
+
+      this.indexCache.set(packId, nextEntries);
+    }
+
+    if (stats.targetedWeapons > 0) {
+      Log.info("CompendiumIndexer: enriched weapon snapshot metadata", stats);
+    }
+  }
+
+  private needsWeaponMasteryEnrichment(entry: CreatorIndexEntry): boolean {
+    if (entry.itemType !== "weapon") return false;
+    return !entry.identifier
+      || !entry.weaponType
+      || !entry.mastery
+      || entry.isFirearm === undefined
+      || entry.baselineWeapon === undefined;
+  }
+
+  private enrichWeaponEntryFromDocument(
+    entry: CreatorIndexEntry,
+    doc: WeaponDocumentLike | null,
+  ): CreatorIndexEntry {
+    const system = doc?.system;
+    if (!system) return entry;
+
+    const identifier = typeof system.identifier === "string" && system.identifier.trim()
+      ? system.identifier.trim()
+      : entry.identifier;
+    const weaponType = typeof system.weaponType === "string" && system.weaponType.trim()
+      ? system.weaponType.trim()
+      : typeof system.type?.value === "string" && system.type.value.trim()
+        ? system.type.value.trim()
+        : entry.weaponType;
+    const mastery = typeof system.mastery === "string" && system.mastery.trim()
+      ? system.mastery.trim()
+      : entry.mastery;
+    const isFirearm = typeof system.ammunition?.type === "string"
+      ? system.ammunition.type === "firearmBullet"
+      : entry.isFirearm;
+    const rarity = typeof system.rarity === "string" && system.rarity.trim()
+      ? system.rarity.trim()
+      : entry.rarity;
+    const magicalBonus = typeof system.magicalBonus === "number"
+      ? system.magicalBonus
+      : entry.magicalBonus;
+    const properties = this.normalizeDocumentStringCollection(system.properties);
+    const baselineWeapon = this.isBaselineWeaponDocument(doc);
+
+    if (identifier === entry.identifier
+      && weaponType === entry.weaponType
+      && mastery === entry.mastery
+      && isFirearm === entry.isFirearm
+      && rarity === entry.rarity
+      && magicalBonus === entry.magicalBonus
+      && arraysEqual(properties, entry.properties ?? [])
+      && baselineWeapon === entry.baselineWeapon) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      ...(identifier !== undefined && { identifier }),
+      ...(weaponType !== undefined && { weaponType }),
+      ...(mastery !== undefined && { mastery }),
+      ...(isFirearm !== undefined && { isFirearm }),
+      ...(rarity !== undefined && { rarity }),
+      ...(magicalBonus !== undefined && { magicalBonus }),
+      ...(properties.length > 0 ? { properties } : {}),
+      baselineWeapon,
+    };
+  }
+
   private normalizeEntry(
     raw: FoundryIndexEntry,
     packId: string,
@@ -268,6 +543,11 @@ export class CompendiumIndexer {
     const sysSchool = this.extractString(raw, "system.school");
     const sysArmorType = this.extractString(raw, "system.armor.type");
     const sysWeaponType = this.extractString(raw, "system.weaponType");
+    const sysAmmunitionType = this.extractString(raw, "system.ammunition.type");
+    const sysMastery = this.extractString(raw, "system.mastery");
+    const sysRarity = this.extractString(raw, "system.rarity");
+    const sysMagicalBonus = this.extractNumber(raw, "system.magicalBonus");
+    const sysProperties = this.extractStringCollection(raw, "system.properties");
 
     return {
       uuid,
@@ -283,6 +563,11 @@ export class CompendiumIndexer {
       ...(sysSchool !== undefined && { school: sysSchool }),
       ...(sysArmorType !== undefined && { armorType: sysArmorType }),
       ...(sysWeaponType !== undefined && { weaponType: sysWeaponType }),
+      ...(sysAmmunitionType !== undefined && { isFirearm: sysAmmunitionType === "firearmBullet" }),
+      ...(sysMastery !== undefined && { mastery: sysMastery }),
+      ...(sysRarity !== undefined && { rarity: sysRarity }),
+      ...(sysMagicalBonus !== undefined && { magicalBonus: sysMagicalBonus }),
+      ...(sysProperties.length > 0 && { properties: sysProperties }),
     };
   }
 
@@ -316,6 +601,56 @@ export class CompendiumIndexer {
     const val = this.extractValue(raw, path);
     return typeof val === "number" ? val : undefined;
   }
+
+  /** Safely extract enabled string keys from array/set/object-ish compendium index fields. */
+  private extractStringCollection(raw: Record<string, unknown>, path: string): string[] {
+    const value = this.extractValue(raw, path);
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter((entry): entry is string => typeof entry === "string");
+    }
+    if (typeof value === "object" && value !== null && typeof (value as Record<PropertyKey, unknown>)[Symbol.iterator] === "function") {
+      return Array.from(value as Iterable<unknown>).filter((entry): entry is string => typeof entry === "string");
+    }
+    if (typeof value === "object") {
+      return Object.entries(value as Record<string, unknown>)
+        .filter(([, enabled]) => enabled === true)
+        .map(([key]) => key);
+    }
+    return [];
+  }
+
+  private normalizeDocumentStringCollection(value: WeaponDocumentSystemData["properties"]): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter((entry): entry is string => typeof entry === "string");
+    }
+    if (typeof value === "object" && value !== null && typeof (value as Record<PropertyKey, unknown>)[Symbol.iterator] === "function") {
+      return Array.from(value as Iterable<unknown>).filter((entry): entry is string => typeof entry === "string");
+    }
+    if (typeof value === "object") {
+      return Object.entries(value as Record<string, unknown>)
+        .filter(([, enabled]) => enabled === true)
+        .map(([key]) => key);
+    }
+    return [];
+  }
+
+  private isBaselineWeaponDocument(doc: WeaponDocumentLike | null): boolean {
+    const system = doc?.system;
+    if (!system) return false;
+
+    const rarity = typeof system.rarity === "string" ? system.rarity.trim().toLowerCase() : "";
+    if (rarity && rarity !== "mundane") return false;
+    if (typeof system.magicalBonus === "number" && system.magicalBonus > 0) return false;
+    if (this.normalizeDocumentStringCollection(system.properties).includes("mgc")) return false;
+    return true;
+  }
+}
+
+function arraysEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
 }
 
 function summarizeEntriesByPack(entries: CreatorIndexEntry[]): Array<{ packId: string; count: number; itemTypes: string[] }> {

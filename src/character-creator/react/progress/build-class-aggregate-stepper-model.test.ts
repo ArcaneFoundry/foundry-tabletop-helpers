@@ -6,7 +6,7 @@ import { buildClassAggregateStepperModel } from "./build-class-aggregate-stepper
 function createState(overrides?: Partial<WizardState>): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["class", "classChoices", "classSummary", "weaponMasteries", "review"],
+    applicableSteps: ["class", "classChoices", "classExpertise", "classLanguages", "weaponMasteries", "classSummary", "review"],
     selections: {},
     stepStatus: new Map(),
     config: {
@@ -36,39 +36,45 @@ function createSteps() {
   return [
     { id: "class", label: "Class", icon: "fa-solid fa-shield-halved", status: "pending" as const, active: true },
     { id: "classChoices", label: "Skills", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
+    { id: "classExpertise", label: "Expertise", icon: "fa-solid fa-bullseye", status: "pending" as const, active: false },
+    { id: "classLanguages", label: "Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
     { id: "weaponMasteries", label: "Masteries", icon: "fa-solid fa-swords", status: "pending" as const, active: false },
-    { id: "classSummary", label: "Features", icon: "fa-solid fa-stars", status: "pending" as const, active: false },
-    { id: "review", label: "Review", icon: "fa-solid fa-scroll", status: "pending" as const, active: false },
+    { id: "classSummary", label: "Summary", icon: "fa-solid fa-scroll", status: "pending" as const, active: false },
+    { id: "review", label: "Review", icon: "fa-solid fa-stars", status: "pending" as const, active: false },
   ];
 }
 
 function createClassSelection(overrides?: Partial<ClassSelection>): ClassSelection {
   return {
-    uuid: "Compendium.test.classes.Item.fighter",
-    name: "Fighter",
-    img: "fighter.webp",
-    identifier: "fighter",
+    uuid: "Compendium.test.classes.Item.rogue",
+    name: "Rogue",
+    img: "rogue.webp",
+    identifier: "rogue",
     skillPool: ["ath", "sur"],
     skillCount: 2,
     isSpellcaster: false,
     spellcastingAbility: "",
     spellcastingProgression: "",
     hasWeaponMastery: true,
-    weaponMasteryCount: 3,
+    weaponMasteryCount: 2,
     weaponMasteryPool: ["weapon:sim:*", "weapon:mar:*"],
     ...overrides,
   };
 }
 
 describe("buildClassAggregateStepperModel", () => {
-  it("keeps the class node pending before a class has been selected", () => {
+  it("keeps milestones pending before a class has been selected", () => {
     const model = buildClassAggregateStepperModel(createState(), createSteps(), "class");
 
-    expect(model.main.status).toBe("pending");
-    expect(model.main.children.map((child) => child.visible)).toEqual([false, false]);
+    expect(model.milestones.map((milestone) => [milestone.id, milestone.status])).toEqual([
+      ["class", "pending"],
+      ["selections", "pending"],
+      ["classSummary", "pending"],
+    ]);
+    expect(model.showSubsteps).toBe(false);
   });
 
-  it("enters selection-active and previews relevant children on the class screen", () => {
+  it("shows the dynamic subrail once a class is selected", () => {
     const model = buildClassAggregateStepperModel(
       createState({
         selections: { class: createClassSelection() },
@@ -77,49 +83,33 @@ describe("buildClassAggregateStepperModel", () => {
       "class",
     );
 
-    expect(model.main.status).toBe("selection-active");
-    expect(model.main.glowActive).toBe(true);
-    expect(model.main.children[0]).toMatchObject({ id: "classChoices", visible: true, status: "pending" });
-    expect(model.main.children[1]).toMatchObject({ id: "weaponMasteries", visible: true, status: "pending" });
+    expect(model.milestones[0]).toMatchObject({ id: "class", status: "selection-active" });
+    expect(model.milestones[1]).toMatchObject({ id: "selections", status: "in-progress" });
+    expect(model.showSubsteps).toBe(true);
+    expect(model.substeps.map((step) => step.id)).toEqual([
+      "classChoices",
+      "classExpertise",
+      "classLanguages",
+      "weaponMasteries",
+    ]);
   });
 
-  it("hides the mastery child for classes without weapon mastery choices", () => {
-    const model = buildClassAggregateStepperModel(
-      createState({
-        selections: {
-          class: createClassSelection({
-            identifier: "wizard",
-            name: "Wizard",
-            hasWeaponMastery: false,
-            weaponMasteryCount: 0,
-            weaponMasteryPool: [],
-          }),
-        },
-      }),
-      createSteps(),
-      "class",
+  it("marks the selections milestone complete once every class substep is complete", () => {
+    const steps = createSteps().map((step) =>
+      ["classChoices", "classExpertise", "classLanguages", "weaponMasteries"].includes(step.id)
+        ? { ...step, status: "complete" as const, active: false }
+        : step
     );
-
-    expect(model.main.children[0]).toMatchObject({ id: "classChoices", visible: true });
-    expect(model.main.children[1]).toMatchObject({ id: "weaponMasteries", visible: false, status: "skipped" });
-  });
-
-  it("collapses the class group once class-related work is complete and the wizard has moved on", () => {
-    const steps = createSteps().map((step) => {
-      if (step.id === "classChoices" || step.id === "weaponMasteries") {
-        return { ...step, status: "complete" as const };
-      }
-      return step;
-    });
 
     const model = buildClassAggregateStepperModel(
       createState({
         selections: { class: createClassSelection() },
       }),
       steps,
-      "background",
+      "classSummary",
     );
 
-    expect(model.main.status).toBe("collapsed-complete");
+    expect(model.milestones[1]).toMatchObject({ id: "selections", status: "complete" });
+    expect(model.milestones[2]).toMatchObject({ id: "classSummary", status: "in-progress" });
   });
 });

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PackSourceConfig } from "../character-creator-types";
 
 const logDebugMock = vi.fn();
+const logInfoMock = vi.fn();
 const logWarnMock = vi.fn();
 const logErrorMock = vi.fn();
 const getGameMock = vi.fn();
@@ -11,6 +12,7 @@ const fromUuidMock = vi.fn();
 vi.mock("../../logger", () => ({
   Log: {
     debug: logDebugMock,
+    info: logInfoMock,
     warn: logWarnMock,
     error: logErrorMock,
   },
@@ -46,6 +48,8 @@ function createPack(
 beforeEach(() => {
   vi.clearAllMocks();
   vi.resetModules();
+  getGameMock.mockReset();
+  fromUuidMock.mockReset();
   delete (globalThis as Record<string, unknown>).TextEditor;
 });
 
@@ -168,5 +172,238 @@ describe("compendium indexer", () => {
     expect(logWarnMock).toHaveBeenCalledWith('CompendiumIndexer: pack "missing.pack" not found');
     expect(logDebugMock).toHaveBeenCalledWith("CompendiumIndexer: cache invalidated");
     expect(fromUuidMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("builds and hydrates a persistent snapshot when the environment matches", async () => {
+    const itemPack = createPack([
+      {
+        _id: "weapon-1",
+        name: "Longsword",
+        img: "longsword.webp",
+        type: "weapon",
+        "system.identifier": "longsword",
+        "system.weaponType": "martialM",
+        "system.ammunition.type": "arrow",
+        "system.mastery": "sap",
+        "system.rarity": "mundane",
+        "system.properties": ["ver"],
+      },
+    ], { label: "Items" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([["pack.items", itemPack]]),
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+    const snapshot = await indexer.buildPersistentSnapshot(defaultSources(), { contentKeys: ["items"] });
+
+    expect(snapshot.packSignature).toBe(JSON.stringify({ items: ["pack.items"] }));
+    expect(snapshot.packs["pack.items"]).toEqual([
+      expect.objectContaining({
+        name: "Longsword",
+        identifier: "longsword",
+        weaponType: "martialM",
+        mastery: "sap",
+        isFirearm: false,
+      }),
+    ]);
+
+    indexer.invalidate();
+    expect(indexer.hydratePersistentSnapshot(snapshot, defaultSources(), { contentKeys: ["items"] })).toBe(true);
+    expect(indexer.getIndexedEntries("item", defaultSources()).map((entry) => entry.name)).toEqual(["Longsword"]);
+  });
+
+  it("keeps source warm-up index-only by default so it does not fetch weapon documents in the click path", async () => {
+    const itemPack = createPack([
+      {
+        _id: "weapon-1",
+        name: "Longsword",
+        img: "longsword.webp",
+        type: "weapon",
+      },
+    ], { label: "Items" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([["pack.items", itemPack]]),
+    });
+    fromUuidMock.mockResolvedValue({
+      system: {
+        identifier: "longsword",
+        weaponType: "martialM",
+        ammunition: { type: "arrow" },
+        mastery: "sap",
+        properties: { ver: true },
+      },
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+
+    await indexer.ensureIndexedSources(defaultSources(), { contentKeys: ["items"] });
+
+    expect(indexer.getIndexedEntries("item", defaultSources())).toEqual([
+      expect.objectContaining({
+        name: "Longsword",
+      }),
+    ]);
+    expect(indexer.getIndexedEntries("item", defaultSources())[0]).not.toHaveProperty("mastery");
+    expect(fromUuidMock).not.toHaveBeenCalled();
+  });
+
+  it("can explicitly enrich in-session item indexes with weapon mastery metadata when requested", async () => {
+    const itemPack = createPack([
+      {
+        _id: "weapon-1",
+        name: "Longsword",
+        img: "longsword.webp",
+        type: "weapon",
+      },
+    ], { label: "Items" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([["pack.items", itemPack]]),
+    });
+    fromUuidMock.mockResolvedValue({
+      system: {
+        identifier: "longsword",
+        weaponType: "martialM",
+        ammunition: { type: "arrow" },
+        mastery: "sap",
+        properties: { ver: true },
+      },
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+
+    await indexer.ensureIndexedSources(defaultSources(), { contentKeys: ["items"], enrichWeaponMetadata: true });
+
+    expect(indexer.getIndexedEntries("item", defaultSources())).toEqual([
+      expect.objectContaining({
+        name: "Longsword",
+        identifier: "longsword",
+        weaponType: "martialM",
+        mastery: "sap",
+        isFirearm: false,
+        properties: ["ver"],
+        baselineWeapon: true,
+      }),
+    ]);
+    expect(fromUuidMock).toHaveBeenCalledWith("Compendium.pack.items.Item.weapon-1");
+  });
+
+  it("enriches persistent item snapshots with weapon mastery metadata from full documents", async () => {
+    const itemPack = createPack([
+      {
+        _id: "weapon-1",
+        name: "Longsword",
+        img: "longsword.webp",
+        type: "weapon",
+      },
+    ], { label: "Items" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([["pack.items", itemPack]]),
+    });
+    fromUuidMock.mockResolvedValue({
+      system: {
+        identifier: "longsword",
+        weaponType: "martialM",
+        ammunition: { type: "arrow" },
+        mastery: "sap",
+        properties: { ver: true },
+      },
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+    const snapshot = await indexer.buildPersistentSnapshot(defaultSources(), { contentKeys: ["items"] });
+
+    expect(snapshot.packs["pack.items"]).toEqual([
+      expect.objectContaining({
+        name: "Longsword",
+        identifier: "longsword",
+        weaponType: "martialM",
+        mastery: "sap",
+        isFirearm: false,
+        properties: ["ver"],
+        baselineWeapon: true,
+      }),
+    ]);
+    expect(fromUuidMock).toHaveBeenCalledWith("Compendium.pack.items.Item.weapon-1");
+  });
+
+  it("marks firearms in the persistent snapshot from indexed ammunition metadata", async () => {
+    const itemPack = createPack([
+      {
+        _id: "weapon-1",
+        name: "Pistol",
+        img: "pistol.webp",
+        type: "weapon",
+        "system.identifier": "pistol",
+        "system.weaponType": "martialR",
+        "system.mastery": "vex",
+        "system.ammunition.type": "firearmBullet",
+      },
+    ], { label: "Items" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([["pack.items", itemPack]]),
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+    const snapshot = await indexer.buildPersistentSnapshot(defaultSources(), { contentKeys: ["items"] });
+
+    expect(snapshot.packs["pack.items"]).toEqual([
+      expect.objectContaining({
+        name: "Pistol",
+        identifier: "pistol",
+        isFirearm: true,
+      }),
+    ]);
+  });
+
+  it("rejects stale persistent snapshots when pack sources change", async () => {
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map(),
+    });
+
+    const { CompendiumIndexer, PERSISTENT_INDEX_CACHE_FORMAT_VERSION } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+    const validation = indexer.validatePersistentSnapshot({
+      formatVersion: PERSISTENT_INDEX_CACHE_FORMAT_VERSION,
+      moduleVersion: "1.2.1",
+      foundryVersion: "13.351",
+      systemId: "dnd5e",
+      systemVersion: "5.3.7",
+      packSignature: JSON.stringify({ items: ["some.other.pack"] }),
+      generatedAt: new Date().toISOString(),
+      packs: {},
+    }, defaultSources(), { contentKeys: ["items"] });
+
+    expect(validation).toEqual({
+      valid: false,
+      reason: "The selected compendium sources changed since the cache was built.",
+    });
   });
 });

@@ -1,12 +1,13 @@
-import { MOD } from "../../logger";
+import { Log, MOD } from "../../logger";
 import type {
+  CreatorIndexEntry,
+  PackSourceConfig,
   StepCallbacks,
   WeaponMasterySelectionState,
   WizardState,
   WizardStepDefinition,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseDocumentWeaponProficiencies } from "../data/advancement-parser";
 
 interface DatasetElementLike {
   dataset: DOMStringMap;
@@ -25,6 +26,7 @@ type WeaponDocumentLike = {
     mastery?: string;
     weaponType?: string;
     type?: { value?: string };
+    ammunition?: { type?: string };
     identifier?: string;
     rarity?: string;
     magicalBonus?: number;
@@ -45,6 +47,13 @@ const WEAPON_ITEM_PACK_FALLBACKS = [
   "dnd5e.equipment24",
   "dnd5e.items",
 ] as const;
+
+export function getWeaponMasteryPackSources(packSources: PackSourceConfig): PackSourceConfig {
+  return {
+    ...packSources,
+    items: [...new Set([...(packSources.items ?? []), ...WEAPON_ITEM_PACK_FALLBACKS])],
+  };
+}
 
 const MASTERY_DESCRIPTIONS: Record<string, string> = {
   cleave: "On a hit, you can make an attack roll against a second creature within 5 feet of the first and within your reach. On a hit, the second creature takes the weapon's damage, but you don't add your ability modifier unless it is negative.",
@@ -73,6 +82,10 @@ function buildWeaponMasteryState(state: WizardState): WeaponMasterySelectionStat
   };
 }
 
+function shouldIncludeFirearms(state: WizardState): boolean {
+  return state.config.allowFirearms === true;
+}
+
 function normalizeWeaponType(weaponType: string | undefined): string {
   switch (weaponType) {
     case "simpleM": return "Simple Melee";
@@ -96,6 +109,7 @@ function matchesWeaponMasteryPool(
 ): boolean {
   for (const poolKey of poolKeys) {
     if (!poolKey.startsWith("weapon:")) continue;
+    if (poolKey === "weapon:*") return true;
     const [, family, scope] = poolKey.split(":");
     if (scope === "*") {
       if (family === "sim" && weaponType?.startsWith("simple")) return true;
@@ -112,7 +126,7 @@ function matchesWeaponProficiencyPool(
   weaponType: string | undefined,
   proficiencyKeys: string[],
 ): boolean {
-  if (proficiencyKeys.length === 0) return true;
+  if (proficiencyKeys.length === 0) return false;
   const family = weaponFamily(weaponType);
   for (const key of proficiencyKeys) {
     if (!key.startsWith("weapon:")) continue;
@@ -155,23 +169,91 @@ function isBaselineWeaponOption(doc: WeaponDocumentLike | null): boolean {
   return true;
 }
 
-async function getCurrentWeaponProficiencyKeys(state: WizardState): Promise<string[]> {
-  const proficiencies = new Set<string>([
-    ...(state.selections.class?.weaponProficiencyKeys ?? []),
-    ...(state.selections.background?.grants.weaponProficiencies ?? []),
-    ...(state.selections.species?.weaponProficiencies ?? []),
-  ]);
+function isBaselineIndexedWeaponOption(entry: CreatorIndexEntry): boolean | null {
+  if (typeof entry.baselineWeapon === "boolean") return entry.baselineWeapon;
 
-  const originFeatUuid = state.selections.originFeat?.uuid ?? state.selections.background?.grants.originFeatUuid;
-  if (originFeatUuid) {
-    const featDoc = await compendiumIndexer.fetchDocument(originFeatUuid);
-    if (featDoc) {
-      for (const proficiency of parseDocumentWeaponProficiencies(featDoc as never)) {
-        proficiencies.add(proficiency);
-      }
-    }
+  if (typeof entry.rarity === "string") {
+    const rarity = entry.rarity.trim().toLowerCase();
+    if (rarity && rarity !== "mundane") return false;
   }
 
+  if (typeof entry.magicalBonus === "number" && entry.magicalBonus > 0) return false;
+  if (entry.properties?.includes("mgc")) return false;
+  return entry.rarity !== undefined || entry.magicalBonus !== undefined || entry.properties !== undefined
+    ? true
+    : null;
+}
+
+function isIndexedFirearm(entry: CreatorIndexEntry): boolean | null {
+  return typeof entry.isFirearm === "boolean" ? entry.isFirearm : null;
+}
+
+function isFirearmWeaponOption(doc: WeaponDocumentLike | null): boolean {
+  return doc?.system?.ammunition?.type === "firearmBullet";
+}
+
+function buildIndexedWeaponMasteryOption(
+  entry: CreatorIndexEntry,
+  poolKeys: string[],
+  proficiencyKeys: string[],
+  includeFirearms: boolean,
+): { status: "include"; option: {
+  id: string;
+  uuid: string;
+  identifier: string;
+  name: string;
+  img: string;
+  weaponType: string;
+  mastery: string;
+  masteryDescription: string;
+  weaponDescription: string;
+  tooltip: string;
+} } | { status: "exclude"; reason: string } | { status: "fallback"; reason: string } {
+  const indexedBaseline = isBaselineIndexedWeaponOption(entry);
+  if (indexedBaseline === false) return { status: "exclude", reason: "magicalIndexed" };
+  const indexedFirearm = isIndexedFirearm(entry);
+  if (indexedFirearm === true && !includeFirearms) return { status: "exclude", reason: "firearmFiltered" };
+
+  const resolvedWeaponType = entry.weaponType;
+  const rawMastery = typeof entry.mastery === "string" ? entry.mastery.trim() : "";
+  const identifier = typeof entry.identifier === "string" ? entry.identifier.trim() : "";
+  if (identifier && resolvedWeaponType && !matchesWeaponMasteryPool(identifier, resolvedWeaponType, poolKeys)) {
+    return { status: "exclude", reason: "outsideMasteryPool" };
+  }
+  if (identifier && resolvedWeaponType && !matchesWeaponProficiencyPool(identifier, resolvedWeaponType, proficiencyKeys)) {
+    return { status: "exclude", reason: "outsideProficiencyPool" };
+  }
+
+  const fallbackReasons: string[] = [];
+  if (!identifier) fallbackReasons.push("missingIdentifier");
+  if (!resolvedWeaponType) fallbackReasons.push("missingWeaponType");
+  if (!rawMastery) fallbackReasons.push("missingMastery");
+  if (indexedFirearm === null) fallbackReasons.push("missingFirearmFlag");
+  if (fallbackReasons.length > 0) {
+    return { status: "fallback", reason: fallbackReasons.join("+") };
+  }
+
+  const masteryKey = rawMastery.toLowerCase();
+  const mastery = rawMastery.charAt(0).toUpperCase() + rawMastery.slice(1);
+  return {
+    status: "include",
+    option: {
+      id: identifier,
+      uuid: entry.uuid,
+      identifier,
+      name: entry.name,
+      img: entry.img,
+      weaponType: normalizeWeaponType(resolvedWeaponType),
+      mastery,
+      masteryDescription: MASTERY_DESCRIPTIONS[masteryKey] ?? "No mastery description available.",
+      weaponDescription: "",
+      tooltip: `${entry.name} • ${normalizeWeaponType(resolvedWeaponType)} • ${mastery} mastery.`,
+    },
+  };
+}
+
+async function getCurrentWeaponProficiencyKeys(state: WizardState): Promise<string[]> {
+  const proficiencies = new Set<string>(state.selections.class?.weaponProficiencyKeys ?? []);
   return [...proficiencies];
 }
 
@@ -187,27 +269,50 @@ async function getWeaponMasteryOptions(state: WizardState): Promise<Array<{
   weaponDescription: string;
   tooltip: string;
 }>> {
+  const perfStart = globalThis.performance?.now?.() ?? Date.now();
   const requiredCount = getWeaponMasteryChoiceCount(state);
   if (requiredCount <= 0 || !state.selections.class?.hasWeaponMastery) return [];
   const poolKeys = getWeaponMasteryPoolKeys(state);
   if (poolKeys.length === 0) return [];
-  const proficiencyKeys = await getCurrentWeaponProficiencyKeys(state);
 
-  const sourceIds = [...new Set([
-    ...(state.config.packSources.items ?? []),
-    ...WEAPON_ITEM_PACK_FALLBACKS,
-  ])];
+  const proficiencyStart = globalThis.performance?.now?.() ?? Date.now();
+  const proficiencyKeys = await getCurrentWeaponProficiencyKeys(state);
+  const proficiencyDuration = (globalThis.performance?.now?.() ?? Date.now()) - proficiencyStart;
+  const includeFirearms = shouldIncludeFirearms(state);
+
+  const sourceIds = getWeaponMasteryPackSources(state.config.packSources).items;
+  const cachedPackCount = sourceIds.filter((packId) => compendiumIndexer.hasPackCache?.(packId) ?? false).length;
   const entries = [];
+  const packLoadStart = globalThis.performance?.now?.() ?? Date.now();
   for (const packId of sourceIds) {
     const loaded = await compendiumIndexer.loadPack(packId, "item");
     entries.push(...loaded);
   }
+  const packLoadDuration = (globalThis.performance?.now?.() ?? Date.now()) - packLoadStart;
 
   const weaponEntries = entries.filter((entry) => entry.itemType === "weapon");
-  const options = await Promise.all(weaponEntries.map(async (entry) => {
+  const fastPathStart = globalThis.performance?.now?.() ?? Date.now();
+  const fastPathOptions = [];
+  const fallbackEntries = [];
+  const fastPathReasonCounts: Record<string, number> = {};
+  for (const entry of weaponEntries) {
+    const fastPathDecision = buildIndexedWeaponMasteryOption(entry, poolKeys, proficiencyKeys, includeFirearms);
+    if (fastPathDecision.status === "include") {
+      fastPathOptions.push(fastPathDecision.option);
+      continue;
+    }
+    fastPathReasonCounts[fastPathDecision.reason] = (fastPathReasonCounts[fastPathDecision.reason] ?? 0) + 1;
+    if (fastPathDecision.status === "fallback") fallbackEntries.push(entry);
+  }
+  const fastPathDuration = (globalThis.performance?.now?.() ?? Date.now()) - fastPathStart;
+
+  const cachedDocCount = fallbackEntries.filter((entry) => compendiumIndexer.hasDocumentCache?.(entry.uuid) ?? false).length;
+  const fetchStart = globalThis.performance?.now?.() ?? Date.now();
+  const fallbackOptions = await Promise.all(fallbackEntries.map(async (entry) => {
     const doc = await compendiumIndexer.fetchDocument(entry.uuid) as WeaponDocumentLike | null;
     const system = doc?.system;
     if (!isBaselineWeaponOption(doc)) return null;
+    if (!includeFirearms && isFirearmWeaponOption(doc)) return null;
     const resolvedWeaponType = typeof system?.weaponType === "string" && system.weaponType
       ? system.weaponType
       : typeof system?.type?.value === "string" && system.type.value
@@ -244,11 +349,42 @@ async function getWeaponMasteryOptions(state: WizardState): Promise<Array<{
       tooltip,
     };
   }));
+  const fetchDuration = (globalThis.performance?.now?.() ?? Date.now()) - fetchStart;
 
-  return options
+  const finalizeStart = globalThis.performance?.now?.() ?? Date.now();
+  const finalOptions = [...fastPathOptions, ...fallbackOptions]
     .filter((option): option is NonNullable<typeof option> => !!option)
     .filter((option, index, arr) => arr.findIndex((candidate) => candidate.id === option.id) === index)
     .sort((left, right) => left.name.localeCompare(right.name));
+  const finalizeDuration = (globalThis.performance?.now?.() ?? Date.now()) - finalizeStart;
+  const perfDuration = (globalThis.performance?.now?.() ?? Date.now()) - perfStart;
+
+  Log.info("CC Perf: weapon masteries options built", {
+    classId: state.selections.class?.identifier ?? "unknown",
+    requiredCount,
+    sourcePackCount: sourceIds.length,
+    cachedPackCount,
+    proficiencyKeyCount: proficiencyKeys.length,
+    poolKeyCount: poolKeys.length,
+    entryCount: entries.length,
+    weaponEntryCount: weaponEntries.length,
+    fastPathOptionCount: fastPathOptions.length,
+    fallbackEntryCount: fallbackEntries.length,
+    fastPathReasonCounts,
+    cachedDocumentCount: cachedDocCount,
+    fetchedDocumentCount: Math.max(fallbackEntries.length - cachedDocCount, 0),
+    optionCount: finalOptions.length,
+    durationsMs: {
+      total: Math.round(perfDuration),
+      proficiencyLookup: Math.round(proficiencyDuration),
+      packLoad: Math.round(packLoadDuration),
+      fastPathFilter: Math.round(fastPathDuration),
+      documentFetchAndFilter: Math.round(fetchDuration),
+      finalize: Math.round(finalizeDuration),
+    },
+  });
+
+  return finalOptions;
 }
 
 function patchToggleRows(
@@ -318,7 +454,7 @@ export function createWeaponMasteriesStep(): WizardStepDefinition {
     icon: "fa-solid fa-swords",
     renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-weapon-masteries.hbs`,
-    dependencies: ["class", "originSummary"],
+    dependencies: ["class"],
     isApplicable: (state) => !!state.selections.class?.uuid && (state.selections.class?.weaponMasteryCount ?? 0) > 0,
 
     isComplete(state: WizardState): boolean {
@@ -340,10 +476,19 @@ export function createWeaponMasteriesStep(): WizardStepDefinition {
     },
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
+      const perfStart = globalThis.performance?.now?.() ?? Date.now();
       const options = await getWeaponMasteryOptions(state);
       const chosenWeaponMasteries = new Set(state.selections.weaponMasteries?.chosenWeaponMasteries ?? []);
       const requiredWeaponMasteries = Math.min(getWeaponMasteryChoiceCount(state), options.length);
       const chosenWeaponMasteryDetails = state.selections.weaponMasteries?.chosenWeaponMasteryDetails ?? [];
+
+      Log.info("CC Perf: weapon masteries buildViewModel complete", {
+        classId: state.selections.class?.identifier ?? "unknown",
+        optionCount: options.length,
+        chosenCount: chosenWeaponMasteries.size,
+        requiredCount: requiredWeaponMasteries,
+        durationMs: Math.round((globalThis.performance?.now?.() ?? Date.now()) - perfStart),
+      });
 
       return {
         stepId: "weaponMasteries",
@@ -380,7 +525,7 @@ export function createWeaponMasteriesStep(): WizardStepDefinition {
             checked: chosenWeaponMasteries.has(entry.id),
             disabled: !chosenWeaponMasteries.has(entry.id) && chosenWeaponMasteries.size >= requiredWeaponMasteries,
           })),
-          emptyMessage: "This class grants weapon mastery, but no mastery-eligible proficient weapons were exposed by the current class, origin, species, and item data.",
+          emptyMessage: "This class grants weapon mastery, but no mastery-eligible proficient mundane weapons were exposed by the current class and item data.",
         },
       };
     },

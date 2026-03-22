@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import type {
+  ClassAdvancementSelectionsState,
   ClassSelection,
   CreatorIndexEntry,
   ReactWizardStepProps,
@@ -9,12 +10,16 @@ import type {
 import { cn } from "../../../../ui/lib/cn";
 import { ClassAggregateStepper } from "./class-step-screen";
 import { buildClassFlowShellModel } from "./build-class-flow-shell-model";
+import { ClassSummaryStepScreen } from "./class-summary-step-screen";
 import {
   buildClassSelectionFromEntry,
   getClassStepViewModel,
 } from "../../../steps/step-class-model";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
+import { ensureCharacterCreatorIndexesReady } from "../../../character-creator-index-cache";
+import { buildEmptyClassAdvancementSelections } from "../../../steps/class-advancement-utils";
+import { getWeaponMasteryPackSources } from "../../../steps/step-weapon-masteries";
 
 type ClassStepViewModel = Awaited<ReturnType<typeof getClassStepViewModel>>;
 type ClassEntryViewModel = ClassStepViewModel["entries"][number];
@@ -60,6 +65,13 @@ type WeaponMasteryChoiceOption = {
   disabled: boolean;
 };
 
+type MasteryReferenceEntry = {
+  mastery: string;
+  masteryDescription: string;
+  iconClass: string;
+  sourceWeapons: string[];
+};
+
 type WeaponMasteriesStepViewModel = {
   classIdentifier: string;
   className: string;
@@ -78,7 +90,54 @@ type WeaponMasteriesStepViewModel = {
   };
 };
 
-const CLASS_FLOW_STEP_IDS = new Set(["class", "classChoices", "weaponMasteries"]);
+type ClassAdvancementChoiceOption = {
+  id: string;
+  label: string;
+  checked: boolean;
+  disabled: boolean;
+  description?: string;
+  iconClass?: string;
+};
+
+type ClassAdvancementCommonStepViewModel = {
+  classIdentifier: string;
+  className: string;
+  type: "expertise" | "languages" | "tools";
+  title: string;
+  description: string;
+  selectedCount: number;
+  requiredCount: number;
+  selectedEntries: ClassAdvancementChoiceOption[];
+  options: ClassAdvancementChoiceOption[];
+};
+
+type ClassItemChoiceRequirementViewModel = {
+  id: string;
+  title: string;
+  requiredCount: number;
+  selectedIds: string[];
+  options: ClassAdvancementChoiceOption[];
+};
+
+type ClassItemChoicesStepViewModel = {
+  classIdentifier: string;
+  className: string;
+  type: "itemChoices";
+  title: string;
+  description: string;
+  requirements: ClassItemChoiceRequirementViewModel[];
+};
+
+const CLASS_FLOW_STEP_IDS = new Set([
+  "class",
+  "classChoices",
+  "classExpertise",
+  "classLanguages",
+  "classTools",
+  "weaponMasteries",
+  "classItemChoices",
+  "classSummary",
+]);
 
 const CLASS_THEMES: Record<string, { ribbon: string; frame: string; glow: string; crest: string; accent: string; sigil: string }> = {
   barbarian: { ribbon: "from-[#714126] to-[#382015]", frame: "#b57d4d", glow: "rgba(201,124,58,0.35)", crest: "fa-solid fa-fire", accent: "#b57d4d", sigil: "fa-solid fa-fire" },
@@ -105,7 +164,11 @@ export function getClassFlowTransitionKey(stepId: string | undefined): string {
   return isClassFlowStep(stepId) ? "class-flow" : (stepId ?? "");
 }
 
-export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWizardStepProps) {
+export function ClassFlowRouteHost(
+  { shellContext, state, controller, step, pendingTransition }: ReactWizardStepProps & {
+    pendingTransition?: { targetStepId: string; message: string } | null;
+  },
+) {
   const prefersReducedMotion = useReducedMotion() ?? false;
   const shellModel = useMemo(
     () => buildClassFlowShellModel(state, shellContext.steps, shellContext.currentStepId),
@@ -114,6 +177,15 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
   const theme = getClassTheme(shellModel.selectedClassIdentifier ?? "fighter");
   const titleStyle = getClassFlowTitleStyle(shellModel.headerTone, theme);
   const headerFrameStyle = getClassFlowHeaderFrameStyle(shellModel.headerTone, theme);
+
+  useEffect(() => {
+    if (!["class", "classChoices", "classExpertise", "classLanguages", "classTools", "classItemChoices"].includes(shellModel.currentPane)) return;
+    if (!state.selections.class?.hasWeaponMastery || getRequiredWeaponMasteryCount(state) <= 0) return;
+    void ensureCharacterCreatorIndexesReady(getWeaponMasteryPackSources(state.config.packSources), {
+      contentKeys: ["items"],
+      persistIfMissing: true,
+    });
+  }, [shellModel.currentPane, state.config.packSources, state.selections.class?.hasWeaponMastery, state.selections.class?.weaponMasteryCount]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
@@ -142,19 +214,23 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                 src={classStepHeaderBackground}
               />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.36),rgba(16,12,11,0.58))]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.24),rgba(16,12,11,0.42))]" />
               <div className="relative z-10 flex items-center justify-center px-4 py-3">
                 <HeaderFlourish side="left" />
-                <div className="relative min-w-0">
+                <div className="relative min-w-0 flex-1" style={{ containerType: "inline-size" }}>
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.h2
                       key={shellModel.title}
                       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                      className="m-0 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.12em] text-fth-cc-gold-bright md:text-[2.15rem]"
+                      className="m-0 text-center font-fth-cc-display uppercase tracking-[0.12em] text-fth-cc-gold-bright"
                       exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}
                       initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
                       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                      style={titleStyle}
+                      style={{
+                        ...titleStyle,
+                        fontSize: "clamp(1.075rem, 8cqi, 2.15rem)",
+                        lineHeight: 1.05,
+                      }}
                     >
                       {shellModel.title}
                     </motion.h2>
@@ -175,9 +251,23 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,252,245,0.6),rgba(255,248,236,0.18)_52%,rgba(219,190,145,0.08)_100%)]" />
             <ClassAggregateStepper model={shellModel.aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
 
-            <div className="relative z-10 mt-3 min-h-0 flex-1">
+            <div className="relative z-10 mt-3 flex min-h-0 flex-1">
               <AnimatePresence initial={false} mode="wait">
-                {shellModel.currentPane === "classChoices" ? (
+                {pendingTransition?.targetStepId === "weaponMasteries" ? (
+                  <motion.div
+                    key="weaponMasteries-loading"
+                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                    className="flex h-full min-h-0 w-full flex-1 self-stretch"
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <WeaponMasteriesLoadingPane
+                      message={pendingTransition.message}
+                      theme={theme}
+                    />
+                  </motion.div>
+                ) : shellModel.currentPane === "classChoices" ? (
                   <motion.div
                     key="classChoices"
                     animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
@@ -187,6 +277,17 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
                     transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <ClassSkillsPane controller={controller} shellContext={shellContext} state={state} />
+                  </motion.div>
+                ) : shellModel.currentPane === "classExpertise" || shellModel.currentPane === "classLanguages" || shellModel.currentPane === "classTools" ? (
+                  <motion.div
+                    key={shellModel.currentPane}
+                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                    className="flex h-full min-h-0 flex-col"
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <ClassAdvancementChoicePane controller={controller} shellContext={shellContext} state={state} />
                   </motion.div>
                 ) : shellModel.currentPane === "weaponMasteries" ? (
                   <motion.div
@@ -198,6 +299,28 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
                     transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <WeaponMasteriesPane controller={controller} shellContext={shellContext} state={state} />
+                  </motion.div>
+                ) : shellModel.currentPane === "classItemChoices" ? (
+                  <motion.div
+                    key="classItemChoices"
+                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                    className="flex h-full min-h-0 flex-col"
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <ClassItemChoicesPane controller={controller} shellContext={shellContext} state={state} />
+                  </motion.div>
+                ) : shellModel.currentPane === "classSummary" ? (
+                  <motion.div
+                    key="classSummary"
+                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                    className="flex h-full min-h-0 flex-col"
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <ClassSummaryStepScreen controller={controller} shellContext={shellContext} state={state} step={step} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -218,6 +341,55 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
       </motion.div>
     </section>
   );
+}
+
+function buildNextClassAdvancementSelections(
+  current: ClassAdvancementSelectionsState | undefined,
+): ClassAdvancementSelectionsState {
+  return {
+    ...buildEmptyClassAdvancementSelections(),
+    ...(current ?? {}),
+    itemChoices: {
+      ...(current?.itemChoices ?? {}),
+    },
+  };
+}
+
+function WeaponMasteriesLoadingPane(
+  { message, theme }: { message: string; theme: ReturnType<typeof getClassTheme> },
+) {
+  return (
+    <div
+      className="flex h-full min-h-0 w-full flex-1 items-center justify-center self-stretch"
+    >
+      <div
+        className="flex min-h-[22rem] w-full max-w-xl flex-col items-center justify-center gap-5 rounded-[1.6rem] bg-[rgba(39,25,17,0.8)] px-8 py-10 text-center text-fth-cc-light shadow-[0_20px_48px_rgba(24,12,8,0.34)]"
+        style={{ border: `1px solid ${theme.accent}59` }}
+      >
+        <div
+          className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(255,248,239,0.08)] shadow-[0_0_18px_rgba(0,0,0,0.28)]"
+          style={{ border: `1px solid ${theme.accent}80`, color: theme.accent }}
+        >
+          <span
+            aria-hidden="true"
+            className="block h-7 w-7 animate-spin rounded-full border-[3px] border-current/25 border-t-current"
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="font-fth-cc-display text-xl uppercase tracking-[0.14em] text-fth-cc-gold-bright">
+            Preparing Weapon Masteries
+          </div>
+          <p className="mx-auto max-w-md font-fth-cc-ui text-sm leading-6 text-fth-cc-light/80">
+            {message}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getRequiredWeaponMasteryCount(state: ReactWizardStepProps["state"]): number {
+  return state.selections.class?.weaponMasteryCount ?? 0;
 }
 
 function getClassFlowTitleStyle(
@@ -483,17 +655,34 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
     [options, selectedSet],
   );
 
-  const masteryReference = useMemo(() => {
-    const seen = new Set<string>();
-    return options
-      .filter((option) => {
-        const key = option.mastery.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .sort((left, right) => left.mastery.localeCompare(right.mastery));
-  }, [options]);
+  const masteryReference = useMemo<MasteryReferenceEntry[]>(() => {
+    const masteryMap = new Map<string, MasteryReferenceEntry>();
+    for (const option of options) {
+      const key = option.mastery.toLowerCase();
+      const existing = masteryMap.get(key);
+      const sourceWeapons = selectedSet.has(option.id) ? [option.name] : [];
+      if (existing) {
+        for (const weaponName of sourceWeapons) {
+          if (!existing.sourceWeapons.includes(weaponName)) existing.sourceWeapons.push(weaponName);
+        }
+        continue;
+      }
+
+      masteryMap.set(key, {
+        mastery: option.mastery,
+        masteryDescription: option.masteryDescription,
+        iconClass: getMasteryIcon(option.mastery),
+        sourceWeapons,
+      });
+    }
+
+    return [...masteryMap.values()].sort((left, right) => {
+      const leftSelected = left.sourceWeapons.length > 0 ? 0 : 1;
+      const rightSelected = right.sourceWeapons.length > 0 ? 0 : 1;
+      if (leftSelected !== rightSelected) return leftSelected - rightSelected;
+      return left.mastery.localeCompare(right.mastery);
+    });
+  }, [options, selectedSet]);
 
   const onToggleMastery = (weaponId: string) => {
     const option = options.find((candidate) => candidate.id === weaponId);
@@ -533,15 +722,8 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   return (
     <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.76fr)]">
       <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <div className="border-b border-[#cfb58f]/55 pb-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#d5b98b]/70 bg-[rgba(255,247,233,0.78)] px-3 py-1.5 font-fth-cc-body text-sm text-[#6b503f]">
-            <i className={cn(theme.sigil, "text-[#8a613e]")} aria-hidden="true" />
-            <span><strong>Mundane Weapons Only:</strong> Showing mastery-eligible weapons from your enabled equipment packs.</span>
-          </div>
-        </div>
-
         {viewModel.weaponMasterySection.hasChoices ? (
-          <div className="fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+          <div className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
             <div className="grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
                 <section className="grid gap-2.5" key={group.label}>
@@ -582,6 +764,199 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
         />
         <SelectedMasteriesCard selectedEntries={selectedEntries} />
         <MasteryReferenceCard entries={masteryReference} />
+      </aside>
+    </div>
+  );
+}
+
+function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<ReactWizardStepProps, "shellContext" | "state" | "controller">) {
+  const viewModel = shellContext.stepViewModel as ClassAdvancementCommonStepViewModel | undefined;
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  if (!viewModel) return null;
+
+  const [selectedIds, setSelectedIds] = useState<string[]>(viewModel.selectedEntries.map((entry) => entry.id));
+
+  useEffect(() => {
+    setSelectedIds(viewModel.selectedEntries.map((entry) => entry.id));
+  }, [viewModel]);
+
+  const theme = getClassTheme(viewModel.classIdentifier);
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const options = useMemo(
+    () => viewModel.options.map((option) => ({
+      ...option,
+      checked: selectedSet.has(option.id),
+      disabled: !selectedSet.has(option.id) && selectedSet.size >= viewModel.requiredCount,
+    })),
+    [selectedSet, viewModel.options, viewModel.requiredCount],
+  );
+
+  const onToggleOption = (optionId: string) => {
+    const nextSelected = new Set(selectedIds);
+    if (nextSelected.has(optionId)) nextSelected.delete(optionId);
+    else {
+      if (nextSelected.size >= viewModel.requiredCount) return;
+      nextSelected.add(optionId);
+    }
+
+    const chosen = Array.from(nextSelected);
+    const nextSelections = buildNextClassAdvancementSelections(state.selections.classAdvancements);
+    if (viewModel.type === "expertise") nextSelections.expertiseSkills = chosen;
+    if (viewModel.type === "languages") nextSelections.chosenLanguages = chosen;
+    if (viewModel.type === "tools") nextSelections.chosenTools = chosen;
+    state.selections.classAdvancements = nextSelections;
+    controller.updateCurrentStepData(nextSelections, { silent: true });
+    setSelectedIds(chosen);
+  };
+
+  return (
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
+      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
+        <div className="border-b border-[#cfb58f]/55 pb-4">
+          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#5b4335]">
+            {viewModel.title}
+          </div>
+          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#684d3f]">
+            {viewModel.description}
+          </p>
+        </div>
+        <div className="fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+          <div className="grid gap-2.5">
+            {options.map((option, optionIndex) => (
+              <ClassAdvancementOptionRow
+                key={option.id}
+                onToggle={onToggleOption}
+                option={option}
+                prefersReducedMotion={prefersReducedMotion}
+                rowIndex={optionIndex}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <aside className="flex min-h-0 flex-col gap-4">
+        <SelectionSummaryCard
+          accent={theme.accent}
+          glow={theme.glow}
+          label={getSelectionSummaryLabel(viewModel.type)}
+          maxCount={viewModel.requiredCount}
+          selectedCount={selectedIds.length}
+          title="Selection Summary"
+        />
+        <ClassAdvancementSelectedCard
+          emptyMessage={getEmptySelectionMessage(viewModel.type)}
+          entries={options.filter((option) => selectedSet.has(option.id))}
+          title={getSelectedCardTitle(viewModel.type)}
+        />
+      </aside>
+    </div>
+  );
+}
+
+function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWizardStepProps, "shellContext" | "state" | "controller">) {
+  const viewModel = shellContext.stepViewModel as ClassItemChoicesStepViewModel | undefined;
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  if (!viewModel) return null;
+
+  const [selectedByRequirement, setSelectedByRequirement] = useState<Record<string, string[]>>(
+    Object.fromEntries(viewModel.requirements.map((requirement) => [requirement.id, [...requirement.selectedIds]])),
+  );
+
+  useEffect(() => {
+    setSelectedByRequirement(
+      Object.fromEntries(viewModel.requirements.map((requirement) => [requirement.id, [...requirement.selectedIds]])),
+    );
+  }, [viewModel]);
+
+  const theme = getClassTheme(viewModel.classIdentifier);
+  const totalRequired = viewModel.requirements.reduce((sum, requirement) => sum + requirement.requiredCount, 0);
+  const totalSelected = Object.values(selectedByRequirement).reduce((sum, values) => sum + values.length, 0);
+
+  const onToggleOption = (requirementId: string, optionId: string, limit: number) => {
+    const currentSelections = new Set(selectedByRequirement[requirementId] ?? []);
+    if (currentSelections.has(optionId)) currentSelections.delete(optionId);
+    else {
+      if (currentSelections.size >= limit) return;
+      currentSelections.add(optionId);
+    }
+
+    const chosen = Array.from(currentSelections);
+    const nextSelectedByRequirement = {
+      ...selectedByRequirement,
+      [requirementId]: chosen,
+    };
+    const nextSelections = buildNextClassAdvancementSelections(state.selections.classAdvancements);
+    nextSelections.itemChoices = {
+      ...nextSelections.itemChoices,
+      [requirementId]: chosen,
+    };
+    state.selections.classAdvancements = nextSelections;
+    controller.updateCurrentStepData(nextSelections, { silent: true });
+    setSelectedByRequirement(nextSelectedByRequirement);
+  };
+
+  return (
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
+      <section className="fth-react-scrollbar flex min-h-0 flex-col overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
+        <div className="border-b border-[#cfb58f]/55 pb-4">
+          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#5b4335]">
+            {viewModel.title}
+          </div>
+          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#684d3f]">
+            {viewModel.description}
+          </p>
+        </div>
+        <div className="mt-4 grid gap-4 pb-3 pt-2">
+          {viewModel.requirements.map((requirement, groupIndex) => {
+            const selectedSet = new Set(selectedByRequirement[requirement.id] ?? []);
+            const options = requirement.options.map((option) => ({
+              ...option,
+              checked: selectedSet.has(option.id),
+              disabled: !selectedSet.has(option.id) && selectedSet.size >= requirement.requiredCount,
+            }));
+            return (
+              <section className="grid gap-2.5" key={requirement.id}>
+                <div className="flex items-center gap-3 px-1">
+                  <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
+                    {requirement.title}
+                  </span>
+                  <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#6a4f3c]">
+                    Choose {requirement.requiredCount}
+                  </span>
+                  <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
+                </div>
+                {options.map((option, optionIndex) => (
+                  <ClassAdvancementOptionRow
+                    key={option.id}
+                    onToggle={(optionId) => onToggleOption(requirement.id, optionId, requirement.requiredCount)}
+                    option={option}
+                    prefersReducedMotion={prefersReducedMotion}
+                    rowIndex={groupIndex * 10 + optionIndex}
+                  />
+                ))}
+              </section>
+            );
+          })}
+        </div>
+      </section>
+
+      <aside className="flex min-h-0 flex-col gap-4">
+        <SelectionSummaryCard
+          accent={theme.accent}
+          glow={theme.glow}
+          label="Class Options Chosen"
+          maxCount={totalRequired}
+          selectedCount={totalSelected}
+          title="Selection Summary"
+        />
+        <ClassAdvancementSelectedCard
+          emptyMessage="No class options selected yet."
+          entries={viewModel.requirements.flatMap((requirement) =>
+            requirement.options.filter((option) => (selectedByRequirement[requirement.id] ?? []).includes(option.id))
+          )}
+          title="Chosen Features"
+        />
       </aside>
     </div>
   );
@@ -759,7 +1134,6 @@ function SkillOptionRow({
       disabled={option.disabled && !option.checked}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.key)}
-      title={option.tooltip}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
       type="button"
       whileHover={
@@ -846,6 +1220,149 @@ function SelectionSummaryCard({
   );
 }
 
+function ClassAdvancementOptionRow({
+  option,
+  onToggle,
+  prefersReducedMotion,
+  rowIndex,
+}: {
+  option: ClassAdvancementChoiceOption;
+  onToggle: (optionId: string) => void;
+  prefersReducedMotion: boolean;
+  rowIndex: number;
+}) {
+  return (
+    <motion.button
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+      aria-pressed={option.checked}
+      className={cn(
+        "group relative grid w-full grid-cols-[3rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
+        option.checked
+          ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))]"
+          : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
+        option.disabled && !option.checked && "opacity-60",
+      )}
+      disabled={option.disabled && !option.checked}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
+      onClick={() => onToggle(option.id)}
+      transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      type="button"
+      whileHover={
+        prefersReducedMotion || (option.disabled && !option.checked)
+          ? undefined
+          : { scale: 1.01, y: -2, boxShadow: "0 18px 28px rgba(67,43,23,0.12)" }
+      }
+      whileTap={prefersReducedMotion || (option.disabled && !option.checked) ? undefined : { scale: 0.992 }}
+    >
+      <span
+        className={cn(
+          "relative flex h-11 w-11 items-center justify-center rounded-[0.85rem] border shadow-[inset_0_1px_0_rgba(255,244,220,0.16)]",
+          option.checked ? "border-[#7e8c3f] bg-[linear-gradient(180deg,#f5ecbf,#d5b366)] text-[#5b3a1d]" : "border-[#cfb08c] bg-[rgba(255,248,235,0.86)] text-[#8a613e]",
+        )}
+      >
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.7rem] border border-white/20" />
+        <i className={cn(option.iconClass ?? "fa-solid fa-sparkles", "relative z-10 text-base")} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#3f2c22]">
+          {option.label}
+        </span>
+        {option.description ? (
+          <span className="mt-0.5 block font-fth-cc-body text-[0.92rem] leading-6 text-[#6f5747]">
+            {option.description}
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={cn(
+          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,244,220,0.12)]",
+          option.checked
+            ? "border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]"
+            : "border-[#d1b58f] bg-[linear-gradient(180deg,rgba(248,238,220,0.9),rgba(227,210,183,0.92))] text-[#ad8f6f]",
+        )}
+      >
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
+        {option.checked ? <i className="fa-solid fa-check" aria-hidden="true" /> : <i className="fa-solid fa-hexagon" aria-hidden="true" />}
+      </span>
+    </motion.button>
+  );
+}
+
+function ClassAdvancementSelectedCard({
+  title,
+  entries,
+  emptyMessage,
+}: {
+  title: string;
+  entries: ClassAdvancementChoiceOption[];
+  emptyMessage: string;
+}) {
+  return (
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+        </div>
+        <div className="mt-4 grid gap-2.5">
+          {entries.length > 0 ? entries.map((entry) => (
+            <div
+              className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.95rem] border border-[#8a6a48]/55 bg-[linear-gradient(180deg,rgba(91,61,42,0.42),rgba(38,24,17,0.5))] px-3 py-2.5"
+              key={entry.id}
+            >
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d3ad64]/70 bg-[linear-gradient(180deg,#f6e5b8,#d4aa58)] text-[#5a3513]">
+                <i className={cn(entry.iconClass ?? "fa-solid fa-sparkles", "text-sm")} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.label}</span>
+                {entry.description ? (
+                  <span className="block font-fth-cc-body text-[0.86rem] leading-5 text-[#d7bb8a]">{entry.description}</span>
+                ) : null}
+              </span>
+            </div>
+          )) : (
+            <div className="rounded-[0.95rem] border border-dashed border-[#8a6a48]/45 bg-[rgba(44,28,20,0.24)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
+              {emptyMessage}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function getSelectionSummaryLabel(type: ClassAdvancementCommonStepViewModel["type"]): string {
+  switch (type) {
+    case "expertise":
+      return "Expertise Picks";
+    case "languages":
+      return "Languages Chosen";
+    case "tools":
+      return "Tool Picks";
+  }
+}
+
+function getSelectedCardTitle(type: ClassAdvancementCommonStepViewModel["type"]): string {
+  switch (type) {
+    case "expertise":
+      return "Chosen Expertise";
+    case "languages":
+      return "Chosen Languages";
+    case "tools":
+      return "Chosen Tools";
+  }
+}
+
+function getEmptySelectionMessage(type: ClassAdvancementCommonStepViewModel["type"]): string {
+  switch (type) {
+    case "expertise":
+      return "No expertise choices selected yet.";
+    case "languages":
+      return "No class languages selected yet.";
+    case "tools":
+      return "No class tools selected yet.";
+  }
+}
+
 function WeaponMasteryRow({
   option,
   onToggle,
@@ -871,7 +1388,6 @@ function WeaponMasteryRow({
       disabled={option.disabled && !option.checked}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.id)}
-      title={option.tooltip}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
       type="button"
       whileHover={
@@ -897,7 +1413,7 @@ function WeaponMasteryRow({
         </span>
         <span className="mt-0.5 flex flex-wrap gap-1.5">
           <span className="inline-flex items-center rounded-full border border-[#d4b283] bg-[rgba(255,248,233,0.7)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#7a5b43]">
-            {option.weaponType}
+            {formatWeaponTypeBadge(option.weaponType)}
           </span>
           <span className="inline-flex items-center rounded-full border border-[#c0a46f] bg-[rgba(115,84,43,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#7a5631]">
             {option.mastery}
@@ -954,7 +1470,7 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
   );
 }
 
-function MasteryReferenceCard({ entries }: { entries: WeaponMasteryChoiceOption[] }) {
+function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] }) {
   return (
     <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
       <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
@@ -963,14 +1479,36 @@ function MasteryReferenceCard({ entries }: { entries: WeaponMasteryChoiceOption[
         </div>
         <div className="mt-4 grid gap-2.5">
           {entries.map((entry) => (
-            <div className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-3" key={entry.mastery}>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#8a6a48] bg-[linear-gradient(180deg,rgba(101,70,49,0.94),rgba(54,35,25,0.98))] text-[#f2deb6]">
-                <i className={getMasteryIcon(entry.mastery)} aria-hidden="true" />
+            <div
+              className={cn(
+                "grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 rounded-[0.95rem] border px-3 py-3",
+                entry.sourceWeapons.length > 0
+                  ? "border-[#aa915c]/55 bg-[linear-gradient(180deg,rgba(101,75,45,0.36),rgba(44,28,20,0.24))]"
+                  : "border-transparent bg-transparent",
+              )}
+              key={entry.mastery}
+            >
+              <span className="inline-flex h-8 w-8 items-center justify-center self-center rounded-full border border-[#8a6a48] bg-[linear-gradient(180deg,rgba(101,70,49,0.94),rgba(54,35,25,0.98))] text-[#f2deb6]">
+                <i className={entry.iconClass} aria-hidden="true" />
               </span>
-              <span>
-                <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.mastery}</span>
-                <span className="block font-fth-cc-body text-[0.92rem] leading-6 text-[#dfcaaa]">{entry.masteryDescription}</span>
-              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.mastery}</span>
+                  {entry.sourceWeapons.length > 0 ? (
+                    <span className="inline-flex items-center rounded-full border border-[#b69c67]/70 bg-[linear-gradient(180deg,rgba(156,126,67,0.26),rgba(109,82,41,0.28))] px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em] text-[#f3ddb0]">
+                      Known via weapon mastery
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="col-span-2 min-w-0">
+                {entry.sourceWeapons.length > 0 ? (
+                  <div className="mb-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#d9bc8f]">
+                    From {entry.sourceWeapons.join(", ")}
+                  </div>
+                ) : null}
+                <span className="block font-fth-cc-body text-[0.84rem] leading-5 text-[#dfcaaa]">{entry.masteryDescription}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -1028,6 +1566,13 @@ function getMasteryIcon(mastery: string): string {
     default:
       return "fa-solid fa-swords";
   }
+}
+
+function formatWeaponTypeBadge(weaponType: string): string {
+  const normalized = weaponType.trim().toLowerCase();
+  if (normalized.endsWith("melee")) return "Melee";
+  if (normalized.endsWith("ranged")) return "Ranged";
+  return weaponType;
 }
 
 function abilityLabel(abbrev: string): string {

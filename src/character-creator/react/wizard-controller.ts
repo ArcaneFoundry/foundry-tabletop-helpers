@@ -9,12 +9,15 @@ import type {
 import { buildWizardShellContext } from "../wizard/character-creator-app-helpers";
 import type { WizardStateMachine } from "../wizard/wizard-state-machine";
 import { Log } from "../../logger";
+import { ensureCharacterCreatorIndexesReady } from "../character-creator-index-cache";
+import { getWeaponMasteryPackSources } from "../steps/step-weapon-masteries";
 
 export interface CharacterCreatorWizardSnapshot {
   ready: boolean;
   shellContext: WizardShellContext | null;
   currentStepDef?: WizardStepDefinition;
   state: WizardState;
+  pendingTransition: { targetStepId: string; message: string } | null;
 }
 
 interface WizardControllerOptions {
@@ -39,6 +42,7 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
   private _activeStepElement: HTMLElement | null = null;
   private _renderRequestId = 0;
   private _destroyed = false;
+  private _pendingTransition: { targetStepId: string; message: string } | null = null;
 
   constructor(machine: WizardStateMachine, options: WizardControllerOptions) {
     this._machine = machine;
@@ -67,6 +71,7 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
   }
 
   async refresh(): Promise<void> {
+    const perfStart = globalThis.performance?.now?.() ?? Date.now();
     const requestId = ++this._renderRequestId;
     const currentStepDef = this._machine.currentStepDef;
     const shellContext = await buildWizardShellContext(
@@ -80,6 +85,10 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
 
     this._currentStepDef = currentStepDef;
     this._shellContext = shellContext;
+    Log.info("CC Perf: controller refresh complete", {
+      stepId: currentStepDef?.id ?? "unknown",
+      durationMs: Math.round((globalThis.performance?.now?.() ?? Date.now()) - perfStart),
+    });
     this._emit();
   }
 
@@ -110,9 +119,41 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
   }
 
   goNext(): void {
-    this._deactivateActiveStep();
-    if (this._machine.goNext()) {
-      void this.refresh();
+    if (this._pendingTransition) return;
+    void this._goNext();
+  }
+
+  private async _goNext(): Promise<void> {
+    const fromStepId = this._machine.currentStepId;
+    const toStepId = this._machine.state.applicableSteps[this._machine.state.currentStep + 1] ?? "";
+    const perfStart = globalThis.performance?.now?.() ?? Date.now();
+
+    try {
+      if (fromStepId === "classChoices" && toStepId === "weaponMasteries") {
+        const masteryPackSources = getWeaponMasteryPackSources(this._machine.state.config.packSources);
+        this._pendingTransition = {
+          targetStepId: "weaponMasteries",
+          message: "Preparing weapon mastery options...",
+        };
+        this._emit();
+        await ensureCharacterCreatorIndexesReady(masteryPackSources, {
+          contentKeys: ["items"],
+          persistIfMissing: false,
+        });
+      }
+
+      this._deactivateActiveStep();
+      if (this._machine.goNext()) {
+        Log.info("CC Perf: goNext triggered refresh", {
+          fromStepId,
+          toStepId: this._machine.currentStepId || toStepId,
+          transitionPrepMs: Math.round((globalThis.performance?.now?.() ?? Date.now()) - perfStart),
+        });
+        await this.refresh();
+      }
+    } finally {
+      this._pendingTransition = null;
+      this._emit();
     }
   }
 
@@ -222,6 +263,7 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
       shellContext: this._shellContext,
       currentStepDef: this._currentStepDef,
       state: this._machine.state,
+      pendingTransition: this._pendingTransition,
     };
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import type {
   ClassSelection,
@@ -9,10 +9,9 @@ import type {
 import { cn } from "../../../../ui/lib/cn";
 import {
   buildClassAggregateStepperModel,
-  type ClassAggregateChildNode,
-  type ClassAggregateMainNode,
+  type ClassAggregateMilestoneNode,
   type ClassAggregatePresentationStatus,
-  type ClassAggregateTailNode,
+  type ClassAggregateSubstepNode,
 } from "../../progress/build-class-aggregate-stepper-model";
 import { buildClassSelectionFromEntry, getClassStepViewModel } from "../../../steps/step-class-model";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
@@ -108,7 +107,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
                 src={classStepHeaderBackground}
                 transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
               />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.36),rgba(16,12,11,0.58))]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.24),rgba(16,12,11,0.42))]" />
               <motion.div
                 animate={prefersReducedMotion ? undefined : { opacity: [0.18, 0.32, 0.18] }}
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,220,170,0.08),transparent_40%)]"
@@ -203,26 +202,6 @@ function HeaderFlourish({ side, prefersReducedMotion }: { side: "left" | "right"
           initial={prefersReducedMotion ? false : { scaleX: 0.7, opacity: 0.3 }}
           transition={{ delay: 0.24, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         />
-        <span
-          className={cn(
-            "absolute top-1/2 h-px w-full -translate-y-1/2 opacity-65",
-            side === "left"
-              ? "left-0 scale-x-[0.72] bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(247,218,160,0.55),rgba(214,177,111,0.2))]"
-              : "right-0 scale-x-[0.72] bg-[linear-gradient(90deg,rgba(214,177,111,0.2),rgba(247,218,160,0.55),rgba(214,177,111,0))]",
-          )}
-        />
-        <span
-          className={cn(
-            "absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border border-[#d6b16f]/85 bg-[rgba(214,177,111,0.14)] shadow-[0_0_6px_rgba(242,216,157,0.14)]",
-            side === "left" ? "right-1.5 md:right-3" : "left-1.5 md:left-3",
-          )}
-        />
-        <span
-          className={cn(
-            "absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rotate-45 border border-[#f0d39e]/70 bg-[rgba(255,233,188,0.16)]",
-            side === "left" ? "right-0 md:right-0.5" : "left-0 md:left-0.5",
-          )}
-        />
       </span>
       {side === "left" ? <FlourishGem prefersReducedMotion={prefersReducedMotion} /> : null}
     </motion.span>
@@ -253,193 +232,129 @@ export function ClassAggregateStepper({
     <motion.nav
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       aria-label="Class Selection Progress"
-      className="relative mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-3 border-b border-[#bea37d]/55 pb-4 text-[#5e4330]"
+      className="relative mx-auto flex w-full max-w-5xl flex-col gap-3 border-b border-[#bea37d]/55 pb-4 text-[#5e4330]"
       initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
       transition={{ delay: 0.14, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
     >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-12 bottom-0 top-0 rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,248,235,0.7),rgba(255,248,235,0.18)_48%,transparent_78%)]"
-      />
-      <RailEndcap side="left" />
-      <motion.div
-        animate={prefersReducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
-        className="relative z-10 flex items-center gap-3"
-        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96, y: 6 }}
-        transition={{ delay: 0.18, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <AggregateMainNode main={model.main} prefersReducedMotion={prefersReducedMotion} />
-        <RailConnector />
-      </motion.div>
-      {model.tail.map((step, index) => (
+      <div className="relative z-10 flex items-center justify-center gap-3">
+        <RailEndcap side="left" />
+        {model.milestones.map((milestone, index) => (
+          <div className="flex items-center gap-3" key={milestone.id}>
+            <MilestoneNode milestone={milestone} prefersReducedMotion={prefersReducedMotion} />
+            {index < model.milestones.length - 1 ? <RailConnector /> : null}
+          </div>
+        ))}
+        <RailEndcap side="right" />
+      </div>
+      {model.showSubsteps && model.substeps.length > 0 ? (
         <motion.div
-          animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-          className="relative z-10 flex items-center gap-2"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 6, scale: 0.96 }}
-          key={step.id}
-          transition={{ delay: 0.24 + index * 0.05, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+          className="relative z-10 mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-2 rounded-[1.2rem] border border-[#cdb28a]/70 bg-[linear-gradient(180deg,rgba(255,249,239,0.8),rgba(244,231,208,0.82))] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_12px_24px_rgba(76,53,36,0.08)]"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+          transition={{ delay: 0.2, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         >
-          <TailStepNode prefersReducedMotion={prefersReducedMotion} step={step} />
-          {index < model.tail.length - 1 ? <RailConnector /> : <RailConnector />}
+          {model.substeps.map((step) => (
+            <SubstepChip key={step.id} prefersReducedMotion={prefersReducedMotion} step={step} />
+          ))}
         </motion.div>
-      ))}
-      <RailEndcap side="right" />
+      ) : null}
     </motion.nav>
   );
 }
 
-function AggregateMainNode({
-  main,
+function MilestoneNode({
+  milestone,
   prefersReducedMotion,
 }: {
-  main: ClassAggregateMainNode;
+  milestone: ClassAggregateMilestoneNode;
   prefersReducedMotion: boolean;
 }) {
-  const fillAnimation = getMainNodeFillAnimate(main.status, prefersReducedMotion);
-
   return (
-    <div className="relative flex h-16 w-16 items-center justify-center md:h-[4.5rem] md:w-[4.5rem]">
-      <AnimatePresence>
-        {main.children.map((child, index) => (
-          child.visible ? (
-            <ChildSatellite
-              child={child}
-              index={index}
-              key={child.id}
-              prefersReducedMotion={prefersReducedMotion}
-            />
-          ) : null
-        ))}
-      </AnimatePresence>
-      <motion.span
-        animate={prefersReducedMotion ? undefined : getMainNodeAnimate(main)}
+    <motion.div
+      animate={prefersReducedMotion ? undefined : getMilestoneAnimate(milestone.status)}
+      className="flex items-center gap-2"
+      transition={getMilestoneTransition(milestone.status, prefersReducedMotion)}
+    >
+      <span
         className={cn(
-          "relative z-10 inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_8px_16px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
-          getMainNodeClassName(main.status),
+          "relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_8px_16px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
+          getMilestoneClassName(milestone.status),
         )}
-        transition={getMainNodeTransition(main.status, prefersReducedMotion)}
-        title={main.label}
+        title={milestone.label}
       >
-        <motion.span
-          animate={fillAnimation}
-          className={cn(
-            "pointer-events-none absolute inset-[3px] rounded-full",
-            getMainNodeFillClassName(main.status),
-          )}
-          initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.45 }}
-          transition={getMainNodeFillTransition(main.status, prefersReducedMotion)}
-        />
         <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/20" />
         <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.32),transparent_42%)]" />
-        <span className="sr-only">{main.label}</span>
-        <i
-          className={cn(main.icon, "relative z-10", main.status === "skipped" && "opacity-70")}
-          aria-hidden="true"
-        />
-      </motion.span>
-    </div>
+        <span className="sr-only">{milestone.label}</span>
+        <i className={cn(milestone.icon, "relative z-10")} aria-hidden="true" />
+      </span>
+      <span
+        className={cn(
+          "font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] md:text-[0.72rem]",
+          milestone.active ? "text-[#5a3a21]" : milestone.status === "complete" ? "text-[#7c5a31]" : "text-[#8d7257]",
+        )}
+      >
+        {milestone.label}
+      </span>
+    </motion.div>
   );
 }
 
-function ChildSatellite({
-  child,
-  index,
-  prefersReducedMotion,
-}: {
-  child: ClassAggregateChildNode;
-  index: number;
-  prefersReducedMotion: boolean;
-}) {
-  const positions = [
-    "left-[3.3rem] top-[-0.2rem] md:left-[3.85rem] md:top-[-0.15rem]",
-    "left-[3.45rem] top-[2.55rem] md:left-[4.05rem] md:top-[2.95rem]",
-  ];
-
-  return (
-    <motion.span
-      animate={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1, x: 0, y: 0 }}
-      className={cn(
-        "absolute z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border text-[0.62rem] shadow-[inset_0_1px_0_rgba(255,245,226,0.65),0_8px_14px_rgba(76,53,36,0.14)] md:h-8 md:w-8 md:text-xs",
-        positions[index] ?? positions[0],
-        getChildNodeClassName(child.status),
-      )}
-      exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.48, x: -18, y: 10 }}
-      initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.4, x: -28, y: 14 }}
-      transition={
-        prefersReducedMotion
-          ? { duration: 0.16 }
-          : { type: "spring", stiffness: 390, damping: 19, mass: 0.68, delay: 0.05 + index * 0.09 }
-      }
-      title={child.label}
-    >
-      <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/15" />
-      <span className="sr-only">{child.label}</span>
-      <i className={child.icon} aria-hidden="true" />
-    </motion.span>
-  );
-}
-
-function TailStepNode({
-  prefersReducedMotion,
+function SubstepChip({
   step,
+  prefersReducedMotion,
 }: {
+  step: ClassAggregateSubstepNode;
   prefersReducedMotion: boolean;
-  step: ClassAggregateTailNode;
 }) {
   return (
-    <motion.span
+    <motion.div
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       className={cn(
-        "relative inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_6px_12px_rgba(76,53,36,0.12)] md:h-10 md:w-10 md:text-base",
+        "inline-flex items-center gap-2 rounded-full border px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_14px_rgba(76,53,36,0.08)]",
         step.active
-          ? "border-[#4e8c7c] bg-[radial-gradient(circle_at_35%_30%,#e6f5ef,#72b7a5)] text-[#17322b]"
+          ? "border-[#4e8c7c] bg-[linear-gradient(180deg,#e7f6f0,#b8dfd3)] text-[#1d453b]"
           : step.status === "complete"
-            ? "border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] text-[#4b3114]"
-            : step.status === "skipped"
-              ? "border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] text-[#8f7e69]"
-              : "border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] text-[#6b4d37]",
+            ? "border-[#d1ab63] bg-[linear-gradient(180deg,#f7eac7,#e0be7d)] text-[#5c3c16]"
+            : "border-[#ceb08a] bg-[linear-gradient(180deg,#f8efe0,#ead8bc)] text-[#6a4f3c]",
       )}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
       title={step.label}
-      whileHover={
-        prefersReducedMotion
-          ? undefined
-          : {
-              y: -1.5,
-              scale: 1.05,
-              boxShadow: "inset 0 1px 0 rgba(255,245,226,0.75),0 10px 18px rgba(76,53,36,0.16)",
-            }
-      }
     >
-      <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/20" />
-      <span className="sr-only">{step.label}</span>
-      <i className={step.icon} aria-hidden="true" />
-    </motion.span>
+      <i className={cn(step.icon, "text-[0.72rem]")} aria-hidden="true" />
+      <span className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.14em]">{step.label}</span>
+    </motion.div>
   );
 }
 
-function getMainNodeAnimate(main: ClassAggregateMainNode) {
-  if (main.status === "selection-active") {
-    return {
-      boxShadow: [
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(244,179,79,0)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 10px 20px rgba(76,53,36,0.16),0 0 18px rgba(244,179,79,0.46),0 0 34px rgba(244,179,79,0.24)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(244,179,79,0)",
-      ],
-      scale: [1, 1.045, 1],
-    };
-  }
+function RailConnector() {
+  return <span aria-hidden="true" className="h-px w-10 bg-[linear-gradient(90deg,rgba(190,163,125,0.2),rgba(190,163,125,0.8),rgba(190,163,125,0.2))]" />;
+}
 
-  if (main.status === "in-progress") {
+function RailEndcap({ side }: { side: "left" | "right" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "h-3 w-3 rotate-45 border border-[#d0b07b]/75 bg-[rgba(255,236,204,0.34)]",
+        side === "left" ? "mr-1" : "ml-1",
+      )}
+    />
+  );
+}
+
+function getMilestoneAnimate(status: ClassAggregatePresentationStatus) {
+  if (status === "selection-active" || status === "in-progress") {
     return {
       boxShadow: [
         "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(68,169,143,0)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 10px 20px rgba(76,53,36,0.16),0 0 18px rgba(68,169,143,0.34),0 0 30px rgba(68,169,143,0.18)",
+        "inset 0 1px 0 rgba(255,245,226,0.78),0 10px 20px rgba(76,53,36,0.16),0 0 18px rgba(68,169,143,0.28)",
         "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(68,169,143,0)",
       ],
       scale: [1, 1.03, 1],
     };
   }
 
-  if (main.status === "complete" || main.status === "collapsed-complete") {
+  if (status === "complete" || status === "collapsed-complete") {
     return {
       boxShadow: [
         "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(214,169,77,0)",
@@ -452,129 +367,28 @@ function getMainNodeAnimate(main: ClassAggregateMainNode) {
   return undefined;
 }
 
-function getMainNodeTransition(status: ClassAggregatePresentationStatus, prefersReducedMotion: boolean) {
+function getMilestoneTransition(status: ClassAggregatePresentationStatus, prefersReducedMotion: boolean) {
   if (prefersReducedMotion) return { duration: 0.2 };
-  if (status === "selection-active" || status === "in-progress") {
-    return { duration: 2.2, ease: [0.42, 0, 0.58, 1] as const, repeat: Infinity };
+  if (status === "selection-active" || status === "in-progress" || status === "complete" || status === "collapsed-complete") {
+    return { duration: 2.4, ease: [0.42, 0, 0.58, 1] as const, repeat: Infinity };
   }
-  if (status === "complete" || status === "collapsed-complete") {
-    return { duration: 3.2, ease: [0.42, 0, 0.58, 1] as const, repeat: Infinity };
-  }
-  return { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const };
+  return { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const };
 }
 
-function getMainNodeClassName(status: ClassAggregatePresentationStatus) {
+function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return "border-[#a7671d] bg-[linear-gradient(180deg,#f7e4c3,#d19646)] text-[#fff8ed]";
+      return "border-[#cb9845] bg-[linear-gradient(180deg,#f7e5b7,#d39d49)] text-[#553316]";
     case "in-progress":
-      return "border-[#4e8c7c] bg-[linear-gradient(180deg,#d9efe8,#86c2b0)] text-[#17322b]";
+      return "border-[#4e8c7c] bg-[radial-gradient(circle_at_35%_30%,#dff5ee,#69b8a4)] text-[#17342c]";
     case "complete":
     case "collapsed-complete":
-      return "border-[#8e6426] bg-[linear-gradient(180deg,#f3e2b2,#d4a959)] text-[#4b3114]";
+      return "border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] text-[#4b3114]";
     case "skipped":
       return "border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] text-[#8f7e69]";
     default:
       return "border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] text-[#6b4d37]";
   }
-}
-
-function getMainNodeFillClassName(status: ClassAggregatePresentationStatus) {
-  switch (status) {
-    case "selection-active":
-      return "bg-[radial-gradient(circle_at_35%_30%,rgba(255,232,182,0.98),rgba(244,179,79,0.92)_58%,rgba(159,90,27,0.88))]";
-    case "in-progress":
-      return "bg-[radial-gradient(circle_at_35%_30%,rgba(225,247,239,0.98),rgba(103,194,170,0.94)_58%,rgba(35,102,88,0.9))]";
-    case "complete":
-    case "collapsed-complete":
-      return "bg-[radial-gradient(circle_at_35%_30%,rgba(253,239,193,0.98),rgba(217,174,86,0.92)_58%,rgba(137,93,31,0.9))]";
-    case "skipped":
-      return "bg-[radial-gradient(circle_at_35%_30%,rgba(235,228,219,0.92),rgba(196,183,166,0.88)_60%,rgba(138,122,104,0.78))]";
-    default:
-      return "bg-[radial-gradient(circle_at_35%_30%,rgba(255,248,238,0.8),rgba(241,229,207,0.7)_58%,rgba(216,194,157,0.56))]";
-  }
-}
-
-function getMainNodeFillAnimate(status: ClassAggregatePresentationStatus, prefersReducedMotion: boolean) {
-  if (prefersReducedMotion) {
-    return status === "pending"
-      ? { opacity: 0.45, scale: 0.7 }
-      : { opacity: 1, scale: 1 };
-  }
-
-  switch (status) {
-    case "selection-active":
-      return {
-        opacity: [0.82, 1, 0.88],
-        scale: [0.88, 1.06, 0.96],
-      };
-    case "in-progress":
-      return {
-        opacity: [0.84, 1, 0.9],
-        scale: [0.82, 1.08, 0.98],
-      };
-    case "complete":
-    case "collapsed-complete":
-      return {
-        opacity: [0.92, 1, 0.94],
-        scale: [1, 1.03, 1],
-      };
-    case "skipped":
-      return {
-        opacity: 0.62,
-        scale: 1,
-      };
-    default:
-      return {
-        opacity: 0.48,
-        scale: 0.68,
-      };
-  }
-}
-
-function getMainNodeFillTransition(status: ClassAggregatePresentationStatus, prefersReducedMotion: boolean) {
-  if (prefersReducedMotion) return { duration: 0.2 };
-  if (status === "selection-active" || status === "in-progress") {
-    return { duration: 1.8, ease: [0.34, 1.56, 0.64, 1] as const, repeat: Infinity };
-  }
-  if (status === "complete" || status === "collapsed-complete") {
-    return { duration: 3.4, ease: [0.42, 0, 0.58, 1] as const, repeat: Infinity };
-  }
-  return { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const };
-}
-
-function getChildNodeClassName(status: ClassAggregatePresentationStatus) {
-  switch (status) {
-    case "in-progress":
-      return "border-[#4e8c7c] bg-[radial-gradient(circle_at_35%_30%,#e6f5ef,#72b7a5)] text-[#17322b]";
-    case "complete":
-      return "border-[#8e6426] bg-[radial-gradient(circle_at_35%_30%,#f6e7bc,#d7ab59)] text-[#4b3114]";
-    case "skipped":
-      return "border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] text-[#8f7e69]";
-    default:
-      return "border-[#d0b185] bg-[linear-gradient(180deg,#f6eddc,#ead6b6)] text-[#704f35]";
-  }
-}
-
-function RailConnector() {
-  return (
-    <span aria-hidden="true" className="relative block h-3 w-7 md:w-9">
-      <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[linear-gradient(90deg,rgba(199,171,131,0),rgba(199,171,131,0.85),rgba(199,171,131,0))]" />
-      <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-[#ceb07f]/70 bg-[rgba(255,244,220,0.45)]" />
-    </span>
-  );
-}
-
-function RailEndcap({ side }: { side: "left" | "right" }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn("relative z-10 hidden h-3 w-8 md:block", side === "right" && "scale-x-[-1]")}
-    >
-      <span className="absolute left-0 right-1 top-1/2 h-px -translate-y-1/2 bg-[linear-gradient(90deg,rgba(199,171,131,0),rgba(199,171,131,0.78),rgba(199,171,131,0.22))]" />
-      <span className="absolute right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border border-[#d1b07a]/80 bg-[rgba(248,228,189,0.24)]" />
-    </span>
-  );
 }
 
 function ClassCard({
@@ -621,8 +435,6 @@ function ClassCard({
           )}
         >
           <div className="pointer-events-none absolute inset-x-2 top-0 h-px bg-[rgba(255,238,207,0.52)]" />
-          <div className="pointer-events-none absolute left-1 top-1 h-3 w-3 rounded-tl-[0.4rem] border-l border-t border-[#e1bc79]/55" />
-          <div className="pointer-events-none absolute right-1 top-1 h-3 w-3 rounded-tr-[0.4rem] border-r border-t border-[#e1bc79]/55" />
           <div className="font-fth-cc-display text-center text-[1.05rem] uppercase tracking-[0.04em] text-[#f7e5bf] md:text-[1.2rem]">
             {entry.name}
           </div>
@@ -648,13 +460,6 @@ function ClassCard({
             />
           </div>
           <div className="pointer-events-none absolute inset-0 rounded-[0.72rem] bg-[linear-gradient(180deg,rgba(255,247,233,0.08)_0%,transparent_18%,transparent_58%,rgba(26,12,8,0.22)_100%)] shadow-[inset_0_0_0_1px_rgba(240,209,153,0.45)]" />
-          <div className="pointer-events-none absolute inset-x-4 bottom-3 h-7 rounded-full bg-[linear-gradient(180deg,rgba(16,8,6,0),rgba(16,8,6,0.48))] blur-md" />
-          <div className="pointer-events-none absolute left-2 top-2 h-4 w-4 rounded-tl-[0.5rem] border-l border-t" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute right-2 top-2 h-4 w-4 rounded-tr-[0.5rem] border-r border-t" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute bottom-2 left-2 h-4 w-4 rounded-bl-[0.5rem] border-b border-l" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute bottom-2 right-2 h-4 w-4 rounded-br-[0.5rem] border-b border-r" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute inset-y-[3.35rem] left-0 w-5 bg-[linear-gradient(90deg,rgba(0,0,0,0.28),rgba(0,0,0,0))]" />
-          <div className="pointer-events-none absolute inset-y-[3.35rem] right-0 w-5 bg-[linear-gradient(270deg,rgba(0,0,0,0.24),rgba(0,0,0,0))]" />
           <div className="pointer-events-auto absolute inset-x-3 bottom-3">
             <motion.div
               animate={prefersReducedMotion ? undefined : "show"}
@@ -670,43 +475,21 @@ function ClassCard({
                 },
               }}
             >
-              <InfoChip
-                icon="fa-solid fa-dice-d20"
-                label={`Hit Die ${entry.hitDie}`}
-                prefersReducedMotion={prefersReducedMotion}
-                value={entry.hitDie}
-              />
-              <InfoChip
-                icon="fa-solid fa-star"
-                label={`Primary Abilities ${entry.primaryAbilityText}`}
-                prefersReducedMotion={prefersReducedMotion}
-                value={entry.primaryAbilityBadgeText}
-              />
-              <InfoChip
-                icon="fa-solid fa-shield"
-                label={`Saving Throws ${entry.savingThrowText}`}
-                prefersReducedMotion={prefersReducedMotion}
-                value={entry.savingThrowBadgeText}
-              />
+              <InfoChip icon="fa-solid fa-dice-d20" label={`Hit Die ${entry.hitDie}`} prefersReducedMotion={prefersReducedMotion} value={entry.hitDie} />
+              <InfoChip icon="fa-solid fa-star" label={`Primary Abilities ${entry.primaryAbilityText}`} prefersReducedMotion={prefersReducedMotion} value={entry.primaryAbilityBadgeText} />
+              <InfoChip icon="fa-solid fa-shield" label={`Saving Throws ${entry.savingThrowText}`} prefersReducedMotion={prefersReducedMotion} value={entry.savingThrowBadgeText} />
             </motion.div>
           </div>
-          <AnimatePresence>
-            {selected ? (
-              <motion.div
-                animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-                className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#f2d48f]/70 bg-[radial-gradient(circle_at_35%_35%,rgba(247,214,145,0.95),rgba(182,120,38,0.92))] text-white shadow-[0_6px_12px_rgba(0,0,0,0.24)]"
-                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.72, y: -6 }}
-                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.72, y: 6 }}
-                transition={
-                  prefersReducedMotion
-                    ? { duration: 0.16 }
-                    : { type: "spring", stiffness: 460, damping: 24, mass: 0.75 }
-                }
-              >
-                <i className={cn(theme.crest, "text-[0.8rem]")} aria-hidden="true" />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+          {selected ? (
+            <motion.div
+              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#f2d48f]/70 bg-[radial-gradient(circle_at_35%_35%,rgba(247,214,145,0.95),rgba(182,120,38,0.92))] text-white shadow-[0_6px_12px_rgba(0,0,0,0.24)]"
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.72, y: 6 }}
+              transition={prefersReducedMotion ? { duration: 0.16 } : { type: "spring", stiffness: 460, damping: 24, mass: 0.75 }}
+            >
+              <i className={cn(theme.crest, "text-[0.8rem]")} aria-hidden="true" />
+            </motion.div>
+          ) : null}
         </div>
       </motion.button>
     </motion.div>
@@ -725,49 +508,18 @@ function InfoChip({
   value: string;
 }) {
   if (!value) return null;
-  const [iconAnimating, setIconAnimating] = useState(false);
-  const [iconCycle, setIconCycle] = useState(0);
-
-  const handleHoverStart = () => {
-    if (prefersReducedMotion || iconAnimating) return;
-
-    setIconAnimating(true);
-    setIconCycle((current) => current + 1);
-  };
-
   return (
     <motion.span
       animate={prefersReducedMotion ? undefined : "show"}
       aria-label={label}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border border-[#efd29a]/60 bg-[linear-gradient(180deg,rgba(35,22,15,0.55),rgba(22,14,10,0.86))] px-2 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#f6deb0] shadow-[0_8px_16px_rgba(0,0,0,0.2)] backdrop-blur-[2px]"
       initial={prefersReducedMotion ? false : "hidden"}
-      onHoverStart={() => {
-        handleHoverStart();
-      }}
       variants={{
         hidden: { opacity: 0, x: -6, scale: 0.96 },
         show: { opacity: 1, x: 0, scale: 1 },
       }}
-      whileHover={prefersReducedMotion ? undefined : { x: 2, scale: 1.02 }}
     >
-      <AnimatePresence initial={false} mode="wait">
-        <motion.i
-          animate={{ rotate: [0, 164, 312, 352, 360], scale: [1, 1.12, 0.98, 1.02, 1] }}
-          aria-hidden="true"
-          className={cn(icon, "shrink-0 text-[0.7rem] text-[#f7d691]")}
-          initial={{ rotate: 0, scale: 1 }}
-          key={iconCycle}
-          onAnimationComplete={() => {
-            setIconAnimating(false);
-          }}
-          style={{ transformOrigin: "50% 50%" }}
-          transition={{
-            duration: 0.72,
-            ease: [0.22, 1, 0.36, 1],
-            times: [0, 0.34, 0.64, 0.84, 1],
-          }}
-        />
-      </AnimatePresence>
+      <i aria-hidden="true" className={cn(icon, "shrink-0 text-[0.7rem] text-[#f7d691]")} />
       <span className="min-w-0 truncate">{value}</span>
     </motion.span>
   );

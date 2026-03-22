@@ -583,6 +583,37 @@
   line-height: 1.5;
 }
 
+.cc-compendium-select__status {
+  margin: 0 0 var(--cc-space-md) 0;
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255, 244, 224, 0.72), rgba(255, 236, 208, 0.42));
+}
+
+.cc-compendium-select__status-label {
+  color: var(--cc-text-accent);
+  font-size: var(--cc-text-base);
+  font-weight: 700;
+}
+
+.cc-compendium-select__status-detail,
+.cc-compendium-select__status-meta,
+.cc-compendium-select__status-message {
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-sm);
+  margin-top: 4px;
+}
+
+.cc-compendium-select__status-message {
+  min-height: 1.25rem;
+  color: var(--cc-text-accent);
+}
+
+.cc-compendium-select--busy {
+  opacity: 0.92;
+}
+
 .cc-compendium-select__group {
   margin-bottom: var(--cc-space-md);
   border: 1px solid var(--cc-border-subtle);

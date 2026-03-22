@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   allowCustomBackgrounds,
+  allowFirearms,
   allowOriginFeatChoice,
   allowUnrestrictedBackgroundAsi,
   allowMulticlass,
@@ -41,6 +42,7 @@ describe("character creator settings accessors", () => {
     expect(getEquipmentMethod()).toBe("both");
     expect(getLevel1HpMethod()).toBe("max");
     expect(getMaxRerolls()).toBe(0);
+    expect(allowFirearms()).toBe(false);
     expect(allowCustomBackgrounds()).toBe(false);
     expect(allowOriginFeatChoice()).toBe(false);
     expect(allowUnrestrictedBackgroundAsi()).toBe(false);

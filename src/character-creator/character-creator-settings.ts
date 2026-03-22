@@ -12,6 +12,7 @@ import { registerCharacterCreatorSettingsMenus } from "./character-creator-setti
 export { CC_SETTINGS } from "./character-creator-settings-shared";
 export {
   allowCustomBackgrounds,
+  allowFirearms,
   allowOriginFeatChoice,
   allowUnrestrictedBackgroundAsi,
   allowMulticlass,
@@ -89,6 +90,15 @@ export function registerCharacterCreatorSettings(settings: {
       restricted: true,
     });
 
+    settings.register(MOD, CC_SETTINGS.ALLOW_FIREARMS, {
+      name: "Allow Firearms",
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
+      restricted: true,
+    });
+
     settings.register(MOD, CC_SETTINGS.EQUIPMENT_METHOD, {
       name: "Starting Equipment",
       scope: "world",
@@ -148,6 +158,14 @@ export function registerCharacterCreatorSettings(settings: {
       config: false,
       type: String,
       default: "{}",
+      restricted: true,
+    });
+
+    settings.register(MOD, CC_SETTINGS.INDEXED_PACK_CACHE, {
+      scope: "world",
+      config: false,
+      type: String,
+      default: "",
       restricted: true,
     });
 

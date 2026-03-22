@@ -43,4 +43,12 @@ describe("description formatting", () => {
       + "<p>(currently)</p>"
     );
   });
+
+  it("normalizes unresolved reference tokens into readable labels", () => {
+    const input = "<p>Take &Reference[Dash], &Reference[Disengage], or &amp;Reference[Hide].</p>";
+
+    expect(formatInjectedDescriptionHtml(input)).toBe(
+      "<p>Take Dash, Disengage, or Hide.</p>",
+    );
+  });
 });

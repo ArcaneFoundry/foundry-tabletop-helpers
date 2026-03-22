@@ -15,6 +15,7 @@ import type { WizardState, PortraitSelection } from "../character-creator-types"
 import { ABILITY_KEYS } from "../data/dnd5e-constants";
 import type { AbilityKey } from "../character-creator-types";
 import { getStartingGoldForSelections } from "../starting-resources";
+import { buildEmptyClassAdvancementSelections } from "../steps/class-advancement-utils";
 import { applyLevelUp } from "../level-up/actor-update-engine";
 import { averageHpForHitDie, getClassItems } from "../level-up/level-up-detection";
 import { buildFeatureSelectionForLevel, resolveGrantedFeaturesForDocument } from "../level-up/level-up-feature-helpers";
@@ -879,9 +880,86 @@ async function applyFinalCharacterSelections(
 ): Promise<void> {
   await applyAbilityScores(actor, state.selections);
   await applyProficiencies(actor, state.selections);
+  await applyClassAdvancementSelections(actor, state);
   await applyWeaponMasteries(actor, state);
   await applyLanguages(actor, state.selections);
   await applyFinalHitPoints(actor, state);
+}
+
+function toClassLanguageAdvancementKey(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    "common-sign": "languages:standard:sign",
+    "deep-speech": "languages:standard:deep",
+  };
+  return aliases[normalized] ?? `languages:standard:${normalized}`;
+}
+
+async function applyClassAdvancementSelections(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const selections = state.selections.classAdvancements ?? buildEmptyClassAdvancementSelections();
+  const classIdentifier = state.selections.class?.identifier;
+  if (!classIdentifier) return;
+
+  let appliedExpertiseViaAdvancement = false;
+  if (selections.expertiseSkills.length > 0) {
+    appliedExpertiseViaAdvancement = await applyTraitAdvancementSelection(actor, {
+      itemTypes: ["class"],
+      advancementTitleIncludes: "expertise",
+      chosen: prefixTraitKeys(selections.expertiseSkills, "skills"),
+      level: state.config.startingLevel,
+      itemIdentifier: classIdentifier,
+    });
+
+    if (!appliedExpertiseViaAdvancement) {
+      const expertiseUpdates: Record<string, unknown> = {};
+      for (const key of selections.expertiseSkills) {
+        expertiseUpdates[`system.skills.${key}.value`] = 2;
+      }
+      if (Object.keys(expertiseUpdates).length > 0) {
+        await actor.update(expertiseUpdates);
+      }
+    }
+  }
+
+  if (selections.chosenLanguages.length > 0) {
+    const appliedLanguageAdvancement = await applyTraitAdvancementSelection(actor, {
+      itemTypes: ["class"],
+      advancementTitleIncludes: "language",
+      chosen: selections.chosenLanguages.map(toClassLanguageAdvancementKey),
+      level: state.config.startingLevel,
+      itemIdentifier: classIdentifier,
+      includeConfigurationGrants: true,
+    });
+    if (!appliedLanguageAdvancement) {
+      await applyTraitAdvancementSelection(actor, {
+        itemTypes: ["class"],
+        advancementTitleIncludes: "cant",
+        chosen: selections.chosenLanguages.map(toClassLanguageAdvancementKey),
+        level: state.config.startingLevel,
+        itemIdentifier: classIdentifier,
+        includeConfigurationGrants: true,
+      });
+    }
+  }
+
+  if (selections.chosenTools.length > 0) {
+    await applyTraitAdvancementSelection(actor, {
+      itemTypes: ["class"],
+      advancementTitleIncludes: "tool",
+      chosen: prefixTraitKeys(selections.chosenTools, "tool"),
+      level: state.config.startingLevel,
+      itemIdentifier: classIdentifier,
+      includeConfigurationGrants: true,
+    });
+  }
+
+  const selectedItemUuids = Object.values(selections.itemChoices).flat().filter((value): value is string => typeof value === "string" && value.length > 0);
+  if (selectedItemUuids.length > 0) {
+    await grantItemsByUuid(actor, [...new Set(selectedItemUuids)]);
+  }
 }
 
 async function applyWeaponMasteries(

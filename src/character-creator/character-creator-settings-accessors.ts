@@ -1,6 +1,12 @@
 import { MOD } from "../logger";
 import { getSetting, setSetting } from "../types";
-import type { AbilityScoreMethod, EquipmentMethod, HpMethod, PackSourceConfig } from "./character-creator-types";
+import type {
+  AbilityScoreMethod,
+  EquipmentMethod,
+  HpMethod,
+  PackSourceConfig,
+  PersistentCompendiumIndexSnapshot,
+} from "./character-creator-types";
 import { CC_SETTINGS } from "./character-creator-settings-shared";
 import {
   normalizeAbilityMethods,
@@ -35,6 +41,21 @@ export function getPackSources(): PackSourceConfig {
 
 export async function setPackSources(config: PackSourceConfig): Promise<void> {
   await setSetting(MOD, CC_SETTINGS.PACK_SOURCES, JSON.stringify(normalizePackSources(config)));
+}
+
+export function getIndexedPackCache(): PersistentCompendiumIndexSnapshot | null {
+  const raw = getSetting<string>(MOD, CC_SETTINGS.INDEXED_PACK_CACHE) ?? "";
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as PersistentCompendiumIndexSnapshot;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setIndexedPackCache(snapshot: PersistentCompendiumIndexSnapshot | null): Promise<void> {
+  await setSetting(MOD, CC_SETTINGS.INDEXED_PACK_CACHE, snapshot ? JSON.stringify(snapshot) : "");
 }
 
 export function getDisabledContentUUIDs(): string[] {
@@ -75,6 +96,10 @@ export async function setStartingLevel(level: unknown): Promise<void> {
 
 export function allowMulticlass(): boolean {
   return getSetting<boolean>(MOD, CC_SETTINGS.ALLOW_MULTICLASS) ?? false;
+}
+
+export function allowFirearms(): boolean {
+  return getSetting<boolean>(MOD, CC_SETTINGS.ALLOW_FIREARMS) ?? false;
 }
 
 export function getEquipmentMethod(): EquipmentMethod {

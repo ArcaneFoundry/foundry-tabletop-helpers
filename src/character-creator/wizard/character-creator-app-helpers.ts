@@ -1,3 +1,4 @@
+import { Log } from "../../logger";
 import type { WizardShellContext, WizardStepDefinition } from "../character-creator-types";
 import type { WizardStateMachine } from "./wizard-state-machine";
 
@@ -7,14 +8,28 @@ export async function buildWizardShellContext(
   renderTemplateFn: (path: string, data: Record<string, unknown>) => Promise<string>,
   getStepAtmosphere: (stepId: string) => string,
 ): Promise<WizardShellContext> {
+  const perfStart = globalThis.performance?.now?.() ?? Date.now();
   let stepContentHtml = "";
   let vmData: Record<string, unknown> = {};
 
   if (stepDef) {
+    const viewModelStart = globalThis.performance?.now?.() ?? Date.now();
     vmData = await stepDef.buildViewModel(machine.state);
+    const viewModelDuration = (globalThis.performance?.now?.() ?? Date.now()) - viewModelStart;
+    let templateDuration = 0;
     if (stepDef.renderMode !== "react") {
+      const templateStart = globalThis.performance?.now?.() ?? Date.now();
       stepContentHtml = await renderTemplateFn(stepDef.templatePath, vmData);
+      templateDuration = (globalThis.performance?.now?.() ?? Date.now()) - templateStart;
     }
+
+    Log.info("CC Perf: buildWizardShellContext step complete", {
+      stepId: stepDef.id,
+      renderMode: stepDef.renderMode ?? "legacy",
+      durationMs: Math.round((globalThis.performance?.now?.() ?? Date.now()) - perfStart),
+      viewModelMs: Math.round(viewModelDuration),
+      templateMs: Math.round(templateDuration),
+    });
   }
 
   const headerTitle = vmData.stepTitle as string | undefined;

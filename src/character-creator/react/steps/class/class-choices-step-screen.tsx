@@ -142,7 +142,7 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                 src={classStepHeaderBackground}
               />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.36),rgba(16,12,11,0.58))]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.24),rgba(16,12,11,0.42))]" />
               <div className="relative z-10 flex items-center justify-center px-4 py-3">
                 <HeaderFlourish side="left" />
                 <h2
@@ -258,7 +258,6 @@ function SkillOptionRow({
       disabled={option.disabled && !option.checked}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.key)}
-      title={option.tooltip}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
       type="button"
       whileHover={

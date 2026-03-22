@@ -59,6 +59,12 @@
   </div>
 
   <div class="form-group">
+    <label>Allow Firearms</label>
+    <input type="checkbox" name="allowFirearms" {{#if allowFirearms}}checked{{/if}} />
+    <p class="notes">Off by default. When disabled, firearms are hidden from Character Creator weapon-choice flows, beginning with weapon masteries.</p>
+  </div>
+
+  <div class="form-group">
     <label>Starting Equipment</label>
     <select name="equipmentMethod">
       <option value="both" {{#if (eq equipmentMethod "both")}}selected{{/if}}>Player's Choice</option>

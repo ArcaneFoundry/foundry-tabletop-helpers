@@ -122,6 +122,7 @@ function createActor() {
     entry: Record<string, unknown>,
   ) => {
     const isMasteryAdvancement = (entry.configuration as { mode?: string } | undefined)?.mode === "mastery";
+    const advancementMode = (entry.configuration as { mode?: string } | undefined)?.mode;
     const advancement = {
       ...entry,
       value: {
@@ -145,7 +146,7 @@ function createActor() {
           if (key.startsWith("skills:")) {
             const skillKey = key.slice("skills:".length);
             assignPath(createActorInstance as unknown as Record<string, unknown>, `system.skills.${skillKey}.proficient`, 1);
-            assignPath(createActorInstance as unknown as Record<string, unknown>, `system.skills.${skillKey}.value`, 1);
+            assignPath(createActorInstance as unknown as Record<string, unknown>, `system.skills.${skillKey}.value`, advancementMode === "expertise" ? 2 : 1);
           }
           if (key.startsWith("languages:")) {
             const languageKey = key.split(":").at(-1);
@@ -477,6 +478,35 @@ beforeEach(() => {
                 { type: "ItemGrant", level: 3, configuration: { items: [{ uuid: "Compendium.features.martial-archetype", name: "Martial Archetype" }] } },
               ],
             }
+          : uuid === "Compendium.classes.rogue"
+            ? {
+                hitDice: "d8",
+                levels: 1,
+                identifier: "rogue",
+                advancement: [
+                  {
+                    type: "Trait",
+                    title: "Expertise",
+                    level: 1,
+                    configuration: {
+                      mode: "expertise",
+                      choices: [{ count: 2 }],
+                    },
+                    value: { chosen: [] },
+                  },
+                  {
+                    type: "Trait",
+                    title: "Thieves' Cant",
+                    level: 1,
+                    configuration: {
+                      mode: "language",
+                      grants: ["languages:standard:thieves-cant"],
+                      choices: [{ count: 1 }],
+                    },
+                    value: { chosen: [] },
+                  },
+                ],
+              }
           : uuid === "Compendium.backgrounds.sage"
             ? {
                 advancement: [
@@ -750,6 +780,8 @@ describe("actor creation engine", () => {
     } as never;
     state.selections.classChoices = {
       chosenSkills: ["his", "ins"],
+    } as never;
+    state.selections.weaponMasteries = {
       chosenWeaponMasteries: ["longsword", "shortbow"],
       chosenWeaponMasteryDetails: [
         { id: "longsword", label: "Longsword", mastery: "Sap" },
@@ -769,6 +801,54 @@ describe("actor creation engine", () => {
     const masteryAdvancement = classAdvancement.find((entry) => entry.title === "Weapon Mastery");
 
     expect(masteryAdvancement?.value?.chosen).toEqual(["weapon:longsword", "weapon:shortbow"]);
+  });
+
+  it("applies class advancement selections for expertise, class languages, and item choices", async () => {
+    const { createCharacterFromWizard } = await import("./actor-creation-engine");
+    const state = createWizardState();
+    state.selections.class = {
+      uuid: "Compendium.classes.rogue",
+      identifier: "rogue",
+      name: "Rogue",
+      classAdvancementRequirements: [
+        {
+          id: "divine-order",
+          type: "itemChoices",
+          title: "Class Choice",
+          level: 1,
+          advancementType: "ItemChoice",
+          requiredCount: 1,
+          pool: ["Compendium.features.shadow-strike"],
+          groupKey: "itemChoices",
+          itemChoices: [{ uuid: "Compendium.features.shadow-strike", name: "Shadow Strike", img: "shadow-strike.webp" }],
+        },
+      ],
+    } as never;
+    state.selections.classAdvancements = {
+      expertiseSkills: ["his", "ins"],
+      chosenLanguages: ["draconic"],
+      chosenTools: [],
+      itemChoices: {
+        "divine-order": ["Compendium.features.shadow-strike"],
+      },
+    } as never;
+
+    await createCharacterFromWizard(state as never);
+
+    expect(createActorInstance.system.skills.his.value).toBe(2);
+    expect(createActorInstance.system.skills.ins.value).toBe(2);
+    expect(createActorInstance.system.traits.languages.value).toContain("draconic");
+
+    const classItem = Array.from(createActorInstance.items).find((item) => item.type === "class");
+    const classAdvancement = ((classItem?.toObject().system as {
+      advancement?: Array<{ title?: string; value?: { chosen?: string[] } }>;
+    } | undefined)?.advancement ?? []);
+    const expertiseAdvancement = classAdvancement.find((entry) => entry.title === "Expertise");
+    const cantAdvancement = classAdvancement.find((entry) => entry.title === "Thieves' Cant");
+
+    expect(expertiseAdvancement?.value?.chosen).toEqual(["skills:his", "skills:ins"]);
+    expect(cantAdvancement?.value?.chosen).toContain("languages:standard:draconic");
+    expect(Array.from(createActorInstance.items).some((item) => item.name === "shadow-strike")).toBe(true);
   });
 
   it("respects explicit prepared spell choices for other prepared casters", async () => {

@@ -4,8 +4,13 @@ import type { AbilityScoreMethod, PackSourceConfig } from "./character-creator-t
 import { compendiumIndexer } from "./data/compendium-indexer";
 import { buildPackSourceGroups, invalidatePackAnalysisCache } from "./data/pack-analysis";
 import {
+  getCharacterCreatorIndexStatus,
+  rebuildCharacterCreatorIndexCache,
+} from "./character-creator-index-cache";
+import {
   allowOriginFeatChoice,
   allowUnrestrictedBackgroundAsi,
+  allowFirearms,
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
@@ -87,6 +92,7 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
           maxRerolls: getMaxRerolls(),
           startingLevel: getStartingLevel(),
           allowMulticlass: allowMulticlass(),
+          allowFirearms: allowFirearms(),
           equipmentMethod: getEquipmentMethod(),
           level1HpMethod: getLevel1HpMethod(),
           allowOriginFeatChoice: allowOriginFeatChoice(),
@@ -113,6 +119,7 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
           setMaxRerolls(Number(formData.maxRerolls)),
           setStartingLevel(Number(formData.startingLevel)),
           setSetting(MOD, CC_SETTINGS.ALLOW_MULTICLASS, !!formData.allowMulticlass),
+          setSetting(MOD, CC_SETTINGS.ALLOW_FIREARMS, !!formData.allowFirearms),
           setEquipmentMethod(String(formData.equipmentMethod ?? "")),
           setLevel1HpMethod(String(formData.level1HpMethod ?? "")),
           setSetting(MOD, CC_SETTINGS.ALLOW_ORIGIN_FEAT_CHOICE, !!formData.allowOriginFeatChoice),
@@ -147,6 +154,8 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
     const BaseWithDefaults = getFormAppBase(FormAppBase);
 
     class CompendiumSelectForm extends BaseWithDefaults {
+      private _root: HTMLElement | null = null;
+
       static get defaultOptions() {
         const base = BaseWithDefaults.defaultOptions ?? {};
         return mergeDefaultOptions(base, {
@@ -161,11 +170,15 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
       async getData() {
         const currentSources = getPackSources();
         const groups = await buildPackSourceGroups(currentSources);
-        return { groups };
+        return {
+          groups,
+          indexStatus: getCharacterCreatorIndexStatus(currentSources),
+        };
       }
 
       async _updateObject(_event: Event, formData: Record<string, unknown>) {
-        const newSources: Record<string, string[]> = {
+        const submitAction = typeof formData.__submitAction === "string" ? formData.__submitAction : "saveAndIndex";
+        const newSources: PackSourceConfig = {
           classes: [],
           subclasses: [],
           races: [],
@@ -181,18 +194,50 @@ function registerCompendiumSelectMenu(settings: SettingsMenuRegistration): void 
           if (parts.length < 3) continue;
           const sourceKey = parts[1];
           const collection = parts.slice(2).join("__");
-          if (newSources[sourceKey]) newSources[sourceKey].push(collection);
+          if (sourceKey in newSources) newSources[sourceKey as keyof PackSourceConfig].push(collection);
         }
 
-        await setPackSources(newSources as unknown as PackSourceConfig);
-        compendiumIndexer.invalidate();
-        invalidatePackAnalysisCache();
-        getUI()?.notifications?.info?.("Compendium sources updated. Changes take effect on next wizard open.");
+        this.setBusyState(
+          true,
+          submitAction === "rebuildIndexes" ? "Rebuilding compendium indexes..." : "Saving sources and building compendium indexes...",
+        );
+
+        try {
+          await setPackSources(newSources);
+          compendiumIndexer.invalidate();
+          invalidatePackAnalysisCache();
+          await rebuildCharacterCreatorIndexCache(newSources);
+          getUI()?.notifications?.info?.(
+            submitAction === "rebuildIndexes"
+              ? "Character Creator compendium indexes rebuilt."
+              : "Compendium sources saved and indexed.",
+          );
+        } finally {
+          this.setBusyState(false);
+        }
       }
 
       activateListeners(html: unknown): void {
         super.activateListeners?.(html);
+        this._root = getRootElement(html);
         bindExplicitFormSubmit(this, html);
+      }
+
+      private setBusyState(isBusy: boolean, message = ""): void {
+        const form = this._root?.querySelector("form");
+        if (!form) return;
+
+        const buttons = Array.from(form.querySelectorAll("button"));
+        for (const button of buttons) {
+          button.disabled = isBusy;
+          button.setAttribute("aria-busy", isBusy ? "true" : "false");
+        }
+
+        form.classList.toggle("cc-compendium-select--busy", isBusy);
+        const status = this._root?.querySelector("[data-indexing-status-message]");
+        if (status) {
+          status.textContent = isBusy ? message : "";
+        }
       }
     }
 
@@ -221,7 +266,8 @@ function bindExplicitFormSubmit(app: FormAppLike, html: unknown): void {
   form.dataset.fthExplicitSubmitBound = "true";
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await app._updateObject?.(event, extractFormData(form));
+    const submitter = getSubmitterAction(event);
+    await app._updateObject?.(event, extractFormData(form, submitter));
     await app.close?.();
   });
 }
@@ -244,7 +290,7 @@ function getRootElement(html: unknown): HTMLElement | null {
   return null;
 }
 
-function extractFormData(form: HTMLFormElement): Record<string, unknown> {
+function extractFormData(form: HTMLFormElement, submitAction?: string): Record<string, unknown> {
   const formData: Record<string, unknown> = {};
   const elements = Array.from(form.elements);
 
@@ -260,6 +306,7 @@ function extractFormData(form: HTMLFormElement): Record<string, unknown> {
     formData[element.name] = element.value;
   }
 
+  if (submitAction) formData.__submitAction = submitAction;
   return formData;
 }
 
@@ -290,4 +337,11 @@ function getFoundryUtils(): FoundryUtilsLike | undefined {
   if (!foundryNs || typeof foundryNs !== "object") return undefined;
   const utils = (foundryNs as { utils?: unknown }).utils;
   return utils && typeof utils === "object" ? (utils as FoundryUtilsLike) : undefined;
+}
+
+function getSubmitterAction(event: Event): string | undefined {
+  const submitter = (event as Event & { submitter?: unknown }).submitter;
+  if (!submitter || typeof submitter !== "object") return undefined;
+  const dataset = (submitter as { dataset?: Record<string, string | undefined> }).dataset;
+  return dataset?.submitAction;
 }

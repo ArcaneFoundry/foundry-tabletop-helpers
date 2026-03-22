@@ -67,7 +67,7 @@ class FakeElement {
 function makeState(): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["class", "originSummary", "weaponMasteries", "review"],
+    applicableSteps: ["class", "classChoices", "weaponMasteries", "classSummary", "review"],
     selections: {
       class: {
         uuid: "class.fighter",
@@ -121,6 +121,7 @@ function makeState(): WizardState {
       maxRerolls: 0,
       startingLevel: 1,
       allowMulticlass: false,
+      allowFirearms: false,
       equipmentMethod: "equipment",
       level1HpMethod: "max",
       allowCustomBackgrounds: false,
@@ -167,6 +168,19 @@ describe("step weapon masteries", () => {
           itemType: "weapon",
           weaponType: "simpleM",
           identifier: "dagger",
+        },
+        {
+          uuid: "weapon.pistol",
+          name: "Pistol",
+          img: "pistol.png",
+          packId,
+          packLabel: "Equipment",
+          type: "item",
+          itemType: "weapon",
+          weaponType: "martialR",
+          identifier: "pistol",
+          mastery: "vex",
+          isFirearm: true,
         },
       ];
     });
@@ -230,19 +244,33 @@ describe("step weapon masteries", () => {
       options: Array<{ id: string; mastery: string; masteryDescription: string }>;
     };
 
-    expect(section.maxCount).toBe(2);
+    expect(section.maxCount).toBe(1);
     expect(section.options).toEqual([
-      expect.objectContaining({
-        id: "longsword",
-        mastery: "Sap",
-        masteryDescription: expect.stringContaining("Disadvantage"),
-      }),
       expect.objectContaining({
         id: "shortbow",
         mastery: "Vex",
         masteryDescription: expect.stringContaining("Advantage"),
       }),
     ]);
+    expect(fetchDocumentMock).not.toHaveBeenCalledWith("weapon.longsword");
+  });
+
+  it("does not surface mastery options unlocked only by later origin or background proficiencies", async () => {
+    const { createWeaponMasteriesStep } = await import("./step-weapon-masteries");
+    const state = makeState();
+    state.selections.class = {
+      ...state.selections.class!,
+      weaponProficiencyKeys: [],
+    };
+
+    const vm = await createWeaponMasteriesStep().buildViewModel(state);
+    const section = vm.weaponMasterySection as {
+      options: Array<{ id: string }>;
+      emptyMessage: string;
+    };
+
+    expect(section.options).toEqual([]);
+    expect(section.emptyMessage).toContain("current class and item data");
   });
 
   it("filters out magical weapon variants even when they share a valid weapon identifier", async () => {
@@ -251,6 +279,103 @@ describe("step weapon masteries", () => {
     state.selections.class = {
       ...state.selections.class!,
       weaponProficiencyKeys: ["weapon:sim:*", "weapon:mar:*"],
+    };
+
+    const vm = await createWeaponMasteriesStep().buildViewModel(state);
+    const section = vm.weaponMasterySection as {
+      options: Array<{ id: string; name: string }>;
+    };
+
+    expect(section.options.map((option) => option.name)).toEqual([
+      "Longsword",
+      "Shortbow",
+    ]);
+  });
+
+  it("hides firearms from weapon mastery options by default", async () => {
+    const { createWeaponMasteriesStep } = await import("./step-weapon-masteries");
+    const state = makeState();
+    state.selections.class = {
+      ...state.selections.class!,
+      weaponProficiencyKeys: ["weapon:sim:*", "weapon:mar:*"],
+    };
+
+    const vm = await createWeaponMasteriesStep().buildViewModel(state);
+    const section = vm.weaponMasterySection as {
+      options: Array<{ name: string }>;
+    };
+
+    expect(section.options.map((option) => option.name)).toEqual([
+      "Longsword",
+      "Shortbow",
+    ]);
+  });
+
+  it("surfaces firearms when the GM explicitly enables them", async () => {
+    const { createWeaponMasteriesStep } = await import("./step-weapon-masteries");
+    const state = makeState();
+    state.config.allowFirearms = true;
+    state.selections.class = {
+      ...state.selections.class!,
+      weaponProficiencyKeys: ["weapon:sim:*", "weapon:mar:*"],
+    };
+
+    const vm = await createWeaponMasteriesStep().buildViewModel(state);
+    const section = vm.weaponMasterySection as {
+      options: Array<{ name: string }>;
+    };
+
+    expect(section.options.map((option) => option.name)).toEqual([
+      "Longsword",
+      "Pistol",
+      "Shortbow",
+    ]);
+  });
+
+  it("uses indexed mastery data directly when the pack index already exposes the needed mundane fields", async () => {
+    loadPackMock.mockImplementationOnce(async (packId: string) => {
+      if (packId !== "dnd-players-handbook.equipment") return [];
+      return [
+        {
+          uuid: "weapon.shortbow",
+          name: "Shortbow",
+          img: "shortbow.png",
+          packId,
+          packLabel: "Equipment",
+          type: "item",
+          itemType: "weapon",
+          weaponType: "simpleR",
+          identifier: "shortbow",
+          mastery: "vex",
+          isFirearm: false,
+        },
+      ];
+    });
+
+    const { createWeaponMasteriesStep } = await import("./step-weapon-masteries");
+    const vm = await createWeaponMasteriesStep().buildViewModel(makeState());
+    const section = vm.weaponMasterySection as {
+      options: Array<{ id: string; mastery: string }>;
+    };
+
+    expect(section.options).toEqual([
+      expect.objectContaining({
+        id: "shortbow",
+        mastery: "Vex",
+      }),
+    ]);
+    expect(fetchDocumentMock).not.toHaveBeenCalled();
+  });
+
+  it("surfaces class-proficient weapons when the mastery pool is the all-weapons wildcard", async () => {
+    const { createWeaponMasteriesStep } = await import("./step-weapon-masteries");
+    const state = makeState();
+    state.selections.class = {
+      ...state.selections.class!,
+      identifier: "barbarian",
+      name: "Barbarian",
+      weaponMasteryPool: ["weapon:*"],
+      weaponProficiencyKeys: ["weapon:sim", "weapon:mar"],
     };
 
     const vm = await createWeaponMasteriesStep().buildViewModel(state);

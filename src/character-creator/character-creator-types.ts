@@ -63,6 +63,47 @@ export interface CreatorIndexEntry {
   armorType?: string;
   /** For equipment: weapon category */
   weaponType?: string;
+  /** For weapons: mastery slug from compendium index data. */
+  mastery?: string;
+  /** For items: rarity label from compendium index data. */
+  rarity?: string;
+  /** For items: magical bonus value when present. */
+  magicalBonus?: number;
+  /** For items: normalized enabled property keys from index data. */
+  properties?: string[];
+  /** For weapons: whether the cached metadata marks this entry as a firearm. */
+  isFirearm?: boolean;
+  /** For weapons: whether the cached metadata confirms this is a mundane baseline option. */
+  baselineWeapon?: boolean;
+}
+
+/** Persisted world-level snapshot of normalized compendium index data. */
+export interface PersistentCompendiumIndexSnapshot {
+  /** Internal cache schema version. */
+  formatVersion: number;
+  /** Current module version when the cache was built. */
+  moduleVersion: string;
+  /** Current Foundry core version when the cache was built. */
+  foundryVersion: string;
+  /** Active system id. */
+  systemId: string;
+  /** Active system version when the cache was built. */
+  systemVersion: string;
+  /** Normalized selected-pack signature. */
+  packSignature: string;
+  /** ISO timestamp of cache generation. */
+  generatedAt: string;
+  /** Cached normalized entries grouped by pack id. */
+  packs: Record<string, CreatorIndexEntry[]>;
+}
+
+/** Current status of the persistent compendium cache for the selected sources. */
+export interface PersistentCompendiumIndexStatus {
+  state: "missing" | "ready" | "stale";
+  label: string;
+  detail: string;
+  generatedAt?: string;
+  packCount: number;
 }
 
 /* ── Pack Source Configuration ────────────────────────────── */
@@ -104,6 +145,34 @@ export interface ClassFeatureSummary {
   level?: number;
 }
 
+export type ClassAdvancementRequirementType =
+  | "skills"
+  | "weaponMasteries"
+  | "expertise"
+  | "languages"
+  | "tools"
+  | "itemChoices";
+
+export interface ClassAdvancementItemChoiceOption {
+  uuid: string;
+  name: string;
+  img?: string;
+}
+
+export interface ClassAdvancementRequirement {
+  id: string;
+  type: ClassAdvancementRequirementType;
+  title: string;
+  level: number;
+  advancementType: string;
+  mode?: string;
+  classRestriction?: string;
+  requiredCount: number;
+  pool: string[];
+  itemChoices?: ClassAdvancementItemChoiceOption[];
+  groupKey: string;
+}
+
 /** Frozen snapshot of all GM configuration at wizard open time. */
 export interface GMConfig {
   packSources: PackSourceConfig;
@@ -115,6 +184,8 @@ export interface GMConfig {
   allowMulticlass: boolean;
   equipmentMethod: EquipmentMethod;
   level1HpMethod: HpMethod;
+  /** Whether firearm weapons should be surfaced in creator-facing weapon mastery picks. */
+  allowFirearms?: boolean;
   /** Whether custom/homebrew backgrounds are permitted. Added for 2024 rules. */
   allowCustomBackgrounds: boolean;
   /** Whether players may swap away from their background's assigned origin feat. */
@@ -203,6 +274,7 @@ export interface RulesConfigViewModel {
   allowMulticlass: boolean;
   equipmentMethod: EquipmentMethod;
   level1HpMethod: HpMethod;
+  allowFirearms?: boolean;
   allowCustomBackgrounds: boolean;
   allowOriginFeatChoice?: boolean;
   allowUnrestrictedBackgroundAsi?: boolean;
@@ -409,12 +481,21 @@ export interface ClassSelection {
   weaponMasteryCount?: number;
   /** Raw weapon mastery pool keys from class advancements (e.g. weapon:sim:*). */
   weaponMasteryPool?: string[];
+  /** Normalized class-driven selections required through the configured starting level. */
+  classAdvancementRequirements?: ClassAdvancementRequirement[];
 }
 
 /** Player-facing selections made in the class choices step. */
 export interface ClassChoicesState {
   /** Class skill keys chosen during the class step flow. */
   chosenSkills: string[];
+}
+
+export interface ClassAdvancementSelectionsState {
+  expertiseSkills: string[];
+  chosenLanguages: string[];
+  chosenTools: string[];
+  itemChoices: Record<string, string[]>;
 }
 
 /** Player-facing selections made in the weapon mastery step. */
@@ -532,6 +613,7 @@ export interface WizardSelections {
   background?: BackgroundSelection;
   class?: ClassSelection;
   classChoices?: ClassChoicesState;
+  classAdvancements?: ClassAdvancementSelectionsState;
   weaponMasteries?: WeaponMasterySelectionState;
   subclass?: SubclassSelection;
   backgroundAsi?: BackgroundASI;

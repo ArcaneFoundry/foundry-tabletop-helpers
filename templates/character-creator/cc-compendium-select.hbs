@@ -4,6 +4,15 @@
     Packs are auto-detected by the item types they contain.
   </p>
 
+  <section class="cc-compendium-select__status" data-indexing-status>
+    <div class="cc-compendium-select__status-label">{{indexStatus.label}}</div>
+    <div class="cc-compendium-select__status-detail">{{indexStatus.detail}}</div>
+    {{#if indexStatus.generatedAt}}
+    <div class="cc-compendium-select__status-meta">Built {{indexStatus.generatedAt}}</div>
+    {{/if}}
+    <div class="cc-compendium-select__status-message" data-indexing-status-message></div>
+  </section>
+
   {{#each groups}}
   <fieldset class="cc-compendium-select__group">
     <legend class="cc-compendium-select__legend">{{label}}</legend>
@@ -68,8 +77,11 @@
   {{/each}}
 
   <footer class="sheet-footer flexrow">
-    <button type="submit" class="dialog-button default">
-      <i class="fa-solid fa-save"></i> Save
+    <button type="submit" class="dialog-button" data-submit-action="rebuildIndexes">
+      <i class="fa-solid fa-rotate"></i> Rebuild Indexes
+    </button>
+    <button type="submit" class="dialog-button default" data-submit-action="saveAndIndex">
+      <i class="fa-solid fa-save"></i> Save and Index
     </button>
   </footer>
 </form>

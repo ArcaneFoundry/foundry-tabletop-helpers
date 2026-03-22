@@ -30,6 +30,12 @@ import {
   getSpellPreparationPolicy,
   type SpellPreparationClassDocumentLike,
 } from "../spell-preparation-policy";
+import {
+  buildEmptyClassAdvancementSelections,
+  getClassAdvancementRequiredCount,
+  languageLabel,
+  toolLabel,
+} from "./class-advancement-utils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -64,6 +70,18 @@ function formatASI(assignments: Partial<Record<AbilityKey, number>>): string {
     }
   }
   return parts.length > 0 ? parts.join(", ") : "None assigned";
+}
+
+function classItemChoiceNames(state: WizardState): string[] {
+  const selections = state.selections.classAdvancements ?? buildEmptyClassAdvancementSelections();
+  return (state.selections.class?.classAdvancementRequirements ?? [])
+    .filter((requirement) => requirement.type === "itemChoices")
+    .flatMap((requirement) => {
+      const selectedIds = new Set(selections.itemChoices[requirement.id] ?? []);
+      return (requirement.itemChoices ?? [])
+        .filter((option) => selectedIds.has(option.uuid))
+        .map((option) => option.name);
+    });
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -210,6 +228,17 @@ export function createReviewStep(): WizardStepDefinition {
       const weaponMasteryNames = (sel.weaponMasteries?.chosenWeaponMasteryDetails ?? []).length > 0
         ? (sel.weaponMasteries?.chosenWeaponMasteryDetails ?? []).map(weaponMasteryName)
         : (sel.weaponMasteries?.chosenWeaponMasteries ?? []).map(weaponMasteryName);
+      const classAdvancementSelections = sel.classAdvancements ?? buildEmptyClassAdvancementSelections();
+      const requiredExpertise = getClassAdvancementRequiredCount(state, "expertise");
+      const requiredLanguages = getClassAdvancementRequiredCount(state, "languages");
+      const requiredTools = getClassAdvancementRequiredCount(state, "tools");
+      const requiredClassItems = (sel.class?.classAdvancementRequirements ?? [])
+        .filter((requirement) => requirement.type === "itemChoices")
+        .reduce((sum, requirement) => sum + requirement.requiredCount, 0);
+      const expertiseNames = (classAdvancementSelections.expertiseSkills ?? []).map(skillName);
+      const classLanguageNames = (classAdvancementSelections.chosenLanguages ?? []).map(languageLabel);
+      const classToolNames = (classAdvancementSelections.chosenTools ?? []).map(toolLabel);
+      const classItemNames = classItemChoiceNames(state);
       const classChoicesSection = {
         id: "classChoices",
         label: "Class Skills",
@@ -238,6 +267,50 @@ export function createReviewStep(): WizardStepDefinition {
           icon: "fa-solid fa-swords",
           complete: weaponMasteryNames.length >= requiredWeaponMasteries,
           summary: weaponMasteryNames.join(", ") || "Not selected",
+          isSimple: true,
+        });
+      }
+
+      if (state.applicableSteps.includes("classExpertise")) {
+        sections.push({
+          id: "classExpertise",
+          label: "Expertise",
+          icon: "fa-solid fa-bullseye",
+          complete: expertiseNames.length >= requiredExpertise,
+          summary: expertiseNames.join(", ") || "Not selected",
+          isSimple: true,
+        });
+      }
+
+      if (state.applicableSteps.includes("classLanguages")) {
+        sections.push({
+          id: "classLanguages",
+          label: "Class Languages",
+          icon: "fa-solid fa-language",
+          complete: classLanguageNames.length >= requiredLanguages,
+          summary: classLanguageNames.join(", ") || "Not selected",
+          isSimple: true,
+        });
+      }
+
+      if (state.applicableSteps.includes("classTools")) {
+        sections.push({
+          id: "classTools",
+          label: "Class Tools",
+          icon: "fa-solid fa-screwdriver-wrench",
+          complete: classToolNames.length >= requiredTools,
+          summary: classToolNames.join(", ") || "Not selected",
+          isSimple: true,
+        });
+      }
+
+      if (state.applicableSteps.includes("classItemChoices")) {
+        sections.push({
+          id: "classItemChoices",
+          label: "Class Options",
+          icon: "fa-solid fa-hand-sparkles",
+          complete: classItemNames.length >= requiredClassItems,
+          summary: classItemNames.join(", ") || "Not selected",
           isSimple: true,
         });
       }

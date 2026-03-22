@@ -9,6 +9,7 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import {
+  parseClassAdvancementRequirements,
   parseClassSkillAdvancement,
   parseClassSpellcasting,
   parseClassWeaponMasteryAdvancement,
@@ -422,6 +423,7 @@ export async function buildClassSelectionFromEntry(
     const { skillPool, skillCount } = parseClassSkillAdvancement(doc as never);
     selection.skillPool = skillPool;
     selection.skillCount = skillCount;
+    selection.classAdvancementRequirements = await parseClassAdvancementRequirements(doc as never, state.config.startingLevel);
 
     const weaponMastery = parseClassWeaponMasteryAdvancement(doc as never, state.config.startingLevel);
     selection.weaponMasteryCount = weaponMastery.count;

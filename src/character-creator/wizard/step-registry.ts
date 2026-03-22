@@ -14,6 +14,12 @@ import { createBackgroundStep } from "../steps/step-background";
 import { createBackgroundAsiStep } from "../steps/step-background-asi";
 import { createClassStep } from "../steps/step-class";
 import { createClassChoicesStep } from "../steps/step-class-choices";
+import {
+  createClassExpertiseStep,
+  createClassItemChoicesStep,
+  createClassLanguagesStep,
+  createClassToolsStep,
+} from "../steps/step-class-advancements";
 import { createClassSummaryStep } from "../steps/step-class-summary";
 import { createWeaponMasteriesStep } from "../steps/step-weapon-masteries";
 import { createOriginChoicesStep } from "../steps/step-origin-choices";
@@ -32,6 +38,11 @@ import { createReviewStep } from "../steps/step-review";
 const STEP_ORDER = [
   "class",
   "classChoices",
+  "classExpertise",
+  "classLanguages",
+  "classTools",
+  "weaponMasteries",
+  "classItemChoices",
   "classSummary",
   "subclass",
   "background",
@@ -40,7 +51,6 @@ const STEP_ORDER = [
   "species",
   "speciesChoices",
   "originSummary",
-  "weaponMasteries",
   "abilities",
   "feats",
   "equipment",
@@ -92,6 +102,9 @@ export function getStep(id: string): WizardStepDefinition | undefined {
 const STEP_ATMOSPHERES: Record<string, string> = {
   class: "cc-atmosphere--forge",
   classChoices: "cc-atmosphere--forge",
+  classExpertise: "cc-atmosphere--forge",
+  classLanguages: "cc-atmosphere--forge",
+  classTools: "cc-atmosphere--forge",
   classSummary: "cc-atmosphere--gold",
   subclass: "cc-atmosphere--forge",
   background: "cc-atmosphere--shadow",
@@ -101,6 +114,7 @@ const STEP_ATMOSPHERES: Record<string, string> = {
   speciesChoices: "cc-atmosphere--nature",
   originSummary: "cc-atmosphere--gold",
   weaponMasteries: "cc-atmosphere--forge",
+  classItemChoices: "cc-atmosphere--forge",
   abilities: "cc-atmosphere--arcane",
   feats: "cc-atmosphere--crimson",
   spells: "cc-atmosphere--arcane",
@@ -154,6 +168,10 @@ export function createPlaceholderStep(
 export function registerAllSteps(): void {
   registerStep(createClassStep());
   registerStep(createClassChoicesStep());
+  registerStep(createClassExpertiseStep());
+  registerStep(createClassLanguagesStep());
+  registerStep(createClassToolsStep());
+  registerStep(createClassItemChoicesStep());
   registerStep(createClassSummaryStep());
   registerStep(createSubclassStep());
   registerStep(createBackgroundStep());

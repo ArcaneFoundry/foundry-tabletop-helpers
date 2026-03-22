@@ -16,6 +16,7 @@ const getAllowedAbilityMethodsMock = vi.fn();
 const getStartingLevelMock = vi.fn();
 const allowOriginFeatChoiceMock = vi.fn();
 const allowUnrestrictedBackgroundAsiMock = vi.fn();
+const allowFirearmsMock = vi.fn();
 const allowMulticlassMock = vi.fn();
 const getEquipmentMethodMock = vi.fn();
 const getLevel1HpMethodMock = vi.fn();
@@ -52,6 +53,7 @@ vi.mock("../character-creator-settings", () => ({
   getStartingLevel: getStartingLevelMock,
   allowOriginFeatChoice: allowOriginFeatChoiceMock,
   allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
+  allowFirearms: allowFirearmsMock,
   allowMulticlass: allowMulticlassMock,
   getEquipmentMethod: getEquipmentMethodMock,
   getLevel1HpMethod: getLevel1HpMethodMock,
@@ -195,6 +197,7 @@ beforeEach(() => {
   getStartingLevelMock.mockReturnValue(2);
   allowOriginFeatChoiceMock.mockReturnValue(false);
   allowUnrestrictedBackgroundAsiMock.mockReturnValue(false);
+  allowFirearmsMock.mockReturnValue(false);
   allowMulticlassMock.mockReturnValue(true);
   getEquipmentMethodMock.mockReturnValue("both");
   getLevel1HpMethodMock.mockReturnValue("max");
@@ -249,6 +252,7 @@ describe("character creator app shell", () => {
       allowedAbilityMethods: ["4d6", "pointBuy"],
       startingLevel: 2,
       allowMulticlass: true,
+      allowFirearms: false,
       equipmentMethod: "both",
       level1HpMethod: "max",
       allowCustomBackgrounds: false,
