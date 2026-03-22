@@ -1,22 +1,11 @@
 import { MOD } from "../../logger";
 import type {
-  ClassChoicesState,
-  StepCallbacks,
+  AbilityKey,
   WizardState,
   WizardStepDefinition,
 } from "../character-creator-types";
 import { ABILITY_ABBREVS, SKILLS } from "../data/dnd5e-constants";
-
-interface DatasetElementLike {
-  dataset: DOMStringMap;
-  addEventListener(event: string, handler: () => void): void;
-  closest(selector: string): Element | null;
-}
-
-interface ToggleInputLike extends DatasetElementLike {
-  checked: boolean;
-  disabled: boolean;
-}
+import { ClassChoicesStepScreen } from "../react/steps/class/class-choices-step-screen";
 
 const SKILL_META: Record<string, { icon: string; description: string }> = {
   acr: { icon: "fa-person-running", description: "Balance, tumble, dive, and keep your footing when the battlefield turns treacherous." },
@@ -55,54 +44,8 @@ function getRequiredSkillCount(state: WizardState): number {
   return Math.min(state.selections.class?.skillCount ?? 0, getAvailableSkillKeys(state).length);
 }
 
-function buildClassChoicesState(state: WizardState): ClassChoicesState {
-  return {
-    chosenSkills: getChosenSkills(state),
-  };
-}
-
-function patchToggleRows(
-  el: HTMLElement,
-  selector: string,
-  chosen: Set<string>,
-  maxPicks: number,
-): void {
-  const atMax = maxPicks > 0 && chosen.size >= maxPicks;
-  getToggleInputs(el, selector).forEach((input) => {
-    const key = input.dataset.choiceValue;
-    if (!key) return;
-    const isChosen = chosen.has(key);
-    input.checked = isChosen;
-    input.disabled = !isChosen && atMax;
-    const row = input.closest(".cc-choice-option");
-    if (row) row.classList.toggle("cc-choice-option--selected", isChosen);
-  });
-}
-
-function patchSectionCount(el: HTMLElement, section: string, value: number): void {
-  const countEl = el.querySelector<HTMLElement>(`[data-choice-count="${section}"]`);
-  if (countEl) countEl.textContent = String(value);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function patchSelectedChips(
-  el: HTMLElement,
-  section: string,
-  entries: Array<{ label: string; iconClass?: string; tooltip: string }>,
-): void {
-  const host = el.querySelector<HTMLElement>(`[data-selected-chips="${section}"]`);
-  if (!host) return;
-  host.innerHTML = entries.map((entry) =>
-    `<span class="cc-choice-chip"><i class="fa-solid ${entry.iconClass ?? "fa-book"}"></i><span>${escapeHtml(entry.label)}</span></span>`
-  ).join("");
+function abilityLabel(key: AbilityKey): string {
+  return key.toUpperCase();
 }
 
 export function createClassChoicesStep(): WizardStepDefinition {
@@ -110,6 +53,8 @@ export function createClassChoicesStep(): WizardStepDefinition {
     id: "classChoices",
     label: "Class Skills",
     icon: "fa-solid fa-list-check",
+    renderMode: "react",
+    reactComponent: ClassChoicesStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-class-choices.hbs`,
     dependencies: ["class"],
     isApplicable: (state) => !!state.selections.class?.uuid,
@@ -144,68 +89,36 @@ export function createClassChoicesStep(): WizardStepDefinition {
       }));
 
       return {
+        stepId: "classChoices",
+        stepTitle: "Class Skills",
+        stepLabel: "Choose Your Skills",
+        stepIcon: "fa-solid fa-list-check",
+        stepDescription: "Choose the talents your class teaches from the outset.",
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--class-choices",
         className: classSelection?.name ?? "Class",
+        classIdentifier: classSelection?.identifier ?? "",
         primaryAbilityHint: classSelection?.primaryAbilityHint ?? "",
+        savingThrows: (classSelection?.savingThrowProficiencies ?? []).map(abilityLabel),
+        armorProficiencies: classSelection?.armorProficiencies ?? [],
+        weaponProficiencies: classSelection?.weaponProficiencies ?? [],
         skillSection: {
           hasChoices: requiredSkillCount > 0,
           chosenCount: chosenSkills.size,
           maxCount: requiredSkillCount,
           selectedEntries: skillPool
             .filter((entry) => entry.checked)
-            .map((entry) => ({ label: entry.label, iconClass: entry.iconClass, tooltip: entry.tooltip })),
+            .map((entry) => ({
+              label: entry.label,
+              iconClass: entry.iconClass,
+              tooltip: entry.tooltip,
+              abilityAbbrev: entry.abilityAbbrev,
+            })),
           options: skillPool,
           emptyMessage: "This class does not expose additional class skill choices.",
         },
       };
     },
-
-    onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
-      getToggleInputs(el, "[data-choice-section='skills']").forEach((input) => {
-        input.addEventListener("change", () => {
-          const key = input.dataset.choiceValue;
-          if (!key) return;
-
-          const chosen = new Set(getChosenSkills(state));
-          const limit = getRequiredSkillCount(state);
-          if (input.checked) {
-            if (chosen.size >= limit) {
-              input.checked = false;
-              return;
-            }
-            chosen.add(key);
-          } else {
-            chosen.delete(key);
-          }
-
-          const chosenSkills = [...chosen];
-          state.selections.skills = { chosen: chosenSkills };
-          state.selections.classChoices = { chosenSkills };
-
-          patchToggleRows(el, "[data-choice-section='skills']", chosen, limit);
-          patchSectionCount(el, "skills", chosen.size);
-          patchSelectedChips(
-            el,
-            "skills",
-            chosenSkills.map((skill) => ({
-              label: skillLabel(skill),
-              iconClass: SKILL_META[skill]?.icon ?? "fa-book",
-              tooltip: `${skillLabel(skill)} (${ABILITY_ABBREVS[SKILLS[skill]?.ability ?? "int"]}) — ${SKILL_META[skill]?.description ?? "Class skill option."}`,
-            })),
-          );
-          callbacks.setDataSilent(buildClassChoicesState(state));
-        });
-      });
-
-      state.selections.classChoices = buildClassChoicesState(state);
-      callbacks.setDataSilent(buildClassChoicesState(state));
-    },
   };
-}
-
-function getToggleInputs(root: ParentNode, selector: string): ToggleInputLike[] {
-  return Array.from(root.querySelectorAll(selector))
-    .filter((value) =>
-      typeof value === "object" && value !== null && "dataset" in value && "checked" in value && "disabled" in value
-    )
-    .map((value) => value as unknown as ToggleInputLike);
 }

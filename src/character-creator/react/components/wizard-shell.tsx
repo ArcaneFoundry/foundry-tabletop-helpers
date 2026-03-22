@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import type { WizardShellContext } from "../../character-creator-types";
 import { cn } from "../../../ui/lib/cn";
@@ -22,6 +23,7 @@ export function WizardShell({
   onCreateCharacter,
 }: WizardShellProps) {
   const [isCreating, setIsCreating] = useState(false);
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
   const handleCreateCharacter = async () => {
     if (isCreating) return;
@@ -121,55 +123,108 @@ export function WizardShell({
 
       {stepContent}
 
-      <footer className="mt-auto flex items-center justify-between gap-4 border-t border-fth-cc-gold/18 bg-[linear-gradient(180deg,rgba(48,31,21,0.96),rgba(25,16,11,0.98))] px-6 py-4 backdrop-blur-sm">
-        <button
+      <motion.footer
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+        className="relative mt-auto flex items-center justify-between gap-4 overflow-hidden border-t border-fth-cc-gold/18 bg-[linear-gradient(180deg,rgba(62,41,28,0.98),rgba(30,19,13,0.99)_42%,rgba(21,14,10,1)_100%)] px-6 py-4 backdrop-blur-sm"
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,234,196,0.12),transparent_42%),linear-gradient(180deg,rgba(255,244,220,0.06),transparent_26%)]" />
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.65),rgba(214,177,111,0))]" />
+        <div className="pointer-events-none absolute inset-x-10 bottom-0 h-5 bg-[radial-gradient(circle_at_bottom,rgba(0,0,0,0.28),transparent_72%)]" />
+        <motion.button
           className={cn(
-            "inline-flex min-w-32 items-center justify-center gap-2 rounded-[1rem] border px-5 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
-            "border-fth-cc-gold/40 bg-[linear-gradient(180deg,#3f526f_0%,#243146_52%,#17202e_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_20px_rgba(0,0,0,0.22)]",
+            "relative z-10 inline-flex min-w-32 items-center justify-center gap-2 rounded-[1rem] border px-5 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
+            "border-fth-cc-gold/40 bg-[linear-gradient(180deg,#4a6285_0%,#29384f_52%,#17202e_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_20px_rgba(0,0,0,0.22)]",
             "hover:border-fth-cc-gold hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45",
           )}
           disabled={!shellContext.canGoBack}
           onClick={onBack}
           type="button"
+          whileHover={prefersReducedMotion || !shellContext.canGoBack ? undefined : { y: -2, scale: 1.01 }}
+          whileTap={prefersReducedMotion || !shellContext.canGoBack ? undefined : { scale: 0.985 }}
         >
+          <span className="pointer-events-none absolute inset-[2px] rounded-[0.85rem] border border-white/10" />
+          <ButtonOrnament side="left" />
           <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
           <span>Back</span>
-        </button>
+          <ButtonOrnament side="right" />
+        </motion.button>
 
-        <div className="min-h-5 flex-1 text-center font-fth-cc-body text-sm text-fth-cc-muted/90">
-          {shellContext.statusHint}
-        </div>
+        <motion.div
+          animate={prefersReducedMotion ? undefined : { opacity: 1, scale: 1 }}
+          className="relative z-10 min-h-5 flex-1 text-center font-fth-cc-body text-sm text-fth-cc-muted/90"
+          initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
+          transition={{ delay: 0.06, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="mx-auto flex max-w-sm items-center justify-center gap-3">
+            <FooterDivider />
+            <span>{shellContext.statusHint}</span>
+            <FooterDivider />
+          </div>
+        </motion.div>
 
         {shellContext.isReviewStep ? (
-          <button
+          <motion.button
             className={cn(
-              "inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
+              "relative z-10 inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
               "border-fth-cc-gold/70 bg-[linear-gradient(180deg,#c04732_0%,#9f231a_52%,#6e1715_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,238,222,0.16),0_12px_24px_rgba(0,0,0,0.24)]",
               "hover:brightness-110 disabled:cursor-progress disabled:opacity-70",
             )}
             disabled={isCreating}
             onClick={() => void handleCreateCharacter()}
             type="button"
+            whileHover={prefersReducedMotion || isCreating ? undefined : { y: -2, scale: 1.01 }}
+            whileTap={prefersReducedMotion || isCreating ? undefined : { scale: 0.985 }}
           >
+            <span className="pointer-events-none absolute inset-[2px] rounded-[0.85rem] border border-white/10" />
+            <ButtonOrnament side="left" />
             <i className={cn(isCreating ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-sparkles")} aria-hidden="true" />
             <span>{isCreating ? "Creating..." : "Create Character"}</span>
-          </button>
+            <ButtonOrnament side="right" />
+          </motion.button>
         ) : (
-          <button
+          <motion.button
             className={cn(
-              "inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
+              "relative z-10 inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
               "border-fth-cc-gold/70 bg-[linear-gradient(180deg,#c04732_0%,#9f231a_52%,#6e1715_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,238,222,0.16),0_12px_24px_rgba(0,0,0,0.24)]",
               "hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45",
             )}
             disabled={!shellContext.canGoNext}
             onClick={onNext}
             type="button"
+            whileHover={prefersReducedMotion || !shellContext.canGoNext ? undefined : { y: -2, scale: 1.01 }}
+            whileTap={prefersReducedMotion || !shellContext.canGoNext ? undefined : { scale: 0.985 }}
           >
+            <span className="pointer-events-none absolute inset-[2px] rounded-[0.85rem] border border-white/10" />
+            <ButtonOrnament side="left" />
             <span>Next</span>
             <i className="fa-solid fa-chevron-right" aria-hidden="true" />
-          </button>
+            <ButtonOrnament side="right" />
+          </motion.button>
         )}
-      </footer>
+      </motion.footer>
     </div>
+  );
+}
+
+function FooterDivider() {
+  return (
+    <span aria-hidden="true" className="hidden items-center gap-2 sm:inline-flex">
+      <span className="h-px w-8 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.65),rgba(214,177,111,0))]" />
+      <span className="h-1.5 w-1.5 rotate-45 border border-fth-cc-gold/55 bg-fth-cc-gold/20" />
+    </span>
+  );
+}
+
+function ButtonOrnament({ side }: { side: "left" | "right" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border border-fth-cc-gold/55 bg-fth-cc-gold/10",
+        side === "left" ? "left-2.5" : "right-2.5",
+      )}
+    />
   );
 }
