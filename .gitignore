@@ -60,3 +60,6 @@ temp/
 
 # Design docs (local only)
 docs/superpowers/
+
+# Local generated design and image work
+output/
