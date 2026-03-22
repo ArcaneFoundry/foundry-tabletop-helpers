@@ -78,19 +78,20 @@ The current module-wide reset strategy is intentionally scoped to our own UI roo
 
 ## Class Step Status
 
-The class-selection, class-skills, and class-summary pages are now the leading React-native screens and the current visual reference for the migration.
+The class-selection, class-skills, class-summary, and weapon-masteries pages are now the leading React-native screens and the current visual reference for the migration.
 
 Current behavior:
 
 - class cards are rendered in React
 - the class-skills selection page is rendered in React with an in-shell summary rail and proficiency panel
+- the weapon-masteries page is rendered in React with a routed mastery list, selected-weapon summary, and mastery glossary
 - the follow-up class-summary screen is rendered in React
 - the page uses the React shell and Tailwind styling
 - the class-selection header now uses a generated scenic banner treatment with light ornamental flourishes
 - the main class-selection field now includes a subtle generated parchment texture layer behind the interactive content
 - the class step now uses Motion-powered entry, hover, and selection feedback across the banner, progress rail, cards, chips, and footer controls
 - selection state is shown directly on the chosen card through a selected-only crest badge
-- the `class` and `classChoices` steps now share one mounted React shell so the banner and aggregate class stepper stay resident while only the inner content pane transitions
+- the `class`, `classChoices`, and `weaponMasteries` steps now share one mounted React shell so the banner and aggregate class stepper stay resident while only the inner content pane transitions
 - the lower class details panel has been removed
 - richer class recap content now lives on the summary step instead
 - the in-page progress treatment is compact so more space is available for class cards

@@ -107,4 +107,23 @@ describe("buildClassFlowShellModel", () => {
     expect(model.headerTone).toBe("accent");
     expect(model.aggregateStepper.main.status).toBe("in-progress");
   });
+
+  it("tracks the weapon masteries pane inside the mounted class shell", () => {
+    const model = buildClassFlowShellModel(
+      createState({
+        selections: { class: createClassSelection() },
+      }),
+      createSteps({
+        class: { status: "complete", active: false },
+        classChoices: { status: "complete", active: false },
+        weaponMasteries: { status: "pending", active: true },
+      }),
+      "weaponMasteries",
+    );
+
+    expect(model.currentPane).toBe("weaponMasteries");
+    expect(model.title).toBe("Choose Your Weapon Masteries");
+    expect(model.headerTone).toBe("accent");
+    expect(model.aggregateStepper.main.status).toBe("in-progress");
+  });
 });

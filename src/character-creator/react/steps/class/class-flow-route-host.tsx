@@ -45,7 +45,40 @@ type ClassChoicesStepViewModel = {
   };
 };
 
-const CLASS_FLOW_STEP_IDS = new Set(["class", "classChoices"]);
+type WeaponMasteryChoiceOption = {
+  id: string;
+  uuid: string;
+  identifier: string;
+  name: string;
+  img: string;
+  weaponType: string;
+  mastery: string;
+  masteryDescription: string;
+  weaponDescription: string;
+  tooltip: string;
+  checked: boolean;
+  disabled: boolean;
+};
+
+type WeaponMasteriesStepViewModel = {
+  classIdentifier: string;
+  className: string;
+  weaponMasterySection: {
+    hasChoices: boolean;
+    chosenCount: number;
+    maxCount: number;
+    selectedEntries: Array<{
+      label: string;
+      img?: string;
+      mastery?: string;
+      tooltip: string;
+    }>;
+    options: WeaponMasteryChoiceOption[];
+    emptyMessage: string;
+  };
+};
+
+const CLASS_FLOW_STEP_IDS = new Set(["class", "classChoices", "weaponMasteries"]);
 
 const CLASS_THEMES: Record<string, { ribbon: string; frame: string; glow: string; crest: string; accent: string; sigil: string }> = {
   barbarian: { ribbon: "from-[#714126] to-[#382015]", frame: "#b57d4d", glow: "rgba(201,124,58,0.35)", crest: "fa-solid fa-fire", accent: "#b57d4d", sigil: "fa-solid fa-fire" },
@@ -154,6 +187,17 @@ export function ClassFlowRouteHost({ shellContext, state, controller }: ReactWiz
                     transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <ClassSkillsPane controller={controller} shellContext={shellContext} state={state} />
+                  </motion.div>
+                ) : shellModel.currentPane === "weaponMasteries" ? (
+                  <motion.div
+                    key="weaponMasteries"
+                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                    className="flex h-full min-h-0 flex-col"
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <WeaponMasteriesPane controller={controller} shellContext={shellContext} state={state} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -398,6 +442,151 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
   );
 }
 
+function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWizardStepProps, "shellContext" | "state" | "controller">) {
+  const viewModel = shellContext.stepViewModel as WeaponMasteriesStepViewModel | undefined;
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  if (!viewModel) return null;
+
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    viewModel.weaponMasterySection.options.filter((option) => option.checked).map((option) => option.id),
+  );
+
+  useEffect(() => {
+    setSelectedIds(viewModel.weaponMasterySection.options.filter((option) => option.checked).map((option) => option.id));
+  }, [viewModel]);
+
+  const theme = getClassTheme(viewModel.classIdentifier);
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const maxCount = viewModel.weaponMasterySection.maxCount;
+  const options = useMemo(
+    () => viewModel.weaponMasterySection.options.map((option) => ({
+      ...option,
+      checked: selectedSet.has(option.id),
+      disabled: !selectedSet.has(option.id) && selectedSet.size >= maxCount,
+    })),
+    [maxCount, selectedSet, viewModel.weaponMasterySection.options],
+  );
+
+  const groupedOptions = useMemo(() => {
+    const groups = new Map<string, WeaponMasteryChoiceOption[]>();
+    for (const option of options) {
+      const groupKey = option.weaponType.startsWith("Martial") ? "Martial Weapons" : "Simple Weapons";
+      const existing = groups.get(groupKey) ?? [];
+      existing.push(option);
+      groups.set(groupKey, existing);
+    }
+    return Array.from(groups.entries()).map(([label, entries]) => ({ label, entries }));
+  }, [options]);
+
+  const selectedEntries = useMemo(
+    () => options.filter((option) => selectedSet.has(option.id)),
+    [options, selectedSet],
+  );
+
+  const masteryReference = useMemo(() => {
+    const seen = new Set<string>();
+    return options
+      .filter((option) => {
+        const key = option.mastery.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((left, right) => left.mastery.localeCompare(right.mastery));
+  }, [options]);
+
+  const onToggleMastery = (weaponId: string) => {
+    const option = options.find((candidate) => candidate.id === weaponId);
+    if (!option) return;
+
+    const nextSelected = new Set(selectedIds);
+    if (nextSelected.has(weaponId)) nextSelected.delete(weaponId);
+    else {
+      if (nextSelected.size >= maxCount) return;
+      nextSelected.add(weaponId);
+    }
+
+    const chosenWeaponMasteries = Array.from(nextSelected);
+    const chosenWeaponMasteryDetails = options
+      .filter((candidate) => nextSelected.has(candidate.id))
+      .map((candidate) => ({
+        id: candidate.id,
+        label: candidate.name,
+        img: candidate.img,
+        mastery: candidate.mastery,
+        tooltip: candidate.tooltip,
+      }));
+
+    state.selections.weaponMasteries = {
+      chosenWeaponMasteries,
+      chosenWeaponMasteryDetails,
+      availableWeaponMasteries: options.length,
+    };
+    controller.updateCurrentStepData({
+      chosenWeaponMasteries,
+      chosenWeaponMasteryDetails,
+      availableWeaponMasteries: options.length,
+    }, { silent: true });
+    setSelectedIds(chosenWeaponMasteries);
+  };
+
+  return (
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.76fr)]">
+      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
+        <div className="border-b border-[#cfb58f]/55 pb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#d5b98b]/70 bg-[rgba(255,247,233,0.78)] px-3 py-1.5 font-fth-cc-body text-sm text-[#6b503f]">
+            <i className={cn(theme.sigil, "text-[#8a613e]")} aria-hidden="true" />
+            <span><strong>Mundane Weapons Only:</strong> Showing mastery-eligible weapons from your enabled equipment packs.</span>
+          </div>
+        </div>
+
+        {viewModel.weaponMasterySection.hasChoices ? (
+          <div className="fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+            <div className="grid gap-4">
+              {groupedOptions.map((group, groupIndex) => (
+                <section className="grid gap-2.5" key={group.label}>
+                  <div className="flex items-center gap-3 px-1">
+                    <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
+                      {group.label}
+                    </span>
+                    <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
+                  </div>
+                  {group.entries.map((option, optionIndex) => (
+                    <WeaponMasteryRow
+                      key={option.id}
+                      onToggle={onToggleMastery}
+                      option={option}
+                      prefersReducedMotion={prefersReducedMotion}
+                      rowIndex={groupIndex * 12 + optionIndex}
+                    />
+                  ))}
+                </section>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-[1.1rem] border border-dashed border-[#c7aa80]/65 bg-[rgba(255,250,241,0.7)] px-4 py-5 font-fth-cc-body text-[#6b5040]">
+            {viewModel.weaponMasterySection.emptyMessage}
+          </div>
+        )}
+      </section>
+
+      <aside className="flex min-h-0 flex-col gap-4">
+        <SelectionSummaryCard
+          accent={theme.accent}
+          glow={theme.glow}
+          label="Weapon Types Chosen"
+          maxCount={maxCount}
+          selectedCount={selectedIds.length}
+          title="Masteries Summary"
+        />
+        <SelectedMasteriesCard selectedEntries={selectedEntries} />
+        <MasteryReferenceCard entries={masteryReference} />
+      </aside>
+    </div>
+  );
+}
+
 function HeaderFlourish({ side }: { side: "left" | "right" }) {
   const containerClasses =
     side === "left"
@@ -616,11 +805,15 @@ function SelectionSummaryCard({
   maxCount,
   accent,
   glow,
+  title = "Selection Summary",
+  label = "Skills Chosen",
 }: {
   selectedCount: number;
   maxCount: number;
   accent: string;
   glow: string;
+  title?: string;
+  label?: string;
 }) {
   return (
     <section
@@ -629,7 +822,7 @@ function SelectionSummaryCard({
     >
       <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Selection Summary</div>
+          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
           <div className="mt-4 flex items-center justify-center gap-3">
             <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
             <div
@@ -646,7 +839,140 @@ function SelectionSummaryCard({
             </div>
             <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
           </div>
-          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#f7e7c8]">Skills Chosen</div>
+          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#f7e7c8]">{label}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WeaponMasteryRow({
+  option,
+  onToggle,
+  prefersReducedMotion,
+  rowIndex,
+}: {
+  option: WeaponMasteryChoiceOption;
+  onToggle: (weaponId: string) => void;
+  prefersReducedMotion: boolean;
+  rowIndex: number;
+}) {
+  return (
+    <motion.button
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+      aria-pressed={option.checked}
+      className={cn(
+        "group relative grid w-full grid-cols-[3.7rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
+        option.checked
+          ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))]"
+          : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
+        option.disabled && !option.checked && "opacity-60",
+      )}
+      disabled={option.disabled && !option.checked}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
+      onClick={() => onToggle(option.id)}
+      title={option.tooltip}
+      transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      type="button"
+      whileHover={
+        prefersReducedMotion || (option.disabled && !option.checked)
+          ? undefined
+          : { scale: 1.01, y: -2, boxShadow: "0 18px 28px rgba(67,43,23,0.12)" }
+      }
+      whileTap={prefersReducedMotion || (option.disabled && !option.checked) ? undefined : { scale: 0.992 }}
+    >
+      <span
+        className={cn(
+          "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,244,220,0.16)]",
+          option.checked ? "border-[#7e8c3f]" : "border-[#8c6a47]",
+        )}
+      >
+        <img alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" src={option.img} />
+        <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,236,0.12),rgba(16,10,7,0.22))]" />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#3f2c22]">
+          {option.name}
+        </span>
+        <span className="mt-0.5 flex flex-wrap gap-1.5">
+          <span className="inline-flex items-center rounded-full border border-[#d4b283] bg-[rgba(255,248,233,0.7)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#7a5b43]">
+            {option.weaponType}
+          </span>
+          <span className="inline-flex items-center rounded-full border border-[#c0a46f] bg-[rgba(115,84,43,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#7a5631]">
+            {option.mastery}
+          </span>
+        </span>
+      </span>
+      <span
+        className={cn(
+          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,244,220,0.12)]",
+          option.checked
+            ? "border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]"
+            : "border-[#d1b58f] bg-[linear-gradient(180deg,rgba(248,238,220,0.9),rgba(227,210,183,0.92))] text-[#ad8f6f]",
+        )}
+      >
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
+        {option.checked ? <i className="fa-solid fa-check" aria-hidden="true" /> : <i className="fa-solid fa-hexagon" aria-hidden="true" />}
+      </span>
+    </motion.button>
+  );
+}
+
+function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMasteryChoiceOption[] }) {
+  return (
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Chosen Weapons</div>
+        </div>
+        <div className="mt-4 grid gap-2.5">
+          {selectedEntries.length > 0 ? selectedEntries.map((entry) => (
+            <div
+              className="grid grid-cols-[2.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[0.95rem] border border-[#8a6a48]/55 bg-[linear-gradient(180deg,rgba(91,61,42,0.42),rgba(38,24,17,0.5))] px-2 py-2"
+              key={entry.id}
+            >
+              <span className="overflow-hidden rounded-[0.7rem] border border-[#9b774f]/60">
+                <img alt="" aria-hidden="true" className="h-10 w-10 object-cover" loading="lazy" src={entry.img} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.name}</span>
+                <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] text-[#d7bb8a]">{entry.mastery}</span>
+              </span>
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]">
+                <i className="fa-solid fa-check" aria-hidden="true" />
+              </span>
+            </div>
+          )) : (
+            <div className="rounded-[0.95rem] border border-dashed border-[#8a6a48]/45 bg-[rgba(44,28,20,0.24)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
+              No weapon masteries chosen yet.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MasteryReferenceCard({ entries }: { entries: WeaponMasteryChoiceOption[] }) {
+  return (
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Mastery Techniques</div>
+        </div>
+        <div className="mt-4 grid gap-2.5">
+          {entries.map((entry) => (
+            <div className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-3" key={entry.mastery}>
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#8a6a48] bg-[linear-gradient(180deg,rgba(101,70,49,0.94),rgba(54,35,25,0.98))] text-[#f2deb6]">
+                <i className={getMasteryIcon(entry.mastery)} aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.mastery}</span>
+                <span className="block font-fth-cc-body text-[0.92rem] leading-6 text-[#dfcaaa]">{entry.masteryDescription}</span>
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -679,6 +1005,29 @@ function ClassProficienciesCard({ savingThrows }: { savingThrows: string[] }) {
 
 function getClassTheme(identifier: string) {
   return CLASS_THEMES[identifier.trim().toLowerCase()] ?? CLASS_THEMES.fighter;
+}
+
+function getMasteryIcon(mastery: string): string {
+  switch (mastery.trim().toLowerCase()) {
+    case "cleave":
+      return "fa-solid fa-arrows-left-right";
+    case "graze":
+      return "fa-solid fa-wind";
+    case "nick":
+      return "fa-solid fa-scissors";
+    case "push":
+      return "fa-solid fa-arrow-right";
+    case "sap":
+      return "fa-solid fa-hand";
+    case "slow":
+      return "fa-solid fa-hourglass-half";
+    case "topple":
+      return "fa-solid fa-person-falling";
+    case "vex":
+      return "fa-solid fa-eye";
+    default:
+      return "fa-solid fa-swords";
+  }
 }
 
 function abilityLabel(abbrev: string): string {

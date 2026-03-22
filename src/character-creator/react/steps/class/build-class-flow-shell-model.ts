@@ -5,7 +5,7 @@ import {
   type ClassAggregateStepperModel,
 } from "../../progress/build-class-aggregate-stepper-model";
 
-export type ClassFlowPaneId = "class" | "classChoices";
+export type ClassFlowPaneId = "class" | "classChoices" | "weaponMasteries";
 export type ClassFlowHeaderTone = "default" | "accent";
 
 export interface ClassFlowShellModel {
@@ -32,7 +32,12 @@ export function buildClassFlowShellModel(
   steps: Array<{ id: string; label: string; icon: string; status: StepStatus; active: boolean }>,
   currentStepId: string,
 ): ClassFlowShellModel {
-  const currentPane: ClassFlowPaneId = currentStepId === "classChoices" ? "classChoices" : "class";
+  const currentPane: ClassFlowPaneId =
+    currentStepId === "classChoices"
+      ? "classChoices"
+      : currentStepId === "weaponMasteries"
+        ? "weaponMasteries"
+        : "class";
   const aggregateStepper = buildClassAggregateStepperModel(state, steps, currentStepId);
   const classSelection = state.selections.class as ClassSelection | undefined;
   const classChoicesStatus = getStepStatus(steps, "classChoices");
@@ -45,7 +50,12 @@ export function buildClassFlowShellModel(
 
   return {
     currentPane,
-    title: currentPane === "classChoices" ? "Choose Your Skills" : "Choose Your Class",
+    title:
+      currentPane === "classChoices"
+        ? "Choose Your Skills"
+        : currentPane === "weaponMasteries"
+          ? "Choose Your Weapon Masteries"
+          : "Choose Your Class",
     headerTone,
     selectedClassIdentifier: classSelection?.identifier ?? null,
     aggregateStepper,

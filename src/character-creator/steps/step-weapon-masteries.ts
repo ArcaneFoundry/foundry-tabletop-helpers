@@ -316,6 +316,7 @@ export function createWeaponMasteriesStep(): WizardStepDefinition {
     id: "weaponMasteries",
     label: "Weapon Masteries",
     icon: "fa-solid fa-swords",
+    renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-weapon-masteries.hbs`,
     dependencies: ["class", "originSummary"],
     isApplicable: (state) => !!state.selections.class?.uuid && (state.selections.class?.weaponMasteryCount ?? 0) > 0,
@@ -345,6 +346,15 @@ export function createWeaponMasteriesStep(): WizardStepDefinition {
       const chosenWeaponMasteryDetails = state.selections.weaponMasteries?.chosenWeaponMasteryDetails ?? [];
 
       return {
+        stepId: "weaponMasteries",
+        stepTitle: "Weapon Masteries",
+        stepLabel: "Choose Your Weapon Masteries",
+        stepIcon: "fa-solid fa-swords",
+        stepDescription: "Choose the weapon types your character has mastered.",
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--weapon-masteries",
+        classIdentifier: state.selections.class?.identifier ?? "",
         className: state.selections.class?.name ?? "Class",
         weaponMasterySection: {
           hasChoices: requiredWeaponMasteries > 0,
@@ -352,15 +362,17 @@ export function createWeaponMasteriesStep(): WizardStepDefinition {
           maxCount: requiredWeaponMasteries,
           selectedEntries: chosenWeaponMasteryDetails.length > 0
             ? chosenWeaponMasteryDetails.map((entry) => ({
-                label: entry.mastery ? `${entry.label} (${entry.mastery})` : entry.label,
+                label: entry.label,
                 img: entry.img,
+                mastery: entry.mastery ?? "",
                 tooltip: entry.tooltip ?? entry.label,
               }))
             : options
               .filter((entry) => chosenWeaponMasteries.has(entry.id))
               .map((entry) => ({
-                label: `${entry.name} (${entry.mastery})`,
+                label: entry.name,
                 img: entry.img,
+                mastery: entry.mastery,
                 tooltip: entry.tooltip,
               })),
           options: options.map((entry) => ({
