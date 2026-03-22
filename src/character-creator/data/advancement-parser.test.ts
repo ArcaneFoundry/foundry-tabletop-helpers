@@ -267,6 +267,82 @@ describe("advancement parser", () => {
     ]);
   });
 
+  it("infers background language requirements when Foundry omits the choice pool", async () => {
+    const { parseBackgroundAdvancementRequirements } = await import("./advancement-parser");
+
+    const result = await parseBackgroundAdvancementRequirements({
+      system: {
+        advancement: [
+          {
+            _id: "choose-languages",
+            type: "Trait",
+            title: "Choose Languages",
+            level: 0,
+            hint: "Your character knows at least three languages: Common plus two languages you roll or choose from the Standard Languages table.",
+            configuration: {
+              choices: [{ count: 2, pool: {} }],
+            },
+          },
+        ],
+      },
+    } as never, 1);
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: "choose-languages",
+        type: "languages",
+        requiredCount: 2,
+        pool: ["languages:standard:*"],
+      }),
+    ]);
+  });
+
+  it("infers species skill choice pools from hint text when Foundry omits the pool", async () => {
+    const { parseSpeciesAdvancementRequirements } = await import("./advancement-parser");
+
+    const result = await parseSpeciesAdvancementRequirements({
+      system: {
+        advancement: [
+          {
+            _id: "skillful",
+            type: "Trait",
+            title: "Skillful",
+            level: 0,
+            hint: "You gain proficiency in one skill of your choice.",
+            configuration: {
+              choices: [{ count: 1, pool: {} }],
+            },
+          },
+          {
+            _id: "keen-senses",
+            type: "Trait",
+            title: "Keen Senses",
+            level: 0,
+            hint: "You have proficiency in the Insight, Perception, or Survival skill.",
+            configuration: {
+              choices: [{ count: 1, pool: {} }],
+            },
+          },
+        ],
+      },
+    } as never, 1);
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: "skillful",
+        type: "skills",
+        requiredCount: 1,
+        pool: ["skills:*"],
+      }),
+      expect.objectContaining({
+        id: "keen-senses",
+        type: "skills",
+        requiredCount: 1,
+        pool: ["skills:ins", "skills:prc", "skills:sur"],
+      }),
+    ]);
+  });
+
   it("parses background weapon proficiency grants from trait advancements", async () => {
     const { parseBackgroundGrants } = await import("./advancement-parser");
 

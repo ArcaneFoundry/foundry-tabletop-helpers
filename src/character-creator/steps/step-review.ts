@@ -36,6 +36,12 @@ import {
   languageLabel,
   toolLabel,
 } from "./class-advancement-utils";
+import {
+  buildOriginSelectedGrantGroups,
+  getRequiredSpeciesItemChoiceCount,
+  getRequiredSpeciesLanguageChoiceCount,
+  getRequiredSpeciesSkillChoiceCount,
+} from "./origin-flow-utils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -118,36 +124,40 @@ export function createReviewStep(): WizardStepDefinition {
         hasTraits: (sel.species?.traits?.length ?? 0) > 0,
       };
 
-      const speciesChoiceCount = sel.species?.languageChoiceCount ?? 0;
       const chosenSpeciesLanguages = sel.speciesChoices?.chosenLanguages ?? [];
       const chosenSpeciesSkills = sel.speciesChoices?.chosenSkills ?? [];
-      const speciesSkillChoiceCount = Math.min(
-        sel.species?.skillChoiceCount ?? 0,
-        (sel.species?.skillChoicePool ?? [])
-          .filter((skill) => skill in SKILLS)
-          .filter((skill) => chosenSpeciesSkills.includes(skill)
-            || !new Set([
-              ...(sel.background?.grants.skillProficiencies ?? []),
-              ...(sel.skills?.chosen ?? []),
-              ...(sel.species?.skillGrants ?? []),
-            ]).has(skill))
-          .length,
-      );
-      const speciesItemChoiceCount = (sel.species?.itemChoiceGroups ?? [])
-        .reduce((sum, group) => sum + Math.min(group.count, group.options.length), 0);
+      const speciesLanguageChoiceCount = getRequiredSpeciesLanguageChoiceCount(state);
+      const speciesSkillChoiceCount = getRequiredSpeciesSkillChoiceCount(state);
+      const speciesItemChoiceCount = getRequiredSpeciesItemChoiceCount(state);
       const chosenSpeciesItems = Object.values(sel.speciesChoices?.chosenItems ?? {}).flat().length;
-      const speciesChoicesSection = {
-        id: "speciesChoices",
-        label: "Species Choices",
-        icon: "fa-solid fa-wand-magic-sparkles",
-        complete: chosenSpeciesLanguages.length >= speciesChoiceCount
-          && chosenSpeciesSkills.length >= speciesSkillChoiceCount
-          && chosenSpeciesItems >= speciesItemChoiceCount,
-        summary: [
-          speciesChoiceCount > 0 ? `${chosenSpeciesLanguages.length} / ${speciesChoiceCount} language choices` : "",
-          speciesSkillChoiceCount > 0 ? `${chosenSpeciesSkills.length} / ${speciesSkillChoiceCount} skill choices` : "",
-          speciesItemChoiceCount > 0 ? `${chosenSpeciesItems} / ${speciesItemChoiceCount} spell/item choices` : "",
-        ].filter(Boolean).join(", ") || "No additional species choices",
+      const speciesSkillsSection = {
+        id: "speciesSkills",
+        label: "Species Skills",
+        icon: "fa-solid fa-list-check",
+        complete: chosenSpeciesSkills.length >= speciesSkillChoiceCount,
+        summary: speciesSkillChoiceCount > 0
+          ? `${chosenSpeciesSkills.length} / ${speciesSkillChoiceCount} skill choices`
+          : "No species skill choices",
+        isSimple: true,
+      };
+      const speciesLanguagesSection = {
+        id: "speciesLanguages",
+        label: "Species Languages",
+        icon: "fa-solid fa-language",
+        complete: chosenSpeciesLanguages.length >= speciesLanguageChoiceCount,
+        summary: speciesLanguageChoiceCount > 0
+          ? `${chosenSpeciesLanguages.length} / ${speciesLanguageChoiceCount} language choices`
+          : "No species language choices",
+        isSimple: true,
+      };
+      const speciesItemChoicesSection = {
+        id: "speciesItemChoices",
+        label: "Species Gifts",
+        icon: "fa-solid fa-hand-sparkles",
+        complete: chosenSpeciesItems >= speciesItemChoiceCount,
+        summary: speciesItemChoiceCount > 0
+          ? `${chosenSpeciesItems} / ${speciesItemChoiceCount} feature choices`
+          : "No species gift choices",
         isSimple: true,
       };
 
@@ -191,18 +201,23 @@ export function createReviewStep(): WizardStepDefinition {
         isSimple: true,
       };
 
-      const originChoicesComplete = (sel.skills?.chosen.length ?? 0) >= (sel.class?.skillCount ?? 0)
-        && (bg?.languages.chosen.length ?? 0) >= (bg?.grants.languageChoiceCount ?? 0)
-        && (!bg?.grants.originFeatUuid || !!sel.originFeat?.uuid);
-      const originChoicesSummary = [
-        `${sel.skills?.chosen.length ?? 0} class skills`,
-        `${bg?.languages.chosen.length ?? 0} chosen languages`,
-        sel.originFeat?.name ?? bgOriginFeat,
-      ].filter(Boolean).join(", ");
+      const backgroundLanguagesSection = {
+        id: "backgroundLanguages",
+        label: "Background Languages",
+        icon: "fa-solid fa-language",
+        complete: (bg?.languages.chosen.length ?? 0) >= (bg?.grants.languageChoiceCount ?? 0),
+        summary: (bg?.grants.languageChoiceCount ?? 0) > 0
+          ? `${bg?.languages.chosen.length ?? 0} / ${bg?.grants.languageChoiceCount ?? 0} language choices`
+          : "No background language choices",
+        isSimple: true,
+      };
+
+      const originChoicesComplete = !bg?.grants.originFeatUuid || !!sel.originFeat?.uuid;
+      const originChoicesSummary = sel.originFeat?.name ?? bgOriginFeat ?? "No origin feat";
 
       const originChoicesSection = {
         id: "originChoices",
-        label: "Origin Choices",
+        label: "Origin Feat",
         icon: "fa-solid fa-hand-sparkles",
         complete: originChoicesComplete,
         summary: originChoicesSummary || "Not selected",
@@ -255,9 +270,12 @@ export function createReviewStep(): WizardStepDefinition {
         classChoicesSection,
         backgroundSection,
         backgroundAsiSection,
+        backgroundLanguagesSection,
         originChoicesSection,
         speciesSection,
-        speciesChoicesSection,
+        speciesSkillsSection,
+        speciesLanguagesSection,
+        speciesItemChoicesSection,
       ];
 
       if (state.applicableSteps.includes("weaponMasteries")) {
@@ -375,6 +393,7 @@ export function createReviewStep(): WizardStepDefinition {
         label: "Origin Summary",
         icon: "fa-solid fa-layer-group",
         complete: !!bg?.uuid && !!sel.species?.uuid,
+        selectedGrantGroups: buildOriginSelectedGrantGroups(state),
         backgroundSkills,
         speciesSkills,
         speciesItems,

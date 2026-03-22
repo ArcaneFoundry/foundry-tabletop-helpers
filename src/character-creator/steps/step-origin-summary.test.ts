@@ -25,6 +25,19 @@ function makeState(): WizardState {
           languageChoiceCount: 1,
           languageChoicePool: [],
         },
+        advancementRequirements: [
+          {
+            id: "background-languages",
+            source: "background",
+            type: "languages",
+            title: "Choose Languages",
+            level: 1,
+            advancementType: "Trait",
+            requiredCount: 1,
+            pool: ["languages:*"],
+            groupKey: "background:languages",
+          },
+        ],
         asi: { assignments: { int: 2, wis: 1 } },
         languages: { fixed: ["common"], chosen: ["draconic"] },
       },
@@ -41,6 +54,31 @@ function makeState(): WizardState {
             title: "Wizard Cantrip",
             count: 1,
             options: [{ uuid: "spell.light", name: "Light" }],
+          },
+        ],
+        advancementRequirements: [
+          {
+            id: "species-skills",
+            source: "species",
+            type: "skills",
+            title: "Keen Senses",
+            level: 1,
+            advancementType: "Trait",
+            requiredCount: 1,
+            pool: ["skills:*"],
+            groupKey: "species:skills",
+          },
+          {
+            id: "wizard-cantrip",
+            source: "species",
+            type: "itemChoices",
+            title: "Wizard Cantrip",
+            level: 1,
+            advancementType: "ItemChoice",
+            requiredCount: 1,
+            pool: [],
+            itemChoices: [{ uuid: "spell.light", name: "Light" }],
+            groupKey: "species:item",
           },
         ],
         languageChoiceCount: 0,
@@ -77,13 +115,46 @@ describe("step origin summary", () => {
     const vm = await createOriginSummaryStep().buildViewModel(makeState());
 
     expect(vm).toMatchObject({
+      nextButtonLabel: "Confirm",
       backgroundName: "Sage",
       speciesName: "Elf",
-      speciesSkills: ["Perception", "Nature"],
+      fixedLanguages: ["Common", "Elvish"],
       speciesItems: ["Light"],
       toolProficiency: "Art: Calligrapher",
       originFeatName: "Magic Initiate",
       speciesTraits: ["Darkvision"],
+      selectedGrantGroups: [
+        {
+          id: "background-proficiencies",
+          title: "Background Proficiencies",
+          entries: ["Arcana", "Art Calligrapher"],
+        },
+        {
+          id: "background-languages",
+          title: "Choose Languages",
+          entries: ["Draconic"],
+        },
+        {
+          id: "background-origin-feat",
+          title: "Background Feat",
+          entries: ["Magic Initiate"],
+        },
+        {
+          id: "species-traits",
+          title: "Species Traits",
+          entries: ["Darkvision"],
+        },
+        {
+          id: "species-skills",
+          title: "Keen Senses",
+          entries: ["Nature"],
+        },
+        {
+          id: "wizard-cantrip",
+          title: "Wizard Cantrip",
+          entries: ["Light"],
+        },
+      ],
     });
     expect(vm.languages).toEqual(["Common", "Elvish", "Draconic", "Giant"]);
   });

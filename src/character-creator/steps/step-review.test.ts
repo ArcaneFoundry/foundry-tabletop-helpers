@@ -34,6 +34,31 @@ function makeState(): WizardState {
             options: [{ uuid: "spell.light", name: "Light" }],
           },
         ],
+        advancementRequirements: [
+          {
+            id: "species-skillful",
+            source: "species",
+            type: "skills",
+            title: "Skillful",
+            level: 1,
+            advancementType: "Trait",
+            requiredCount: 1,
+            pool: ["skills:*"],
+            groupKey: "species:skills",
+          },
+          {
+            id: "wizard-cantrip",
+            source: "species",
+            type: "itemChoices",
+            title: "Versatile",
+            level: 1,
+            advancementType: "ItemChoice",
+            requiredCount: 1,
+            pool: [],
+            itemChoices: [{ uuid: "spell.light", name: "Light" }],
+            groupKey: "species:item",
+          },
+        ],
       },
       speciesChoices: {
         hasChoices: true,
@@ -143,7 +168,9 @@ describe("step review", () => {
     const sections = viewModel.sections as Array<Record<string, unknown>>;
     const spellsSection = sections.find((section) => section.id === "spells");
     const originSummarySection = sections.find((section) => section.id === "originSummary");
-    const speciesChoicesSection = sections.find((section) => section.id === "speciesChoices");
+    const backgroundLanguagesSection = sections.find((section) => section.id === "backgroundLanguages");
+    const speciesSkillsSection = sections.find((section) => section.id === "speciesSkills");
+    const speciesItemChoicesSection = sections.find((section) => section.id === "speciesItemChoices");
     const classChoicesSection = sections.find((section) => section.id === "classChoices");
     const weaponMasteriesSection = sections.find((section) => section.id === "weaponMasteries");
 
@@ -164,8 +191,14 @@ describe("step review", () => {
       speciesItems: ["Light"],
       hasSpeciesSkills: true,
     });
-    expect(speciesChoicesSection).toMatchObject({
-      summary: "1 / 1 skill choices, 1 / 1 spell/item choices",
+    expect(backgroundLanguagesSection).toMatchObject({
+      summary: "2 / 2 language choices",
+    });
+    expect(speciesSkillsSection).toMatchObject({
+      summary: "1 / 1 skill choices",
+    });
+    expect(speciesItemChoicesSection).toMatchObject({
+      summary: "1 / 1 feature choices",
     });
   });
 
@@ -239,7 +272,8 @@ describe("step review", () => {
     const originChoicesSection = sections.find((section) => section.id === "originChoices");
 
     expect(originChoicesSection).toMatchObject({
-      summary: "2 class skills, 2 chosen languages, Alert",
+      label: "Origin Feat",
+      summary: "Alert",
       img: "alert.png",
     });
   });
@@ -259,7 +293,7 @@ describe("step review", () => {
 
     expect(viewModel).toMatchObject({
       allComplete: false,
-      incompleteSectionLabels: expect.arrayContaining(["Species Choices"]),
+      incompleteSectionLabels: expect.arrayContaining(["Species Skills", "Species Gifts"]),
     });
   });
 });

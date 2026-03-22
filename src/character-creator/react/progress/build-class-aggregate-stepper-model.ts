@@ -1,4 +1,5 @@
 import type { StepStatus, WizardState } from "../../character-creator-types";
+import { getClassPresentation } from "../steps/class/class-presentation";
 
 export type ClassAggregatePresentationStatus =
   | "pending"
@@ -9,7 +10,7 @@ export type ClassAggregatePresentationStatus =
   | "skipped";
 
 export interface ClassAggregateMilestoneNode {
-  id: "class" | "selections" | "classSummary";
+  id: string;
   label: string;
   icon: string;
   active: boolean;
@@ -71,12 +72,13 @@ export function buildClassAggregateStepperModel(
   const selectionSteps = steps.filter((step) => isSelectionStep(step.id));
   const selectionComplete = selectionSteps.every((step) => step.status === "complete");
   const onSelectionStep = isSelectionStep(currentStepId);
+  const classPresentation = getClassPresentation(state.selections.class?.identifier, state.selections.class?.name);
 
   const milestones: ClassAggregateMilestoneNode[] = [
     {
       id: "class",
-      label: "Class",
-      icon: "fa-solid fa-shield-halved",
+      label: hasSelectedClass ? classPresentation.label : "Class",
+      icon: hasSelectedClass ? classPresentation.icon : "fa-solid fa-shield-halved",
       active: currentStepId === "class",
       status: !hasSelectedClass
         ? "pending"

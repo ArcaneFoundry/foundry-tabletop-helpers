@@ -233,8 +233,9 @@ async function renderOriginFeatDetailPane(
 export function createOriginChoicesStep(): WizardStepDefinition {
   return {
     id: "originChoices",
-    label: "Origin Choices",
+    label: "Origin Feat",
     icon: "fa-solid fa-hand-sparkles",
+    renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-origin-choices.hbs`,
     dependencies: ["background", "class"],
     isApplicable: (state) =>
@@ -290,6 +291,13 @@ export function createOriginChoicesStep(): WizardStepDefinition {
         : null;
 
       return {
+        stepId: "originChoices",
+        stepTitle: "Origin Feat",
+        stepLabel: "Origin Feat",
+        stepIcon: "fa-solid fa-hand-sparkles",
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--origin-flow",
         className: state.selections.class?.name ?? "",
         backgroundName: state.selections.background?.name ?? "",
         chosenClassSkillChips: getChosenClassSkills(state).map(skillLabel),

@@ -198,7 +198,7 @@ export function WizardShell({
           >
             <span className="pointer-events-none absolute inset-[2px] rounded-[0.85rem] border border-white/10" />
             <ButtonOrnament side="left" />
-            <span>Next</span>
+            <span>{shellContext.nextButtonLabel ?? "Next"}</span>
             <i className="fa-solid fa-chevron-right" aria-hidden="true" />
             <ButtonOrnament side="right" />
           </motion.button>

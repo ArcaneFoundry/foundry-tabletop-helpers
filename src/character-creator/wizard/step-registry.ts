@@ -12,6 +12,7 @@ import { createAbilitiesStep } from "../steps/step-abilities";
 import { createSpeciesStep } from "../steps/step-species";
 import { createBackgroundStep } from "../steps/step-background";
 import { createBackgroundAsiStep } from "../steps/step-background-asi";
+import { createBackgroundLanguagesStep } from "../steps/step-background-languages";
 import { createClassStep } from "../steps/step-class";
 import { createClassChoicesStep } from "../steps/step-class-choices";
 import {
@@ -24,7 +25,11 @@ import { createClassSummaryStep } from "../steps/step-class-summary";
 import { createWeaponMasteriesStep } from "../steps/step-weapon-masteries";
 import { createOriginChoicesStep } from "../steps/step-origin-choices";
 import { createSubclassStep } from "../steps/step-subclass";
-import { createSpeciesChoicesStep } from "../steps/step-species-choices";
+import {
+  createSpeciesItemChoicesStep,
+  createSpeciesLanguagesStep,
+  createSpeciesSkillsStep,
+} from "../steps/step-species-advancements";
 import { createOriginSummaryStep } from "../steps/step-origin-summary";
 import { createFeatsStep } from "../steps/step-feats";
 import { createSpellsStep } from "../steps/step-spells";
@@ -47,9 +52,12 @@ const STEP_ORDER = [
   "subclass",
   "background",
   "backgroundAsi",
+  "backgroundLanguages",
   "originChoices",
   "species",
-  "speciesChoices",
+  "speciesSkills",
+  "speciesLanguages",
+  "speciesItemChoices",
   "originSummary",
   "abilities",
   "feats",
@@ -109,9 +117,12 @@ const STEP_ATMOSPHERES: Record<string, string> = {
   subclass: "cc-atmosphere--forge",
   background: "cc-atmosphere--shadow",
   backgroundAsi: "cc-atmosphere--shadow",
+  backgroundLanguages: "cc-atmosphere--shadow",
   originChoices: "cc-atmosphere--crimson",
   species: "cc-atmosphere--nature",
-  speciesChoices: "cc-atmosphere--nature",
+  speciesSkills: "cc-atmosphere--nature",
+  speciesLanguages: "cc-atmosphere--nature",
+  speciesItemChoices: "cc-atmosphere--nature",
   originSummary: "cc-atmosphere--gold",
   weaponMasteries: "cc-atmosphere--forge",
   classItemChoices: "cc-atmosphere--forge",
@@ -176,9 +187,12 @@ export function registerAllSteps(): void {
   registerStep(createSubclassStep());
   registerStep(createBackgroundStep());
   registerStep(createBackgroundAsiStep());
+  registerStep(createBackgroundLanguagesStep());
   registerStep(createOriginChoicesStep());
   registerStep(createSpeciesStep());
-  registerStep(createSpeciesChoicesStep());
+  registerStep(createSpeciesSkillsStep());
+  registerStep(createSpeciesLanguagesStep());
+  registerStep(createSpeciesItemChoicesStep());
   registerStep(createOriginSummaryStep());
   registerStep(createWeaponMasteriesStep());
   registerStep(createAbilitiesStep());

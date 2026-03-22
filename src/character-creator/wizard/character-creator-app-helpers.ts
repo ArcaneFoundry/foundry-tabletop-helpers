@@ -39,6 +39,7 @@ export async function buildWizardShellContext(
   const hideStepIndicator = vmData.hideStepIndicator as boolean | undefined;
   const hideShellHeader = vmData.hideShellHeader as boolean | undefined;
   const shellContentClass = vmData.shellContentClass as string | undefined;
+  const nextButtonLabel = vmData.nextButtonLabel as string | undefined;
   const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
 
   return {
@@ -50,6 +51,7 @@ export async function buildWizardShellContext(
     canGoBack: machine.canGoBack,
     canGoNext: machine.canGoNext,
     isReviewStep: machine.isReviewStep,
+    nextButtonLabel,
     statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
     atmosphereClass: getStepAtmosphere(machine.currentStepId),
     headerTitle,

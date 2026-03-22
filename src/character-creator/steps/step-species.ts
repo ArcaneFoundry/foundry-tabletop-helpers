@@ -17,6 +17,7 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import {
+  parseSpeciesAdvancementRequirements,
   parseSpeciesTraits,
   parseSpeciesLanguages,
   parseSpeciesProficiencies,
@@ -36,6 +37,33 @@ function splitSpeciesName(name: string): [string, string] {
   const commaIdx = name.indexOf(",");
   if (commaIdx < 0) return [name.trim(), ""];
   return [name.slice(0, commaIdx).trim(), name.slice(commaIdx + 1).trim()];
+}
+
+export async function buildSpeciesSelectionFromEntry(
+  entry: CreatorIndexEntry,
+): Promise<SpeciesSelection> {
+  const selection: SpeciesSelection = {
+    uuid: entry.uuid,
+    name: entry.name,
+    img: entry.img,
+  };
+
+  const doc = await compendiumIndexer.fetchDocument(entry.uuid);
+  if (!doc) return selection;
+
+  selection.traits = parseSpeciesTraits(doc);
+  const langs = parseSpeciesLanguages(doc);
+  selection.languageGrants = langs.fixed;
+  selection.languageChoiceCount = langs.choiceCount;
+  selection.languageChoicePool = langs.choicePool;
+  const profs = parseSpeciesProficiencies(doc);
+  selection.skillGrants = profs.fixedSkills;
+  selection.weaponProficiencies = profs.fixedWeaponProficiencies;
+  selection.skillChoiceCount = profs.skillChoiceCount;
+  selection.skillChoicePool = profs.skillChoicePool;
+  selection.itemChoiceGroups = await parseSpeciesItemChoices(doc);
+  selection.advancementRequirements = await parseSpeciesAdvancementRequirements(doc);
+  return selection;
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
@@ -73,6 +101,9 @@ export function createSpeciesStep(): WizardStepDefinition {
         stepTitle: "Character Origins:",
         stepLabel: "Species",
         stepIcon: "fa-solid fa-dna",
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--origin-flow",
         stepDescription: "Choose your character's species.",
         entries: sorted.map((e) => ({
           ...e,
@@ -95,28 +126,11 @@ export function createSpeciesStep(): WizardStepDefinition {
           const entry = entries.find((e) => e.uuid === uuid);
           if (!entry) return;
 
-          const selection: SpeciesSelection = {
-            uuid: entry.uuid,
-            name: entry.name,
-            img: entry.img,
-          };
+          const selection: SpeciesSelection = { uuid: entry.uuid, name: entry.name, img: entry.img };
 
           // Fetch full document to parse species traits and languages
           try {
-            const doc = await compendiumIndexer.fetchDocument(uuid);
-            if (doc) {
-              selection.traits = parseSpeciesTraits(doc);
-              const langs = parseSpeciesLanguages(doc);
-              selection.languageGrants = langs.fixed;
-              selection.languageChoiceCount = langs.choiceCount;
-              selection.languageChoicePool = langs.choicePool;
-              const profs = parseSpeciesProficiencies(doc);
-              selection.skillGrants = profs.fixedSkills;
-              selection.weaponProficiencies = profs.fixedWeaponProficiencies;
-              selection.skillChoiceCount = profs.skillChoiceCount;
-              selection.skillChoicePool = profs.skillChoicePool;
-              selection.itemChoiceGroups = await parseSpeciesItemChoices(doc);
-            }
+            Object.assign(selection, await buildSpeciesSelectionFromEntry(entry));
           } catch (err) {
             Log.warn("Failed to parse species data", err);
           }
@@ -183,3 +197,8 @@ function patchDetailPanelDOM(el: HTMLElement, entry: CreatorIndexEntry, uuid: st
     descPlaceholder.textContent = "No description available.";
   });
 }
+
+export const __speciesStepInternals = {
+  buildSpeciesSelectionFromEntry,
+  getAvailableSpecies,
+};

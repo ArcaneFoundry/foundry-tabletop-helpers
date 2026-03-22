@@ -6,10 +6,13 @@ import type {
 
 /** When a step changes, downstream dependent steps are invalidated. */
 export const DEPENDENCY_CASCADE: Record<string, string[]> = {
-  species: ["speciesChoices", "originChoices", "originSummary"],
-  speciesChoices: ["originSummary"],
-  background: ["backgroundAsi", "originChoices", "originSummary", "abilities"],
-  backgroundAsi: ["abilities", "originSummary"],
+  species: ["speciesSkills", "speciesLanguages", "speciesItemChoices", "originSummary"],
+  speciesSkills: ["speciesItemChoices", "originSummary"],
+  speciesLanguages: ["speciesItemChoices", "originSummary"],
+  speciesItemChoices: ["originSummary"],
+  background: ["backgroundAsi", "backgroundLanguages", "originChoices", "speciesSkills", "speciesLanguages", "speciesItemChoices", "originSummary", "abilities"],
+  backgroundAsi: ["backgroundLanguages", "originChoices", "originSummary", "abilities"],
+  backgroundLanguages: ["originChoices", "originSummary", "abilities"],
   originChoices: ["originSummary"],
   originSummary: [],
   class: ["classChoices", "classExpertise", "classLanguages", "classTools", "weaponMasteries", "classItemChoices", "classSummary", "subclass", "originChoices", "feats", "spells", "equipment"],

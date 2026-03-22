@@ -344,6 +344,8 @@ export interface SpeciesSelection {
   skillChoicePool?: string[];
   /** Species level-0 item/spell choice groups parsed from ItemGrant advancements. */
   itemChoiceGroups?: SpeciesItemChoiceGroup[];
+  /** UI-facing normalized level-0/1 choice requirements surfaced by the species. */
+  advancementRequirements?: OriginAdvancementRequirement[];
 }
 
 export interface SpeciesItemChoiceOption {
@@ -356,6 +358,30 @@ export interface SpeciesItemChoiceGroup {
   title: string;
   count: number;
   options: SpeciesItemChoiceOption[];
+}
+
+export type OriginAdvancementRequirementType =
+  | "skills"
+  | "languages"
+  | "itemChoices";
+
+export interface OriginAdvancementItemChoiceOption {
+  uuid: string;
+  name: string;
+  img?: string;
+}
+
+export interface OriginAdvancementRequirement {
+  id: string;
+  source: "background" | "species";
+  type: OriginAdvancementRequirementType;
+  title: string;
+  level: number;
+  advancementType: string;
+  requiredCount: number;
+  pool: string[];
+  itemChoices?: OriginAdvancementItemChoiceOption[];
+  groupKey: string;
 }
 
 /** What a background grants — parsed from advancement data. */
@@ -436,6 +462,8 @@ export interface BackgroundSelection {
   img: string;
   /** Parsed grants from the background's advancement data. */
   grants: BackgroundGrants;
+  /** UI-facing normalized level-0/1 choice requirements surfaced by the background. */
+  advancementRequirements?: OriginAdvancementRequirement[];
   /** Player's ASI distribution. */
   asi: BackgroundASI;
   /** Player's language selections. */
@@ -682,6 +710,7 @@ export interface WizardShellContext {
   canGoBack: boolean;
   canGoNext: boolean;
   isReviewStep: boolean;
+  nextButtonLabel?: string;
   /** Short status hint for the navigation bar */
   statusHint: string;
   /** Atmospheric gradient class for current step */

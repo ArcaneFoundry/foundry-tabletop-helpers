@@ -34,6 +34,7 @@ export function createBackgroundAsiStep(): WizardStepDefinition {
     id: "backgroundAsi",
     label: "Background Ability Scores",
     icon: "fa-solid fa-chart-line",
+    renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-background-asi.hbs`,
     dependencies: ["background"],
     isApplicable: (state) => !!state.selections.background?.uuid,
@@ -93,6 +94,13 @@ export function createBackgroundAsiStep(): WizardStepDefinition {
 
       return {
         hasBackground: true,
+        stepId: "backgroundAsi",
+        stepTitle: "Background Ability Scores",
+        stepLabel: "Background Ability Scores",
+        stepIcon: "fa-solid fa-chart-line",
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--origin-flow",
         backgroundName: bg.name,
         backgroundImg: bg.img,
         hasASI: bg.grants.asiPoints > 0,

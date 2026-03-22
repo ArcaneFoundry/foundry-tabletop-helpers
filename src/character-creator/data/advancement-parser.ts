@@ -15,6 +15,8 @@ import type {
   BackgroundGrants,
   ClassAdvancementRequirement,
   ClassAdvancementRequirementType,
+  OriginAdvancementRequirement,
+  OriginAdvancementRequirementType,
   SpeciesItemChoiceGroup,
 } from "../character-creator-types";
 import { ABILITY_KEYS, SKILLS } from "./dnd5e-constants";
@@ -26,6 +28,7 @@ interface AdvancementEntry {
   _id?: string;
   type?: string;
   title?: string;
+  hint?: string;
   level?: number;
   classRestriction?: string;
   configuration?: Record<string, unknown>;
@@ -142,6 +145,30 @@ function classifyClassAdvancementRequirement(
   return null;
 }
 
+function classifyOriginAdvancementRequirement(
+  entry: AdvancementEntry,
+): OriginAdvancementRequirementType | null {
+  if (entry.type === "ItemChoice") return "itemChoices";
+  if (entry.type !== "Trait") return null;
+
+  const title = (entry.title ?? "").trim().toLowerCase();
+  const hint = typeof entry.hint === "string" ? entry.hint.trim().toLowerCase() : "";
+  const choiceEntries = Array.isArray(entry.configuration?.choices)
+    ? entry.configuration.choices as Array<Record<string, unknown>>
+    : Object.values(entry.configuration?.choices as Record<string, unknown> ?? {}).filter((choice) =>
+      choice && typeof choice === "object"
+    ) as Array<Record<string, unknown>>;
+  const normalizedPool = choiceEntries.flatMap((choice) => normalizePoolValues(choice.pool));
+
+  if (normalizedPool.some((value) => value.startsWith("skills:"))) return "skills";
+  if (normalizedPool.some((value) => value.startsWith("languages:"))) return "languages";
+  if (title.includes("choose languages") || hint.includes("standard languages table")) return "languages";
+  if (title === "skillful" || title === "keen senses") return "skills";
+  if (hint.includes("one skill of your choice") || hint.includes("one of the following skills")) return "skills";
+  if (normalizedPool.length === 0) return null;
+  return null;
+}
+
 function buildImplicitPool(type: ClassAdvancementRequirementType): string[] {
   switch (type) {
     case "expertise":
@@ -153,6 +180,63 @@ function buildImplicitPool(type: ClassAdvancementRequirementType): string[] {
     default:
       return [];
   }
+}
+
+function buildOriginImplicitPool(type: OriginAdvancementRequirementType): string[] {
+  switch (type) {
+    case "skills":
+      return ["skills:*"];
+    case "languages":
+      return ["languages:standard:*"];
+    default:
+      return [];
+  }
+}
+
+function inferOriginSkillPool(entry: AdvancementEntry): string[] {
+  const hint = typeof entry.hint === "string" ? entry.hint.toLowerCase() : "";
+  const matches = Object.entries(SKILLS)
+    .filter(([, skill]) => hint.includes(skill.label.toLowerCase()))
+    .map(([key]) => `skills:${key}`);
+  return matches.length > 0 ? matches : buildOriginImplicitPool("skills");
+}
+
+async function resolveOriginItemChoiceOptions(value: unknown): Promise<OriginAdvancementRequirement["itemChoices"]> {
+  const options: NonNullable<OriginAdvancementRequirement["itemChoices"]> = [];
+  if (!Array.isArray(value)) return options;
+
+  for (const entry of value) {
+    if (typeof entry === "string") {
+      const itemDoc = await fromUuid(entry);
+      if (!itemDoc) continue;
+      options.push({
+        uuid: entry,
+        name: itemDoc.name ?? entry,
+        img: itemDoc.img ?? "",
+      });
+      continue;
+    }
+
+    if (!entry || typeof entry !== "object") continue;
+    const itemEntry = entry as { uuid?: unknown; name?: unknown; img?: unknown };
+    if (typeof itemEntry.uuid !== "string" || itemEntry.uuid.length === 0) continue;
+
+    let name = typeof itemEntry.name === "string" ? itemEntry.name : "";
+    let img = typeof itemEntry.img === "string" ? itemEntry.img : "";
+    if (!name || !img) {
+      const itemDoc = await fromUuid(itemEntry.uuid);
+      name ||= itemDoc?.name ?? "";
+      img ||= itemDoc?.img ?? "";
+    }
+
+    options.push({
+      uuid: itemEntry.uuid,
+      name: name || itemEntry.uuid.split(".").at(-1) || "Choice",
+      img,
+    });
+  }
+
+  return options;
 }
 
 /** All 18 skill abbreviation keys. */
@@ -416,6 +500,74 @@ export async function parseClassAdvancementRequirements(
   return requirements;
 }
 
+async function parseOriginAdvancementRequirements(
+  doc: FoundryDocument,
+  source: "background" | "species",
+  maxLevel: number,
+): Promise<OriginAdvancementRequirement[]> {
+  const advancements = getAdvancementArray(doc);
+  const requirements: OriginAdvancementRequirement[] = [];
+
+  for (const [index, entry] of advancements.entries()) {
+    const type = classifyOriginAdvancementRequirement(entry);
+    if (!type) continue;
+
+    const level = typeof entry.level === "number" ? entry.level : 0;
+    if (level > maxLevel) continue;
+
+    const requiredCount = getChoiceCount(entry.configuration?.choices);
+    if (requiredCount <= 0) continue;
+
+    const explicitPool = normalizePoolValues(
+      type === "itemChoices"
+        ? entry.configuration?.pool
+        : Array.isArray(entry.configuration?.choices)
+          ? (entry.configuration?.choices as Array<Record<string, unknown>>).flatMap((choice) => normalizePoolValues(choice.pool))
+          : Object.values(entry.configuration?.choices as Record<string, unknown> ?? {}).flatMap((choice) =>
+            normalizePoolValues((choice as { pool?: unknown }).pool)
+          ),
+    );
+
+    const requirement: OriginAdvancementRequirement = {
+      id: entry._id ?? `${source}-${type}-${level}-${index}`,
+      source,
+      type,
+      title: entry.title ?? (source === "background" ? "Background Choice" : "Species Choice"),
+      level,
+      advancementType: entry.type ?? "Trait",
+      requiredCount,
+      pool: explicitPool.length > 0
+        ? explicitPool
+        : type === "skills"
+          ? inferOriginSkillPool(entry)
+          : buildOriginImplicitPool(type),
+      groupKey: `${source}-${type}`,
+    };
+
+    if (type === "itemChoices") {
+      requirement.itemChoices = await resolveOriginItemChoiceOptions(entry.configuration?.pool);
+    }
+
+    requirements.push(requirement);
+  }
+
+  return requirements;
+}
+
+export async function parseBackgroundAdvancementRequirements(
+  doc: FoundryDocument,
+  maxLevel = 1,
+): Promise<OriginAdvancementRequirement[]> {
+  return parseOriginAdvancementRequirements(doc, "background", maxLevel);
+}
+
+export async function parseSpeciesAdvancementRequirements(
+  doc: FoundryDocument,
+  maxLevel = 1,
+): Promise<OriginAdvancementRequirement[]> {
+  return parseOriginAdvancementRequirements(doc, "species", maxLevel);
+}
+
 /* ── Class Spellcasting ────────────────────────────────── */
 
 /** Parsed spellcasting configuration from a class document. */
@@ -641,6 +793,22 @@ export function parseSpeciesProficiencies(doc: FoundryDocument): SpeciesProficie
 }
 
 export async function parseSpeciesItemChoices(doc: FoundryDocument): Promise<SpeciesItemChoiceGroup[]> {
+  const requirementGroups = await parseSpeciesAdvancementRequirements(doc, 1);
+  const normalizedGroups = requirementGroups
+    .filter((requirement) => requirement.type === "itemChoices")
+    .map((requirement) => ({
+      id: requirement.id,
+      title: requirement.title,
+      count: requirement.requiredCount,
+      options: (requirement.itemChoices ?? []).map((option) => ({
+        uuid: option.uuid,
+        name: option.name,
+      })),
+    }))
+    .filter((group) => group.options.length > 0);
+
+  if (normalizedGroups.length > 0) return normalizedGroups;
+
   const advancements = getAdvancementArray(doc);
   const groups: SpeciesItemChoiceGroup[] = [];
 

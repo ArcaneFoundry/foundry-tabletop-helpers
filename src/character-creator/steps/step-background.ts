@@ -15,7 +15,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseBackgroundGrants } from "../data/advancement-parser";
+import { parseBackgroundAdvancementRequirements, parseBackgroundGrants } from "../data/advancement-parser";
 import {
   beginCardSelectionUpdate,
   isCurrentCardSelectionUpdate,
@@ -33,13 +33,35 @@ function getAvailableBackgrounds(state: WizardState): CreatorIndexEntry[] {
   return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
 }
 
+export async function buildBackgroundSelectionFromEntry(
+  entry: CreatorIndexEntry,
+): Promise<BackgroundSelection | null> {
+  const doc = await compendiumIndexer.fetchDocument(entry.uuid);
+  if (!doc) return null;
+
+  const grants = await parseBackgroundGrants(doc);
+  return {
+    uuid: entry.uuid,
+    name: entry.name,
+    img: entry.img,
+    grants,
+    advancementRequirements: await parseBackgroundAdvancementRequirements(doc),
+    asi: { assignments: {} },
+    languages: {
+      fixed: grants.languageGrants,
+      chosen: [],
+    },
+  };
+}
+
 /* ── Step Definition ─────────────────────────────────────── */
 
 export function createBackgroundStep(): WizardStepDefinition {
   return {
     id: "background",
-    label: "Character Origins",
+    label: "Background",
     icon: "fa-solid fa-scroll",
+    renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
     dependencies: [],
     isApplicable: () => true,
@@ -68,6 +90,9 @@ export function createBackgroundStep(): WizardStepDefinition {
         stepTitle: "Character Origins:",
         stepLabel: "Background",
         stepIcon: "fa-solid fa-scroll",
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--origin-flow",
         stepDescription: "Select the background that shaped your character before they became an adventurer.",
         emptySelectionPrompt: "Choose the past that forged your instincts, outlook, and place in the world.",
         entries: entries.map((e) => ({
@@ -94,21 +119,8 @@ export function createBackgroundStep(): WizardStepDefinition {
           const requestId = beginCardSelectionUpdate(el, uuid, entry);
 
           try {
-            const doc = await compendiumIndexer.fetchDocument(uuid);
-            if (!doc) return;
-            const grants = await parseBackgroundGrants(doc);
-
-            const selection: BackgroundSelection = {
-              uuid: entry.uuid,
-              name: entry.name,
-              img: entry.img,
-              grants,
-              asi: { assignments: {} },
-              languages: {
-                fixed: grants.languageGrants,
-                chosen: [],
-              },
-            };
+            const selection = await buildBackgroundSelectionFromEntry(entry);
+            if (!selection) return;
 
             const selectedEntry = {
               ...entry,
@@ -139,6 +151,7 @@ function isDatasetElementLike(value: unknown): value is DatasetElementLike {
 }
 
 export const __backgroundStepInternals = {
+  buildBackgroundSelectionFromEntry,
   getAvailableBackgrounds,
 };
 
