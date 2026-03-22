@@ -1,6 +1,7 @@
 import { MOD } from "../../logger";
 import type { SpeciesChoicesState, StepCallbacks, WizardState, WizardStepDefinition } from "../character-creator-types";
 import { ABILITY_ABBREVS, LANGUAGE_LABELS, SKILLS, STANDARD_LANGUAGES } from "../data/dnd5e-constants";
+import { isSelectableLanguageId } from "./class-advancement-utils";
 
 function buildSpeciesChoicesState(state: WizardState): SpeciesChoicesState {
   const chosenLanguages = state.selections.speciesChoices?.chosenLanguages ?? [];
@@ -166,6 +167,7 @@ export function createSpeciesChoicesStep(): WizardStepDefinition {
         return {
           index,
           options: STANDARD_LANGUAGES
+            .filter((language) => isSelectableLanguageId(language.id))
             .filter((language) => !fixedLanguages.has(language.id))
             .map((language) => ({
               id: language.id,

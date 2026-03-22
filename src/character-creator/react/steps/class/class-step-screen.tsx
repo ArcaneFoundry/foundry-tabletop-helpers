@@ -269,31 +269,68 @@ function MilestoneNode({
   milestone: ClassAggregateMilestoneNode;
   prefersReducedMotion: boolean;
 }) {
+  const isAccent = milestone.status === "selection-active" || milestone.status === "in-progress";
+
   return (
     <motion.div
       animate={prefersReducedMotion ? undefined : getMilestoneAnimate(milestone.status)}
-      className="flex items-center gap-2"
+      className="relative flex items-center gap-2.5"
       transition={getMilestoneTransition(milestone.status, prefersReducedMotion)}
     >
       <span
         className={cn(
-          "relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_8px_16px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
-          getMilestoneClassName(milestone.status),
+          "relative inline-flex items-center gap-2 rounded-full px-1.5 py-1",
+          getMilestonePlateClassName(milestone.status),
         )}
-        title={milestone.label}
       >
-        <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/20" />
-        <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.32),transparent_42%)]" />
-        <span className="sr-only">{milestone.label}</span>
-        <i className={cn(milestone.icon, "relative z-10")} aria-hidden="true" />
+        <span
+          className={cn(
+            "relative z-10 inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
+            getMilestoneClassName(milestone.status),
+          )}
+          title={milestone.label}
+        >
+          <span
+            className={cn(
+              "pointer-events-none absolute inset-[-5px] rounded-full transition-opacity",
+              getMilestoneHaloClassName(milestone.status),
+            )}
+          />
+          <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/20" />
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.32),transparent_42%)]" />
+          <span className="sr-only">{milestone.label}</span>
+          <i className={cn(milestone.icon, "relative z-10")} aria-hidden="true" />
+        </span>
+        {isAccent ? (
+          <span
+            aria-hidden="true"
+            className={cn(
+              "absolute inset-y-1 left-1 z-0 rounded-full border opacity-100",
+              milestone.status === "in-progress"
+                ? "right-1 border-[#5eab98]/55 bg-[linear-gradient(180deg,rgba(236,250,245,0.92),rgba(194,233,222,0.82))] shadow-[inset_0_1px_0_rgba(255,255,255,0.78),0_10px_20px_rgba(79,138,124,0.12)]"
+                : "right-1 border-[#d8bb86]/65 bg-[linear-gradient(180deg,rgba(255,250,240,0.94),rgba(244,228,196,0.82))] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_10px_20px_rgba(124,90,46,0.12)]",
+            )}
+          />
+        ) : null}
       </span>
       <span
         className={cn(
-          "font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] md:text-[0.72rem]",
-          milestone.active ? "text-[#5a3a21]" : milestone.status === "complete" ? "text-[#7c5a31]" : "text-[#8d7257]",
+          "relative min-w-[6.5rem] rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] md:text-[0.72rem]",
+          getMilestoneLabelClassName(milestone.status),
         )}
       >
-        {milestone.label}
+        {isAccent ? (
+          <span
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-x-3 bottom-[0.42rem] h-px",
+              milestone.status === "in-progress"
+                ? "bg-[linear-gradient(90deg,rgba(78,140,124,0),rgba(78,140,124,0.82),rgba(78,140,124,0))]"
+                : "bg-[linear-gradient(90deg,rgba(203,152,69,0),rgba(203,152,69,0.82),rgba(203,152,69,0))]",
+            )}
+          />
+        ) : null}
+        <span className="relative z-10">{milestone.label}</span>
       </span>
     </motion.div>
   );
@@ -378,9 +415,9 @@ function getMilestoneTransition(status: ClassAggregatePresentationStatus, prefer
 function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return "border-[#cb9845] bg-[linear-gradient(180deg,#f7e5b7,#d39d49)] text-[#553316]";
+      return "border-[#bf8b37] bg-[radial-gradient(circle_at_35%_28%,#fff4d6,#f1d18a_52%,#cb9643)] text-[#5b3816]";
     case "in-progress":
-      return "border-[#4e8c7c] bg-[radial-gradient(circle_at_35%_30%,#dff5ee,#69b8a4)] text-[#17342c]";
+      return "border-[#4c9180] bg-[radial-gradient(circle_at_35%_28%,#f2fffb,#c6ebe1_42%,#67b19f)] text-[#173931]";
     case "complete":
     case "collapsed-complete":
       return "border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] text-[#4b3114]";
@@ -388,6 +425,45 @@ function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
       return "border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] text-[#8f7e69]";
     default:
       return "border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] text-[#6b4d37]";
+  }
+}
+
+function getMilestonePlateClassName(status: ClassAggregatePresentationStatus) {
+  switch (status) {
+    case "selection-active":
+      return "bg-[linear-gradient(180deg,rgba(255,250,240,0.88),rgba(244,229,201,0.7))] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]";
+    case "in-progress":
+      return "bg-[linear-gradient(180deg,rgba(242,252,248,0.84),rgba(219,241,233,0.64))] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
+    default:
+      return "";
+  }
+}
+
+function getMilestoneHaloClassName(status: ClassAggregatePresentationStatus) {
+  switch (status) {
+    case "selection-active":
+      return "bg-[radial-gradient(circle,rgba(219,177,94,0.28),rgba(219,177,94,0))]";
+    case "in-progress":
+      return "bg-[radial-gradient(circle,rgba(89,177,154,0.3),rgba(89,177,154,0))]";
+    case "complete":
+    case "collapsed-complete":
+      return "bg-[radial-gradient(circle,rgba(214,169,77,0.18),rgba(214,169,77,0))]";
+    default:
+      return "";
+  }
+}
+
+function getMilestoneLabelClassName(status: ClassAggregatePresentationStatus) {
+  switch (status) {
+    case "selection-active":
+      return "text-[#6b4722]";
+    case "in-progress":
+      return "text-[#295247]";
+    case "complete":
+    case "collapsed-complete":
+      return "text-[#7c5a31]";
+    default:
+      return "text-[#8d7257]";
   }
 }
 

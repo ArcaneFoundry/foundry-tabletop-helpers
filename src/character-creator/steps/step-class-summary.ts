@@ -1,5 +1,12 @@
 import { MOD } from "../../logger";
-import type { AbilityKey, WizardState, WizardStepDefinition } from "../character-creator-types";
+import type {
+  AbilityKey,
+  ClassAdvancementRequirement,
+  ClassAdvancementRequirementType,
+  ClassSelection,
+  WizardState,
+  WizardStepDefinition,
+} from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { SKILLS } from "../data/dnd5e-constants";
 import { ClassSummaryStepScreen } from "../react/steps/class/class-summary-step-screen";
@@ -195,6 +202,88 @@ function getTraitGrantLabels(
   return dedupeEntries(labels);
 }
 
+type SelectedGrantGroupViewModel = {
+  id: string;
+  title: string;
+  iconClass: string;
+  entries: string[];
+};
+
+function getSelectedGrantGroupTitle(
+  requirement: ClassAdvancementRequirement,
+): string {
+  return requirement.title?.trim() || "Class Choice";
+}
+
+function getSelectedGrantGroupIconClass(type: ClassAdvancementRequirementType): string {
+  switch (type) {
+    case "expertise":
+      return "fa-solid fa-bullseye";
+    case "languages":
+      return "fa-solid fa-comments";
+    case "tools":
+      return "fa-solid fa-hammer";
+    case "itemChoices":
+      return "fa-solid fa-stars";
+    default:
+      return "fa-solid fa-sparkles";
+  }
+}
+
+function buildSelectedGrantGroups(
+  classSelection: ClassSelection | undefined,
+  state: WizardState,
+): SelectedGrantGroupViewModel[] {
+  const requirements = classSelection?.classAdvancementRequirements ?? [];
+  const classAdvancementSelections = state.selections.classAdvancements ?? buildEmptyClassAdvancementSelections();
+  let expertiseIndex = 0;
+  let languageIndex = 0;
+  let toolIndex = 0;
+
+  return requirements.flatMap((requirement) => {
+    let entries: string[] = [];
+
+    switch (requirement.type) {
+      case "expertise":
+        entries = classAdvancementSelections.expertiseSkills
+          .slice(expertiseIndex, expertiseIndex + requirement.requiredCount)
+          .map(skillLabel);
+        expertiseIndex += requirement.requiredCount;
+        break;
+      case "languages":
+        entries = classAdvancementSelections.chosenLanguages
+          .slice(languageIndex, languageIndex + requirement.requiredCount)
+          .map(languageLabel);
+        languageIndex += requirement.requiredCount;
+        break;
+      case "tools":
+        entries = classAdvancementSelections.chosenTools
+          .slice(toolIndex, toolIndex + requirement.requiredCount)
+          .map(toolLabel);
+        toolIndex += requirement.requiredCount;
+        break;
+      case "itemChoices": {
+        const selectedIds = new Set(classAdvancementSelections.itemChoices[requirement.id] ?? []);
+        entries = (requirement.itemChoices ?? [])
+          .filter((option) => selectedIds.has(option.uuid))
+          .map((option) => option.name);
+        break;
+      }
+      default:
+        return [];
+    }
+
+    if (entries.length === 0) return [];
+
+    return [{
+      id: requirement.id,
+      title: getSelectedGrantGroupTitle(requirement),
+      iconClass: getSelectedGrantGroupIconClass(requirement.type),
+      entries,
+    }];
+  });
+}
+
 async function buildFeatureSummaries(
   doc: ClassDocumentLike | null,
   fallbackFeatures: Array<{ title: string; level?: number }> = [],
@@ -309,21 +398,14 @@ export function createClassSummaryStep(): WizardStepDefinition {
         prefix: "tool:",
         formatter: formatToolGrantLabel,
       });
-      const classAdvancementSelections = state.selections.classAdvancements ?? buildEmptyClassAdvancementSelections();
-      const selectedClassItems = (classSelection?.classAdvancementRequirements ?? [])
-        .filter((requirement) => requirement.type === "itemChoices")
-        .flatMap((requirement) => {
-          const selectedIds = new Set(classAdvancementSelections.itemChoices[requirement.id] ?? []);
-          return (requirement.itemChoices ?? [])
-            .filter((option) => selectedIds.has(option.uuid))
-            .map((option) => option.name);
-        });
+      const selectedGrantGroups = buildSelectedGrantGroups(classSelection, state);
 
       return {
         stepId: "classSummary",
         stepTitle: "Class Summary",
         stepLabel: "Class Summary",
         stepIcon: "fa-solid fa-scroll",
+        nextButtonLabel: "Confirm",
         hideStepIndicator: true,
         hideShellHeader: true,
         shellContentClass: "cc-step-content--class-summary",
@@ -344,10 +426,7 @@ export function createClassSummaryStep(): WizardStepDefinition {
         armorProficiencies,
         weaponProficiencies,
         toolProficiencies,
-        chosenExpertise: (classAdvancementSelections.expertiseSkills ?? []).map(skillLabel),
-        chosenLanguages: (classAdvancementSelections.chosenLanguages ?? []).map(languageLabel),
-        chosenTools: (classAdvancementSelections.chosenTools ?? []).map(toolLabel),
-        chosenClassItems: selectedClassItems,
+        selectedGrantGroups,
         features,
         hasChosenSkills: (state.selections.skills?.chosen?.length ?? 0) > 0,
         hasChosenWeaponMasteries: chosenWeaponMasteries.length > 0,

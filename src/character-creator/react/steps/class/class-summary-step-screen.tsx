@@ -17,6 +17,12 @@ type ClassSummaryViewModel = {
   armorProficiencies: string[];
   weaponProficiencies: string[];
   toolProficiencies: string[];
+  selectedGrantGroups: Array<{
+    id: string;
+    title: string;
+    iconClass: string;
+    entries: string[];
+  }>;
   features: Array<{ title: string; description: string }>;
   hasChosenSkills: boolean;
   hasChosenWeaponMasteries: boolean;
@@ -160,6 +166,15 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                 iconClass="fa-solid fa-screwdriver-wrench"
                 title="Tool Proficiencies"
               />
+              {viewModel.selectedGrantGroups.map((group) => (
+                <SummaryListCard
+                  emptyLabel={`No selections recorded for ${group.title}.`}
+                  entries={group.entries}
+                  iconClass={group.iconClass}
+                  key={group.id}
+                  title={group.title}
+                />
+              ))}
             </div>
 
             {viewModel.hasFeatures ? (

@@ -144,6 +144,12 @@ describe("step species choices", () => {
       chosenItemChoiceCount: 0,
     });
     expect((vm.languageSlots as Array<unknown>)).toHaveLength(1);
+    expect(
+      ((vm.languageSlots as Array<{ options: Array<{ id: string }> }>)[0]?.options ?? []).map((option) => option.id),
+    ).not.toContain("common");
+    expect(
+      ((vm.languageSlots as Array<{ options: Array<{ id: string }> }>)[0]?.options ?? []).map((option) => option.id),
+    ).toContain("common-sign");
     expect((vm.availableSpeciesSkills as Array<{ key: string }>).map((skill) => skill.key)).toEqual(["prc"]);
   });
 

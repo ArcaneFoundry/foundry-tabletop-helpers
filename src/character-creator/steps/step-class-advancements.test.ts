@@ -167,4 +167,56 @@ describe("class advancement steps", () => {
       ],
     });
   });
+
+  it("uses singular and plural status hint copy for class advancement picks", () => {
+    const state = makeState();
+    const languagesStep = createClassLanguagesStep();
+    const toolsStep = createClassToolsStep();
+    const itemChoicesStep = createClassItemChoicesStep();
+
+    expect(languagesStep.getStatusHint?.(state)).toBe("Choose 1 more language");
+    expect(toolsStep.getStatusHint?.(state)).toBe("Choose 1 more tool proficiency");
+    expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 1 more class choice");
+
+    state.selections.class!.classAdvancementRequirements = [
+      {
+        id: "languages",
+        type: "languages",
+        title: "Languages",
+        level: 1,
+        advancementType: "Trait",
+        requiredCount: 2,
+        pool: ["languages:standard:*"],
+        groupKey: "languages",
+      },
+      {
+        id: "tools",
+        type: "tools",
+        title: "Tool Proficiencies",
+        level: 1,
+        advancementType: "Trait",
+        requiredCount: 2,
+        pool: ["tool:*"],
+        groupKey: "tools",
+      },
+      {
+        id: "itemChoices",
+        type: "itemChoices",
+        title: "Class Choices",
+        level: 1,
+        advancementType: "ItemChoice",
+        requiredCount: 2,
+        pool: ["Compendium.test.Item.option-a", "Compendium.test.Item.option-b"],
+        groupKey: "itemChoices",
+        itemChoices: [
+          { uuid: "Compendium.test.Item.option-a", name: "Option A", img: "option-a.webp" },
+          { uuid: "Compendium.test.Item.option-b", name: "Option B", img: "option-b.webp" },
+        ],
+      },
+    ];
+
+    expect(languagesStep.getStatusHint?.(state)).toBe("Choose 2 more languages");
+    expect(toolsStep.getStatusHint?.(state)).toBe("Choose 2 more tool proficiencies");
+    expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 2 more class choices");
+  });
 });

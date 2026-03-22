@@ -83,6 +83,10 @@ export function getExpertisePool(state: WizardState): LabeledOption[] {
     .sort((left, right) => left.label.localeCompare(right.label));
 }
 
+export function isSelectableLanguageId(value: string): boolean {
+  return normalizeLanguageId(value) !== "common";
+}
+
 function flattenLanguageChildren(
   entries: Record<string, unknown>,
   prefix = "",
@@ -120,6 +124,7 @@ export function getLanguagePool(state: WizardState): LabeledOption[] {
     : [...STANDARD_LANGUAGES];
 
   return dedupeLabeledOptions(languageOptions)
+    .filter((entry) => isSelectableLanguageId(entry.id))
     .filter((entry) => !known.has(entry.id))
     .sort((left, right) => left.label.localeCompare(right.label));
 }

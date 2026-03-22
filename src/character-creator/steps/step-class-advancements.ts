@@ -88,6 +88,24 @@ function iconForType(type: ClassAdvancementRequirementType): string {
   }
 }
 
+function getRemainingSelectionLabel(
+  type: ClassAdvancementRequirementType,
+  remaining: number,
+): string {
+  switch (type) {
+    case "expertise":
+      return "expertise";
+    case "languages":
+      return remaining === 1 ? "language" : "languages";
+    case "tools":
+      return remaining === 1 ? "tool proficiency" : "tool proficiencies";
+    case "itemChoices":
+      return remaining === 1 ? "class choice" : "class choices";
+    default:
+      return "selection";
+  }
+}
+
 function buildStepDefinition(
   type: ClassAdvancementRequirementType,
   label: string,
@@ -118,7 +136,7 @@ function buildStepDefinition(
               );
       if (selectedCount >= requiredCount) return "";
       const remaining = requiredCount - selectedCount;
-      return `Choose ${remaining} more ${label.toLowerCase()}${remaining === 1 ? "" : ""}`;
+      return `Choose ${remaining} more ${getRemainingSelectionLabel(type, remaining)}`;
     },
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       const selections = state.selections.classAdvancements ?? buildEmptyClassAdvancementSelections();

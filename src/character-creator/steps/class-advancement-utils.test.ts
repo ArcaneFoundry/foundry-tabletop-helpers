@@ -62,6 +62,10 @@ afterEach(() => {
 
 describe("class advancement utils", () => {
   it("flattens string-backed dnd5e language leaves into selectable class language options", () => {
+    const state = makeState();
+    state.selections.background!.languages.fixed = [];
+    state.selections.species!.languageGrants = [];
+
     (globalThis as typeof globalThis & { CONFIG?: unknown }).CONFIG = {
       DND5E: {
         languages: {
@@ -86,12 +90,22 @@ describe("class advancement utils", () => {
       },
     };
 
-    const pool = getLanguagePool(makeState());
+    const pool = getLanguagePool(state);
 
     expect(pool).toEqual([
       { id: "common-sign", label: "Common Sign Language" },
       { id: "deep-speech", label: "Deep Speech" },
       { id: "draconic", label: "Draconic" },
     ]);
+  });
+
+  it("never includes Common in fallback selectable class language options", () => {
+    const state = makeState();
+    state.selections.background!.languages.fixed = [];
+
+    const pool = getLanguagePool(state);
+
+    expect(pool.some((entry) => entry.id === "common")).toBe(false);
+    expect(pool.some((entry) => entry.id === "common-sign")).toBe(true);
   });
 });

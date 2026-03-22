@@ -37,6 +37,52 @@ function makeState(): WizardState {
           { title: "Second Wind", level: 1 },
           { title: "Action Surge", level: 2 },
         ],
+        classAdvancementRequirements: [
+          {
+            id: "fighter-expertise",
+            type: "expertise",
+            title: "Expertise",
+            level: 1,
+            advancementType: "Trait",
+            requiredCount: 2,
+            pool: ["skills:proficient"],
+            groupKey: "expertise",
+          },
+          {
+            id: "fighter-language",
+            type: "languages",
+            title: "Battle Tongue",
+            level: 1,
+            advancementType: "Trait",
+            requiredCount: 1,
+            pool: ["languages:standard:*"],
+            groupKey: "languages",
+          },
+          {
+            id: "fighter-tools",
+            type: "tools",
+            title: "Field Kit Training",
+            level: 1,
+            advancementType: "Trait",
+            requiredCount: 1,
+            pool: ["tool:*"],
+            groupKey: "tools",
+          },
+          {
+            id: "fighter-order",
+            type: "itemChoices",
+            title: "Martial Doctrine",
+            level: 1,
+            advancementType: "ItemChoice",
+            requiredCount: 1,
+            pool: ["Compendium.test.Item.guardian", "Compendium.test.Item.skirmisher"],
+            groupKey: "itemChoices",
+            itemChoices: [
+              { uuid: "Compendium.test.Item.guardian", name: "Guardian", img: "guardian.webp" },
+              { uuid: "Compendium.test.Item.skirmisher", name: "Skirmisher", img: "skirmisher.webp" },
+            ],
+          },
+        ],
       },
       classChoices: {
         chosenSkills: ["ath", "sur"],
@@ -49,6 +95,14 @@ function makeState(): WizardState {
         ],
       },
       skills: { chosen: ["ath", "sur"] },
+      classAdvancements: {
+        expertiseSkills: ["ath", "sur"],
+        chosenLanguages: ["draconic"],
+        chosenTools: ["thief"],
+        itemChoices: {
+          "fighter-order": ["Compendium.test.Item.skirmisher"],
+        },
+      },
       abilities: {
         method: "standardArray",
         scores: { str: 15, dex: 14, con: 14, int: 10, wis: 12, cha: 8 },
@@ -170,6 +224,7 @@ describe("step class summary", () => {
     expect(fetchDocumentMock).toHaveBeenCalledWith("class.fighter");
     expect(viewModel).toMatchObject({
       className: "Fighter",
+      nextButtonLabel: "Confirm",
       overview: "",
       primaryAbilitySummary: "STR / DEX",
       startingLevel: 1,
@@ -180,6 +235,32 @@ describe("step class summary", () => {
       armorProficiencies: ["Light", "Medium", "Shields"],
       weaponProficiencies: ["Simple", "Martial"],
       toolProficiencies: ["Thieves' Tools"],
+      selectedGrantGroups: [
+        {
+          id: "fighter-expertise",
+          title: "Expertise",
+          iconClass: "fa-solid fa-bullseye",
+          entries: ["Athletics", "Survival"],
+        },
+        {
+          id: "fighter-language",
+          title: "Battle Tongue",
+          iconClass: "fa-solid fa-comments",
+          entries: ["Draconic"],
+        },
+        {
+          id: "fighter-tools",
+          title: "Field Kit Training",
+          iconClass: "fa-solid fa-hammer",
+          entries: ["Thieves' Tools"],
+        },
+        {
+          id: "fighter-order",
+          title: "Martial Doctrine",
+          iconClass: "fa-solid fa-stars",
+          entries: ["Skirmisher"],
+        },
+      ],
       hasFeatures: true,
       hasChosenSkills: true,
       hasChosenWeaponMasteries: true,
