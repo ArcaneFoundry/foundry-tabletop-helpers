@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { Log, MOD } from "../../logger";
 import { renderTemplate } from "../../types";
@@ -16,6 +17,7 @@ import { LegacyStepHost } from "./components/legacy-step-host";
 import { ReactStepHost } from "./components/react-step-host";
 import { WizardControllerProvider } from "./wizard-context";
 import { CharacterCreatorWizardController } from "./wizard-controller";
+import { ClassFlowRouteHost, getClassFlowTransitionKey, isClassFlowStep } from "./steps/class/class-flow-route-host";
 import {
   allowCustomBackgrounds,
   allowMulticlass,
@@ -63,6 +65,7 @@ let _CharacterCreatorReactAppClass: RuntimeApplicationClass | null = null;
 
 function CharacterCreatorReactView({ controller }: { controller: CharacterCreatorWizardController }) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
     void controller.initialize();
@@ -83,32 +86,57 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
       <WizardShell
         shellContext={snapshot.shellContext}
         stepContent={(
-          snapshot.currentStepDef?.renderMode === "react" && snapshot.currentStepDef.reactComponent ? (
-            <div
-              className={[
-                "cc-step-content flex-1 overflow-hidden",
-                snapshot.shellContext.shellContentClass,
-              ].filter(Boolean).join(" ")}
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+              className="flex min-h-0 flex-1 overflow-hidden"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10, scale: 0.992 }}
+              key={getClassFlowTransitionKey(snapshot.shellContext.currentStepId)}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8, scale: 1.008 }}
             >
-              <ReactStepHost
-                controller={controller}
-                shellContext={snapshot.shellContext}
-                state={snapshot.state}
-                stepDef={snapshot.currentStepDef}
-              />
-            </div>
-          ) : (
-            <LegacyStepHost
-              className={[
-                "cc-step-content",
-                snapshot.shellContext.shellContentClass,
-                "fth-react-scrollbar flex-1 overflow-y-auto",
-              ].filter(Boolean).join(" ")}
-              controller={controller}
-              stepContentHtml={snapshot.shellContext.stepContentHtml}
-              stepDef={snapshot.currentStepDef}
-            />
-          )
+              {snapshot.currentStepDef?.renderMode === "react" && isClassFlowStep(snapshot.shellContext.currentStepId) ? (
+                <div
+                  className={[
+                    "cc-step-content flex-1 overflow-hidden",
+                    snapshot.shellContext.shellContentClass,
+                  ].filter(Boolean).join(" ")}
+                >
+                  <ClassFlowRouteHost
+                    controller={controller}
+                    shellContext={snapshot.shellContext}
+                    state={snapshot.state}
+                    step={snapshot.currentStepDef}
+                  />
+                </div>
+              ) : snapshot.currentStepDef?.renderMode === "react" && snapshot.currentStepDef.reactComponent ? (
+                <div
+                  className={[
+                    "cc-step-content flex-1 overflow-hidden",
+                    snapshot.shellContext.shellContentClass,
+                  ].filter(Boolean).join(" ")}
+                >
+                  <ReactStepHost
+                    controller={controller}
+                    shellContext={snapshot.shellContext}
+                    state={snapshot.state}
+                    stepDef={snapshot.currentStepDef}
+                  />
+                </div>
+              ) : (
+                <LegacyStepHost
+                  className={[
+                    "cc-step-content",
+                    snapshot.shellContext.shellContentClass,
+                    "fth-react-scrollbar flex-1 overflow-y-auto",
+                  ].filter(Boolean).join(" ")}
+                  controller={controller}
+                  stepContentHtml={snapshot.shellContext.stepContentHtml}
+                  stepDef={snapshot.currentStepDef}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
         onBack={() => controller.goBack()}
         onCreateCharacter={() => controller.createCharacter()}

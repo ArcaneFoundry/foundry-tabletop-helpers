@@ -23,7 +23,7 @@ The following foundation is already in place:
 - the React character creator shell is active
 - the shell can host both `react` and `legacy` step render modes
 - legacy steps still run through an adapter so the migration can continue step by step
-- the class-selection and class-summary pages are now React-native steps
+- the class-selection, class-skills, and class-summary pages are now React-native steps
 
 This means the rendering layer is now hybrid by design.
 
@@ -78,14 +78,19 @@ The current module-wide reset strategy is intentionally scoped to our own UI roo
 
 ## Class Step Status
 
-The class-selection and class-summary pages are now the leading React-native screens and the current visual reference for the migration.
+The class-selection, class-skills, and class-summary pages are now the leading React-native screens and the current visual reference for the migration.
 
 Current behavior:
 
 - class cards are rendered in React
+- the class-skills selection page is rendered in React with an in-shell summary rail and proficiency panel
 - the follow-up class-summary screen is rendered in React
 - the page uses the React shell and Tailwind styling
+- the class-selection header now uses a generated scenic banner treatment with light ornamental flourishes
+- the main class-selection field now includes a subtle generated parchment texture layer behind the interactive content
+- the class step now uses Motion-powered entry, hover, and selection feedback across the banner, progress rail, cards, chips, and footer controls
 - selection state is shown directly on the chosen card through a selected-only crest badge
+- the `class` and `classChoices` steps now share one mounted React shell so the banner and aggregate class stepper stay resident while only the inner content pane transitions
 - the lower class details panel has been removed
 - richer class recap content now lives on the summary step instead
 - the in-page progress treatment is compact so more space is available for class cards
@@ -98,6 +103,7 @@ Current design direction:
 - parchment, brass, and carved-plaque styling
 - stronger selected-state feedback
 - tablet-friendly layout inside Foundry windows
+- future AI-generated art support should focus on shell-level plaques, parchment textures, and light ornament kits before adding heavier card decoration; see [character-creator-class-step-art-direction.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-class-step-art-direction.md)
 
 Important product note:
 
@@ -135,6 +141,7 @@ Complete enough to build on:
 - React wizard shell
 - legacy-step adapter path
 - React-native class selection and class summary steps
+- React-native class-skills step
 
 Still in progress:
 
