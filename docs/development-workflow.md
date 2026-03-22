@@ -60,6 +60,7 @@ Current Character Creator deployment note:
 - the live world on `foundry.digitalframeworks.org` is currently configured to source classes from `dnd-players-handbook.classes`
 - class and step validation should therefore be checked against current PHB 2024 item shapes, not only SRD packs
 - class save proficiencies currently appear in Foundry content under both `Saving Throws` and `Saving Throw Proficiencies`, depending on pack/source
+- the class section now includes dynamic class-driven substeps such as expertise, languages, tools, weapon masteries, and item-choice advancements when the selected class requires them
 
 ## Build
 
@@ -116,6 +117,12 @@ For React/Tailwind character creator work, the expected sequence is:
 4. run `npm run build`
 5. deploy
 6. live-test the deployed build
+
+Current class-flow note:
+
+- the mounted React class shell now spans `class`, `classChoices`, `classExpertise`, `classLanguages`, `classTools`, `weaponMasteries`, `classItemChoices`, and `classSummary`
+- `classSummary` should not be considered complete until all required class-driven selections for the working level are finished
+- weapon-mastery validation should cover both the loading interstitial and the final mastery pane because indexing warmup, cache hydration, and fallback document fetches can affect each stage differently
 
 ## Documentation Expectations
 

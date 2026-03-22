@@ -23,7 +23,7 @@ The following foundation is already in place:
 - the React character creator shell is active
 - the shell can host both `react` and `legacy` step render modes
 - legacy steps still run through an adapter so the migration can continue step by step
-- the class-selection, class-skills, and class-summary pages are now React-native steps
+- the mounted class flow is now React-native across class selection, class-driven substeps, and class summary
 
 This means the rendering layer is now hybrid by design.
 
@@ -78,12 +78,13 @@ The current module-wide reset strategy is intentionally scoped to our own UI roo
 
 ## Class Step Status
 
-The class-selection, class-skills, class-summary, and weapon-masteries pages are now the leading React-native screens and the current visual reference for the migration.
+The mounted class flow is now the leading React-native slice and the current visual reference for the migration.
 
 Current behavior:
 
 - class cards are rendered in React
 - the class-skills selection page is rendered in React with an in-shell summary rail and proficiency panel
+- the class flow now adds React-native class advancement steps for expertise, languages, tools, and item-choice requirements when the selected class needs them at the current starting level
 - the weapon-masteries page is rendered in React with a routed mastery list, selected-weapon summary, and mastery glossary
 - the follow-up class-summary screen is rendered in React
 - the page uses the React shell and Tailwind styling
@@ -91,9 +92,18 @@ Current behavior:
 - the main class-selection field now includes a subtle generated parchment texture layer behind the interactive content
 - the class step now uses Motion-powered entry, hover, and selection feedback across the banner, progress rail, cards, chips, and footer controls
 - selection state is shown directly on the chosen card through a selected-only crest badge
-- the `class`, `classChoices`, and `weaponMasteries` steps now share one mounted React shell so the banner and aggregate class stepper stay resident while only the inner content pane transitions
+- the `class`, `classChoices`, `classExpertise`, `classLanguages`, `classTools`, `weaponMasteries`, `classItemChoices`, and `classSummary` steps now share one mounted React shell so the banner and class stepper stay resident while only the inner content pane transitions
+- the class stepper has moved from the earlier orbiting child-icons concept to a milestone-plus-subrail model: `Class`, `Selections`, and `Summary` stay stable while the subrail reflects the actual class substeps required for the chosen class
+- class advancement requirements are now normalized on the class selection model and reused by step applicability, summary generation, review output, and actor creation
+- class summary is now gated on completion of all required class-driven selections instead of acting as an unconditional follow-up page
+- class-granted weapon masteries now route immediately after class skills and currently derive only from class-known weapon proficiencies; if later origin or feature grants need additional mastery picks, they should surface in a separate later mastery flow
+- the compendium-source settings menu now exposes `Save and Index` plus `Rebuild Indexes`, and persists a world-level normalized compendium cache for the currently selected Character Creator sources
+- the class flow now warms item indexes in the background during the skills pane, validates content-scoped persistent snapshots, and shows an in-shell loading state while preparing weapon masteries instead of leaving the user on a dead click
+- creator weapon-choice flows now respect a GM `Allow Firearms` world setting; it defaults off and currently hides weapons marked by dnd5e ammunition type `firearmBullet` from weapon mastery choices first
 - the lower class details panel has been removed
 - richer class recap content now lives on the summary step instead
+- the class-summary screen has been reworked into a cleaner recap of selected class picks, current-level proficiencies, and only the newly granted class features for the working level
+- feature descriptions on the summary step are expandable in place and now run through the shared description formatting pipeline so leaked Foundry token markup is cleaned up before display
 - the in-page progress treatment is compact so more space is available for class cards
 - class cards expose compact portrait chips for hit die, curated primary ability display, and starting saving throw proficiencies without covering the artwork
 
@@ -141,13 +151,16 @@ Complete enough to build on:
 - Foundry React app wrapper
 - React wizard shell
 - legacy-step adapter path
-- React-native class selection and class summary steps
-- React-native class-skills step
+- mounted React class flow across class selection, class-driven substeps, and summary
+- dynamic class requirement parsing through the configured starting level
+- milestone-plus-subrail class stepper model
+- persistent compendium indexing plus background warmup for weapon mastery preparation
 
 Still in progress:
 
 - moving more steps onto the React contract
 - continuing the visual system rollout across the rest of the wizard
-- relocating summary and detail content into later steps where it fits the flow better
 - removing stale legacy styling assumptions as React coverage expands
 - keeping class-card summary extraction aligned with current PHB 2024 compendium data on the live server
+- tightening the remaining class-summary and class-advancement polish as more PHB classes are exercised live
+- continuing to reduce the remaining `weaponMasteries` first-render cost when indexed metadata still falls back to full document reads

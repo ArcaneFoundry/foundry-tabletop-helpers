@@ -64,6 +64,9 @@ A FilePicker replacement for GMs with a companion server for heavier media workf
 Wizard-style dnd5e character workflows for onboarding and progression.
 
 - Class-first character creation flow for 2024 rules content
+- Class section now runs as a mounted React shell across class selection, class-driven substeps, and class summary
+- Class flow surfaces required level-appropriate picks such as class skills, expertise, languages, tools, weapon masteries, and item-choice advancements before summary
+- Character Creator now maintains a world-level normalized compendium index cache and warms mastery-related item indexes during the class flow
 - GM configuration for curated sources and behavior
 - Character creation from wizard selections into a real actor
 - Level-up flow for existing characters
@@ -236,9 +239,12 @@ Current migration status:
 - React/Tailwind tooling is installed and wired into the build.
 - A React Foundry app wrapper and wizard shell are in place.
 - Legacy Handlebars steps can still render inside the React shell through an adapter host.
-- The class-selection and class-summary pages are now React-native steps and are the current UI reference for the migration.
+- The mounted class flow is now the leading React-native slice and covers `class`, `classChoices`, `classExpertise`, `classLanguages`, `classTools`, `weaponMasteries`, `classItemChoices`, and `classSummary`.
 - Class details were intentionally removed from the class page; richer recap content now lives on the class-summary step.
-- Class cards now carry compact portrait chips for hit die, curated primary ability display, and starting saving throw proficiencies.
+- The class shell now uses a milestone-plus-subrail stepper so dynamic class substeps can appear without turning each one into a top-level wizard stage.
+- Class summary now acts as the class-section recap: it shows selected class picks, current-level proficiencies, and clickable feature entries, and it stays gated until all required class selections are complete.
+- Character creation and review now apply and reflect class advancement choices such as expertise, languages, tools, and class item choices.
+- Weapon mastery preparation now relies on persistent compendium indexing, background warmup, and an in-shell loading state instead of a dead click between skills and masteries.
 - The live Character Creator currently sources class data from the 2024 Player's Handbook pack configuration on `foundry.digitalframeworks.org`, so class-card summaries must stay compatible with current PHB 2024 document shapes as well as older SRD-style data.
 
 See [docs/development-workflow.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/development-workflow.md), [docs/character-creator-react-tailwind-migration-plan.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-react-tailwind-migration-plan.md), and [docs/character-creator-wizard-redesign-plan.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-wizard-redesign-plan.md) for the current workflow and status notes.
