@@ -24,6 +24,7 @@ The following foundation is already in place:
 - the shell can host both `react` and `legacy` step render modes
 - legacy steps still run through an adapter so the migration can continue step by step
 - the mounted class flow is now React-native across class selection, class-driven substeps, and class summary
+- the mounted Origins flow now follows the confirmed class handoff and is React-native across background selection, background-driven substeps, species selection, species-driven substeps, and origin summary
 
 This means the rendering layer is now hybrid by design.
 
@@ -93,9 +94,10 @@ Current behavior:
 - the class step now uses Motion-powered entry, hover, and selection feedback across the banner, progress rail, cards, chips, and footer controls
 - selection state is shown directly on the chosen card through a selected-only crest badge
 - the `class`, `classChoices`, `classExpertise`, `classLanguages`, `classTools`, `weaponMasteries`, `classItemChoices`, and `classSummary` steps now share one mounted React shell so the banner and class stepper stay resident while only the inner content pane transitions
-- the class stepper has moved from the earlier orbiting child-icons concept to a milestone-plus-subrail model: `Class`, `Selections`, and `Summary` stay stable while the subrail reflects the actual class substeps required for the chosen class
+- the progress rail has moved from the earlier orbiting child-icons concept to a milestone-plus-subrail model: the current section is `Class` or the confirmed class name, the next major chapter is `Origins`, and the subrail reflects only the active section's actual required substeps
 - class advancement requirements are now normalized on the class selection model and reused by step applicability, summary generation, review output, and actor creation
 - class summary is now gated on completion of all required class-driven selections instead of acting as an unconditional follow-up page
+- class summary now acts as the class-phase confirmation point and shows exact selected grants for titled requirements such as expertise, languages, tools, and class item choices
 - class-granted weapon masteries now route immediately after class skills and currently derive only from class-known weapon proficiencies; if later origin or feature grants need additional mastery picks, they should surface in a separate later mastery flow
 - the compendium-source settings menu now exposes `Save and Index` plus `Rebuild Indexes`, and persists a world-level normalized compendium cache for the currently selected Character Creator sources
 - the class flow now warms item indexes in the background during the skills pane, validates content-scoped persistent snapshots, and shows an in-shell loading state while preparing weapon masteries instead of leaving the user on a dead click
@@ -119,6 +121,31 @@ Current design direction:
 Important product note:
 
 - rich class summary and deeper explanatory content are no longer shown on the class-selection page and now live on the later class-summary step
+
+## Origins Step Status
+
+Origins are now the second major React-native chapter in the live character-creation flow.
+
+Current behavior:
+
+- confirming the class summary keeps the user inside the mounted creator shell; only the inner content pane changes while the shared header and progress rail remain in place
+- the top-level progress rail now treats Background and Species as one major `Origins` milestone instead of separate top-level stages
+- `background`, `backgroundSkillConflicts`, `backgroundAsi`, `backgroundLanguages`, `originChoices`, `species`, `speciesSkills`, `speciesLanguages`, `speciesItemChoices`, and `originSummary` now run through the React shell
+- Background and Species selection use art-led card grids with top nameplates and no split detail panel
+- the origin flow is background-first
+- the background flow now includes an in-flow skill-conflict step that rewrites overlapping class skill picks when a background grants the same proficiencies
+- background aptitude restrictions now honor live 2024 PHB background limits even when the allowed ability scores are described only in advancement hint text
+- language-selection screens now apply one shared picker rule: never offer `Common` as a selectable bonus language, while still allowing explicit variants such as `Common Sign Language`
+- the origin-feat screen now supports reverting back to the background's default feat after a custom swap
+- the origin summary follows the same grouped-summary approach as the class summary and shows exact selected grants under the originating advancement titles
+
+Current performance/state note:
+
+- origin-feat availability no longer depends on a full background-and-feat document walk at step time
+- indexed feat entries now cache normalized feat-category and prerequisite-level metadata
+- indexed background entries now cache the granted origin-feat UUID
+- the persistent compendium snapshot now stores that metadata so warm and hydrated paths can resolve origin-feat choices without refetching every background and feat document
+- the controller now warms origin-feat metadata during the `backgroundLanguages -> originChoices` transition and logs whether the result came from hydrated cache, fallback enrichment, or an in-memory hit
 
 ## Constraints That Still Matter
 
@@ -152,9 +179,11 @@ Complete enough to build on:
 - React wizard shell
 - legacy-step adapter path
 - mounted React class flow across class selection, class-driven substeps, and summary
+- mounted React Origins flow across background selection, origin substeps, species selection, species substeps, and origin summary
 - dynamic class requirement parsing through the configured starting level
 - milestone-plus-subrail class stepper model
 - persistent compendium indexing plus background warmup for weapon mastery preparation
+- persisted origin-feat metadata plus warmup-driven origin-feat preparation
 
 Still in progress:
 
@@ -164,3 +193,4 @@ Still in progress:
 - keeping class-card summary extraction aligned with current PHB 2024 compendium data on the live server
 - tightening the remaining class-summary and class-advancement polish as more PHB classes are exercised live
 - continuing to reduce the remaining `weaponMasteries` first-render cost when indexed metadata still falls back to full document reads
+- continuing to harden live species/background verification coverage now that Origins are mounted and React-native

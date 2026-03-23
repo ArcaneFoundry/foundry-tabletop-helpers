@@ -58,9 +58,11 @@ Typical live test expectations:
 Current Character Creator deployment note:
 
 - the live world on `foundry.digitalframeworks.org` is currently configured to source classes from `dnd-players-handbook.classes`
+- the same live world now exercises Origins from the configured PHB/Heroes of Faerun background and species packs, so origin-step validation should be checked against current 2024 document shapes as well
 - class and step validation should therefore be checked against current PHB 2024 item shapes, not only SRD packs
 - class save proficiencies currently appear in Foundry content under both `Saving Throws` and `Saving Throw Proficiencies`, depending on pack/source
 - the class section now includes dynamic class-driven substeps such as expertise, languages, tools, weapon masteries, and item-choice advancements when the selected class requires them
+- the Origins section now runs as a mounted React flow under a single `Origins` milestone and can inject background/species substeps such as skill-conflict resolution, aptitudes, languages, origin feat selection, species skills, species languages, and species item-choice selections
 
 ## Build
 
@@ -123,6 +125,14 @@ Current class-flow note:
 - the mounted React class shell now spans `class`, `classChoices`, `classExpertise`, `classLanguages`, `classTools`, `weaponMasteries`, `classItemChoices`, and `classSummary`
 - `classSummary` should not be considered complete until all required class-driven selections for the working level are finished
 - weapon-mastery validation should cover both the loading interstitial and the final mastery pane because indexing warmup, cache hydration, and fallback document fetches can affect each stage differently
+- class summary now hands off into Origins with a `Confirm` action, and the top-level progress rail should read as the chosen class plus `Origins`, not as separate top-level background/species stages
+
+Current Origins-flow note:
+
+- the mounted React Origins shell now spans `background`, `backgroundSkillConflicts`, `backgroundAsi`, `backgroundLanguages`, `originChoices`, `species`, `speciesSkills`, `speciesLanguages`, `speciesItemChoices`, and `originSummary`
+- Background and Species selection now use full-width art-led React card grids, so live tests should cover layout, selection-state feedback, and resize behavior for those panes rather than the older split detail layout
+- language-selection screens should never offer `Common` as a selectable option, but should still allow explicit variants such as `Common Sign Language`
+- origin-feat validation should cover both the warmup interstitial and the final selection screen because feat availability now depends on hydrated origin-feat metadata on indexed background and feat entries
 
 ## Documentation Expectations
 

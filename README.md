@@ -64,9 +64,13 @@ A FilePicker replacement for GMs with a companion server for heavier media workf
 Wizard-style dnd5e character workflows for onboarding and progression.
 
 - Class-first character creation flow for 2024 rules content
-- Class section now runs as a mounted React shell across class selection, class-driven substeps, and class summary
+- Class and Origins now run inside a mounted React shell that keeps the window chrome and progress rail resident while only the content pane changes
 - Class flow surfaces required level-appropriate picks such as class skills, expertise, languages, tools, weapon masteries, and item-choice advancements before summary
-- Character Creator now maintains a world-level normalized compendium index cache and warms mastery-related item indexes during the class flow
+- Class summary now acts as a gated recap and shows the exact grants chosen for titled requirements such as expertise, languages, tools, and class item choices
+- Origins now run as a background-first flow under a single `Origins` milestone with dedicated React substeps for background aptitudes, background languages, origin feat selection, species choice, species grant selections, and an origin summary
+- Background and Species selection now use art-led React card grids, and Origin can resolve duplicate background/class skill proficiencies without bouncing the user back into Class
+- Character Creator now maintains a world-level normalized compendium index cache, warms mastery-related item indexes during the class flow, and persists origin-feat metadata so the origin-feat step can resolve from cached entries instead of full compendium rescans
+- Character Creator language pickers now exclude `Common` from selectable bonus-language options while still allowing specific variants such as `Common Sign Language`
 - GM configuration for curated sources and behavior
 - Character creation from wizard selections into a real actor
 - Level-up flow for existing characters
@@ -240,11 +244,13 @@ Current migration status:
 - A React Foundry app wrapper and wizard shell are in place.
 - Legacy Handlebars steps can still render inside the React shell through an adapter host.
 - The mounted class flow is now the leading React-native slice and covers `class`, `classChoices`, `classExpertise`, `classLanguages`, `classTools`, `weaponMasteries`, `classItemChoices`, and `classSummary`.
+- The mounted Origins flow now follows the confirmed class handoff and covers `background`, `backgroundSkillConflicts`, `backgroundAsi`, `backgroundLanguages`, `originChoices`, `species`, `speciesSkills`, `speciesLanguages`, `speciesItemChoices`, and `originSummary`.
 - Class details were intentionally removed from the class page; richer recap content now lives on the class-summary step.
-- The class shell now uses a milestone-plus-subrail stepper so dynamic class substeps can appear without turning each one into a top-level wizard stage.
+- The progress rail now treats the current section as `Class` or the confirmed class name and the next major chapter as `Origins`, with a subrail for the active section's required substeps.
 - Class summary now acts as the class-section recap: it shows selected class picks, current-level proficiencies, and clickable feature entries, and it stays gated until all required class selections are complete.
 - Character creation and review now apply and reflect class advancement choices such as expertise, languages, tools, and class item choices.
 - Weapon mastery preparation now relies on persistent compendium indexing, background warmup, and an in-shell loading state instead of a dead click between skills and masteries.
+- Origin feat preparation now reuses the persistent compendium cache by storing feat-category, prerequisite-level, and background-granted origin-feat metadata on indexed entries, then warming that metadata before the origin-feat step renders.
 - The live Character Creator currently sources class data from the 2024 Player's Handbook pack configuration on `foundry.digitalframeworks.org`, so class-card summaries must stay compatible with current PHB 2024 document shapes as well as older SRD-style data.
 
 See [docs/development-workflow.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/development-workflow.md), [docs/character-creator-react-tailwind-migration-plan.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-react-tailwind-migration-plan.md), and [docs/character-creator-wizard-redesign-plan.md](/Users/johngallego/CodeProjects/foundry-tabletop-helpers/docs/character-creator-wizard-redesign-plan.md) for the current workflow and status notes.
