@@ -9,7 +9,7 @@ import type {
 import { buildWizardShellContext } from "../wizard/character-creator-app-helpers";
 import type { WizardStateMachine } from "../wizard/wizard-state-machine";
 import { Log } from "../../logger";
-import { ensureCharacterCreatorIndexesReady, ensureOriginFeatMetadataReady } from "../character-creator-index-cache";
+import { ensureCharacterCreatorIndexesReady, ensureEquipmentShopMetadataReady, ensureOriginFeatMetadataReady } from "../character-creator-index-cache";
 import { warmOriginFeatChoices } from "../steps/step-origin-choices";
 import { getWeaponMasteryPackSources } from "../steps/step-weapon-masteries";
 
@@ -129,6 +129,7 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
     const toStepId = this._machine.state.applicableSteps[this._machine.state.currentStep + 1] ?? "";
     const perfStart = globalThis.performance?.now?.() ?? Date.now();
     let originFeatWarmupMs: number | undefined;
+    let equipmentWarmupMs: number | undefined;
 
     try {
       if (fromStepId === "classChoices" && toStepId === "weaponMasteries") {
@@ -158,6 +159,19 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
         originFeatWarmupMs = Math.round((globalThis.performance?.now?.() ?? Date.now()) - originFeatWarmupStart);
       }
 
+      if (toStepId === "equipment") {
+        const equipmentWarmupStart = globalThis.performance?.now?.() ?? Date.now();
+        this._pendingTransition = {
+          targetStepId: "equipment",
+          message: "Preparing starting gear and shop inventory...",
+        };
+        this._emit();
+        await ensureEquipmentShopMetadataReady(this._machine.state.config.packSources, {
+          persistIfMissing: true,
+        });
+        equipmentWarmupMs = Math.round((globalThis.performance?.now?.() ?? Date.now()) - equipmentWarmupStart);
+      }
+
       this._deactivateActiveStep();
       if (this._machine.goNext()) {
         Log.info("CC Perf: goNext triggered refresh", {
@@ -165,6 +179,7 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
           toStepId: this._machine.currentStepId || toStepId,
           transitionPrepMs: Math.round((globalThis.performance?.now?.() ?? Date.now()) - perfStart),
           ...(originFeatWarmupMs !== undefined ? { originFeatWarmupMs } : {}),
+          ...(equipmentWarmupMs !== undefined ? { equipmentWarmupMs } : {}),
         });
         await this.refresh();
       }

@@ -23,7 +23,6 @@ import {
   abilityModifier,
   formatModifier,
 } from "../data/dnd5e-constants";
-import { getStartingGoldForSelections } from "../starting-resources";
 import { fromUuid } from "../../types";
 import {
   buildPreparationNotice,
@@ -42,6 +41,7 @@ import {
   getRequiredSpeciesLanguageChoiceCount,
   getRequiredSpeciesSkillChoiceCount,
 } from "./origin-flow-utils";
+import { deriveEquipmentState, formatCurrencyCp, resolveEquipmentFlow } from "./equipment-flow-utils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -454,12 +454,24 @@ export function createReviewStep(): WizardStepDefinition {
 
       /* ── 10. Equipment ──────────────────────────────────── */
       let equipmentSummary = "";
-      if (sel.equipment) {
-        if (sel.equipment.method === "gold") {
-          equipmentSummary = `Starting gold: ${sel.equipment.goldAmount ?? 0} gp`;
-        } else {
-          equipmentSummary = `Recommended gold fallback: ${getStartingGoldForSelections(sel)} gp`;
+      let equipmentDetail = "";
+      if (sel.equipment && sel.class?.uuid && sel.background?.uuid) {
+        const equipmentResolution = await resolveEquipmentFlow(state);
+        const derivedEquipment = deriveEquipmentState(state, equipmentResolution);
+        const shopNameByUuid = new Map(equipmentResolution.shopInventory.map((entry) => [entry.uuid, entry.name]));
+        const classChoice = derivedEquipment.selectedClassOption?.title ?? "Unchosen";
+        const backgroundChoice = derivedEquipment.selectedBackgroundOption?.title ?? "Unchosen";
+        equipmentSummary = `${classChoice} • ${backgroundChoice}`;
+        const detailParts = [
+          `Funds: ${formatCurrencyCp(derivedEquipment.remainingGoldCp)}`,
+        ];
+        if (derivedEquipment.purchases.length > 0) {
+          detailParts.push(`Bought: ${derivedEquipment.purchases.map((entry) => `${entry.quantity}x ${shopNameByUuid.get(entry.uuid) ?? entry.uuid}`).join(", ")}`);
         }
+        if (derivedEquipment.sales.length > 0) {
+          detailParts.push(`Sold: ${derivedEquipment.sales.map((entry) => `${entry.quantity}x ${shopNameByUuid.get(entry.uuid) ?? entry.uuid}`).join(", ")}`);
+        }
+        equipmentDetail = detailParts.join(" • ");
       }
       sections.push({
         id: "equipment",
@@ -467,6 +479,7 @@ export function createReviewStep(): WizardStepDefinition {
         icon: "fa-solid fa-sack",
         complete: !!sel.equipment,
         summary: equipmentSummary || "Not selected",
+        detail: equipmentDetail || undefined,
         isSimple: true,
       });
 

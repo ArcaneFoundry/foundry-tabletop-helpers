@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WizardState } from "../character-creator-types";
 
 const fromUuidMock = vi.fn();
+const resolveEquipmentFlowMock = vi.fn();
+const deriveEquipmentStateMock = vi.fn();
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -10,6 +12,12 @@ vi.mock("../../logger", () => ({
 
 vi.mock("../../types", () => ({
   fromUuid: fromUuidMock,
+}));
+
+vi.mock("./equipment-flow-utils", () => ({
+  resolveEquipmentFlow: resolveEquipmentFlowMock,
+  deriveEquipmentState: deriveEquipmentStateMock,
+  formatCurrencyCp: (totalCp: number) => `${Math.floor(totalCp / 100)} gp`,
 }));
 
 function makeState(): WizardState {
@@ -119,7 +127,7 @@ function makeState(): WizardState {
         spells: Array.from({ length: 14 }, (_, index) => `spell.${index}`),
         preparedSpells: Array.from({ length: 9 }, (_, index) => `spell.${index}`),
       },
-      equipment: { method: "gold", goldAmount: 100 },
+      equipment: { classOptionId: "class-kit", backgroundOptionId: "background-kit", baseGoldCp: 10000, remainingGoldCp: 10000 },
     },
     stepStatus: new Map(),
     config: {
@@ -138,6 +146,20 @@ function makeState(): WizardState {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resolveEquipmentFlowMock.mockResolvedValue({
+    classSource: { source: "class", label: "Wizard", img: "wizard.png", options: [], shopInventory: [] },
+    backgroundSource: { source: "background", label: "Sage", img: "sage.png", options: [] },
+    shopInventory: [{ uuid: "item.rope", name: "Rope", img: "rope.png" }],
+  });
+  deriveEquipmentStateMock.mockReturnValue({
+    selectedClassOption: { id: "class-kit", title: "Scholar's Pack" },
+    selectedBackgroundOption: { id: "background-kit", title: "Sage Supplies" },
+    baseGoldCp: 10000,
+    remainingGoldCp: 10000,
+    inventory: [],
+    purchases: [],
+    sales: [],
+  });
   fromUuidMock.mockResolvedValue({
     system: {
       advancement: [

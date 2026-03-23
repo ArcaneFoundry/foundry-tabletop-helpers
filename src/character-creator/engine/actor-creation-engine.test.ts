@@ -13,6 +13,15 @@ const logDebugMock = vi.fn();
 const getGameMock = vi.fn();
 const getUIMock = vi.fn();
 const fromUuidMock = vi.fn();
+const resolveEquipmentFlowMock = vi.fn();
+const deriveEquipmentStateMock = vi.fn();
+const currencyCpToActorCurrencyMock = vi.fn((totalCp: number) => ({
+  pp: 0,
+  gp: Math.floor(totalCp / 100),
+  ep: 0,
+  sp: Math.floor((totalCp % 100) / 10),
+  cp: totalCp % 10,
+}));
 
 vi.mock("../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -28,6 +37,12 @@ vi.mock("../../types", () => ({
   getGame: getGameMock,
   getUI: getUIMock,
   fromUuid: fromUuidMock,
+}));
+
+vi.mock("../steps/equipment-flow-utils", () => ({
+  resolveEquipmentFlow: resolveEquipmentFlowMock,
+  deriveEquipmentState: deriveEquipmentStateMock,
+  currencyCpToActorCurrency: currencyCpToActorCurrencyMock,
 }));
 
 function createWizardState(): any {
@@ -89,7 +104,12 @@ function createWizardState(): any {
           "wizard-cantrip": ["Compendium.spells.light"],
         },
       },
-      equipment: { method: "gold", goldAmount: 125 },
+      equipment: {
+        classOptionId: "class-gold",
+        backgroundOptionId: "background-kit",
+        baseGoldCp: 12500,
+        remainingGoldCp: 12500,
+      },
     },
   };
 }
@@ -584,6 +604,30 @@ beforeEach(() => {
   (globalThis as Record<string, unknown>).Blob = Blob;
   (globalThis as Record<string, unknown>).atob = (data: string) => Buffer.from(data, "base64").toString("binary");
   delete (globalThis as Record<string, unknown>).FilePicker;
+  resolveEquipmentFlowMock.mockResolvedValue({
+    classSource: {
+      source: "class",
+      label: "Wizard",
+      img: "wizard.webp",
+      options: [],
+    },
+    backgroundSource: {
+      source: "background",
+      label: "Sage",
+      img: "sage.webp",
+      options: [],
+    },
+    shopInventory: [],
+  });
+  deriveEquipmentStateMock.mockReturnValue({
+    selectedClassOption: null,
+    selectedBackgroundOption: null,
+    baseGoldCp: 12500,
+    remainingGoldCp: 12500,
+    inventory: [],
+    purchases: [],
+    sales: [],
+  });
 });
 
 describe("actor creation engine", () => {
@@ -617,7 +661,7 @@ describe("actor creation engine", () => {
       "system.attributes.hp.value": 7,
     });
     expect(createActorInstance.update).toHaveBeenCalledWith({
-      "system.currency.gp": 125,
+      "system.currency": { pp: 0, gp: 125, ep: 0, sp: 0, cp: 0 },
     });
     expect(createActorInstance.update).toHaveBeenCalledWith({
       "ownership.user-1": 3,
@@ -976,14 +1020,25 @@ describe("actor creation engine", () => {
     const { createCharacterFromWizard } = await import("./actor-creation-engine");
     const state = createWizardState();
     state.selections.equipment = {
-      method: "equipment",
-      goldAmount: 100,
+      classOptionId: "class-kit",
+      backgroundOptionId: "background-kit",
+      baseGoldCp: 10000,
+      remainingGoldCp: 10000,
     };
+    deriveEquipmentStateMock.mockReturnValue({
+      selectedClassOption: { id: "class-kit", title: "Class Kit" },
+      selectedBackgroundOption: { id: "background-kit", title: "Background Kit" },
+      baseGoldCp: 10000,
+      remainingGoldCp: 10000,
+      inventory: [],
+      purchases: [],
+      sales: [],
+    });
 
     await createCharacterFromWizard(state as never);
 
     expect(createActorInstance.update).toHaveBeenCalledWith({
-      "system.currency.gp": 100,
+      "system.currency": { pp: 0, gp: 100, ep: 0, sp: 0, cp: 0 },
     });
   });
 

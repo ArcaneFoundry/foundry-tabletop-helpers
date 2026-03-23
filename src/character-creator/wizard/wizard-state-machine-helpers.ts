@@ -16,7 +16,7 @@ export const DEPENDENCY_CASCADE: Record<string, string[]> = {
   backgroundLanguages: ["originChoices", "originSummary", "abilities"],
   originChoices: ["originSummary"],
   originSummary: [],
-  class: ["classChoices", "classExpertise", "classLanguages", "classTools", "weaponMasteries", "classItemChoices", "classSummary", "subclass", "backgroundSkillConflicts", "originChoices", "feats", "spells", "equipment"],
+  class: ["classChoices", "classExpertise", "classLanguages", "classTools", "weaponMasteries", "classItemChoices", "classSummary", "subclass", "backgroundSkillConflicts", "originChoices", "feats", "spells", "equipment", "equipmentShop"],
   classChoices: ["backgroundSkillConflicts", "speciesSkills", "speciesItemChoices", "originSummary"],
   classExpertise: [],
   classLanguages: [],
@@ -25,7 +25,11 @@ export const DEPENDENCY_CASCADE: Record<string, string[]> = {
   classItemChoices: [],
   classSummary: [],
   subclass: ["spells"],
-  abilities: ["feats"],
+  abilities: ["feats", "equipment", "equipmentShop", "spells"],
+  feats: ["equipment", "equipmentShop", "spells"],
+  equipment: ["equipmentShop", "spells", "portrait", "review"],
+  equipmentShop: ["spells", "portrait", "review"],
+  spells: ["portrait", "review"],
 };
 
 export function recalculateApplicableSteps(

@@ -73,6 +73,10 @@ export interface CreatorIndexEntry {
   rarity?: string;
   /** For items: magical bonus value when present. */
   magicalBonus?: number;
+  /** For items: normalized price in copper pieces when available. */
+  priceCp?: number;
+  /** For items: whether the cached metadata marks this entry as magical. */
+  isMagical?: boolean;
   /** For items: normalized enabled property keys from index data. */
   properties?: string[];
   /** For weapons: whether the cached metadata marks this entry as a firearm. */
@@ -588,12 +592,40 @@ export interface SpellSelection {
   maxPreparedSpells?: number;
 }
 
+export interface EquipmentOptionItem {
+  uuid: string;
+  name: string;
+  img?: string;
+  quantity: number;
+  priceCp?: number;
+  itemType?: string;
+  isFirearm?: boolean;
+  isMagical?: boolean;
+}
+
+export interface EquipmentSourceOption {
+  id: string;
+  source: "class" | "background";
+  mode: "equipment" | "gold";
+  title: string;
+  description: string;
+  img?: string;
+  items: EquipmentOptionItem[];
+  goldCp: number;
+  totalValueCp: number;
+}
+
 /** Equipment selection state. */
 export interface EquipmentSelection {
-  /** Method chosen by the player. */
-  method: "equipment" | "gold";
-  /** Gold amount (if gold method). */
-  goldAmount?: number;
+  classOptionId?: string;
+  backgroundOptionId?: string;
+  purchases?: Record<string, number>;
+  sales?: Record<string, number>;
+  shopMode?: "buy" | "sell";
+  /** Internal snapshot used for conditional step routing and review without reparsing. */
+  baseGoldCp?: number;
+  /** Internal snapshot of current remaining currency after shop transactions. */
+  remainingGoldCp?: number;
 }
 
 /** Skills selection state (class-chosen only). */

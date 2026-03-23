@@ -36,6 +36,10 @@ interface WeaponDocumentSystemData extends DescriptionSystemData {
   rarity?: string;
   magicalBonus?: number;
   properties?: Iterable<string> | ArrayLike<string> | Record<string, boolean>;
+  price?: {
+    value?: number | string | null;
+    denomination?: string | null;
+  };
 }
 
 interface WeaponDocumentLike {
@@ -73,10 +77,12 @@ const INDEX_FIELDS = [
   "system.mastery",
   "system.rarity",
   "system.magicalBonus",
+  "system.price.value",
+  "system.price.denomination",
   "system.properties",
 ];
 
-export const PERSISTENT_INDEX_CACHE_FORMAT_VERSION = 4;
+export const PERSISTENT_INDEX_CACHE_FORMAT_VERSION = 5;
 
 /** Maps pack source config keys to content types. */
 const SOURCE_KEY_TO_TYPE: Record<keyof PackSourceConfig, CreatorContentType> = {
@@ -107,6 +113,52 @@ function getPrerequisiteLevel(doc: FeatDocumentLike | null): number | null | und
     if (Number.isFinite(parsed)) return parsed;
   }
   return rawLevel === null ? null : undefined;
+}
+
+function normalizeProperties(
+  value: Iterable<string> | ArrayLike<string> | Record<string, boolean> | undefined,
+): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter((entry): entry is string => typeof entry === "string");
+  if (typeof value === "object" && value !== null && typeof (value as Record<PropertyKey, unknown>)[Symbol.iterator] === "function") {
+    return Array.from(value as Iterable<unknown>).filter((entry): entry is string => typeof entry === "string");
+  }
+  if (typeof value === "object") {
+    return Object.entries(value).filter(([, enabled]) => enabled === true).map(([key]) => key);
+  }
+  return [];
+}
+
+function getPriceInCopper(
+  rawValue: number | string | null | undefined,
+  denomination: string | null | undefined,
+): number | undefined {
+  if (rawValue === null || rawValue === undefined || rawValue === "") return undefined;
+  const value = typeof rawValue === "number" ? rawValue : Number(rawValue);
+  if (!Number.isFinite(value)) return undefined;
+  const normalizedDenomination = (denomination ?? "gp").trim().toLowerCase();
+  const multiplier = normalizedDenomination === "pp"
+    ? 1000
+    : normalizedDenomination === "gp"
+      ? 100
+      : normalizedDenomination === "ep"
+        ? 50
+        : normalizedDenomination === "sp"
+          ? 10
+          : 1;
+  return Math.max(0, Math.round(value * multiplier));
+}
+
+function inferMagicalFlag(
+  rarity: string | undefined,
+  magicalBonus: number | undefined,
+  properties: string[],
+): boolean | undefined {
+  if (typeof magicalBonus === "number" && magicalBonus > 0) return true;
+  if (properties.includes("mgc")) return true;
+  if (typeof rarity === "string" && rarity.trim()) return true;
+  if (magicalBonus === undefined && properties.length === 0 && rarity === undefined) return undefined;
+  return false;
 }
 
 /**
@@ -220,6 +272,7 @@ export class CompendiumIndexer {
       contentKeys?: Array<keyof PackSourceConfig>;
       enrichWeaponMetadata?: boolean;
       enrichOriginFeatMetadata?: boolean;
+      enrichEquipmentShopMetadata?: boolean;
     },
   ): Promise<void> {
     const packIds = this.getSelectedPackIds(sources, options);
@@ -235,6 +288,9 @@ export class CompendiumIndexer {
     }
     if (options?.enrichOriginFeatMetadata) {
       await this.enrichIndexedOriginFeatMetadata(sources, options);
+    }
+    if (options?.enrichEquipmentShopMetadata) {
+      await this.enrichIndexedEquipmentShopMetadata(sources, options);
     }
   }
 
@@ -312,6 +368,7 @@ export class CompendiumIndexer {
       ...options,
       enrichWeaponMetadata: true,
       enrichOriginFeatMetadata: true,
+      enrichEquipmentShopMetadata: true,
     });
     const game = getGame();
     const packIds = this.getSelectedPackIds(sources, options);
@@ -558,6 +615,47 @@ export class CompendiumIndexer {
     }
   }
 
+  private async enrichIndexedEquipmentShopMetadata(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): Promise<void> {
+    const packIds = this.getSelectedPackIds(sources, options);
+    const stats = {
+      targetedItems: 0,
+      fetchedDocuments: 0,
+      enrichedEntries: 0,
+      unresolvedEntries: 0,
+    };
+
+    for (const packId of packIds) {
+      const type = this.getConfiguredTypeForPackId(packId, sources, options?.contentKeys);
+      if (type !== "item") continue;
+      const cached = this.indexCache.get(packId);
+      if (!cached?.length) continue;
+
+      const nextEntries = await Promise.all(cached.map(async (entry) => {
+        if (!this.needsEquipmentShopEnrichment(entry)) return entry;
+        stats.targetedItems += 1;
+        const cachedDoc = this.docCache.get(entry.uuid);
+        const doc = (cachedDoc ?? await this.fetchDocument(entry.uuid)) as FoundryDocument | null;
+        if (!cachedDoc && doc) stats.fetchedDocuments += 1;
+        const enriched = this.enrichEquipmentEntryFromDocument(entry, doc as WeaponDocumentLike | null);
+        if (enriched === entry) {
+          stats.unresolvedEntries += 1;
+          return entry;
+        }
+        stats.enrichedEntries += 1;
+        return enriched;
+      }));
+
+      this.indexCache.set(packId, nextEntries);
+    }
+
+    if (stats.targetedItems > 0) {
+      Log.info("CompendiumIndexer: enriched equipment shop metadata", stats);
+    }
+  }
+
   private needsWeaponMasteryEnrichment(entry: CreatorIndexEntry): boolean {
     if (entry.itemType !== "weapon") return false;
     return !entry.identifier
@@ -667,6 +765,41 @@ export class CompendiumIndexer {
     };
   }
 
+  private needsEquipmentShopEnrichment(entry: CreatorIndexEntry): boolean {
+    const itemType = entry.itemType ?? "";
+    if (!ACCEPTED_ITEM_TYPES.item.has(itemType)) return false;
+    return entry.priceCp === undefined || entry.isMagical === undefined;
+  }
+
+  private enrichEquipmentEntryFromDocument(
+    entry: CreatorIndexEntry,
+    doc: WeaponDocumentLike | null,
+  ): CreatorIndexEntry {
+    if (!doc) return entry;
+
+    const system = doc.system;
+    const priceCp = getPriceInCopper(system?.price?.value, system?.price?.denomination);
+    const isMagical = inferMagicalFlag(
+      system?.rarity,
+      system?.magicalBonus,
+      normalizeProperties(system?.properties),
+    );
+
+    if (priceCp === entry.priceCp && isMagical === entry.isMagical) {
+      return {
+        ...entry,
+        ...(entry.priceCp === undefined ? { priceCp } : {}),
+        ...(entry.isMagical === undefined ? { isMagical } : {}),
+      };
+    }
+
+    return {
+      ...entry,
+      ...(priceCp !== undefined ? { priceCp } : {}),
+      ...(isMagical !== undefined ? { isMagical } : {}),
+    };
+  }
+
   private normalizeEntry(
     raw: FoundryIndexEntry,
     packId: string,
@@ -696,7 +829,11 @@ export class CompendiumIndexer {
     const sysMastery = this.extractString(raw, "system.mastery");
     const sysRarity = this.extractString(raw, "system.rarity");
     const sysMagicalBonus = this.extractNumber(raw, "system.magicalBonus");
+    const sysPriceValue = this.extractNumberish(raw, "system.price.value");
+    const sysPriceDenomination = this.extractString(raw, "system.price.denomination");
     const sysProperties = this.extractStringCollection(raw, "system.properties");
+    const normalizedPriceCp = getPriceInCopper(sysPriceValue, sysPriceDenomination);
+    const normalizedIsMagical = inferMagicalFlag(sysRarity, sysMagicalBonus, sysProperties);
 
     return {
       uuid,
@@ -720,6 +857,8 @@ export class CompendiumIndexer {
       ...(sysMastery !== undefined && { mastery: sysMastery }),
       ...(sysRarity !== undefined && { rarity: sysRarity }),
       ...(sysMagicalBonus !== undefined && { magicalBonus: sysMagicalBonus }),
+      ...(normalizedPriceCp !== undefined && { priceCp: normalizedPriceCp }),
+      ...(normalizedIsMagical !== undefined && { isMagical: normalizedIsMagical }),
       ...(sysProperties.length > 0 && { properties: sysProperties }),
     };
   }

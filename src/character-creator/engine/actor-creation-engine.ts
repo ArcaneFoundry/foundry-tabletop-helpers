@@ -14,8 +14,12 @@ import type { FoundryDocument } from "../../types";
 import type { WizardState, PortraitSelection } from "../character-creator-types";
 import { ABILITY_KEYS } from "../data/dnd5e-constants";
 import type { AbilityKey } from "../character-creator-types";
-import { getStartingGoldForSelections } from "../starting-resources";
 import { buildEmptyClassAdvancementSelections } from "../steps/class-advancement-utils";
+import {
+  currencyCpToActorCurrency,
+  deriveEquipmentState,
+  resolveEquipmentFlow,
+} from "../steps/equipment-flow-utils";
 import { applyLevelUp } from "../level-up/actor-update-engine";
 import { averageHpForHitDie, getClassItems } from "../level-up/level-up-detection";
 import { buildFeatureSelectionForLevel, resolveGrantedFeaturesForDocument } from "../level-up/level-up-feature-helpers";
@@ -689,6 +693,7 @@ async function applyStartingDetails(
 ): Promise<void> {
   await applyLevel1HitPoints(actor, state);
   await applyStartingCurrency(actor, state);
+  await applyStartingEquipment(actor, state);
   await actor.update({ "system.details.level": 1 });
 }
 
@@ -714,18 +719,52 @@ async function applyStartingCurrency(
   state: WizardState,
 ): Promise<void> {
   const equipment = state.selections.equipment;
-  if (!equipment) return;
+  if (!equipment || !state.selections.class?.uuid || !state.selections.background?.uuid) return;
 
-  const fallbackGold = getStartingGoldForSelections(state.selections);
-  const grantedGold = equipment.method === "gold"
-    ? Math.max(0, equipment.goldAmount ?? fallbackGold)
-    : fallbackGold;
+  const resolution = await resolveEquipmentFlow(state);
+  const derived = deriveEquipmentState(state, resolution);
+  const actorCurrency = currencyCpToActorCurrency(derived.remainingGoldCp);
 
-  await actor.update({ "system.currency.gp": grantedGold });
+  await actor.update({ "system.currency": actorCurrency });
   Log.debug("ActorCreationEngine: Applied starting currency", {
-    method: equipment.method,
-    grantedGold,
+    baseGoldCp: derived.baseGoldCp,
+    remainingGoldCp: derived.remainingGoldCp,
+    actorCurrency,
   });
+}
+
+async function applyStartingEquipment(
+  actor: FoundryDocument,
+  state: WizardState,
+): Promise<void> {
+  const equipment = state.selections.equipment;
+  if (!equipment || !state.selections.class?.uuid || !state.selections.background?.uuid) return;
+
+  const resolution = await resolveEquipmentFlow(state);
+  const derived = deriveEquipmentState(state, resolution);
+  if (derived.inventory.length === 0) return;
+
+  const items: Record<string, unknown>[] = [];
+  for (const inventoryItem of derived.inventory) {
+    const doc = await fromUuid(inventoryItem.uuid);
+    if (!doc) {
+      Log.warn(`ActorCreationEngine: Could not resolve equipment UUID ${inventoryItem.uuid}`);
+      continue;
+    }
+    const obj = doc.toObject();
+    delete obj._id;
+    const system = typeof obj.system === "object" && obj.system !== null
+      ? { ...(obj.system as Record<string, unknown>) }
+      : {};
+    system.quantity = inventoryItem.quantity;
+    obj.system = system;
+    items.push(obj);
+  }
+
+  if (items.length > 0) {
+    await actor.createEmbeddedDocuments("Item", items);
+    Log.debug(`ActorCreationEngine: Embedded ${items.length} starting equipment items`);
+  }
 }
 
 async function getClassHitDie(classUuid: string | undefined): Promise<string> {

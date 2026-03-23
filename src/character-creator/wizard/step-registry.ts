@@ -34,7 +34,7 @@ import {
 import { createOriginSummaryStep } from "../steps/step-origin-summary";
 import { createFeatsStep } from "../steps/step-feats";
 import { createSpellsStep } from "../steps/step-spells";
-import { createEquipmentStep } from "../steps/step-equipment";
+import { createEquipmentShopStep, createEquipmentStep } from "../steps/step-equipment";
 import { createPortraitStep } from "../steps/step-portrait";
 import { createReviewStep } from "../steps/step-review";
 
@@ -64,6 +64,7 @@ const STEP_ORDER = [
   "abilities",
   "feats",
   "equipment",
+  "equipmentShop",
   "spells",
   "portrait",
   "review",
@@ -133,6 +134,7 @@ const STEP_ATMOSPHERES: Record<string, string> = {
   feats: "cc-atmosphere--crimson",
   spells: "cc-atmosphere--arcane",
   equipment: "cc-atmosphere--forge",
+  equipmentShop: "cc-atmosphere--forge",
   portrait: "cc-atmosphere--shadow",
   review: "cc-atmosphere--gold",
 };
@@ -203,6 +205,7 @@ export function registerAllSteps(): void {
   registerStep(createFeatsStep());
   registerStep(createSpellsStep());
   registerStep(createEquipmentStep());
+  registerStep(createEquipmentShopStep());
 
   // Portrait (AI generation or manual upload)
   registerStep(createPortraitStep());

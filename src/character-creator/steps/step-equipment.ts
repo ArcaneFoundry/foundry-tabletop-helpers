@@ -1,121 +1,108 @@
-/**
- * Character Creator — Step 9: Equipment
- *
- * Starting equipment selection or starting gold.
- * Shows equipment items from configured packs grouped by category.
- */
-
 import { MOD } from "../../logger";
 import type {
   WizardStepDefinition,
   WizardState,
-  EquipmentSelection,
-  StepCallbacks,
-  CreatorIndexEntry,
 } from "../character-creator-types";
-import { compendiumIndexer } from "../data/compendium-indexer";
-import { getStartingGoldForSelections } from "../starting-resources";
+import { ensureEquipmentShopMetadataReady } from "../character-creator-index-cache";
+import {
+  buildDefaultEquipmentSelection,
+  deriveEquipmentState,
+  getEquipmentSelection,
+  resolveEquipmentFlow,
+  syncEquipmentSelectionSnapshot,
+} from "./equipment-flow-utils";
 
-/* ── Helpers ─────────────────────────────────────────────── */
-
-function getAvailableEquipment(state: WizardState): CreatorIndexEntry[] {
-  const entries = compendiumIndexer.getIndexedEntries("item", state.config.packSources);
-  return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
+function hasRequiredEquipmentSelections(state: WizardState): boolean {
+  const selection = getEquipmentSelection(state);
+  return Boolean(selection.classOptionId && selection.backgroundOptionId);
 }
 
-function getStartingGold(state: WizardState): number {
-  return getStartingGoldForSelections(state.selections);
-}
-
-function buildDefaultEquipmentSelection(state: WizardState): EquipmentSelection {
-  const startingGold = getStartingGold(state);
-  const preferredMethod = state.config.equipmentMethod === "gold" ? "gold" : "equipment";
+async function buildEquipmentViewModel(state: WizardState): Promise<Record<string, unknown>> {
+  await ensureEquipmentShopMetadataReady(state.config.packSources, { persistIfMissing: false });
+  const resolution = await resolveEquipmentFlow(state);
+  syncEquipmentSelectionSnapshot(state, resolution);
+  const selection = getEquipmentSelection(state);
+  const derived = deriveEquipmentState(state, resolution);
 
   return {
-    method: preferredMethod,
-    goldAmount: preferredMethod === "gold" ? startingGold : undefined,
+    stepId: "equipment",
+    stepTitle: "Build:",
+    stepLabel: "Equipment",
+    stepIcon: "fa-solid fa-sack",
+    hideStepIndicator: true,
+    hideShellHeader: true,
+    shellContentClass: "cc-step-content--build-flow",
+    resolution,
+    selection,
+    derived,
   };
 }
 
-/* ── Step Definition ─────────────────────────────────────── */
+async function buildEquipmentShopViewModel(state: WizardState): Promise<Record<string, unknown>> {
+  await ensureEquipmentShopMetadataReady(state.config.packSources, { persistIfMissing: false });
+  const resolution = await resolveEquipmentFlow(state);
+  syncEquipmentSelectionSnapshot(state, resolution);
+  const selection = getEquipmentSelection(state);
+  const derived = deriveEquipmentState(state, resolution);
+
+  return {
+    stepId: "equipmentShop",
+    stepTitle: "Build:",
+    stepLabel: "Shop",
+    stepIcon: "fa-solid fa-store",
+    hideStepIndicator: true,
+    hideShellHeader: true,
+    shellContentClass: "cc-step-content--build-flow",
+    resolution,
+    selection,
+    derived,
+  };
+}
 
 export function createEquipmentStep(): WizardStepDefinition {
   return {
     id: "equipment",
     label: "Equipment",
     icon: "fa-solid fa-sack",
-    templatePath: `modules/${MOD}/templates/character-creator/cc-step-equipment.hbs`,
-    dependencies: ["class"],
-    isApplicable: () => true,
-
-    isComplete(state: WizardState): boolean {
-      const data = state.selections.equipment;
-      if (!data) return false;
-      return data.method === "gold" || data.method === "equipment";
+    renderMode: "react",
+    templatePath: `modules/${MOD}/templates/character-creator/cc-step-placeholder.hbs`,
+    dependencies: ["class", "background"],
+    isApplicable: (state) => Boolean(state.selections.class?.uuid && state.selections.background?.uuid),
+    isComplete(state) {
+      return hasRequiredEquipmentSelections(state);
     },
-
-    async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
-      await compendiumIndexer.loadPacks(state.config.packSources);
-
-      const data = state.selections.equipment ?? buildDefaultEquipmentSelection(state);
-      const equipment = getAvailableEquipment(state);
-      const startingGold = getStartingGold(state);
-      const gmMethod = state.config.equipmentMethod;
-
-      // Group equipment by category
-      const weapons = equipment.filter((e) => e.weaponType);
-      const armor = equipment.filter((e) => e.armorType);
-      const other = equipment.filter((e) => !e.weaponType && !e.armorType);
-
-      return {
-        method: data?.method ?? "equipment",
-        isEquipment: !data?.method || data.method === "equipment",
-        isGold: data?.method === "gold",
-        allowEquipment: gmMethod === "equipment" || gmMethod === "both",
-        allowGold: gmMethod === "gold" || gmMethod === "both",
-        startingGold,
-        equipmentFallbackGold: startingGold,
-        goldAmount: data?.goldAmount ?? startingGold,
-        weapons: weapons.slice(0, 50), // Limit for performance
-        armor: armor.slice(0, 50),
-        other: other.slice(0, 50),
-        hasWeapons: weapons.length > 0,
-        hasArmor: armor.length > 0,
-        hasOther: other.length > 0,
-        className: state.selections.class?.name ?? "your class",
-      };
+    getStatusHint(state) {
+      if (!state.selections.class?.uuid || !state.selections.background?.uuid) return "";
+      const selection = getEquipmentSelection(state);
+      if (!selection.classOptionId) return "Choose your class provisions";
+      if (!selection.backgroundOptionId) return "Choose your background provisions";
+      return "";
     },
+    async buildViewModel(state) {
+      if (!state.selections.equipment) state.selections.equipment = buildDefaultEquipmentSelection();
+      return buildEquipmentViewModel(state);
+    },
+  };
+}
 
-    onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
-      if (!state.selections.equipment) {
-        callbacks.setDataSilent(buildDefaultEquipmentSelection(state));
-      }
-
-      // Method tabs
-      el.querySelectorAll("[data-equip-method]").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          const method = (tab as HTMLElement).dataset.equipMethod as "equipment" | "gold";
-          if (!method) return;
-          const startingGold = getStartingGold(state);
-          callbacks.setData({
-            method,
-            goldAmount: method === "gold" ? startingGold : undefined,
-          } as EquipmentSelection);
-        });
-      });
-
-      // Gold amount input — save silently (no layout change)
-      const goldInput = el.querySelector("[data-gold-amount]") as HTMLInputElement | null;
-      if (goldInput) {
-        goldInput.addEventListener("change", () => {
-          const amount = parseInt(goldInput.value, 10);
-          if (isNaN(amount) || amount < 0) return;
-          callbacks.setDataSilent({
-            method: "gold",
-            goldAmount: amount,
-          } as EquipmentSelection);
-        });
-      }
+export function createEquipmentShopStep(): WizardStepDefinition {
+  return {
+    id: "equipmentShop",
+    label: "Shop",
+    icon: "fa-solid fa-store",
+    renderMode: "react",
+    templatePath: `modules/${MOD}/templates/character-creator/cc-step-placeholder.hbs`,
+    dependencies: ["equipment"],
+    isApplicable: (state) => {
+      if (!hasRequiredEquipmentSelections(state)) return false;
+      const selection = getEquipmentSelection(state);
+      return (selection.baseGoldCp ?? 0) > 0;
+    },
+    isComplete: (state) => hasRequiredEquipmentSelections(state),
+    getStatusHint: (state) => (state.selections.equipment?.remainingGoldCp ?? 0) > 0 ? "Spend or save your remaining gold" : "",
+    async buildViewModel(state) {
+      if (!state.selections.equipment) state.selections.equipment = buildDefaultEquipmentSelection();
+      return buildEquipmentShopViewModel(state);
     },
   };
 }

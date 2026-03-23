@@ -15,6 +15,7 @@ type IndexReadyOptions = {
   persistIfMissing?: boolean;
   enrichWeaponMetadata?: boolean;
   enrichOriginFeatMetadata?: boolean;
+  enrichEquipmentShopMetadata?: boolean;
 };
 
 export function getCharacterCreatorIndexStatus(sources: PackSourceConfig): PersistentCompendiumIndexStatus {
@@ -117,6 +118,17 @@ export async function ensureOriginFeatMetadataReady(
     contentKeys: ["backgrounds", "feats"],
     persistIfMissing: options?.persistIfMissing ?? false,
     enrichOriginFeatMetadata: true,
+  });
+}
+
+export async function ensureEquipmentShopMetadataReady(
+  sources: PackSourceConfig,
+  options?: { persistIfMissing?: boolean },
+): Promise<void> {
+  await ensureCharacterCreatorIndexesReady(sources, {
+    contentKeys: ["items"],
+    persistIfMissing: options?.persistIfMissing ?? false,
+    enrichEquipmentShopMetadata: true,
   });
 }
 
