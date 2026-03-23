@@ -4,6 +4,7 @@ import { getClassPresentation } from "../steps/class/class-presentation";
 
 const BACKGROUND_STEP_IDS = [
   "background",
+  "backgroundSkillConflicts",
   "backgroundAsi",
   "backgroundLanguages",
   "originChoices",
@@ -22,12 +23,18 @@ const ORIGIN_GROUP_STEP_IDS = new Set([
   "originSummary",
 ]);
 
-function getStepStatus(
-  steps: Array<{ id: string; status: StepStatus; active: boolean }>,
-  stepId: string,
-): StepStatus {
-  return steps.find((step) => step.id === stepId)?.status ?? "pending";
-}
+const ORIGIN_SUBSTEP_LABELS: Record<string, string> = {
+  background: "Background",
+  backgroundSkillConflicts: "Skill Swap",
+  backgroundAsi: "Aptitudes",
+  backgroundLanguages: "Bg. Languages",
+  originChoices: "Feat",
+  species: "Species",
+  speciesSkills: "Skills",
+  speciesLanguages: "Sp. Languages",
+  speciesItemChoices: "Gifts",
+  originSummary: "Summary",
+};
 
 function mapStepStatus(
   status: StepStatus,
@@ -46,6 +53,10 @@ function isSpeciesStep(stepId: string): boolean {
   return SPECIES_STEP_IDS.includes(stepId as typeof SPECIES_STEP_IDS[number]);
 }
 
+function getOriginSubstepLabel(stepId: string, fallback: string): string {
+  return ORIGIN_SUBSTEP_LABELS[stepId] ?? fallback;
+}
+
 export function buildOriginAggregateStepperModel(
   state: WizardState,
   steps: Array<{ id: string; label: string; icon: string; status: StepStatus; active: boolean }>,
@@ -58,8 +69,12 @@ export function buildOriginAggregateStepperModel(
   const speciesComplete = speciesSteps.length > 0 && speciesSteps.every((step) => step.status === "complete");
   const onBackgroundStep = isBackgroundStep(currentStepId);
   const onSpeciesStep = isSpeciesStep(currentStepId);
+  const onOriginStep = onBackgroundStep || onSpeciesStep;
   const hasBackground = Boolean(state.selections.background?.uuid);
   const hasSpecies = Boolean(state.selections.species?.uuid);
+  const originSteps = [...backgroundSteps, ...speciesSteps];
+  const originReady = hasBackground || backgroundComplete || hasSpecies || speciesComplete;
+  const originComplete = backgroundComplete && speciesComplete;
 
   return {
     milestones: [
@@ -71,65 +86,27 @@ export function buildOriginAggregateStepperModel(
         status: "complete",
       },
       {
-        id: "background",
-        label: "Background",
+        id: "origin",
+        label: "Origins",
         icon: "fa-solid fa-scroll",
-        active: onBackgroundStep,
-        status: onBackgroundStep
-          ? (hasBackground ? "in-progress" : "selection-active")
-          : backgroundComplete
+        active: onOriginStep || currentStepId === "originSummary",
+        status: (onOriginStep || currentStepId === "originSummary")
+          ? (originReady ? "in-progress" : "selection-active")
+          : originComplete
             ? "complete"
-            : hasBackground
-              ? "selection-active"
-              : "pending",
-      },
-      {
-        id: "species",
-        label: "Species",
-        icon: "fa-solid fa-dna",
-        active: onSpeciesStep,
-        status: !backgroundComplete && !onSpeciesStep
-          ? "pending"
-          : onSpeciesStep
-            ? (hasSpecies ? "in-progress" : "selection-active")
-            : speciesComplete
-              ? "complete"
-              : hasSpecies
-                ? "selection-active"
-                : backgroundComplete
-                  ? "selection-active"
-                  : "pending",
-      },
-      {
-        id: "originSummary",
-        label: "Summary",
-        icon: "fa-solid fa-layer-group",
-        active: currentStepId === "originSummary",
-        status: currentStepId === "originSummary"
-          ? "in-progress"
-          : getStepStatus(steps, "originSummary") === "complete"
-            ? "complete"
-            : backgroundComplete && speciesComplete
+            : originReady
               ? "selection-active"
               : "pending",
       },
     ],
-    substeps: onSpeciesStep
-      ? speciesSteps.map((step) => ({
+    substeps: [...originSteps, ...steps.filter((step) => step.id === "originSummary")].map((step) => ({
         id: step.id,
-        label: step.label,
-        icon: step.icon,
-        active: step.id === currentStepId,
-        status: mapStepStatus(step.status, step.id === currentStepId),
-      }))
-      : backgroundSteps.map((step) => ({
-        id: step.id,
-        label: step.label,
+        label: getOriginSubstepLabel(step.id, step.label),
         icon: step.icon,
         active: step.id === currentStepId,
         status: mapStepStatus(step.status, step.id === currentStepId),
       })),
-    showSubsteps: ORIGIN_GROUP_STEP_IDS.has(currentStepId) && currentStepId !== "originSummary",
+    showSubsteps: ORIGIN_GROUP_STEP_IDS.has(currentStepId),
   };
 }
 

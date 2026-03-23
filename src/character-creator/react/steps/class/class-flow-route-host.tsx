@@ -192,7 +192,7 @@ export function ClassFlowRouteHost(
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
         className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-fth-cc-gold/45 bg-[linear-gradient(180deg,rgba(249,237,216,0.98),rgba(236,219,191,0.98))] p-[0.35rem] shadow-[0_24px_60px_rgba(0,0,0,0.34)]"
-        initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.985 }}
+        initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),transparent_28%),linear-gradient(180deg,rgba(255,248,236,0.98),rgba(232,214,187,0.98))]" />

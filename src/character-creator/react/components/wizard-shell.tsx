@@ -134,7 +134,7 @@ export function WizardShell({
         <div className="pointer-events-none absolute inset-x-10 bottom-0 h-5 bg-[radial-gradient(circle_at_bottom,rgba(0,0,0,0.28),transparent_72%)]" />
         <motion.button
           className={cn(
-            "relative z-10 inline-flex min-w-32 items-center justify-center gap-2 rounded-[1rem] border px-5 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
+            "cc-shell-footer-btn cc-shell-footer-btn--back relative z-10 inline-flex min-w-32 items-center justify-center gap-2 rounded-[1rem] border px-5 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
             "border-fth-cc-gold/40 bg-[linear-gradient(180deg,#4a6285_0%,#29384f_52%,#17202e_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_20px_rgba(0,0,0,0.22)]",
             "hover:border-fth-cc-gold hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45",
           )}
@@ -146,7 +146,6 @@ export function WizardShell({
         >
           <span className="pointer-events-none absolute inset-[2px] rounded-[0.85rem] border border-white/10" />
           <ButtonOrnament side="left" />
-          <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
           <span>Back</span>
           <ButtonOrnament side="right" />
         </motion.button>
@@ -167,7 +166,7 @@ export function WizardShell({
         {shellContext.isReviewStep ? (
           <motion.button
             className={cn(
-              "relative z-10 inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
+              "cc-shell-footer-btn cc-shell-footer-btn--primary relative z-10 inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
               "border-fth-cc-gold/70 bg-[linear-gradient(180deg,#c04732_0%,#9f231a_52%,#6e1715_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,238,222,0.16),0_12px_24px_rgba(0,0,0,0.24)]",
               "hover:brightness-110 disabled:cursor-progress disabled:opacity-70",
             )}
@@ -186,7 +185,7 @@ export function WizardShell({
         ) : (
           <motion.button
             className={cn(
-              "relative z-10 inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
+              "cc-shell-footer-btn cc-shell-footer-btn--primary relative z-10 inline-flex min-w-40 items-center justify-center gap-2 rounded-[1rem] border px-6 py-2.5 font-fth-cc-ui text-sm uppercase tracking-[0.12em] transition",
               "border-fth-cc-gold/70 bg-[linear-gradient(180deg,#c04732_0%,#9f231a_52%,#6e1715_100%)] text-fth-cc-light shadow-[inset_0_1px_0_rgba(255,238,222,0.16),0_12px_24px_rgba(0,0,0,0.24)]",
               "hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45",
             )}
@@ -199,7 +198,6 @@ export function WizardShell({
             <span className="pointer-events-none absolute inset-[2px] rounded-[0.85rem] border border-white/10" />
             <ButtonOrnament side="left" />
             <span>{shellContext.nextButtonLabel ?? "Next"}</span>
-            <i className="fa-solid fa-chevron-right" aria-hidden="true" />
             <ButtonOrnament side="right" />
           </motion.button>
         )}

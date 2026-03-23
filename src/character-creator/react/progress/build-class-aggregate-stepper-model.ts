@@ -41,6 +41,7 @@ const CLASS_SELECTION_STEP_IDS = [
 ] as const;
 
 const CLASS_GROUP_STEP_IDS = new Set([...CLASS_SELECTION_STEP_IDS, "class", "classSummary"]);
+const CLASS_SUBSTEP_STEP_IDS = [...CLASS_SELECTION_STEP_IDS, "classSummary"] as const;
 
 function getStepStatus(
   steps: Array<{ id: string; status: StepStatus; active: boolean }>,
@@ -62,6 +63,10 @@ function isSelectionStep(stepId: string): boolean {
   return CLASS_SELECTION_STEP_IDS.includes(stepId as typeof CLASS_SELECTION_STEP_IDS[number]);
 }
 
+function isClassSubstep(stepId: string): boolean {
+  return CLASS_SUBSTEP_STEP_IDS.includes(stepId as typeof CLASS_SUBSTEP_STEP_IDS[number]);
+}
+
 export function buildClassAggregateStepperModel(
   state: WizardState,
   steps: Array<{ id: string; label: string; icon: string; status: StepStatus; active: boolean }>,
@@ -70,6 +75,7 @@ export function buildClassAggregateStepperModel(
   const hasSelectedClass = Boolean(state.selections.class?.uuid);
   const inClassGroup = CLASS_GROUP_STEP_IDS.has(currentStepId);
   const selectionSteps = steps.filter((step) => isSelectionStep(step.id));
+  const classSubsteps = steps.filter((step) => isClassSubstep(step.id));
   const selectionComplete = selectionSteps.every((step) => step.status === "complete");
   const onSelectionStep = isSelectionStep(currentStepId);
   const classPresentation = getClassPresentation(state.selections.class?.identifier, state.selections.class?.name);
@@ -79,44 +85,31 @@ export function buildClassAggregateStepperModel(
       id: "class",
       label: hasSelectedClass ? classPresentation.label : "Class",
       icon: hasSelectedClass ? classPresentation.icon : "fa-solid fa-shield-halved",
-      active: currentStepId === "class",
+      active: inClassGroup,
       status: !hasSelectedClass
         ? "pending"
-        : currentStepId === "class"
-          ? "selection-active"
+        : inClassGroup
+          ? currentStepId === "class"
+            ? "selection-active"
+            : "in-progress"
           : "complete",
     },
     {
-      id: "selections",
-      label: "Selections",
-      icon: "fa-solid fa-compass-drafting",
-      active: onSelectionStep,
+      id: "origins",
+      label: "Origins",
+      icon: "fa-solid fa-scroll",
+      active: false,
       status: !hasSelectedClass
         ? "pending"
-        : onSelectionStep
-          ? "in-progress"
-          : selectionComplete
-            ? "complete"
-            : inClassGroup
-              ? "in-progress"
-              : "pending",
-    },
-    {
-      id: "classSummary",
-      label: "Summary",
-      icon: "fa-solid fa-scroll",
-      active: currentStepId === "classSummary",
-      status: currentStepId === "classSummary"
-        ? "in-progress"
         : getStepStatus(steps, "classSummary") === "complete"
-          ? "complete"
-          : selectionComplete && hasSelectedClass
             ? "selection-active"
-            : "pending",
+            : selectionComplete
+              ? "selection-active"
+              : "pending",
     },
   ];
 
-  const substeps: ClassAggregateSubstepNode[] = selectionSteps.map((step) => ({
+  const substeps: ClassAggregateSubstepNode[] = classSubsteps.map((step) => ({
     id: step.id,
     label: step.label,
     icon: step.icon,

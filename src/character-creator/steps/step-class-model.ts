@@ -9,6 +9,7 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import {
+  getEffectiveAdvancementLevel,
   parseClassAdvancementRequirements,
   parseClassSkillAdvancement,
   parseClassSpellcasting,
@@ -148,7 +149,7 @@ export function getFeatureSummary(doc: ClassDocumentLike | null, startingLevel: 
     const title = typeof entry.title === "string" ? entry.title.trim() : "";
     if (!title) continue;
 
-    const level = typeof entry.level === "number" ? entry.level : undefined;
+    const level = getEffectiveAdvancementLevel(entry as never);
     if (level && level > startingLevel) continue;
 
     const normalizedTitle = title.toLowerCase();

@@ -4,6 +4,7 @@ import type { ClassAggregateStepperModel } from "../../progress/build-class-aggr
 
 export type OriginFlowPaneId =
   | "background"
+  | "backgroundSkillConflicts"
   | "backgroundAsi"
   | "backgroundLanguages"
   | "originChoices"
@@ -22,6 +23,7 @@ export interface OriginFlowShellModel {
 
 function getCurrentPane(currentStepId: string): OriginFlowPaneId {
   switch (currentStepId) {
+    case "backgroundSkillConflicts":
     case "backgroundAsi":
     case "backgroundLanguages":
     case "originChoices":
@@ -40,6 +42,8 @@ function getPaneTitle(currentPane: OriginFlowPaneId): string {
   switch (currentPane) {
     case "backgroundAsi":
       return "Shape Your Aptitudes";
+    case "backgroundSkillConflicts":
+      return "Resolve Overlapping Skills";
     case "backgroundLanguages":
       return "Choose Your Background Languages";
     case "originChoices":

@@ -24,8 +24,10 @@ function allowsUnrestrictedBackgroundAsi(state: WizardState): boolean {
 
 function getAllowedBackgroundAsiAbilities(state: WizardState): AbilityKey[] {
   if (allowsUnrestrictedBackgroundAsi(state)) return [...ABILITY_KEYS];
-  const suggested = state.selections.background?.grants.asiSuggested ?? [];
-  const allowed = suggested.filter((key): key is AbilityKey => ABILITY_KEYS.includes(key as AbilityKey));
+  const allowed = [...new Set([
+    ...(state.selections.background?.grants.asiAllowed ?? []),
+    ...(state.selections.background?.grants.asiSuggested ?? []),
+  ])].filter((key): key is AbilityKey => ABILITY_KEYS.includes(key as AbilityKey));
   return allowed.length > 0 ? allowed : [...ABILITY_KEYS];
 }
 

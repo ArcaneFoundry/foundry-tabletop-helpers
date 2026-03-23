@@ -249,7 +249,7 @@ export function ClassAggregateStepper({
       {model.showSubsteps && model.substeps.length > 0 ? (
         <motion.div
           animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-          className="relative z-10 mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-2 rounded-[1.2rem] border border-[#cdb28a]/70 bg-[linear-gradient(180deg,rgba(255,249,239,0.8),rgba(244,231,208,0.82))] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_12px_24px_rgba(76,53,36,0.08)]"
+          className="relative z-10 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 pt-1"
           initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
           transition={{ delay: 0.2, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -269,8 +269,6 @@ function MilestoneNode({
   milestone: ClassAggregateMilestoneNode;
   prefersReducedMotion: boolean;
 }) {
-  const isAccent = milestone.status === "selection-active" || milestone.status === "in-progress";
-
   return (
     <motion.div
       animate={prefersReducedMotion ? undefined : getMilestoneAnimate(milestone.status)}
@@ -279,51 +277,33 @@ function MilestoneNode({
     >
       <span
         className={cn(
-          "relative inline-flex items-center gap-2 rounded-full px-1.5 py-1",
-          getMilestonePlateClassName(milestone.status),
+          "relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
+          getMilestoneClassName(milestone.status),
         )}
+        title={milestone.label}
       >
         <span
           className={cn(
-            "relative z-10 inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
-            getMilestoneClassName(milestone.status),
+            "pointer-events-none absolute inset-[-5px] rounded-full transition-opacity",
+            getMilestoneHaloClassName(milestone.status),
           )}
-          title={milestone.label}
-        >
-          <span
-            className={cn(
-              "pointer-events-none absolute inset-[-5px] rounded-full transition-opacity",
-              getMilestoneHaloClassName(milestone.status),
-            )}
-          />
-          <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/20" />
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.32),transparent_42%)]" />
-          <span className="sr-only">{milestone.label}</span>
-          <i className={cn(milestone.icon, "relative z-10")} aria-hidden="true" />
-        </span>
-        {isAccent ? (
-          <span
-            aria-hidden="true"
-            className={cn(
-              "absolute inset-y-1 left-1 z-0 rounded-full border opacity-100",
-              milestone.status === "in-progress"
-                ? "right-1 border-[#5eab98]/55 bg-[linear-gradient(180deg,rgba(236,250,245,0.92),rgba(194,233,222,0.82))] shadow-[inset_0_1px_0_rgba(255,255,255,0.78),0_10px_20px_rgba(79,138,124,0.12)]"
-                : "right-1 border-[#d8bb86]/65 bg-[linear-gradient(180deg,rgba(255,250,240,0.94),rgba(244,228,196,0.82))] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_10px_20px_rgba(124,90,46,0.12)]",
-            )}
-          />
-        ) : null}
+        />
+        <span className="pointer-events-none absolute inset-[2px] rounded-full border border-white/20" />
+        <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.32),transparent_42%)]" />
+        <span className="sr-only">{milestone.label}</span>
+        <i className={cn(milestone.icon, "relative z-10")} aria-hidden="true" />
       </span>
       <span
         className={cn(
-          "relative min-w-[6.5rem] rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] md:text-[0.72rem]",
+          "relative min-w-[6.25rem] pb-1 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] md:text-[0.72rem]",
           getMilestoneLabelClassName(milestone.status),
         )}
       >
-        {isAccent ? (
+        {milestone.status !== "pending" && milestone.status !== "skipped" ? (
           <span
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute inset-x-3 bottom-[0.42rem] h-px",
+              "pointer-events-none absolute inset-x-0 bottom-[0.1rem] h-px",
               milestone.status === "in-progress"
                 ? "bg-[linear-gradient(90deg,rgba(78,140,124,0),rgba(78,140,124,0.82),rgba(78,140,124,0))]"
                 : "bg-[linear-gradient(90deg,rgba(203,152,69,0),rgba(203,152,69,0.82),rgba(203,152,69,0))]",
@@ -347,18 +327,29 @@ function SubstepChip({
     <motion.div
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_14px_rgba(76,53,36,0.08)]",
+        "relative inline-flex items-center gap-1.5 px-1 py-1.5",
         step.active
-          ? "border-[#4e8c7c] bg-[linear-gradient(180deg,#e7f6f0,#b8dfd3)] text-[#1d453b]"
+          ? "text-[#1d453b]"
           : step.status === "complete"
-            ? "border-[#d1ab63] bg-[linear-gradient(180deg,#f7eac7,#e0be7d)] text-[#5c3c16]"
-            : "border-[#ceb08a] bg-[linear-gradient(180deg,#f8efe0,#ead8bc)] text-[#6a4f3c]",
+            ? "text-[#5c3c16]"
+            : "text-[#6a4f3c]",
       )}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
       title={step.label}
     >
-      <i className={cn(step.icon, "text-[0.72rem]")} aria-hidden="true" />
-      <span className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.14em]">{step.label}</span>
+      <i className={cn(step.icon, "text-[0.68rem]")} aria-hidden="true" />
+      <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] md:text-[0.62rem]">{step.label}</span>
+      {step.status !== "pending" ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 h-px",
+            step.active
+              ? "bg-[linear-gradient(90deg,rgba(78,140,124,0),rgba(78,140,124,0.82),rgba(78,140,124,0))]"
+              : "bg-[linear-gradient(90deg,rgba(203,152,69,0),rgba(203,152,69,0.82),rgba(203,152,69,0))]",
+          )}
+        />
+      ) : null}
     </motion.div>
   );
 }
@@ -425,17 +416,6 @@ function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
       return "border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] text-[#8f7e69]";
     default:
       return "border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] text-[#6b4d37]";
-  }
-}
-
-function getMilestonePlateClassName(status: ClassAggregatePresentationStatus) {
-  switch (status) {
-    case "selection-active":
-      return "bg-[linear-gradient(180deg,rgba(255,250,240,0.88),rgba(244,229,201,0.7))] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]";
-    case "in-progress":
-      return "bg-[linear-gradient(180deg,rgba(242,252,248,0.84),rgba(219,241,233,0.64))] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
-    default:
-      return "";
   }
 }
 

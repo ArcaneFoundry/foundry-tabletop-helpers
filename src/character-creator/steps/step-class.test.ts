@@ -8,8 +8,24 @@ const getIndexedEntriesMock = vi.fn();
 const getCachedDescriptionMock = vi.fn();
 const fetchDocumentMock = vi.fn();
 const parseClassSkillAdvancementMock = vi.fn();
+const parseClassAdvancementRequirementsMock = vi.fn();
 const parseClassSpellcastingMock = vi.fn();
 const parseClassWeaponMasteryAdvancementMock = vi.fn();
+const getEffectiveAdvancementLevelMock = vi.fn((entry: { level?: unknown; configuration?: { choices?: unknown } }) => {
+  if (typeof entry.level === "number") return entry.level;
+  const choices = entry.configuration?.choices;
+  if (choices && typeof choices === "object" && !Array.isArray(choices)) {
+    const levels = Object.entries(choices as Record<string, unknown>)
+      .flatMap(([key, choice]) => {
+        const level = Number(key);
+        if (!Number.isFinite(level) || String(level) !== key) return [];
+        const count = choice && typeof choice === "object" ? (choice as { count?: unknown }).count : 0;
+        return typeof count === "number" && count > 0 ? [level] : [];
+      });
+    if (levels.length > 0) return Math.min(...levels);
+  }
+  return 1;
+});
 const renderTemplateMock = vi.fn();
 const beginCardSelectionUpdateMock = vi.fn();
 const isCurrentCardSelectionUpdateMock = vi.fn();
@@ -36,6 +52,8 @@ vi.mock("../data/compendium-indexer", () => ({
 }));
 
 vi.mock("../data/advancement-parser", () => ({
+  getEffectiveAdvancementLevel: getEffectiveAdvancementLevelMock,
+  parseClassAdvancementRequirements: parseClassAdvancementRequirementsMock,
   parseClassSkillAdvancement: parseClassSkillAdvancementMock,
   parseClassSpellcasting: parseClassSpellcastingMock,
   parseClassWeaponMasteryAdvancement: parseClassWeaponMasteryAdvancementMock,
@@ -132,6 +150,7 @@ beforeEach(() => {
     skillPool: ["arc", "his"],
     skillCount: 2,
   });
+  parseClassAdvancementRequirementsMock.mockResolvedValue([]);
   parseClassSpellcastingMock.mockReturnValue({
     isSpellcaster: true,
     ability: "int",
@@ -421,6 +440,43 @@ describe("step class", () => {
     }, 2)).toEqual([
       { title: "Sneak Attack", level: 1 },
       { title: "Cunning Action", level: 2 },
+    ]);
+    expect(__classStepInternals.getFeatureSummary({
+      system: {
+        advancement: [
+          {
+            type: "ItemChoice",
+            title: "Fighting Style",
+            configuration: {
+              choices: {
+                2: { count: 1 },
+              },
+            },
+          },
+          { title: "Lay on Hands", level: 1 },
+        ],
+      },
+    }, 1)).toEqual([
+      { title: "Lay on Hands", level: 1 },
+    ]);
+    expect(__classStepInternals.getFeatureSummary({
+      system: {
+        advancement: [
+          {
+            type: "ItemChoice",
+            title: "Fighting Style",
+            configuration: {
+              choices: {
+                1: { count: 1 },
+              },
+            },
+          },
+          { title: "Second Wind", level: 1 },
+        ],
+      },
+    }, 1)).toEqual([
+      { title: "Fighting Style", level: 1 },
+      { title: "Second Wind", level: 1 },
     ]);
     expect(__classStepInternals.getHitPointFeatureLabel("d10", 1)).toBe("Hitpoints: 10");
     expect(__classStepInternals.getHitPointFeatureLabel("d10", 2)).toBe("Hitpoints: +10");

@@ -84,6 +84,10 @@ export function createBackgroundStep(): WizardStepDefinition {
       const detailSelectedEntry = selectedEntry
         ? { ...selectedEntry, description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid) }
         : null;
+      const entryBlurbs = await Promise.all(
+        entries.map(async (entry) => [entry.uuid, summarizeDescription(await compendiumIndexer.getCachedDescription(entry.uuid))] as const),
+      );
+      const blurbByUuid = new Map(entryBlurbs);
 
       return {
         stepId: "background",
@@ -98,6 +102,7 @@ export function createBackgroundStep(): WizardStepDefinition {
         entries: entries.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
+          blurb: blurbByUuid.get(e.uuid) ?? "",
         })),
         selectedEntry: detailSelectedEntry,
         detailPaneHtml: detailSelectedEntry
@@ -160,4 +165,15 @@ async function renderBackgroundDetailPane(selectedEntry: Record<string, unknown>
     `modules/${MOD}/templates/character-creator/cc-step-card-detail-pane.hbs`,
     { selectedEntry },
   );
+}
+
+function summarizeDescription(descriptionHtml: string | null | undefined): string {
+  if (!descriptionHtml) return "";
+  const text = descriptionHtml
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "";
+  return text.length > 150 ? `${text.slice(0, 147).trimEnd()}...` : text;
 }

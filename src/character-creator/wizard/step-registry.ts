@@ -11,6 +11,7 @@ import type { WizardStepDefinition, WizardState } from "../character-creator-typ
 import { createAbilitiesStep } from "../steps/step-abilities";
 import { createSpeciesStep } from "../steps/step-species";
 import { createBackgroundStep } from "../steps/step-background";
+import { createBackgroundSkillConflictsStep } from "../steps/step-background-skill-conflicts";
 import { createBackgroundAsiStep } from "../steps/step-background-asi";
 import { createBackgroundLanguagesStep } from "../steps/step-background-languages";
 import { createClassStep } from "../steps/step-class";
@@ -51,6 +52,7 @@ const STEP_ORDER = [
   "classSummary",
   "subclass",
   "background",
+  "backgroundSkillConflicts",
   "backgroundAsi",
   "backgroundLanguages",
   "originChoices",
@@ -116,6 +118,7 @@ const STEP_ATMOSPHERES: Record<string, string> = {
   classSummary: "cc-atmosphere--gold",
   subclass: "cc-atmosphere--forge",
   background: "cc-atmosphere--shadow",
+  backgroundSkillConflicts: "cc-atmosphere--shadow",
   backgroundAsi: "cc-atmosphere--shadow",
   backgroundLanguages: "cc-atmosphere--shadow",
   originChoices: "cc-atmosphere--crimson",
@@ -186,6 +189,7 @@ export function registerAllSteps(): void {
   registerStep(createClassSummaryStep());
   registerStep(createSubclassStep());
   registerStep(createBackgroundStep());
+  registerStep(createBackgroundSkillConflictsStep());
   registerStep(createBackgroundAsiStep());
   registerStep(createBackgroundLanguagesStep());
   registerStep(createOriginChoicesStep());

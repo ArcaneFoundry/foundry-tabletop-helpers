@@ -12,6 +12,10 @@ type LabeledOption = {
   label: string;
 };
 
+export function getRequiredClassSkillCount(state: WizardState): number {
+  return Math.min(state.selections.class?.skillCount ?? 0, state.selections.class?.skillPool?.length ?? 0);
+}
+
 export function getTotalLanguageChoiceCount(state: WizardState): number {
   const bgCount = state.selections.background?.grants?.languageChoiceCount ?? 0;
   const speciesCount = state.selections.species?.languageChoiceCount ?? 0;
@@ -66,7 +70,61 @@ export function getKnownOriginSkillKeys(state: WizardState): Set<string> {
     ...(state.selections.background?.grants.skillProficiencies ?? []),
     ...(state.selections.skills?.chosen ?? []),
     ...(state.selections.species?.skillGrants ?? []),
+    ...(state.selections.speciesChoices?.chosenSkills ?? []),
   ]);
+}
+
+export function getBackgroundSkillConflictKeys(state: WizardState): string[] {
+  const backgroundSkills = new Set(state.selections.background?.grants.skillProficiencies ?? []);
+  return (state.selections.skills?.chosen ?? []).filter((skill) => backgroundSkills.has(skill));
+}
+
+export function getRetainedClassSkillKeys(state: WizardState): string[] {
+  const conflictKeys = new Set(getBackgroundSkillConflictKeys(state));
+  return (state.selections.skills?.chosen ?? []).filter((skill) => !conflictKeys.has(skill));
+}
+
+export function getBackgroundSkillConflictReplacementCount(state: WizardState): number {
+  const requiredClassSkillCount = getRequiredClassSkillCount(state);
+  const retainedCount = getRetainedClassSkillKeys(state).length;
+  return Math.max(0, requiredClassSkillCount - retainedCount);
+}
+
+export function getBackgroundSkillConflictOptions(state: WizardState): Array<{
+  id: string;
+  label: string;
+  abilityAbbrev: string;
+}> {
+  const retained = new Set(getRetainedClassSkillKeys(state));
+  const backgroundSkills = new Set(state.selections.background?.grants.skillProficiencies ?? []);
+  const otherKnown = new Set([
+    ...(state.selections.species?.skillGrants ?? []),
+    ...(state.selections.speciesChoices?.chosenSkills ?? []),
+  ]);
+
+  return dedupeLabeledOptions(
+    (state.selections.class?.skillPool ?? [])
+      .filter((skill) => !backgroundSkills.has(skill))
+      .filter((skill) => !retained.has(skill))
+      .filter((skill) => !otherKnown.has(skill))
+      .filter((skill) => skill in SKILLS)
+      .map((skill) => ({
+        id: skill,
+        label: SKILLS[skill]?.label ?? skill,
+      })),
+  )
+    .map((entry) => ({
+      ...entry,
+      abilityAbbrev: ABILITY_ABBREVS[SKILLS[entry.id]?.ability ?? "int"],
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+export function applyBackgroundSkillConflictSelections(state: WizardState, selectedReplacementSkills: string[]): string[] {
+  const retainedSkills = getRetainedClassSkillKeys(state);
+  const nextChosenSkills = [...retainedSkills, ...selectedReplacementSkills];
+  state.selections.skills = { chosen: nextChosenSkills };
+  return nextChosenSkills;
 }
 
 export function getBackgroundLanguageOptions(state: WizardState): LabeledOption[] {

@@ -73,6 +73,7 @@ export function createSpeciesStep(): WizardStepDefinition {
     id: "species",
     label: "Character Origins",
     icon: "fa-solid fa-dna",
+    renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
     dependencies: [],
     isApplicable: () => true,
@@ -109,9 +110,6 @@ export function createSpeciesStep(): WizardStepDefinition {
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
-        selectedEntry: selected
-          ? { ...entries.find((e) => e.uuid === selected.uuid), description: await compendiumIndexer.getCachedDescription(selected.uuid) }
-          : null,
         hasEntries: entries.length > 0,
         emptyMessage: "No species available. Check your GM configuration.",
       };

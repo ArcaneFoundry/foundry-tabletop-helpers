@@ -65,6 +65,7 @@ function makeState(): WizardState {
           originFeatImg: null,
           asiPoints: 3,
           asiCap: 2,
+          asiAllowed: ["int", "wis"],
           asiSuggested: ["int", "wis"],
           languageGrants: ["common"],
           languageChoiceCount: 0,

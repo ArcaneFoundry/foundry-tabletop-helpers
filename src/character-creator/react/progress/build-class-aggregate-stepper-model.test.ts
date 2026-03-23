@@ -68,8 +68,7 @@ describe("buildClassAggregateStepperModel", () => {
 
     expect(model.milestones.map((milestone) => [milestone.id, milestone.status])).toEqual([
       ["class", "pending"],
-      ["selections", "pending"],
-      ["classSummary", "pending"],
+      ["origins", "pending"],
     ]);
     expect(model.showSubsteps).toBe(false);
   });
@@ -84,17 +83,18 @@ describe("buildClassAggregateStepperModel", () => {
     );
 
     expect(model.milestones[0]).toMatchObject({ id: "class", status: "selection-active" });
-    expect(model.milestones[1]).toMatchObject({ id: "selections", status: "in-progress" });
+    expect(model.milestones[1]).toMatchObject({ id: "origins", status: "pending" });
     expect(model.showSubsteps).toBe(true);
     expect(model.substeps.map((step) => step.id)).toEqual([
       "classChoices",
       "classExpertise",
       "classLanguages",
       "weaponMasteries",
+      "classSummary",
     ]);
   });
 
-  it("marks the selections milestone complete once every class substep is complete", () => {
+  it("highlights origins once the class phase reaches summary", () => {
     const steps = createSteps().map((step) =>
       ["classChoices", "classExpertise", "classLanguages", "weaponMasteries"].includes(step.id)
         ? { ...step, status: "complete" as const, active: false }
@@ -109,7 +109,8 @@ describe("buildClassAggregateStepperModel", () => {
       "classSummary",
     );
 
-    expect(model.milestones[1]).toMatchObject({ id: "selections", status: "complete" });
-    expect(model.milestones[2]).toMatchObject({ id: "classSummary", status: "in-progress" });
+    expect(model.milestones[0]).toMatchObject({ id: "class", status: "in-progress" });
+    expect(model.milestones[1]).toMatchObject({ id: "origins", status: "selection-active" });
+    expect(model.substeps.find((step) => step.id === "classSummary")).toMatchObject({ status: "in-progress" });
   });
 });

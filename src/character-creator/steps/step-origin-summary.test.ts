@@ -20,6 +20,7 @@ function makeState(): WizardState {
           originFeatImg: "feat.png",
           asiPoints: 3,
           asiCap: 2,
+          asiAllowed: ["int", "wis"],
           asiSuggested: ["int", "wis"],
           languageGrants: ["common"],
           languageChoiceCount: 1,

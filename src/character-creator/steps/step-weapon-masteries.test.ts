@@ -97,6 +97,7 @@ function makeState(): WizardState {
           originFeatImg: null,
           asiPoints: 0,
           asiCap: 0,
+          asiAllowed: [],
           asiSuggested: [],
           languageGrants: [],
           languageChoiceCount: 0,

@@ -1,20 +1,15 @@
-@layer theme, base, components, utilities;
-
 @import "./design-tokens.css";
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/utilities" layer(utilities);
+
+@layer theme, base, components, utilities;
 
 @layer base {
   /* Scoped control reset for our module UIs only.
      Foundry applies default button chrome globally; this neutralizes it inside
      our own app roots while letting each feature's local styles define the look.
      Kept in the base layer so Tailwind utilities and feature CSS still win. */
-  .application[class*="fth-"] button,
-  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]),
-  .fth-ui-root button,
-  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]),
-  .lpcs-sheet button,
-  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]) {
+  :where(.fth-ui-root, .lpcs-sheet) :is(button, input:is([type="button"], [type="submit"], [type="reset"])) {
     appearance: none;
     -webkit-appearance: none;
     box-sizing: border-box;
@@ -35,24 +30,14 @@
     text-shadow: none;
   }
 
-  .application[class*="fth-"] button:hover,
-  .application[class*="fth-"] button:active,
-  .application[class*="fth-"] button:focus,
-  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]):hover,
-  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]):active,
-  .application[class*="fth-"] input:is([type="button"], [type="submit"], [type="reset"]):focus,
-  .fth-ui-root button:hover,
-  .fth-ui-root button:active,
-  .fth-ui-root button:focus,
-  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]):hover,
-  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]):active,
-  .fth-ui-root input:is([type="button"], [type="submit"], [type="reset"]):focus,
-  .lpcs-sheet button:hover,
-  .lpcs-sheet button:active,
-  .lpcs-sheet button:focus,
-  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]):hover,
-  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]):active,
-  .lpcs-sheet input:is([type="button"], [type="submit"], [type="reset"]):focus {
+  :where(.fth-ui-root, .lpcs-sheet) :is(
+    button:hover,
+    button:active,
+    button:focus,
+    input:is([type="button"], [type="submit"], [type="reset"]):hover,
+    input:is([type="button"], [type="submit"], [type="reset"]):active,
+    input:is([type="button"], [type="submit"], [type="reset"]):focus
+  ) {
     background: none;
     box-shadow: none;
   }

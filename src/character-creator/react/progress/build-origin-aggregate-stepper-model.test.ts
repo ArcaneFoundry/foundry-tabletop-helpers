@@ -6,7 +6,7 @@ import { buildOriginAggregateStepperModel } from "./build-origin-aggregate-stepp
 function createState(overrides?: Partial<WizardState>): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["background", "backgroundAsi", "backgroundLanguages", "originChoices", "species", "speciesSkills", "speciesItemChoices", "originSummary", "review"],
+    applicableSteps: ["background", "backgroundSkillConflicts", "backgroundAsi", "backgroundLanguages", "originChoices", "species", "speciesSkills", "speciesLanguages", "speciesItemChoices", "originSummary", "review"],
     selections: {
       class: {
         uuid: "Compendium.test.classes.Item.rogue",
@@ -42,11 +42,13 @@ function createState(overrides?: Partial<WizardState>): WizardState {
 function createSteps() {
   return [
     { id: "background", label: "Background", icon: "fa-solid fa-scroll", status: "pending" as const, active: true },
+    { id: "backgroundSkillConflicts", label: "Skill Conflicts", icon: "fa-solid fa-shuffle", status: "pending" as const, active: false },
     { id: "backgroundAsi", label: "Background Ability Scores", icon: "fa-solid fa-chart-line", status: "pending" as const, active: false },
     { id: "backgroundLanguages", label: "Background Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
     { id: "originChoices", label: "Origin Feat", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
     { id: "species", label: "Species", icon: "fa-solid fa-dna", status: "pending" as const, active: false },
     { id: "speciesSkills", label: "Species Skills", icon: "fa-solid fa-list-check", status: "pending" as const, active: false },
+    { id: "speciesLanguages", label: "Species Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
     { id: "speciesItemChoices", label: "Species Gifts", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
     { id: "originSummary", label: "Origin Summary", icon: "fa-solid fa-layer-group", status: "pending" as const, active: false },
   ];
@@ -64,7 +66,7 @@ describe("buildOriginAggregateStepperModel", () => {
     });
   });
 
-  it("shows only background substeps while the background milestone is active", () => {
+  it("shows origins as the active second milestone with the full origin subrail", () => {
     const model = buildOriginAggregateStepperModel(
       createState({
         selections: {
@@ -82,6 +84,7 @@ describe("buildOriginAggregateStepperModel", () => {
               originFeatImg: "feat.png",
               asiPoints: 3,
               asiCap: 2,
+              asiAllowed: ["con", "int", "wis"],
               asiSuggested: ["int", "wis"],
               languageGrants: [],
               languageChoiceCount: 2,
@@ -96,19 +99,25 @@ describe("buildOriginAggregateStepperModel", () => {
       "backgroundLanguages",
     );
 
-    expect(model.milestones[1]).toMatchObject({ id: "background", active: true, status: "in-progress" });
+    expect(model.milestones[1]).toMatchObject({ id: "origin", active: true, status: "in-progress" });
     expect(model.showSubsteps).toBe(true);
     expect(model.substeps.map((step) => step.id)).toEqual([
       "background",
+      "backgroundSkillConflicts",
       "backgroundAsi",
       "backgroundLanguages",
       "originChoices",
+      "species",
+      "speciesSkills",
+      "speciesLanguages",
+      "speciesItemChoices",
+      "originSummary",
     ]);
   });
 
-  it("switches to species-only substeps after background completion", () => {
+  it("keeps origin as a single active milestone through species steps", () => {
     const steps = createSteps().map((step) =>
-      ["background", "backgroundAsi", "backgroundLanguages", "originChoices"].includes(step.id)
+      ["background", "backgroundSkillConflicts", "backgroundAsi", "backgroundLanguages", "originChoices"].includes(step.id)
         ? { ...step, status: "complete" as const, active: false }
         : step.id === "speciesSkills"
           ? { ...step, active: true }
@@ -132,6 +141,7 @@ describe("buildOriginAggregateStepperModel", () => {
               originFeatImg: "feat.png",
               asiPoints: 3,
               asiCap: 2,
+              asiAllowed: ["con", "int", "wis"],
               asiSuggested: ["int", "wis"],
               languageGrants: [],
               languageChoiceCount: 2,
@@ -151,12 +161,35 @@ describe("buildOriginAggregateStepperModel", () => {
       "speciesSkills",
     );
 
-    expect(model.milestones[1]).toMatchObject({ id: "background", status: "complete" });
-    expect(model.milestones[2]).toMatchObject({ id: "species", active: true, status: "in-progress" });
+    expect(model.milestones[1]).toMatchObject({ id: "origin", active: true, status: "in-progress" });
     expect(model.substeps.map((step) => step.id)).toEqual([
+      "background",
+      "backgroundSkillConflicts",
+      "backgroundAsi",
+      "backgroundLanguages",
+      "originChoices",
       "species",
       "speciesSkills",
+      "speciesLanguages",
       "speciesItemChoices",
+      "originSummary",
+    ]);
+  });
+
+  it("omits the conflict substep when the wizard does not surface it", () => {
+    const steps = createSteps().filter((step) => step.id !== "backgroundSkillConflicts");
+    const model = buildOriginAggregateStepperModel(createState(), steps, "background");
+
+    expect(model.substeps.map((step) => step.id)).toEqual([
+      "background",
+      "backgroundAsi",
+      "backgroundLanguages",
+      "originChoices",
+      "species",
+      "speciesSkills",
+      "speciesLanguages",
+      "speciesItemChoices",
+      "originSummary",
     ]);
   });
 });
