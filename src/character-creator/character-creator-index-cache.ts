@@ -13,6 +13,8 @@ const rebuildPromises = new Map<string, Promise<PersistentCompendiumIndexSnapsho
 type IndexReadyOptions = {
   contentKeys?: Array<keyof PackSourceConfig>;
   persistIfMissing?: boolean;
+  enrichWeaponMetadata?: boolean;
+  enrichOriginFeatMetadata?: boolean;
 };
 
 export function getCharacterCreatorIndexStatus(sources: PackSourceConfig): PersistentCompendiumIndexStatus {
@@ -105,6 +107,17 @@ export async function ensureCharacterCreatorIndexesReady(
   } catch (error) {
     Log.warn("Character Creator: failed to persist rebuilt compendium cache during fallback", error);
   }
+}
+
+export async function ensureOriginFeatMetadataReady(
+  sources: PackSourceConfig,
+  options?: { persistIfMissing?: boolean },
+): Promise<void> {
+  await ensureCharacterCreatorIndexesReady(sources, {
+    contentKeys: ["backgrounds", "feats"],
+    persistIfMissing: options?.persistIfMissing ?? false,
+    enrichOriginFeatMetadata: true,
+  });
 }
 
 export function getCharacterCreatorCacheEnvironment(): {

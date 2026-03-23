@@ -12,6 +12,7 @@
 import type { FoundryDocument } from "../../types";
 import { fromUuid } from "../../types";
 import type {
+  AbilityKey,
   BackgroundGrants,
   ClassAdvancementRequirement,
   ClassAdvancementRequirementType,
@@ -19,7 +20,49 @@ import type {
   OriginAdvancementRequirementType,
   SpeciesItemChoiceGroup,
 } from "../character-creator-types";
-import { ABILITY_KEYS, SKILLS } from "./dnd5e-constants";
+import { ABILITY_KEYS, ABILITY_LABELS, SKILLS } from "./dnd5e-constants";
+
+const TOOL_HINT_LABELS: Array<[string, string]> = [
+  ["alchemist", "alchemist's supplies"],
+  ["bagpipes", "bagpipes"],
+  ["brewer", "brewer's supplies"],
+  ["calligrapher", "calligrapher's supplies"],
+  ["card", "playing cards"],
+  ["carpenter", "carpenter's tools"],
+  ["cartographer", "cartographer's tools"],
+  ["chess", "dragonchess set"],
+  ["cobbler", "cobbler's tools"],
+  ["cook", "cook's utensils"],
+  ["dice", "dice set"],
+  ["disg", "disguise kit"],
+  ["drum", "drum"],
+  ["dulcimer", "dulcimer"],
+  ["flute", "flute"],
+  ["forg", "forgery kit"],
+  ["glassblower", "glassblower's tools"],
+  ["herb", "herbalism kit"],
+  ["horn", "horn"],
+  ["jeweler", "jeweler's tools"],
+  ["leatherworker", "leatherworker's tools"],
+  ["lute", "lute"],
+  ["lyre", "lyre"],
+  ["mason", "mason's tools"],
+  ["navg", "navigator's tools"],
+  ["painter", "painter's supplies"],
+  ["panflute", "pan flute"],
+  ["pois", "poisoner's kit"],
+  ["potter", "potter's tools"],
+  ["shawm", "shawm"],
+  ["smith", "smith's tools"],
+  ["thief", "thieves' tools"],
+  ["tinker", "tinker's tools"],
+  ["viol", "viol"],
+  ["weaver", "weaver's tools"],
+  ["woodcarver", "woodcarver's tools"],
+  ["bandore", "bandore"],
+  ["cittern", "cittern"],
+  ["yarting", "yarting"],
+];
 
 /* ── Internal Types ─────────────────────────────────────── */
 
@@ -97,34 +140,128 @@ function toStringList(value: unknown): string[] {
 }
 
 function getChoiceCount(value: unknown): number {
+  return getChoiceEntries(value).reduce<number>((sum, choice) => {
+    const count = (choice as { count?: unknown }).count;
+    return sum + (typeof count === "number" ? count : 0);
+  }, 0);
+}
+
+function getChoiceEntries(value: unknown, maxLevel?: number): Array<Record<string, unknown>> {
   if (Array.isArray(value)) {
-    return value.reduce<number>((sum, choice) => {
-      if (!choice || typeof choice !== "object") return sum;
-      const count = (choice as { count?: unknown }).count;
-      return sum + (typeof count === "number" ? count : 0);
-    }, 0);
+    return value.filter((choice): choice is Record<string, unknown> => !!choice && typeof choice === "object");
   }
 
-  if (value && typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).reduce<number>((sum, choice) => {
-      if (!choice || typeof choice !== "object") return sum;
-      const count = (choice as { count?: unknown }).count;
-      return sum + (typeof count === "number" ? count : 0);
-    }, 0);
-  }
+  if (!value || typeof value !== "object") return [];
 
-  return 0;
+  return Object.entries(value as Record<string, unknown>)
+    .flatMap(([key, choice]) => {
+      if (!choice || typeof choice !== "object") return [];
+      const numericLevel = Number(key);
+      if (Number.isFinite(numericLevel) && String(numericLevel) === key) {
+        if (typeof maxLevel === "number" && numericLevel > maxLevel) return [];
+      }
+      return [choice as Record<string, unknown>];
+    });
+}
+
+function normalizePoolEntry(value: unknown): string | null {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (!value || typeof value !== "object") return null;
+
+  const uuid = (value as { uuid?: unknown }).uuid;
+  return typeof uuid === "string" && uuid.length > 0 ? uuid : null;
 }
 
 function normalizePoolValues(value: unknown): string[] {
-  if (Array.isArray(value)) return toStringList(value);
-  if (value && typeof value === "object") {
-    const entries = Object.values(value as Record<string, unknown>);
-    if (entries.every((entry) => typeof entry === "string")) {
-      return entries as string[];
-    }
+  if (Array.isArray(value)) {
+    return value
+      .map(normalizePoolEntry)
+      .filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
   }
+
+  if (value instanceof Set) {
+    return [...value]
+      .map(normalizePoolEntry)
+      .filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map(normalizePoolEntry)
+      .filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+  }
+
   return [];
+}
+
+function getChoiceLevels(value: unknown): number[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+
+  return Object.entries(value as Record<string, unknown>)
+    .flatMap(([key, choice]) => {
+      const level = Number(key);
+      if (!Number.isFinite(level) || String(level) !== key) return [];
+      if (!choice || typeof choice !== "object") return [];
+      const count = (choice as { count?: unknown }).count;
+      return typeof count === "number" && count > 0 ? [level] : [];
+    });
+}
+
+export function getEffectiveAdvancementLevel(entry: AdvancementEntry): number {
+  if (typeof entry.level === "number") return entry.level;
+
+  const choiceLevels = getChoiceLevels(entry.configuration?.choices);
+  if (choiceLevels.length > 0) return Math.min(...choiceLevels);
+
+  return 1;
+}
+
+function normalizeAbilityKey(value: unknown): AbilityKey | null {
+  return typeof value === "string" && ABILITY_KEYS.includes(value as AbilityKey)
+    ? value as AbilityKey
+    : null;
+}
+
+function parseAbilityKeys(value: unknown): AbilityKey[] {
+  if (Array.isArray(value)) {
+    return value
+      .map(normalizeAbilityKey)
+      .filter((entry): entry is AbilityKey => entry !== null);
+  }
+
+  if (!value || typeof value !== "object") return [];
+
+  return Object.entries(value as Record<string, unknown>)
+    .flatMap(([key, enabled]) => enabled ? [normalizeAbilityKey(key)] : [])
+    .filter((entry): entry is AbilityKey => entry !== null);
+}
+
+function inferAllowedAbilitiesFromHint(hint: unknown): AbilityKey[] {
+  if (typeof hint !== "string" || hint.trim().length === 0) return [];
+
+  const normalizedHint = hint.toLowerCase();
+  return ABILITY_KEYS.filter((ability) => normalizedHint.includes(ABILITY_LABELS[ability].toLowerCase()));
+}
+
+function parseAllowedBackgroundAsiAbilities(entry: AdvancementEntry): AbilityKey[] {
+  const config = entry.configuration ?? {};
+  const explicitAllowed = [
+    ...parseAbilityKeys(config.abilities),
+    ...parseAbilityKeys(config.allowed),
+  ];
+  if (explicitAllowed.length > 0) return [...new Set(explicitAllowed)];
+
+  const locked = [
+    ...parseAbilityKeys(config.locked),
+    ...parseAbilityKeys(config.restricted),
+  ];
+  if (locked.length > 0) {
+    const lockedSet = new Set(locked);
+    return ABILITY_KEYS.filter((ability) => !lockedSet.has(ability));
+  }
+
+  const fromHint = inferAllowedAbilitiesFromHint(entry.hint);
+  return fromHint.length > 0 ? fromHint : [...ABILITY_KEYS];
 }
 
 function classifyClassAdvancementRequirement(
@@ -201,6 +338,23 @@ function inferOriginSkillPool(entry: AdvancementEntry): string[] {
   return matches.length > 0 ? matches : buildOriginImplicitPool("skills");
 }
 
+function inferBackgroundSkillProficienciesFromHint(hint: unknown): string[] {
+  if (typeof hint !== "string" || hint.trim().length === 0) return [];
+
+  const normalizedHint = hint.toLowerCase();
+  return Object.entries(SKILLS)
+    .filter(([, skill]) => normalizedHint.includes(skill.label.toLowerCase()))
+    .map(([key]) => key);
+}
+
+function inferBackgroundToolProficiencyFromHint(hint: unknown): string | null {
+  if (typeof hint !== "string" || hint.trim().length === 0) return null;
+
+  const normalizedHint = hint.toLowerCase();
+  const match = TOOL_HINT_LABELS.find(([, label]) => normalizedHint.includes(label));
+  return match?.[0] ?? null;
+}
+
 async function resolveOriginItemChoiceOptions(value: unknown): Promise<OriginAdvancementRequirement["itemChoices"]> {
   const options: NonNullable<OriginAdvancementRequirement["itemChoices"]> = [];
   if (!Array.isArray(value)) return options;
@@ -263,6 +417,7 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
     originFeatImg: null,
     asiPoints: 0,
     asiCap: 0,
+    asiAllowed: [...ABILITY_KEYS],
     asiSuggested: [],
     languageGrants: [],
     languageChoiceCount: 0,
@@ -275,11 +430,9 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
     const config = asi.configuration;
     result.asiPoints = typeof config.points === "number" ? config.points : 0;
     result.asiCap = typeof config.cap === "number" ? config.cap : 0;
-
-    // `locked` contains abilities NOT suggested — invert to get suggested
-    const locked = Array.isArray(config.locked) ? (config.locked as string[]) : [];
-    const lockedSet = new Set(locked);
-    result.asiSuggested = ABILITY_KEYS.filter((k) => !lockedSet.has(k));
+    result.asiAllowed = parseAllowedBackgroundAsiAbilities(asi);
+    const suggested = inferAllowedAbilitiesFromHint(asi.hint);
+    result.asiSuggested = suggested.length > 0 ? suggested : result.asiAllowed;
   }
 
   // --- Skill & Tool Proficiencies ---
@@ -299,6 +452,13 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
         result.toolProficiency = parseGrantKey(grant);
       }
     }
+
+    if (grants.length === 0) {
+      result.skillProficiencies.push(...inferBackgroundSkillProficienciesFromHint(entry.hint));
+      if (!result.toolProficiency) {
+        result.toolProficiency = inferBackgroundToolProficiencyFromHint(entry.hint);
+      }
+    }
   }
 
   result.skillProficiencies = [...new Set(result.skillProficiencies)];
@@ -307,15 +467,12 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
   // --- Origin Feat (ItemGrant) ---
   const featGrant = findAdvancement(advancements, "ItemGrant", "feat");
   if (featGrant?.configuration) {
-    const items = Array.isArray(featGrant.configuration.items)
-      ? (featGrant.configuration.items as Array<Record<string, unknown>>)
-      : [];
-    const first = items[0];
-    if (first && typeof first.uuid === "string") {
-      result.originFeatUuid = first.uuid;
+    const grantedOriginFeatUuid = parseBackgroundGrantedOriginFeatUuid(doc);
+    if (grantedOriginFeatUuid) {
+      result.originFeatUuid = grantedOriginFeatUuid;
       // Attempt to resolve name/img from the compendium
       try {
-        const featDoc = await fromUuid(first.uuid);
+        const featDoc = await fromUuid(grantedOriginFeatUuid);
         if (featDoc) {
           result.originFeatName = featDoc.name ?? null;
           result.originFeatImg = featDoc.img ?? null;
@@ -354,6 +511,18 @@ export async function parseBackgroundGrants(doc: FoundryDocument): Promise<Backg
   }
 
   return result;
+}
+
+export function parseBackgroundGrantedOriginFeatUuid(doc: FoundryDocument): string | null {
+  const advancements = getAdvancementArray(doc);
+  const featGrant = findAdvancement(advancements, "ItemGrant", "feat");
+  if (!featGrant?.configuration) return null;
+
+  const items = Array.isArray(featGrant.configuration.items)
+    ? (featGrant.configuration.items as Array<Record<string, unknown>>)
+    : [];
+  const first = items[0];
+  return first && typeof first.uuid === "string" ? first.uuid : null;
 }
 
 /* ── Class Skill Advancement ────────────────────────────── */
@@ -451,18 +620,18 @@ export async function parseClassAdvancementRequirements(
     const type = classifyClassAdvancementRequirement(entry);
     if (!type) continue;
 
-    const level = typeof entry.level === "number" ? entry.level : 1;
+    const level = getEffectiveAdvancementLevel(entry);
     if (level > maxLevel) continue;
 
-    const requiredCount = getChoiceCount(entry.configuration?.choices);
+    const requiredCount = getChoiceCount(entry.configuration?.choices
+      ? getChoiceEntries(entry.configuration.choices, maxLevel)
+      : entry.configuration?.choices);
     if (requiredCount <= 0) continue;
 
     const explicitPool = normalizePoolValues(
       type === "itemChoices"
         ? entry.configuration?.pool
-        : Array.isArray(entry.configuration?.choices)
-          ? (entry.configuration?.choices as Array<Record<string, unknown>>).flatMap((choice) => normalizePoolValues(choice.pool))
-          : Object.values(entry.configuration?.choices as Record<string, unknown> ?? {}).flatMap((choice) =>
+        : getChoiceEntries(entry.configuration?.choices, maxLevel).flatMap((choice) =>
             normalizePoolValues((choice as { pool?: unknown }).pool)
           ),
     );
@@ -515,15 +684,15 @@ async function parseOriginAdvancementRequirements(
     const level = typeof entry.level === "number" ? entry.level : 0;
     if (level > maxLevel) continue;
 
-    const requiredCount = getChoiceCount(entry.configuration?.choices);
+    const requiredCount = getChoiceCount(entry.configuration?.choices
+      ? getChoiceEntries(entry.configuration.choices, maxLevel)
+      : entry.configuration?.choices);
     if (requiredCount <= 0) continue;
 
     const explicitPool = normalizePoolValues(
       type === "itemChoices"
         ? entry.configuration?.pool
-        : Array.isArray(entry.configuration?.choices)
-          ? (entry.configuration?.choices as Array<Record<string, unknown>>).flatMap((choice) => normalizePoolValues(choice.pool))
-          : Object.values(entry.configuration?.choices as Record<string, unknown> ?? {}).flatMap((choice) =>
+        : getChoiceEntries(entry.configuration?.choices, maxLevel).flatMap((choice) =>
             normalizePoolValues((choice as { pool?: unknown }).pool)
           ),
     );

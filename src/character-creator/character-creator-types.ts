@@ -59,6 +59,10 @@ export interface CreatorIndexEntry {
   spellLevel?: number;
   /** For spells: school of magic */
   school?: string;
+  /** For feats: normalized feat category/subtype when available. */
+  featCategory?: string | null;
+  /** For feats: normalized prerequisite level when available. */
+  prerequisiteLevel?: number | null;
   /** For equipment: armor category */
   armorType?: string;
   /** For equipment: weapon category */
@@ -75,6 +79,8 @@ export interface CreatorIndexEntry {
   isFirearm?: boolean;
   /** For weapons: whether the cached metadata confirms this is a mundane baseline option. */
   baselineWeapon?: boolean;
+  /** For backgrounds: granted origin feat UUID when available. */
+  grantsOriginFeatUuid?: string | null;
 }
 
 /** Persisted world-level snapshot of normalized compendium index data. */
@@ -402,6 +408,8 @@ export interface BackgroundGrants {
   asiPoints: number;
   /** Max points in a single ability (typically 2; 0 if no ASI advancement). */
   asiCap: number;
+  /** Abilities this background actually allows when unrestricted background ASI is off. */
+  asiAllowed: AbilityKey[];
   /** Abilities the PHB suggests — UI hint only, NOT enforced. */
   asiSuggested: string[];
   /** Languages auto-granted by this background (e.g., ["common"]). */

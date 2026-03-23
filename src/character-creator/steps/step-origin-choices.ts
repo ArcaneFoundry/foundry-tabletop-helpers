@@ -7,8 +7,8 @@ import type {
   WizardState,
   WizardStepDefinition,
 } from "../character-creator-types";
+import { ensureOriginFeatMetadataReady } from "../character-creator-index-cache";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseBackgroundGrants } from "../data/advancement-parser";
 import { SKILLS } from "../data/dnd5e-constants";
 import { getPackAnalysisMap, isEntryRelevantForWorkflow } from "../data/pack-analysis";
 import { beginCardSelectionUpdate, isCurrentCardSelectionUpdate, patchCardDetailFromTemplate } from "./card-select-utils";
@@ -18,41 +18,38 @@ interface DatasetElementLike {
   addEventListener(event: string, handler: () => void): void;
 }
 
-interface FeatDocumentLike {
-  system?: {
-    prerequisites?: {
-      level?: number | string | null;
-    };
-    type?:
-      | {
-        value?: string | null;
-        subtype?: string | null;
-      }
-      | string
-      | null;
-  };
+interface OriginFeatLoadStats {
+  cacheSource: "hydrated" | "enriched-fallback";
+  indexedBackgroundCount: number;
+  indexedFeatCount: number;
+  missingBackgroundMetadataCount: number;
+  missingFeatMetadataCount: number;
+  grantedOriginFeatCount: number;
+  workflowEligibleCount: number;
+  duplicateFeatCount: number;
+  packAnalysisMs: number;
+  metadataReadyMs: number;
+  resolverMs: number;
+  buildMs: number;
 }
 
-const originFeatEntryCache = new Map<string, Promise<CreatorIndexEntry[]>>();
+interface OriginFeatAvailabilityResult {
+  entries: CreatorIndexEntry[];
+  stats: OriginFeatLoadStats;
+}
+
+const originFeatEntryCache = new Map<string, Promise<OriginFeatAvailabilityResult>>();
+
+function getNowMs(): number {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
+
+function elapsedMs(start: number): number {
+  return Math.round(getNowMs() - start);
+}
 
 function canChooseOriginFeat(state: WizardState): boolean {
   return !!state.config.allowOriginFeatChoice || !!state.config.allowCustomBackgrounds;
-}
-
-function getEnabledPackIds(state: WizardState): Set<string> {
-  const packIds = new Set<string>();
-  for (const ids of Object.values(state.config.packSources)) {
-    for (const id of ids ?? []) packIds.add(id);
-  }
-  return packIds;
-}
-
-function getEnabledEntriesByItemType(state: WizardState, itemType: string): CreatorIndexEntry[] {
-  const enabledPackIds = getEnabledPackIds(state);
-  const allEntries = compendiumIndexer.getAllIndexedEntries();
-  return allEntries
-    .filter((entry) => enabledPackIds.size === 0 || enabledPackIds.has(entry.packId))
-    .filter((entry) => (entry.itemType ?? "").toLowerCase() === itemType);
 }
 
 function skillLabel(key: string): string {
@@ -94,29 +91,9 @@ function buildOriginFeatCacheKey(state: WizardState): string {
   });
 }
 
-function getFeatCategory(doc: FeatDocumentLike | null): string | null {
-  const rawType = doc?.system?.type;
-  if (typeof rawType === "string") return rawType.toLowerCase();
-  if (rawType && typeof rawType === "object") {
-    if (typeof rawType.subtype === "string" && rawType.subtype.trim()) return rawType.subtype.toLowerCase();
-    if (typeof rawType.value === "string" && rawType.value.trim()) return rawType.value.toLowerCase();
-  }
-  return null;
-}
-
-function getPrerequisiteLevel(doc: FeatDocumentLike | null): number | null | undefined {
-  const rawLevel = doc?.system?.prerequisites?.level;
-  if (typeof rawLevel === "number") return rawLevel;
-  if (typeof rawLevel === "string" && rawLevel.trim()) {
-    const parsed = Number(rawLevel);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return rawLevel === null ? null : undefined;
-}
-
-function isEligibleOriginFeatDocument(doc: FeatDocumentLike | null): boolean {
-  const typeValue = getFeatCategory(doc);
-  const prereqLevel = getPrerequisiteLevel(doc);
+function isEligibleOriginFeatMetadata(entry: CreatorIndexEntry): boolean {
+  const typeValue = entry.featCategory;
+  const prereqLevel = entry.prerequisiteLevel;
   const featCategoryAllowed = !typeValue || typeValue === "feat" || typeValue === "origin";
   const levelAllowed = prereqLevel === null || prereqLevel === undefined || prereqLevel <= 1;
   return featCategoryAllowed && levelAllowed;
@@ -144,17 +121,56 @@ async function getAvailableOriginFeats(state: WizardState): Promise<CreatorIndex
   const cacheKey = buildOriginFeatCacheKey(state);
   const cached = originFeatEntryCache.get(cacheKey);
   if (cached) {
-    const entries = await cached;
-    return entries.filter((entry) => !state.config.disabledUUIDs.has(entry.uuid));
+    const cacheReadStart = getNowMs();
+    const result = await cached;
+    const filtered = result.entries.filter((entry) => !state.config.disabledUUIDs.has(entry.uuid));
+    Log.info("CC Perf: origin feat options ready", {
+      cache: "in-memory-hit",
+      metadataSource: result.stats.cacheSource,
+      indexedBackgroundCount: result.stats.indexedBackgroundCount,
+      indexedFeatCount: result.stats.indexedFeatCount,
+      missingBackgroundMetadataCount: result.stats.missingBackgroundMetadataCount,
+      missingFeatMetadataCount: result.stats.missingFeatMetadataCount,
+      grantedOriginFeatCount: result.stats.grantedOriginFeatCount,
+      cachedEntryCount: result.entries.length,
+      returnedCount: filtered.length,
+      disabledFilteredCount: result.entries.length - filtered.length,
+      cacheReadMs: elapsedMs(cacheReadStart),
+      metadataReadyMs: result.stats.metadataReadyMs,
+      resolverMs: result.stats.resolverMs,
+      buildMs: result.stats.buildMs,
+    });
+    return filtered;
   }
 
   const pending = (async () => {
-    const featEntries = getEnabledEntriesByItemType(state, "feat");
-    const backgroundEntries = getEnabledEntriesByItemType(state, "background");
-    const originFeatUuids = new Set<string>();
-    const packAnalysisMap = await getPackAnalysisMap();
+    const totalStart = getNowMs();
+    await compendiumIndexer.ensureIndexedSources(state.config.packSources, {
+      contentKeys: ["backgrounds", "feats"],
+    });
+    const indexedBackgroundEntries = compendiumIndexer.getIndexedEntries("background", state.config.packSources);
+    const indexedFeatEntries = compendiumIndexer.getIndexedEntries("feat", state.config.packSources);
+    const missingBackgroundMetadataCount = indexedBackgroundEntries
+      .filter((entry) => entry.grantsOriginFeatUuid === undefined)
+      .length;
+    const missingFeatMetadataCount = indexedFeatEntries
+      .filter((entry) => entry.featCategory === undefined || entry.prerequisiteLevel === undefined)
+      .length;
+    const metadataSource = missingBackgroundMetadataCount > 0 || missingFeatMetadataCount > 0
+      ? "enriched-fallback"
+      : "hydrated";
+    const metadataReadyStart = getNowMs();
+    await ensureOriginFeatMetadataReady(state.config.packSources, { persistIfMissing: false });
+    const metadataReadyMs = elapsedMs(metadataReadyStart);
 
-    Log.info("Character Creator: origin feat sources", {
+    const featEntries = compendiumIndexer.getIndexedEntries("feat", state.config.packSources);
+    const backgroundEntries = compendiumIndexer.getIndexedEntries("background", state.config.packSources);
+    const originFeatUuids = new Set<string>();
+    const packAnalysisStart = getNowMs();
+    const packAnalysisMap = await getPackAnalysisMap();
+    const packAnalysisMs = elapsedMs(packAnalysisStart);
+
+    Log.debug("Character Creator: origin feat sources", {
       featSources: state.config.packSources.feats,
       backgroundSources: state.config.packSources.backgrounds,
       indexedFeatPacks: summarizeEntriesByPack(featEntries),
@@ -162,56 +178,85 @@ async function getAvailableOriginFeats(state: WizardState): Promise<CreatorIndex
     });
 
     for (const backgroundEntry of backgroundEntries) {
-      const backgroundDoc = await compendiumIndexer.fetchDocument(backgroundEntry.uuid);
-      if (!backgroundDoc) continue;
-      const grants = await parseBackgroundGrants(backgroundDoc);
-      if (grants.originFeatUuid) originFeatUuids.add(grants.originFeatUuid);
+      if (backgroundEntry.grantsOriginFeatUuid) {
+        originFeatUuids.add(backgroundEntry.grantsOriginFeatUuid);
+      }
     }
 
-    Log.info("Character Creator: background-granted origin feats", Array.from(originFeatUuids));
+    Log.debug("Character Creator: background-granted origin feats", Array.from(originFeatUuids));
 
     const entries: CreatorIndexEntry[] = [];
     const seen = new Set<string>();
+    let workflowEligibleCount = 0;
+    let duplicateFeatCount = 0;
+    const resolverStart = getNowMs();
 
     for (const entry of featEntries) {
-      if (seen.has(entry.uuid)) continue;
+      if (seen.has(entry.uuid)) {
+        duplicateFeatCount += 1;
+        continue;
+      }
       seen.add(entry.uuid);
 
-      const featDoc = await compendiumIndexer.fetchDocument(entry.uuid) as FeatDocumentLike | null;
-      const featCategory = getFeatCategory(featDoc);
-      const prerequisiteLevel = getPrerequisiteLevel(featDoc);
-      const docEligible = isEligibleOriginFeatDocument(featDoc);
-      const workflowEligible = docEligible && isEntryRelevantForWorkflow(entry, "origin-feat", {
+      const workflowEligible = isEligibleOriginFeatMetadata(entry) && isEntryRelevantForWorkflow(entry, "origin-feat", {
         packAnalysis: packAnalysisMap.get(entry.packId) ?? null,
-        prerequisiteLevel,
-        featCategory,
+        prerequisiteLevel: entry.prerequisiteLevel,
+        featCategory: entry.featCategory,
         grantedOriginFeatUuids: originFeatUuids,
       });
 
-      Log.info("Character Creator: origin feat candidate", {
+      Log.debug("Character Creator: origin feat candidate", {
         uuid: entry.uuid,
         name: entry.name,
         packId: entry.packId,
         packLabel: entry.packLabel,
         itemType: entry.itemType ?? null,
-        featCategory,
-        prerequisiteLevel,
-        docEligible,
+        featCategory: entry.featCategory,
+        prerequisiteLevel: entry.prerequisiteLevel,
+        docEligible: isEligibleOriginFeatMetadata(entry),
         workflowEligible,
       });
 
       if (!workflowEligible) continue;
+      workflowEligibleCount += 1;
       entries.push(entry);
     }
+    const resolverMs = elapsedMs(resolverStart);
 
     const sorted = entries.sort((left, right) => left.name.localeCompare(right.name));
-    Log.info("Character Creator: origin feat results", summarizeEntriesByPack(sorted));
-    return sorted;
+    return {
+      entries: sorted,
+      stats: {
+        cacheSource: metadataSource,
+        indexedBackgroundCount: backgroundEntries.length,
+        indexedFeatCount: featEntries.length,
+        missingBackgroundMetadataCount,
+        missingFeatMetadataCount,
+        grantedOriginFeatCount: originFeatUuids.size,
+        workflowEligibleCount,
+        duplicateFeatCount,
+        packAnalysisMs,
+        metadataReadyMs,
+        resolverMs,
+        buildMs: elapsedMs(totalStart),
+      },
+    } satisfies OriginFeatAvailabilityResult;
   })();
 
   originFeatEntryCache.set(cacheKey, pending);
-  const entries = await pending;
-  return entries.filter((entry) => !state.config.disabledUUIDs.has(entry.uuid));
+  const result = await pending;
+  const filtered = result.entries.filter((entry) => !state.config.disabledUUIDs.has(entry.uuid));
+  Log.info("CC Perf: origin feat options ready", {
+    cache: "miss",
+    ...result.stats,
+    returnedCount: filtered.length,
+    disabledFilteredCount: result.entries.length - filtered.length,
+  });
+  return filtered;
+}
+
+export async function warmOriginFeatChoices(state: WizardState): Promise<CreatorIndexEntry[]> {
+  return getAvailableOriginFeats(state);
 }
 
 function buildStepData(state: WizardState): Record<string, unknown> {
@@ -259,7 +304,7 @@ export function createOriginChoicesStep(): WizardStepDefinition {
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       if (canChooseOriginFeat(state)) {
-        await compendiumIndexer.loadPacks(state.config.packSources);
+        await ensureOriginFeatMetadataReady(state.config.packSources, { persistIfMissing: true });
       }
 
       const backgroundSkills = getBackgroundSkills(state);
@@ -397,6 +442,6 @@ export const __originChoicesStepInternals = {
   getChosenClassSkills,
   getDefaultOriginFeatSelection,
   getAvailableOriginFeats,
-  isEligibleOriginFeatDocument,
+  isEligibleOriginFeatMetadata,
   buildStepData,
 };

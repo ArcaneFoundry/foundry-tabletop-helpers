@@ -9,7 +9,8 @@ import type {
 import { buildWizardShellContext } from "../wizard/character-creator-app-helpers";
 import type { WizardStateMachine } from "../wizard/wizard-state-machine";
 import { Log } from "../../logger";
-import { ensureCharacterCreatorIndexesReady } from "../character-creator-index-cache";
+import { ensureCharacterCreatorIndexesReady, ensureOriginFeatMetadataReady } from "../character-creator-index-cache";
+import { warmOriginFeatChoices } from "../steps/step-origin-choices";
 import { getWeaponMasteryPackSources } from "../steps/step-weapon-masteries";
 
 export interface CharacterCreatorWizardSnapshot {
@@ -127,6 +128,7 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
     const fromStepId = this._machine.currentStepId;
     const toStepId = this._machine.state.applicableSteps[this._machine.state.currentStep + 1] ?? "";
     const perfStart = globalThis.performance?.now?.() ?? Date.now();
+    let originFeatWarmupMs: number | undefined;
 
     try {
       if (fromStepId === "classChoices" && toStepId === "weaponMasteries") {
@@ -142,12 +144,27 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
         });
       }
 
+      if (fromStepId === "backgroundLanguages" && toStepId === "originChoices") {
+        const originFeatWarmupStart = globalThis.performance?.now?.() ?? Date.now();
+        this._pendingTransition = {
+          targetStepId: "originChoices",
+          message: "Preparing origin feat options...",
+        };
+        this._emit();
+        await ensureOriginFeatMetadataReady(this._machine.state.config.packSources, {
+          persistIfMissing: true,
+        });
+        await warmOriginFeatChoices(this._machine.state);
+        originFeatWarmupMs = Math.round((globalThis.performance?.now?.() ?? Date.now()) - originFeatWarmupStart);
+      }
+
       this._deactivateActiveStep();
       if (this._machine.goNext()) {
         Log.info("CC Perf: goNext triggered refresh", {
           fromStepId,
           toStepId: this._machine.currentStepId || toStepId,
           transitionPrepMs: Math.round((globalThis.performance?.now?.() ?? Date.now()) - perfStart),
+          ...(originFeatWarmupMs !== undefined ? { originFeatWarmupMs } : {}),
         });
         await this.refresh();
       }

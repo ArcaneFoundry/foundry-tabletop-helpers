@@ -14,6 +14,7 @@ import type {
   PackSourceConfig,
   PersistentCompendiumIndexSnapshot,
 } from "../character-creator-types";
+import { parseBackgroundGrantedOriginFeatUuid } from "./advancement-parser";
 import { formatInjectedDescriptionHtml } from "../utils/description-formatting";
 
 interface TextEditorLike {
@@ -41,12 +42,30 @@ interface WeaponDocumentLike {
   system?: WeaponDocumentSystemData;
 }
 
+interface FeatDocumentLike {
+  system?: {
+    prerequisites?: {
+      level?: number | string | null;
+    };
+    type?:
+      | {
+        value?: string | null;
+        subtype?: string | null;
+      }
+      | string
+      | null;
+  };
+}
+
 /** Fields requested from compendium indexes for normalization. */
 const INDEX_FIELDS = [
   "name", "img", "type",
   "system.identifier",
   "system.classIdentifier",
   "system.level",
+  "system.prerequisites.level",
+  "system.type.value",
+  "system.type.subtype",
   "system.school",
   "system.armor.type",
   "system.weaponType",
@@ -57,7 +76,7 @@ const INDEX_FIELDS = [
   "system.properties",
 ];
 
-export const PERSISTENT_INDEX_CACHE_FORMAT_VERSION = 3;
+export const PERSISTENT_INDEX_CACHE_FORMAT_VERSION = 4;
 
 /** Maps pack source config keys to content types. */
 const SOURCE_KEY_TO_TYPE: Record<keyof PackSourceConfig, CreatorContentType> = {
@@ -69,6 +88,26 @@ const SOURCE_KEY_TO_TYPE: Record<keyof PackSourceConfig, CreatorContentType> = {
   spells: "spell",
   items: "item",
 };
+
+function getFeatCategory(doc: FeatDocumentLike | null): string | null {
+  const rawType = doc?.system?.type;
+  if (typeof rawType === "string") return rawType.toLowerCase();
+  if (rawType && typeof rawType === "object") {
+    if (typeof rawType.subtype === "string" && rawType.subtype.trim()) return rawType.subtype.toLowerCase();
+    if (typeof rawType.value === "string" && rawType.value.trim()) return rawType.value.toLowerCase();
+  }
+  return null;
+}
+
+function getPrerequisiteLevel(doc: FeatDocumentLike | null): number | null | undefined {
+  const rawLevel = doc?.system?.prerequisites?.level;
+  if (typeof rawLevel === "number") return rawLevel;
+  if (typeof rawLevel === "string" && rawLevel.trim()) {
+    const parsed = Number(rawLevel);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return rawLevel === null ? null : undefined;
+}
 
 /**
  * Maps our content types to the dnd5e item types that qualify.
@@ -177,7 +216,11 @@ export class CompendiumIndexer {
 
   async ensureIndexedSources(
     sources: PackSourceConfig,
-    options?: { contentKeys?: Array<keyof PackSourceConfig>; enrichWeaponMetadata?: boolean },
+    options?: {
+      contentKeys?: Array<keyof PackSourceConfig>;
+      enrichWeaponMetadata?: boolean;
+      enrichOriginFeatMetadata?: boolean;
+    },
   ): Promise<void> {
     const packIds = this.getSelectedPackIds(sources, options);
     for (const packId of packIds) {
@@ -189,6 +232,9 @@ export class CompendiumIndexer {
 
     if (options?.enrichWeaponMetadata) {
       await this.enrichIndexedWeaponMetadata(sources, options);
+    }
+    if (options?.enrichOriginFeatMetadata) {
+      await this.enrichIndexedOriginFeatMetadata(sources, options);
     }
   }
 
@@ -262,7 +308,11 @@ export class CompendiumIndexer {
     sources: PackSourceConfig,
     options?: { contentKeys?: Array<keyof PackSourceConfig> },
   ): Promise<PersistentCompendiumIndexSnapshot> {
-    await this.ensureIndexedSources(sources, { ...options, enrichWeaponMetadata: true });
+    await this.ensureIndexedSources(sources, {
+      ...options,
+      enrichWeaponMetadata: true,
+      enrichOriginFeatMetadata: true,
+    });
     const game = getGame();
     const packIds = this.getSelectedPackIds(sources, options);
     const packs = Object.fromEntries(
@@ -458,6 +508,56 @@ export class CompendiumIndexer {
     }
   }
 
+  private async enrichIndexedOriginFeatMetadata(
+    sources: PackSourceConfig,
+    options?: { contentKeys?: Array<keyof PackSourceConfig> },
+  ): Promise<void> {
+    const packIds = this.getSelectedPackIds(sources, options);
+    const stats = {
+      targetedBackgrounds: 0,
+      targetedFeats: 0,
+      fetchedDocuments: 0,
+      enrichedEntries: 0,
+      unresolvedEntries: 0,
+      unresolvedSamples: [] as string[],
+    };
+
+    for (const packId of packIds) {
+      const type = this.getConfiguredTypeForPackId(packId, sources, options?.contentKeys);
+      if (type !== "background" && type !== "feat") continue;
+      const cached = this.indexCache.get(packId);
+      if (!cached?.length) continue;
+
+      const targets = cached.filter((entry) => this.needsOriginFeatMetadataEnrichment(entry));
+      if (!targets.length) continue;
+      if (type === "background") stats.targetedBackgrounds += targets.length;
+      if (type === "feat") stats.targetedFeats += targets.length;
+
+      const nextEntries = await this.mapWithConcurrency(cached, 24, async (entry) => {
+        if (!this.needsOriginFeatMetadataEnrichment(entry)) return entry;
+        const cachedDoc = this.docCache.get(entry.uuid);
+        const doc = (cachedDoc ?? await this.fetchDocument(entry.uuid)) as FoundryDocument | null;
+        if (!cachedDoc && doc) stats.fetchedDocuments += 1;
+        const enriched = type === "background"
+          ? this.enrichBackgroundEntryFromDocument(entry, doc)
+          : this.enrichFeatEntryFromDocument(entry, doc as FeatDocumentLike | null);
+        if (enriched === entry) {
+          stats.unresolvedEntries += 1;
+          if (stats.unresolvedSamples.length < 8) stats.unresolvedSamples.push(entry.name);
+          return entry;
+        }
+        stats.enrichedEntries += 1;
+        return enriched;
+      });
+
+      this.indexCache.set(packId, nextEntries);
+    }
+
+    if (stats.targetedBackgrounds > 0 || stats.targetedFeats > 0) {
+      Log.info("CompendiumIndexer: enriched origin feat snapshot metadata", stats);
+    }
+  }
+
   private needsWeaponMasteryEnrichment(entry: CreatorIndexEntry): boolean {
     if (entry.itemType !== "weapon") return false;
     return !entry.identifier
@@ -465,6 +565,12 @@ export class CompendiumIndexer {
       || !entry.mastery
       || entry.isFirearm === undefined
       || entry.baselineWeapon === undefined;
+  }
+
+  private needsOriginFeatMetadataEnrichment(entry: CreatorIndexEntry): boolean {
+    if (entry.itemType === "background") return entry.grantsOriginFeatUuid === undefined;
+    if (entry.itemType === "feat") return entry.featCategory === undefined || entry.prerequisiteLevel === undefined;
+    return false;
   }
 
   private enrichWeaponEntryFromDocument(
@@ -521,6 +627,46 @@ export class CompendiumIndexer {
     };
   }
 
+  private enrichBackgroundEntryFromDocument(
+    entry: CreatorIndexEntry,
+    doc: FoundryDocument | null,
+  ): CreatorIndexEntry {
+    if (!doc) return entry;
+    const grantsOriginFeatUuid = parseBackgroundGrantedOriginFeatUuid(doc);
+    if (grantsOriginFeatUuid === entry.grantsOriginFeatUuid) return {
+      ...entry,
+      ...(entry.grantsOriginFeatUuid === undefined ? { grantsOriginFeatUuid } : {}),
+    };
+
+    return {
+      ...entry,
+      grantsOriginFeatUuid,
+    };
+  }
+
+  private enrichFeatEntryFromDocument(
+    entry: CreatorIndexEntry,
+    doc: FeatDocumentLike | null,
+  ): CreatorIndexEntry {
+    if (!doc) return entry;
+
+    const featCategory = getFeatCategory(doc);
+    const prerequisiteLevel = getPrerequisiteLevel(doc);
+    if (featCategory === entry.featCategory && prerequisiteLevel === entry.prerequisiteLevel) {
+      return {
+        ...entry,
+        ...(entry.featCategory === undefined ? { featCategory } : {}),
+        ...(entry.prerequisiteLevel === undefined ? { prerequisiteLevel } : {}),
+      };
+    }
+
+    return {
+      ...entry,
+      featCategory,
+      prerequisiteLevel,
+    };
+  }
+
   private normalizeEntry(
     raw: FoundryIndexEntry,
     packId: string,
@@ -540,6 +686,9 @@ export class CompendiumIndexer {
     const sysIdentifier = this.extractString(raw, "system.identifier");
     const sysClassIdentifier = this.extractString(raw, "system.classIdentifier");
     const sysSpellLevel = this.extractNumber(raw, "system.level");
+    const sysPrerequisiteLevel = this.extractNumberish(raw, "system.prerequisites.level");
+    const sysFeatSubtype = this.extractString(raw, "system.type.subtype")?.trim().toLowerCase();
+    const sysFeatTypeValue = this.extractString(raw, "system.type.value")?.trim().toLowerCase();
     const sysSchool = this.extractString(raw, "system.school");
     const sysArmorType = this.extractString(raw, "system.armor.type");
     const sysWeaponType = this.extractString(raw, "system.weaponType");
@@ -560,6 +709,10 @@ export class CompendiumIndexer {
       ...(sysIdentifier !== undefined && { identifier: sysIdentifier }),
       ...(sysClassIdentifier !== undefined && { classIdentifier: sysClassIdentifier }),
       ...(sysSpellLevel !== undefined && { spellLevel: sysSpellLevel }),
+      ...((sysFeatSubtype !== undefined || sysFeatTypeValue !== undefined) && {
+        featCategory: sysFeatSubtype ?? sysFeatTypeValue ?? null,
+      }),
+      ...(sysPrerequisiteLevel !== undefined && { prerequisiteLevel: sysPrerequisiteLevel }),
       ...(sysSchool !== undefined && { school: sysSchool }),
       ...(sysArmorType !== undefined && { armorType: sysArmorType }),
       ...(sysWeaponType !== undefined && { weaponType: sysWeaponType }),
@@ -602,6 +755,17 @@ export class CompendiumIndexer {
     return typeof val === "number" ? val : undefined;
   }
 
+  /** Safely extract a number-or-null field from an index entry using dot notation. */
+  private extractNumberish(raw: Record<string, unknown>, path: string): number | null | undefined {
+    const val = this.extractValue(raw, path);
+    if (typeof val === "number") return val;
+    if (typeof val === "string" && val.trim()) {
+      const parsed = Number(val);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return val === null ? null : undefined;
+  }
+
   /** Safely extract enabled string keys from array/set/object-ish compendium index fields. */
   private extractStringCollection(raw: Record<string, unknown>, path: string): string[] {
     const value = this.extractValue(raw, path);
@@ -634,6 +798,26 @@ export class CompendiumIndexer {
         .map(([key]) => key);
     }
     return [];
+  }
+
+  private async mapWithConcurrency<T, R>(
+    items: T[],
+    limit: number,
+    mapper: (item: T, index: number) => Promise<R>,
+  ): Promise<R[]> {
+    const results = new Array<R>(items.length);
+    let nextIndex = 0;
+    const concurrency = Math.max(1, Math.min(limit, items.length));
+
+    const workers = Array.from({ length: concurrency }, async () => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex++;
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+      }
+    });
+
+    await Promise.all(workers);
+    return results;
   }
 
   private isBaselineWeaponDocument(doc: WeaponDocumentLike | null): boolean {
@@ -702,8 +886,24 @@ function getCompendiumPack(value: unknown): FoundryCompendiumCollection | undefi
 
 function getTextEditor(): TextEditorLike | undefined {
   const g = globalThis as Record<string, unknown>;
-  const textEditor = g.TextEditor;
-  return typeof textEditor === "object" && textEditor !== null ? (textEditor as TextEditorLike) : undefined;
+  const foundryApi = g.foundry as Record<string, unknown> | undefined;
+  const applicationsApi = foundryApi?.applications as Record<string, unknown> | undefined;
+  const uxApi = applicationsApi?.ux as Record<string, unknown> | undefined;
+  const textEditorApi = uxApi?.TextEditor as Record<string, unknown> | undefined;
+  const namespacedImplementation = textEditorApi?.implementation;
+  if (typeof namespacedImplementation === "object" && namespacedImplementation !== null) {
+    return namespacedImplementation as TextEditorLike;
+  }
+
+  // Back-compat fallback for pre-v13 environments where the namespaced API is absent.
+  if (!foundryApi) {
+    const legacyTextEditor = g.TextEditor;
+    return typeof legacyTextEditor === "object" && legacyTextEditor !== null
+      ? (legacyTextEditor as TextEditorLike)
+      : undefined;
+  }
+
+  return undefined;
 }
 
 function getDescriptionSystem(system: unknown): DescriptionSystemData | undefined {

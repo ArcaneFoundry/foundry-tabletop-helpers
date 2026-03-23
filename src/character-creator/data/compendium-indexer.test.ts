@@ -51,6 +51,7 @@ beforeEach(() => {
   getGameMock.mockReset();
   fromUuidMock.mockReset();
   delete (globalThis as Record<string, unknown>).TextEditor;
+  delete (globalThis as Record<string, unknown>).foundry;
 });
 
 describe("compendium indexer", () => {
@@ -117,7 +118,36 @@ describe("compendium indexer", () => {
     expect(indexer.getAllIndexedEntries()).toHaveLength(4);
   });
 
-  it("caches fetched documents and enriches cached descriptions through TextEditor", async () => {
+  it("normalizes feat prerequisite and category metadata from index fields", async () => {
+    const featPack = createPack([
+      {
+        _id: "feat-1",
+        name: "Magic Initiate",
+        img: "feat.png",
+        type: "feat",
+        "system.prerequisites.level": null,
+        "system.type.subtype": "origin",
+      },
+    ], { label: "Feats" });
+
+    getGameMock.mockReturnValue({
+      packs: new Map([["pack.feats", featPack]]),
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+    await indexer.loadPack("pack.feats", "feat");
+
+    expect(indexer.getAllIndexedEntries()).toEqual([
+      expect.objectContaining({
+        name: "Magic Initiate",
+        featCategory: "origin",
+        prerequisiteLevel: null,
+      }),
+    ]);
+  });
+
+  it("caches fetched documents and enriches cached descriptions through the namespaced TextEditor implementation", async () => {
     fromUuidMock.mockResolvedValue({
       id: "uuid-1",
       system: {
@@ -126,8 +156,17 @@ describe("compendium indexer", () => {
         },
       },
     });
-    (globalThis as Record<string, unknown>).TextEditor = {
-      enrichHTML: vi.fn(async (html: string) => html),
+    const enrichHTMLMock = vi.fn(async (html: string) => html);
+    (globalThis as Record<string, unknown>).foundry = {
+      applications: {
+        ux: {
+          TextEditor: {
+            implementation: {
+              enrichHTML: enrichHTMLMock,
+            },
+          },
+        },
+      },
     };
 
     const { CompendiumIndexer } = await import("./compendium-indexer");
@@ -139,6 +178,7 @@ describe("compendium indexer", () => {
 
     expect(first).toBe(second);
     expect(fromUuidMock).toHaveBeenCalledTimes(1);
+    expect(enrichHTMLMock).toHaveBeenCalledTimes(1);
     expect(description).toBe(
       "<p><strong class=\"cc-card-detail__fact-label\">Feat:</strong> Magic Initiate</p>"
       + "<p><strong class=\"cc-card-detail__fact-label\">Equipment:</strong> 13 GP</p>"
@@ -302,6 +342,65 @@ describe("compendium indexer", () => {
     expect(fromUuidMock).toHaveBeenCalledWith("Compendium.pack.items.Item.weapon-1");
   });
 
+  it("can explicitly enrich in-session background indexes with origin feat metadata without fetching feat display docs", async () => {
+    const backgroundPack = createPack([
+      {
+        _id: "background-1",
+        name: "Sage",
+        img: "sage.webp",
+        type: "background",
+      },
+    ], { label: "Backgrounds" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([["pack.backgrounds", backgroundPack]]),
+    });
+    fromUuidMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "Compendium.pack.backgrounds.Item.background-1") {
+        return {
+          system: {
+            advancement: [
+              {
+                type: "ItemGrant",
+                title: "Origin Feat",
+                configuration: {
+                  items: [{ uuid: "Compendium.pack.feats.Item.feat-1" }],
+                },
+              },
+            ],
+          },
+        };
+      }
+      return null;
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+
+    await indexer.ensureIndexedSources({
+      ...defaultSources(),
+      backgrounds: ["pack.backgrounds"],
+    }, {
+      contentKeys: ["backgrounds"],
+      enrichOriginFeatMetadata: true,
+    });
+
+    expect(indexer.getIndexedEntries("background", {
+      ...defaultSources(),
+      backgrounds: ["pack.backgrounds"],
+    })).toEqual([
+      expect.objectContaining({
+        name: "Sage",
+        grantsOriginFeatUuid: "Compendium.pack.feats.Item.feat-1",
+      }),
+    ]);
+    expect(fromUuidMock).toHaveBeenCalledTimes(1);
+    expect(fromUuidMock).toHaveBeenCalledWith("Compendium.pack.backgrounds.Item.background-1");
+  });
+
   it("enriches persistent item snapshots with weapon mastery metadata from full documents", async () => {
     const itemPack = createPack([
       {
@@ -344,6 +443,90 @@ describe("compendium indexer", () => {
       }),
     ]);
     expect(fromUuidMock).toHaveBeenCalledWith("Compendium.pack.items.Item.weapon-1");
+  });
+
+  it("persists and hydrates origin feat metadata in background and feat snapshots", async () => {
+    const backgroundPack = createPack([
+      {
+        _id: "background-1",
+        name: "Criminal",
+        img: "criminal.webp",
+        type: "background",
+      },
+    ], { label: "Backgrounds" });
+    const featPack = createPack([
+      {
+        _id: "feat-1",
+        name: "Alert",
+        img: "alert.webp",
+        type: "feat",
+        "system.prerequisites.level": null,
+        "system.type.subtype": "origin",
+      },
+    ], { label: "Feats" });
+
+    getGameMock.mockReturnValue({
+      version: "13.351",
+      system: { id: "dnd5e", version: "5.3.7" },
+      modules: new Map([["foundry-tabletop-helpers", { id: "foundry-tabletop-helpers", version: "1.2.1", active: true }]]),
+      packs: new Map([
+        ["pack.backgrounds", backgroundPack],
+        ["pack.feats", featPack],
+      ]),
+    });
+    fromUuidMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "Compendium.pack.backgrounds.Item.background-1") {
+        return {
+          system: {
+            advancement: [
+              {
+                type: "ItemGrant",
+                title: "Origin Feat",
+                configuration: {
+                  items: [{ uuid: "Compendium.pack.feats.Item.feat-1" }],
+                },
+              },
+            ],
+          },
+        };
+      }
+      return null;
+    });
+
+    const { CompendiumIndexer } = await import("./compendium-indexer");
+    const indexer = new CompendiumIndexer();
+    const sources = {
+      ...defaultSources(),
+      backgrounds: ["pack.backgrounds"],
+      feats: ["pack.feats"],
+      items: [],
+      spells: [],
+    };
+
+    const snapshot = await indexer.buildPersistentSnapshot(sources, { contentKeys: ["backgrounds", "feats"] });
+
+    expect(snapshot.packs["pack.backgrounds"]).toEqual([
+      expect.objectContaining({
+        name: "Criminal",
+        grantsOriginFeatUuid: "Compendium.pack.feats.Item.feat-1",
+      }),
+    ]);
+    expect(snapshot.packs["pack.feats"]).toEqual([
+      expect.objectContaining({
+        name: "Alert",
+        featCategory: "origin",
+        prerequisiteLevel: null,
+      }),
+    ]);
+
+    indexer.invalidate();
+    expect(indexer.hydratePersistentSnapshot(snapshot, sources, { contentKeys: ["backgrounds", "feats"] })).toBe(true);
+    expect(indexer.getIndexedEntries("background", sources)[0]).toEqual(
+      expect.objectContaining({ grantsOriginFeatUuid: "Compendium.pack.feats.Item.feat-1" }),
+    );
+    expect(indexer.getIndexedEntries("feat", sources)[0]).toEqual(
+      expect.objectContaining({ featCategory: "origin", prerequisiteLevel: null }),
+    );
   });
 
   it("marks firearms in the persistent snapshot from indexed ammunition metadata", async () => {

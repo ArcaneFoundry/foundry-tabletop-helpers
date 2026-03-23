@@ -1,11 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GMConfig, WizardStepDefinition } from "../character-creator-types";
 import { WizardStateMachine } from "../wizard/wizard-state-machine";
 import { CharacterCreatorWizardController } from "./wizard-controller";
 
+const {
+  ensureCharacterCreatorIndexesReadyMock,
+  ensureOriginFeatMetadataReadyMock,
+  warmOriginFeatChoicesMock,
+} = vi.hoisted(() => ({
+  ensureCharacterCreatorIndexesReadyMock: vi.fn(async () => {}),
+  ensureOriginFeatMetadataReadyMock: vi.fn(async () => {}),
+  warmOriginFeatChoicesMock: vi.fn(async () => []),
+}));
+
 vi.mock("../engine/actor-creation-engine", () => ({
   createCharacterFromWizard: vi.fn(),
+}));
+
+vi.mock("../character-creator-index-cache", () => ({
+  ensureCharacterCreatorIndexesReady: ensureCharacterCreatorIndexesReadyMock,
+  ensureOriginFeatMetadataReady: ensureOriginFeatMetadataReadyMock,
+}));
+
+vi.mock("../steps/step-origin-choices", () => ({
+  warmOriginFeatChoices: warmOriginFeatChoicesMock,
 }));
 
 function makeConfig(): GMConfig {
@@ -39,7 +58,44 @@ function makeStep(id: string, extra: Partial<WizardStepDefinition> = {}): Wizard
   };
 }
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("CharacterCreatorWizardController", () => {
+  it("prewarms origin feat choices before advancing from background languages", async () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("backgroundLanguages", {
+        isComplete: () => true,
+      }),
+      makeStep("originChoices"),
+      makeStep("review"),
+    ]);
+
+    const controller = new CharacterCreatorWizardController(machine, {
+      renderTemplate: async () => "<div>content</div>",
+      getStepAtmosphere: () => "cc-atmosphere--forge",
+      closeWizard: async () => undefined,
+    });
+
+    await controller.initialize();
+    controller.goNext();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(ensureOriginFeatMetadataReadyMock).toHaveBeenCalledWith(machine.state.config.packSources, {
+      persistIfMissing: true,
+    });
+    expect(warmOriginFeatChoicesMock).toHaveBeenCalledWith(machine.state);
+    const perfCall = infoSpy.mock.calls.find((call) => call[3] === "CC Perf: goNext triggered refresh");
+    expect(perfCall?.[4]).toMatchObject({
+      fromStepId: "backgroundLanguages",
+      toStepId: "originChoices",
+      originFeatWarmupMs: expect.any(Number),
+    });
+  });
+
   it("returns a stable snapshot object until the store changes", async () => {
     const machine = new WizardStateMachine(makeConfig(), [
       makeStep("class"),

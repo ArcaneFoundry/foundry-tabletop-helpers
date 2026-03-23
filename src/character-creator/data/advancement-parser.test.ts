@@ -267,6 +267,101 @@ describe("advancement parser", () => {
     ]);
   });
 
+  it("derives effective item-choice levels from choice keys and resolves object-backed pools", async () => {
+    const { parseClassAdvancementRequirements } = await import("./advancement-parser");
+
+    fromUuidMock.mockImplementation(async (uuid: string) => {
+      if (uuid === "Compendium.features.archery") return { name: "Archery", img: "archery.webp" };
+      if (uuid === "Compendium.features.defense") return { name: "Defense", img: "defense.webp" };
+      return null;
+    });
+
+    const fighterResult = await parseClassAdvancementRequirements({
+      system: {
+        advancement: [
+          {
+            _id: "fighting-style",
+            type: "ItemChoice",
+            title: "Fighting Style",
+            configuration: {
+              choices: {
+                1: { count: 1 },
+              },
+              pool: [
+                { uuid: "Compendium.features.archery" },
+                { uuid: "Compendium.features.defense" },
+              ],
+            },
+          },
+        ],
+      },
+    } as never, 1);
+
+    const paladinLevelOne = await parseClassAdvancementRequirements({
+      system: {
+        advancement: [
+          {
+            _id: "fighting-style",
+            type: "ItemChoice",
+            title: "Fighting Style",
+            configuration: {
+              choices: {
+                2: { count: 1 },
+              },
+              pool: [
+                { uuid: "Compendium.features.archery" },
+                { uuid: "Compendium.features.defense" },
+              ],
+            },
+          },
+        ],
+      },
+    } as never, 1);
+
+    const paladinLevelTwo = await parseClassAdvancementRequirements({
+      system: {
+        advancement: [
+          {
+            _id: "fighting-style",
+            type: "ItemChoice",
+            title: "Fighting Style",
+            configuration: {
+              choices: {
+                2: { count: 1 },
+              },
+              pool: [
+                { uuid: "Compendium.features.archery" },
+                { uuid: "Compendium.features.defense" },
+              ],
+            },
+          },
+        ],
+      },
+    } as never, 2);
+
+    expect(fighterResult).toEqual([
+      expect.objectContaining({
+        id: "fighting-style",
+        title: "Fighting Style",
+        level: 1,
+        requiredCount: 1,
+        itemChoices: [
+          { uuid: "Compendium.features.archery", name: "Archery", img: "archery.webp" },
+          { uuid: "Compendium.features.defense", name: "Defense", img: "defense.webp" },
+        ],
+      }),
+    ]);
+    expect(paladinLevelOne).toEqual([]);
+    expect(paladinLevelTwo).toEqual([
+      expect.objectContaining({
+        id: "fighting-style",
+        title: "Fighting Style",
+        level: 2,
+        requiredCount: 1,
+      }),
+    ]);
+  });
+
   it("infers background language requirements when Foundry omits the choice pool", async () => {
     const { parseBackgroundAdvancementRequirements } = await import("./advancement-parser");
 
@@ -361,6 +456,74 @@ describe("advancement parser", () => {
     } as never);
 
     expect(result.weaponProficiencies).toEqual(["weapon:mar:*"]);
+  });
+
+  it("extracts a background's granted origin feat UUID without resolving feat display data", async () => {
+    const { parseBackgroundGrantedOriginFeatUuid } = await import("./advancement-parser");
+
+    const result = parseBackgroundGrantedOriginFeatUuid({
+      system: {
+        advancement: [
+          {
+            type: "ItemGrant",
+            title: "Origin Feat",
+            configuration: {
+              items: [{ uuid: "Compendium.pack.feats.Item.alert" }],
+            },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result).toBe("Compendium.pack.feats.Item.alert");
+  });
+
+  it("infers background skill and tool proficiencies from live hint text when grants are empty", async () => {
+    const { parseBackgroundGrants } = await import("./advancement-parser");
+
+    const result = await parseBackgroundGrants({
+      system: {
+        advancement: [
+          {
+            type: "Trait",
+            title: "Background Proficiencies",
+            hint: "Your background grants you proficiency in Insight and Religion. It also grants you proficiency in Calligrapher's Supplies.",
+            configuration: {
+              grants: {},
+              choices: [],
+              mode: "default",
+            },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result.skillProficiencies).toEqual(["ins", "rel"]);
+    expect(result.toolProficiency).toBe("calligrapher");
+  });
+
+  it("parses allowed background ASI abilities from hint text when config does not encode them", async () => {
+    const { parseBackgroundGrants } = await import("./advancement-parser");
+
+    const result = await parseBackgroundGrants({
+      system: {
+        advancement: [
+          {
+            type: "AbilityScoreImprovement",
+            title: "Ability Scores",
+            hint: "Your background allows you to increase your Constitution, Intelligence, and Wisdom scores.",
+            configuration: {
+              points: 3,
+              cap: 2,
+              locked: {},
+            },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result.asiAllowed).toEqual(["con", "int", "wis"]);
+    expect(result.asiSuggested).toEqual(["con", "int", "wis"]);
   });
 
   it("parses document weapon proficiencies from fixed traits and trait grants", async () => {
