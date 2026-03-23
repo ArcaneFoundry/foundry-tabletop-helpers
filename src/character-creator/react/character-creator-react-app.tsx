@@ -19,6 +19,7 @@ import { WizardControllerProvider } from "./wizard-context";
 import { CharacterCreatorWizardController } from "./wizard-controller";
 import { ClassFlowRouteHost, isClassFlowStep } from "./steps/class/class-flow-route-host";
 import { OriginFlowRouteHost, isOriginFlowStep } from "./steps/origin/origin-flow-route-host";
+import { BuildFlowRouteHost, isBuildFlowStep } from "./steps/build/build-flow-route-host";
 import { hydrateCharacterCreatorIndexesFromSettings } from "../character-creator-index-cache";
 import {
   allowCustomBackgrounds,
@@ -94,13 +95,27 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
               animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
               className="flex min-h-0 flex-1 overflow-hidden"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 10, scale: 0.992 }}
-              key={isClassFlowStep(snapshot.shellContext.currentStepId) || isOriginFlowStep(snapshot.shellContext.currentStepId)
+              key={isClassFlowStep(snapshot.shellContext.currentStepId) || isOriginFlowStep(snapshot.shellContext.currentStepId) || isBuildFlowStep(snapshot.shellContext.currentStepId)
                 ? "creator-flow"
                 : (snapshot.shellContext.currentStepId ?? "")}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8, scale: 1.008 }}
             >
-              {snapshot.currentStepDef?.renderMode === "react" && isClassFlowStep(snapshot.shellContext.currentStepId) ? (
+              {isBuildFlowStep(snapshot.shellContext.currentStepId) ? (
+                <div
+                  className={[
+                    "cc-step-content flex-1 overflow-hidden",
+                    snapshot.shellContext.shellContentClass,
+                  ].filter(Boolean).join(" ")}
+                >
+                  <BuildFlowRouteHost
+                    controller={controller}
+                    shellContext={snapshot.shellContext}
+                    state={snapshot.state}
+                    step={snapshot.currentStepDef!}
+                  />
+                </div>
+              ) : snapshot.currentStepDef?.renderMode === "react" && isClassFlowStep(snapshot.shellContext.currentStepId) ? (
                 <div
                   className={[
                     "cc-step-content flex-1 overflow-hidden",

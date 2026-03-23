@@ -29,26 +29,50 @@ import {
 
 /* ── Defaults ────────────────────────────────────────────── */
 
-function defaultScores(): Record<AbilityKey, number> {
+export function defaultScores(): Record<AbilityKey, number> {
   return { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 };
 }
 
-function defaultAssignments(): Record<AbilityKey, number> {
+export function defaultAssignments(): Record<AbilityKey, number> {
   return { str: -1, dex: -1, con: -1, int: -1, wis: -1, cha: -1 };
 }
 
-function getAbilityState(state: WizardState): AbilityScoreState {
+export function createAbilityStateForMethod(
+  method: AbilityScoreMethod,
+  current?: AbilityScoreState,
+): AbilityScoreState {
+  return {
+    method,
+    scores: method === "pointBuy" ? (current?.method === "pointBuy" ? current.scores : defaultScores()) : defaultScores(),
+    assignments: defaultAssignments(),
+    rolledValues: method === "4d6" ? current?.rolledValues : undefined,
+    rerollCount: method === "4d6" ? (current?.rerollCount ?? 0) : 0,
+  };
+}
+
+export function getAbilityState(state: WizardState): AbilityScoreState {
   const sel = state.selections.abilities;
   if (sel) return sel;
 
   const methods = state.config.allowedAbilityMethods;
   const defaultMethod = methods[0] ?? "4d6";
 
-  return {
-    method: defaultMethod,
-    scores: defaultScores(),
-    assignments: defaultAssignments(),
-  };
+  return createAbilityStateForMethod(defaultMethod);
+}
+
+export function isAbilityStateComplete(data: AbilityScoreState | undefined): boolean {
+  if (!data) return false;
+  if (data.method === "pointBuy") {
+    return ABILITY_KEYS.every((key) => data.scores[key] > 0);
+  }
+
+  const pool = data.method === "4d6" ? data.rolledValues : STANDARD_ARRAY;
+  if (!pool || pool.length !== 6) return false;
+
+  return ABILITY_KEYS.every((key) => {
+    const assignedIndex = data.assignments[key];
+    return Number.isInteger(assignedIndex) && assignedIndex >= 0 && assignedIndex < pool.length;
+  });
 }
 
 /* ── Dice Rolling ────────────────────────────────────────── */
@@ -59,13 +83,13 @@ function roll4d6DropLowest(): number {
   return dice[1] + dice[2] + dice[3]; // drop lowest
 }
 
-function rollAllAbilities(): number[] {
+export function rollAllAbilities(): number[] {
   return Array.from({ length: 6 }, () => roll4d6DropLowest());
 }
 
 /* ── Point Buy Helpers ───────────────────────────────────── */
 
-function pointBuySpent(scores: Record<AbilityKey, number>): number {
+export function pointBuySpent(scores: Record<AbilityKey, number>): number {
   let total = 0;
   for (const key of ABILITY_KEYS) {
     total += POINT_BUY_COSTS[scores[key]] ?? 0;
@@ -75,7 +99,7 @@ function pointBuySpent(scores: Record<AbilityKey, number>): number {
 
 /* ── ViewModel Builder ───────────────────────────────────── */
 
-function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
+export function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
   const data = getAbilityState(state);
   const methods = state.config.allowedAbilityMethods;
 
@@ -163,6 +187,13 @@ function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
     : [];
 
   return {
+    stepId: "abilities",
+    stepTitle: "Build:",
+    stepLabel: "Abilities",
+    stepIcon: "fa-solid fa-dice-d20",
+    hideStepIndicator: true,
+    hideShellHeader: true,
+    shellContentClass: "cc-step-content--build-flow",
     method: data.method,
     methodTabs,
     abilities,
@@ -177,6 +208,7 @@ function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
     budgetClass: remaining < 0 ? "over" : remaining <= 3 ? "low" : "ok",
     hasRolled: data.method === "4d6" && !!data.rolledValues,
     rolledValues: data.rolledValues ?? [],
+    rerollCount: data.rerollCount ?? 0,
     availableValues,
     assignmentOptions,
     pointBuyCosts: Object.entries(POINT_BUY_COSTS).map(([score, cost]) => ({
@@ -193,18 +225,19 @@ export function createAbilitiesStep(): WizardStepDefinition {
     id: "abilities",
     label: "Ability Scores",
     icon: "fa-solid fa-dice-d20",
+    renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-abilities.hbs`,
     dependencies: [],
     isApplicable: () => true,
 
     isComplete(state: WizardState): boolean {
-      const data = state.selections.abilities;
-      if (!data) return false;
-      // All 6 scores must be non-zero (assigned)
-      return ABILITY_KEYS.every((key) => data.scores[key] > 0);
+      return isAbilityStateComplete(state.selections.abilities);
     },
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
+      if (!state.selections.abilities) {
+        state.selections.abilities = getAbilityState(state);
+      }
       return buildAbilitiesVM(state);
     },
 
@@ -215,12 +248,7 @@ export function createAbilitiesStep(): WizardStepDefinition {
           const method = (btn as HTMLElement).dataset.method as AbilityScoreMethod;
           if (!method) return;
           const current = getAbilityState(state);
-          const newState: AbilityScoreState = {
-            method,
-            scores: method === "pointBuy" ? (current.method === "pointBuy" ? current.scores : defaultScores()) : defaultScores(),
-            assignments: defaultAssignments(),
-            rolledValues: method === "4d6" ? current.rolledValues : undefined,
-          };
+          const newState: AbilityScoreState = createAbilityStateForMethod(method, current);
           callbacks.setData(newState);
         });
       });
@@ -234,6 +262,7 @@ export function createAbilitiesStep(): WizardStepDefinition {
           rolledValues: rolled,
           assignments: defaultAssignments(),
           scores: defaultScores(),
+          rerollCount: (current.rerollCount ?? 0) + 1,
         } as AbilityScoreState);
       });
 

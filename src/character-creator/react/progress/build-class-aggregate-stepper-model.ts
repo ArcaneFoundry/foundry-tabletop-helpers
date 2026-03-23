@@ -79,6 +79,8 @@ export function buildClassAggregateStepperModel(
   const selectionComplete = selectionSteps.every((step) => step.status === "complete");
   const onSelectionStep = isSelectionStep(currentStepId);
   const classPresentation = getClassPresentation(state.selections.class?.identifier, state.selections.class?.name);
+  const classSummaryComplete = getStepStatus(steps, "classSummary") === "complete";
+  const originSummaryComplete = getStepStatus(steps, "originSummary") === "complete";
 
   const milestones: ClassAggregateMilestoneNode[] = [
     {
@@ -101,11 +103,25 @@ export function buildClassAggregateStepperModel(
       active: false,
       status: !hasSelectedClass
         ? "pending"
-        : getStepStatus(steps, "classSummary") === "complete"
+        : classSummaryComplete
             ? "selection-active"
             : selectionComplete
               ? "selection-active"
               : "pending",
+    },
+    {
+      id: "build",
+      label: "Build",
+      icon: "fa-solid fa-hammer",
+      active: false,
+      status: originSummaryComplete ? "selection-active" : "pending",
+    },
+    {
+      id: "finalize",
+      label: "Finalize",
+      icon: "fa-solid fa-stars",
+      active: false,
+      status: "pending",
     },
   ];
 

@@ -1,6 +1,9 @@
 import { Log } from "../../logger";
 import type { WizardShellContext, WizardStepDefinition } from "../character-creator-types";
 import type { WizardStateMachine } from "./wizard-state-machine";
+import { isBuildFlowStep } from "../react/steps/build/build-flow-route-host";
+import { isClassFlowStep } from "../react/steps/class/class-flow-route-host";
+import { isOriginFlowStep } from "../react/steps/origin/origin-flow-route-host";
 
 export async function buildWizardShellContext(
   machine: WizardStateMachine,
@@ -32,13 +35,15 @@ export async function buildWizardShellContext(
     });
   }
 
+  const inMountedFlow = isClassFlowStep(machine.currentStepId) || isOriginFlowStep(machine.currentStepId) || isBuildFlowStep(machine.currentStepId);
   const headerTitle = vmData.stepTitle as string | undefined;
   const headerSubtitle = vmData.stepLabel as string | undefined;
   const headerDescription = vmData.stepDescription as string | undefined;
   const headerIcon = vmData.stepIcon as string | undefined;
-  const hideStepIndicator = vmData.hideStepIndicator as boolean | undefined;
-  const hideShellHeader = vmData.hideShellHeader as boolean | undefined;
-  const shellContentClass = vmData.shellContentClass as string | undefined;
+  const hideStepIndicator = (vmData.hideStepIndicator as boolean | undefined) ?? inMountedFlow;
+  const hideShellHeader = (vmData.hideShellHeader as boolean | undefined) ?? inMountedFlow;
+  const shellContentClass = (vmData.shellContentClass as string | undefined)
+    ?? (isBuildFlowStep(machine.currentStepId) ? "cc-step-content--build-flow" : undefined);
   const nextButtonLabel = vmData.nextButtonLabel as string | undefined;
   const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
 

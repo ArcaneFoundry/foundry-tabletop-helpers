@@ -325,6 +325,8 @@ export interface AbilityScoreState {
   assignments: Record<AbilityKey, number>;
   /** 4d6: The six rolled totals. */
   rolledValues?: number[];
+  /** 4d6: Number of rerolls used on the current score array. */
+  rerollCount?: number;
 }
 
 /** Species selection state (2024 PHB — replaces "Race" in the wizard). */

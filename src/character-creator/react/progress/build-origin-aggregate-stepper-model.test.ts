@@ -100,6 +100,7 @@ describe("buildOriginAggregateStepperModel", () => {
     );
 
     expect(model.milestones[1]).toMatchObject({ id: "origin", active: true, status: "in-progress" });
+    expect(model.milestones[2]).toMatchObject({ id: "build", status: "pending" });
     expect(model.showSubsteps).toBe(true);
     expect(model.substeps.map((step) => step.id)).toEqual([
       "background",
@@ -162,6 +163,7 @@ describe("buildOriginAggregateStepperModel", () => {
     );
 
     expect(model.milestones[1]).toMatchObject({ id: "origin", active: true, status: "in-progress" });
+    expect(model.milestones[2]).toMatchObject({ id: "build", status: "pending" });
     expect(model.substeps.map((step) => step.id)).toEqual([
       "background",
       "backgroundSkillConflicts",

@@ -45,6 +45,13 @@ function mapStepStatus(
   return "pending";
 }
 
+function getStepStatus(
+  steps: Array<{ id: string; status: StepStatus }>,
+  stepId: string,
+): StepStatus {
+  return steps.find((step) => step.id === stepId)?.status ?? "pending";
+}
+
 function isBackgroundStep(stepId: string): boolean {
   return BACKGROUND_STEP_IDS.includes(stepId as typeof BACKGROUND_STEP_IDS[number]);
 }
@@ -75,6 +82,7 @@ export function buildOriginAggregateStepperModel(
   const originSteps = [...backgroundSteps, ...speciesSteps];
   const originReady = hasBackground || backgroundComplete || hasSpecies || speciesComplete;
   const originComplete = backgroundComplete && speciesComplete;
+  const buildReady = getStepStatus(steps, "originSummary") === "complete";
 
   return {
     milestones: [
@@ -97,6 +105,20 @@ export function buildOriginAggregateStepperModel(
             : originReady
               ? "selection-active"
               : "pending",
+      },
+      {
+        id: "build",
+        label: "Build",
+        icon: "fa-solid fa-hammer",
+        active: false,
+        status: buildReady ? "selection-active" : "pending",
+      },
+      {
+        id: "finalize",
+        label: "Finalize",
+        icon: "fa-solid fa-stars",
+        active: false,
+        status: "pending",
       },
     ],
     substeps: [...originSteps, ...steps.filter((step) => step.id === "originSummary")].map((step) => ({
