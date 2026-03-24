@@ -107,7 +107,8 @@ describe("buildClassFlowShellModel", () => {
     expect(model.currentPane).toBe("classExpertise");
     expect(model.title).toBe("Choose Your Expertise");
     expect(model.headerTone).toBe("accent");
-    expect(model.aggregateStepper.milestones[1]).toMatchObject({ id: "selections", status: "in-progress" });
+    expect(model.aggregateStepper.milestones[0]).toMatchObject({ id: "class", status: "in-progress" });
+    expect(model.aggregateStepper.showSubsteps).toBe(true);
   });
 
   it("keeps the mounted shell active through the class summary pane", () => {
@@ -129,6 +130,7 @@ describe("buildClassFlowShellModel", () => {
     expect(model.currentPane).toBe("classSummary");
     expect(model.title).toBe("Class Summary");
     expect(model.headerTone).toBe("accent");
-    expect(model.aggregateStepper.milestones[2]).toMatchObject({ id: "classSummary", status: "in-progress" });
+    expect(model.aggregateStepper.milestones[1]).toMatchObject({ id: "origins", status: "selection-active" });
+    expect(model.aggregateStepper.showSubsteps).toBe(false);
   });
 });

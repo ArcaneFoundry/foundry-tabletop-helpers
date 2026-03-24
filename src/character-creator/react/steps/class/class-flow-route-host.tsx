@@ -99,6 +99,14 @@ type ClassAdvancementChoiceOption = {
   iconClass?: string;
 };
 
+type SelectedClassToken = {
+  id?: string;
+  key?: string;
+  label: string;
+  description?: string;
+  iconClass?: string;
+};
+
 type ClassAdvancementCommonStepViewModel = {
   classIdentifier: string;
   className: string;
@@ -455,14 +463,14 @@ function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "s
   if (entries.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <div className="max-w-2xl rounded-[1.2rem] border border-[#c0a27b]/65 bg-[linear-gradient(180deg,rgba(249,240,224,0.98),rgba(233,215,190,0.98))] px-8 py-10 text-center shadow-[0_14px_30px_rgba(108,72,38,0.12)]">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#ba8e5d]/65 bg-[radial-gradient(circle_at_35%_35%,#f7d691,#b67826)] text-white shadow-lg">
+        <div className="max-w-2xl rounded-[1.5rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.96),rgba(16,16,20,0.98))] px-8 py-10 text-center shadow-[0_24px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#e9c176]/45 bg-[radial-gradient(circle_at_35%_35%,#f1d08a,#8e6428)] text-[#2d1f0b] shadow-[0_0_20px_rgba(233,193,118,0.18)]">
             <i className="fa-solid fa-triangle-exclamation text-xl" aria-hidden="true" />
           </div>
-          <p className="m-0 font-fth-cc-display text-[1.5rem] uppercase tracking-[0.08em] text-[#5b4335]">
+          <p className="m-0 font-fth-cc-display text-[1.5rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
             No Classes Available
           </p>
-          <p className="mt-3 font-fth-cc-body text-[1.1rem] leading-7 text-[#5f4738]">{emptyMessage}</p>
+          <p className="mt-3 font-fth-cc-body text-[1.02rem] leading-7 text-[#cbc2bc]">{emptyMessage}</p>
         </div>
       </div>
     );
@@ -470,9 +478,22 @@ function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "s
 
   return (
     <div className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
+      <div className="mb-5 flex items-end justify-between gap-4 px-2">
+        <div className="max-w-2xl">
+          <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[#e9c176]/78">
+            Vocations
+          </div>
+          <div className="mt-2 font-fth-cc-body text-[1rem] leading-7 text-[#d0cad0]">
+            Choose the discipline that will define your first rites of battle, devotion, guile, or arcana.
+          </div>
+        </div>
+        <div className="hidden rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb] md:inline-flex">
+          Select One Calling
+        </div>
+      </div>
       <motion.div
         animate={prefersReducedMotion ? undefined : "show"}
-        className="grid shrink-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"
+        className="grid shrink-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
         initial={prefersReducedMotion ? false : "hidden"}
         variants={{
           hidden: {},
@@ -556,12 +577,12 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
-      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <div className="border-b border-[#cfb58f]/55 pb-4">
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.78fr)]">
+      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+        <div className="border-b border-white/10 pb-4">
           {viewModel.primaryAbilityHint ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d5b98b]/70 bg-[rgba(255,247,233,0.78)] px-3 py-1.5 font-fth-cc-body text-sm text-[#6b503f]">
-              <i className={cn(theme.sigil, "text-[#8a613e]")} aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#e9c176]/22 bg-[rgba(233,193,118,0.08)] px-3 py-1.5 font-fth-cc-body text-sm text-[#ddd5ce]">
+              <i className={cn(theme.sigil, "text-[#e9c176]")} aria-hidden="true" />
               <span><strong>Prime Attribute Guidance:</strong> {viewModel.primaryAbilityHint}</span>
             </div>
           ) : null}
@@ -576,7 +597,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
                     <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
                       {group.abilityAbbrev}
                     </span>
-                    <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#6a4f3c]">
+                    <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#bdb4c0]">
                       {abilityLabel(group.abilityAbbrev)}
                     </span>
                     <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
@@ -595,7 +616,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
             </div>
           </div>
         ) : (
-          <div className="mt-4 rounded-[1.1rem] border border-dashed border-[#c7aa80]/65 bg-[rgba(255,250,241,0.7)] px-4 py-5 font-fth-cc-body text-[#6b5040]">
+          <div className="mt-4 rounded-[1.1rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-5 font-fth-cc-body text-[#bfb8c4]">
             {viewModel.skillSection.emptyMessage}
           </div>
         )}
@@ -607,6 +628,11 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
           glow={theme.glow}
           maxCount={maxCount}
           selectedCount={selectedKeys.length}
+        />
+        <ClassAdvancementSelectedCard
+          emptyMessage="No class skills chosen yet."
+          entries={options.filter((option) => selectedSet.has(option.key))}
+          title="Chosen Skills"
         />
         <ClassProficienciesCard savingThrows={viewModel.savingThrows} />
       </aside>
@@ -720,8 +746,8 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.76fr)]">
-      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.8fr)]">
+      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         {viewModel.weaponMasterySection.hasChoices ? (
           <div className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
             <div className="grid gap-4">
@@ -747,7 +773,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
             </div>
           </div>
         ) : (
-          <div className="mt-4 rounded-[1.1rem] border border-dashed border-[#c7aa80]/65 bg-[rgba(255,250,241,0.7)] px-4 py-5 font-fth-cc-body text-[#6b5040]">
+          <div className="mt-4 rounded-[1.1rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-5 font-fth-cc-body text-[#bfb8c4]">
             {viewModel.weaponMasterySection.emptyMessage}
           </div>
         )}
@@ -810,13 +836,13 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
-      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <div className="border-b border-[#cfb58f]/55 pb-4">
-          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#5b4335]">
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.78fr)]">
+      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+        <div className="border-b border-white/10 pb-4">
+          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
             {viewModel.title}
           </div>
-          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#684d3f]">
+          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#c7c0cb]">
             {viewModel.description}
           </p>
         </div>
@@ -897,13 +923,13 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
-      <section className="fth-react-scrollbar flex min-h-0 flex-col overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <div className="border-b border-[#cfb58f]/55 pb-4">
-          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#5b4335]">
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.78fr)]">
+      <section className="fth-react-scrollbar flex min-h-0 flex-col overflow-y-auto rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+        <div className="border-b border-white/10 pb-4">
+          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
             {viewModel.title}
           </div>
-          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#684d3f]">
+          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#c7c0cb]">
             {viewModel.description}
           </p>
         </div>
@@ -921,7 +947,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
                   <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
                     {requirement.title}
                   </span>
-                  <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#6a4f3c]">
+                    <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#bdb4c0]">
                     Choose {requirement.requiredCount}
                   </span>
                   <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
@@ -1029,10 +1055,10 @@ function ClassCard({
     <motion.div
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       className={cn(
-        "group relative overflow-hidden rounded-[0.95rem] border border-[#6e4b30] bg-[linear-gradient(180deg,#6e4b31_0%,#3f291d_9%,#241711_100%)] p-[0.22rem] text-left shadow-[0_18px_34px_rgba(66,40,21,0.36)] transition duration-200",
-        "hover:brightness-[1.04] hover:shadow-[0_24px_40px_rgba(66,40,21,0.42)]",
+        "group relative overflow-hidden rounded-[1.25rem] border border-[#e9c176]/16 bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200",
+        "hover:-translate-y-1 hover:shadow-[0_30px_55px_rgba(0,0,0,0.34)]",
         selected &&
-          "border-[#d4b06c] shadow-[0_0_0_2px_rgba(212,176,108,0.45),0_0_28px_rgba(212,176,108,0.3),0_24px_42px_rgba(64,37,20,0.46)]",
+          "border-[#e9c176]/55 shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_0_28px_rgba(233,193,118,0.18),0_30px_55px_rgba(0,0,0,0.38)] md:col-span-2 xl:col-span-3",
       )}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 18, scale: 0.975 }}
       transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
@@ -1047,19 +1073,8 @@ function ClassCard({
       >
         <div className="pointer-events-none absolute inset-[0.2rem] rounded-[0.78rem] border border-[#d9b074]/22 shadow-[inset_0_1px_0_rgba(255,240,219,0.14)]" />
         <div className="pointer-events-none absolute inset-x-[0.42rem] top-[0.32rem] h-6 rounded-full bg-[linear-gradient(180deg,rgba(255,244,216,0.22),rgba(255,244,216,0))]" />
-        <div className={cn(
-          "absolute inset-x-1 top-1 z-10 rounded-[0.72rem_0.72rem_0.25rem_0.25rem] border border-[#a27747]/65 bg-gradient-to-b px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,235,204,0.24),0_4px_10px_rgba(0,0,0,0.18)]",
-          theme.ribbon,
-        )}>
-          <div className="pointer-events-none absolute inset-x-2 top-0 h-px bg-[rgba(255,238,207,0.52)]" />
-          <div className="pointer-events-none absolute left-1 top-1 h-3 w-3 rounded-tl-[0.4rem] border-l border-t border-[#e1bc79]/55" />
-          <div className="pointer-events-none absolute right-1 top-1 h-3 w-3 rounded-tr-[0.4rem] border-r border-t border-[#e1bc79]/55" />
-          <div className="font-fth-cc-display text-center text-[1.05rem] uppercase tracking-[0.04em] text-[#f7e5bf] md:text-[1.2rem]">
-            {entry.name}
-          </div>
-        </div>
         <div
-          className="relative overflow-hidden rounded-[0.72rem] border bg-[#20130e] pt-[2.9rem] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.12),inset_0_-16px_24px_rgba(0,0,0,0.2)]"
+          className="relative overflow-hidden rounded-[1.06rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08),inset_0_-16px_24px_rgba(0,0,0,0.26)]"
           style={{
             borderColor: theme.frame,
             boxShadow: selected
@@ -1067,7 +1082,7 @@ function ClassCard({
               : undefined,
           }}
         >
-          <div className="aspect-[0.84] overflow-hidden">
+          <div className={cn("overflow-hidden", selected ? "aspect-[2.15]" : "aspect-[0.96]")}>
             <img
               alt={entry.name}
               className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
@@ -1075,21 +1090,39 @@ function ClassCard({
               src={entry.cardImg}
             />
           </div>
-          <div className="pointer-events-none absolute inset-0 rounded-[0.72rem] bg-[linear-gradient(180deg,rgba(255,247,233,0.08)_0%,transparent_18%,transparent_58%,rgba(26,12,8,0.22)_100%)] shadow-[inset_0_0_0_1px_rgba(240,209,153,0.45)]" />
-          <div className="pointer-events-none absolute left-2 top-2 h-4 w-4 rounded-tl-[0.5rem] border-l border-t" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute right-2 top-2 h-4 w-4 rounded-tr-[0.5rem] border-r border-t" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute bottom-2 left-2 h-4 w-4 rounded-bl-[0.5rem] border-b border-l" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-none absolute bottom-2 right-2 h-4 w-4 rounded-br-[0.5rem] border-b border-r" style={{ borderColor: theme.frame }} />
-          <div className="pointer-events-auto absolute inset-x-3 bottom-3">
-            <div className="flex max-w-[80%] flex-col gap-1.5">
-              <InfoChip value={entry.hitDie} icon="fa-solid fa-dice-d20" />
-              <InfoChip value={entry.primaryAbilityBadgeText} icon="fa-solid fa-star" />
-              <InfoChip value={entry.savingThrowBadgeText} icon="fa-solid fa-shield" />
+          <div className="pointer-events-none absolute inset-0 rounded-[1.06rem] bg-[linear-gradient(180deg,rgba(255,247,233,0.04)_0%,transparent_22%,rgba(8,7,12,0.02)_42%,rgba(8,7,12,0.82)_100%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(14,14,18,0.74),rgba(14,14,18,0))]" />
+          <div className="absolute inset-x-4 top-4 z-10 flex items-start justify-between gap-4">
+            <div>
+              <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.3em] text-[#e9c176]/78">
+                Class
+              </div>
+              <div className="mt-1 font-fth-cc-display text-[1.4rem] leading-none text-[#f5ead5] md:text-[1.7rem]">
+                {entry.name}
+              </div>
+            </div>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[rgba(8,8,12,0.42)] text-[#e9c176] backdrop-blur-sm">
+              <i className={theme.crest} aria-hidden="true" />
+            </span>
+          </div>
+          <div className="pointer-events-auto absolute inset-x-4 bottom-4">
+            <div className="grid gap-3 rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,15,20,0.72),rgba(15,15,20,0.92))] p-3 backdrop-blur-md md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="min-w-0">
+                <div className="font-fth-cc-body text-[0.98rem] leading-6 text-[#d6d0d9]">
+                  {entry.primaryAbilityHint}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <InfoChip value={entry.hitDie} icon="fa-solid fa-dice-d20" />
+                <InfoChip value={entry.primaryAbilityBadgeText} icon="fa-solid fa-star" />
+                <InfoChip value={entry.savingThrowBadgeText} icon="fa-solid fa-shield" />
+              </div>
             </div>
           </div>
           {selected ? (
-            <div className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#f2d48f]/70 bg-[radial-gradient(circle_at_35%_35%,rgba(247,214,145,0.95),rgba(182,120,38,0.92))] text-white shadow-[0_6px_12px_rgba(0,0,0,0.24)]">
-              <i className={cn(theme.crest, "text-[0.8rem]")} aria-hidden="true" />
+            <div className="pointer-events-none absolute right-4 top-16 flex items-center gap-2 rounded-full border border-[#e9c176]/45 bg-[rgba(233,193,118,0.14)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#f6e6c4] backdrop-blur-sm shadow-[0_0_16px_rgba(233,193,118,0.16)]">
+              <i className="fa-solid fa-sparkles text-[0.72rem]" aria-hidden="true" />
+              Selected Calling
             </div>
           ) : null}
         </div>
@@ -1102,7 +1135,7 @@ function InfoChip({ icon, value }: { icon: string; value: string }) {
   if (!value) return null;
 
   return (
-    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border border-[#efd29a]/60 bg-[linear-gradient(180deg,rgba(35,22,15,0.55),rgba(22,14,10,0.86))] px-2 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#f6deb0] shadow-[0_8px_16px_rgba(0,0,0,0.2)] backdrop-blur-[2px]">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border border-[#e9c176]/22 bg-[rgba(255,255,255,0.05)] px-2.5 py-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em] text-[#e9dcc6] shadow-[0_8px_16px_rgba(0,0,0,0.16)] backdrop-blur-md">
       <i className={cn(icon, "shrink-0 text-[0.7rem] text-[#f7d691]")} aria-hidden="true" />
       <span className="min-w-0 truncate">{value}</span>
     </span>
@@ -1125,10 +1158,10 @@ function SkillOptionRow({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       aria-pressed={option.checked}
       className={cn(
-        "group relative grid w-full grid-cols-[3.4rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
+        "group relative grid w-full grid-cols-[3.4rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
         option.checked
-          ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))]"
-          : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
+          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
+          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
         option.disabled && !option.checked && "opacity-60",
       )}
       disabled={option.disabled && !option.checked}
@@ -1145,26 +1178,26 @@ function SkillOptionRow({
     >
       <span
         className={cn(
-          "relative flex h-12 w-12 items-center justify-center rounded-[0.8rem] border text-[1.1rem] shadow-[inset_0_1px_0_rgba(255,244,220,0.16)]",
+          "relative flex h-12 w-12 items-center justify-center rounded-[0.8rem] border text-[1.1rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked
-            ? "border-[#7e8c3f] bg-[linear-gradient(180deg,#536425_0%,#364317_100%)] text-[#f6efc4]"
-            : "border-[#8c6a47] bg-[linear-gradient(180deg,#5c3d2b_0%,#3a271b_100%)] text-[#f1d9b3]",
+            ? "border-[#e9c176]/52 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]"
+            : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e9c176]",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
         <i className={cn("fa-solid", option.iconClass)} aria-hidden="true" />
       </span>
-      <span className="min-w-0">
-        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#3f2c22]">
+        <span className="min-w-0">
+        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
           {option.label}
         </span>
       </span>
       <span
         className={cn(
-          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,244,220,0.12)]",
+          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked
-            ? "border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]"
-            : "border-[#d1b58f] bg-[linear-gradient(180deg,rgba(248,238,220,0.9),rgba(227,210,183,0.92))] text-[#ad8f6f]",
+            ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
+            : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
@@ -1191,11 +1224,11 @@ function SelectionSummaryCard({
 }) {
   return (
     <section
-      className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
+      className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
       style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
     >
-      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
           <div className="mt-4 flex items-center justify-center gap-3">
             <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
@@ -1213,7 +1246,7 @@ function SelectionSummaryCard({
             </div>
             <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
           </div>
-          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#f7e7c8]">{label}</div>
+          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#d9d0c5]">{label}</div>
         </div>
       </div>
     </section>
@@ -1236,10 +1269,10 @@ function ClassAdvancementOptionRow({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       aria-pressed={option.checked}
       className={cn(
-        "group relative grid w-full grid-cols-[3rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
+        "group relative grid w-full grid-cols-[3rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-3 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
         option.checked
-          ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))]"
-          : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
+          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
+          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
         option.disabled && !option.checked && "opacity-60",
       )}
       disabled={option.disabled && !option.checked}
@@ -1256,29 +1289,29 @@ function ClassAdvancementOptionRow({
     >
       <span
         className={cn(
-          "relative flex h-11 w-11 items-center justify-center rounded-[0.85rem] border shadow-[inset_0_1px_0_rgba(255,244,220,0.16)]",
-          option.checked ? "border-[#7e8c3f] bg-[linear-gradient(180deg,#f5ecbf,#d5b366)] text-[#5b3a1d]" : "border-[#cfb08c] bg-[rgba(255,248,235,0.86)] text-[#8a613e]",
+          "relative flex h-11 w-11 items-center justify-center rounded-[0.85rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+          option.checked ? "border-[#e9c176]/52 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]" : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e9c176]",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.7rem] border border-white/20" />
         <i className={cn(option.iconClass ?? "fa-solid fa-sparkles", "relative z-10 text-base")} aria-hidden="true" />
       </span>
       <span className="min-w-0">
-        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#3f2c22]">
+        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
           {option.label}
         </span>
         {option.description ? (
-          <span className="mt-0.5 block font-fth-cc-body text-[0.92rem] leading-6 text-[#6f5747]">
+          <span className="mt-0.5 block font-fth-cc-body text-[0.92rem] leading-6 text-[#bcb4bf]">
             {option.description}
           </span>
         ) : null}
       </span>
       <span
         className={cn(
-          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,244,220,0.12)]",
+          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked
-            ? "border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]"
-            : "border-[#d1b58f] bg-[linear-gradient(180deg,rgba(248,238,220,0.9),rgba(227,210,183,0.92))] text-[#ad8f6f]",
+            ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
+            : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
@@ -1294,25 +1327,25 @@ function ClassAdvancementSelectedCard({
   emptyMessage,
 }: {
   title: string;
-  entries: ClassAdvancementChoiceOption[];
+  entries: SelectedClassToken[];
   emptyMessage: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {entries.length > 0 ? entries.map((entry) => (
             <div
-              className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.95rem] border border-[#8a6a48]/55 bg-[linear-gradient(180deg,rgba(91,61,42,0.42),rgba(38,24,17,0.5))] px-3 py-2.5"
-              key={entry.id}
+              className="flex flex-wrap items-center gap-2 rounded-[0.95rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-3"
+              key={entry.id ?? entry.key ?? entry.label}
             >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d3ad64]/70 bg-[linear-gradient(180deg,#f6e5b8,#d4aa58)] text-[#5a3513]">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]">
                 <i className={cn(entry.iconClass ?? "fa-solid fa-sparkles", "text-sm")} aria-hidden="true" />
               </span>
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.label}</span>
                 {entry.description ? (
                   <span className="block font-fth-cc-body text-[0.86rem] leading-5 text-[#d7bb8a]">{entry.description}</span>
@@ -1320,7 +1353,7 @@ function ClassAdvancementSelectedCard({
               </span>
             </div>
           )) : (
-            <div className="rounded-[0.95rem] border border-dashed border-[#8a6a48]/45 bg-[rgba(44,28,20,0.24)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
+            <div className="rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
               {emptyMessage}
             </div>
           )}
@@ -1379,10 +1412,10 @@ function WeaponMasteryRow({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       aria-pressed={option.checked}
       className={cn(
-        "group relative grid w-full grid-cols-[3.7rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
+        "group relative grid w-full grid-cols-[3.7rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
         option.checked
-          ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))]"
-          : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
+          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
+          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
         option.disabled && !option.checked && "opacity-60",
       )}
       disabled={option.disabled && !option.checked}
@@ -1399,8 +1432,8 @@ function WeaponMasteryRow({
     >
       <span
         className={cn(
-          "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,244,220,0.16)]",
-          option.checked ? "border-[#7e8c3f]" : "border-[#8c6a47]",
+          "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+          option.checked ? "border-[#e9c176]/52" : "border-white/12",
         )}
       >
         <img alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" src={option.img} />
@@ -1408,24 +1441,24 @@ function WeaponMasteryRow({
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
       </span>
       <span className="min-w-0">
-        <span className="block truncate font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#3f2c22]">
+        <span className="block truncate font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
           {option.name}
         </span>
         <span className="mt-0.5 flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center rounded-full border border-[#d4b283] bg-[rgba(255,248,233,0.7)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#7a5b43]">
+          <span className="inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#c7bdca]">
             {formatWeaponTypeBadge(option.weaponType)}
           </span>
-          <span className="inline-flex items-center rounded-full border border-[#c0a46f] bg-[rgba(115,84,43,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#7a5631]">
+          <span className="inline-flex items-center rounded-full border border-[#e9c176]/20 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#e3c88c]">
             {option.mastery}
           </span>
         </span>
       </span>
       <span
         className={cn(
-          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,244,220,0.12)]",
+          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked
-            ? "border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]"
-            : "border-[#d1b58f] bg-[linear-gradient(180deg,rgba(248,238,220,0.9),rgba(227,210,183,0.92))] text-[#ad8f6f]",
+            ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
+            : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
@@ -1437,30 +1470,30 @@ function WeaponMasteryRow({
 
 function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMasteryChoiceOption[] }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Chosen Weapons</div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {selectedEntries.length > 0 ? selectedEntries.map((entry) => (
             <div
-              className="grid grid-cols-[2.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[0.95rem] border border-[#8a6a48]/55 bg-[linear-gradient(180deg,rgba(91,61,42,0.42),rgba(38,24,17,0.5))] px-2 py-2"
+              className="grid grid-cols-[2.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[0.95rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-2 py-2"
               key={entry.id}
             >
-              <span className="overflow-hidden rounded-[0.7rem] border border-[#9b774f]/60">
+              <span className="overflow-hidden rounded-[0.7rem] border border-[#e9c176]/20">
                 <img alt="" aria-hidden="true" className="h-10 w-10 object-cover" loading="lazy" src={entry.img} />
               </span>
               <span className="min-w-0">
                 <span className="block truncate font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.name}</span>
                 <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] text-[#d7bb8a]">{entry.mastery}</span>
               </span>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#8da044] bg-[linear-gradient(180deg,#6d8a2d_0%,#4a5f1f_100%)] text-[#fff8ea]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]">
                 <i className="fa-solid fa-check" aria-hidden="true" />
               </span>
             </div>
           )) : (
-            <div className="rounded-[0.95rem] border border-dashed border-[#8a6a48]/45 bg-[rgba(44,28,20,0.24)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
+            <div className="rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
               No weapon masteries chosen yet.
             </div>
           )}
@@ -1472,9 +1505,9 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
 
 function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Mastery Techniques</div>
         </div>
         <div className="mt-4 grid gap-2.5">
@@ -1483,19 +1516,19 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
               className={cn(
                 "grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 rounded-[0.95rem] border px-3 py-3",
                 entry.sourceWeapons.length > 0
-                  ? "border-[#aa915c]/55 bg-[linear-gradient(180deg,rgba(101,75,45,0.36),rgba(44,28,20,0.24))]"
+                  ? "border-[#e9c176]/22 bg-[rgba(233,193,118,0.07)]"
                   : "border-transparent bg-transparent",
               )}
               key={entry.mastery}
             >
-              <span className="inline-flex h-8 w-8 items-center justify-center self-center rounded-full border border-[#8a6a48] bg-[linear-gradient(180deg,rgba(101,70,49,0.94),rgba(54,35,25,0.98))] text-[#f2deb6]">
+              <span className="inline-flex h-8 w-8 items-center justify-center self-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] text-[#f2deb6]">
                 <i className={entry.iconClass} aria-hidden="true" />
               </span>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.mastery}</span>
                   {entry.sourceWeapons.length > 0 ? (
-                    <span className="inline-flex items-center rounded-full border border-[#b69c67]/70 bg-[linear-gradient(180deg,rgba(156,126,67,0.26),rgba(109,82,41,0.28))] px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em] text-[#f3ddb0]">
+                    <span className="inline-flex items-center rounded-full border border-[#e9c176]/28 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em] text-[#f3ddb0]">
                       Known via weapon mastery
                     </span>
                   ) : null}
@@ -1507,7 +1540,7 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
                     From {entry.sourceWeapons.join(", ")}
                   </div>
                 ) : null}
-                <span className="block font-fth-cc-body text-[0.84rem] leading-5 text-[#dfcaaa]">{entry.masteryDescription}</span>
+                <span className="block font-fth-cc-body text-[0.84rem] leading-5 text-[#c7c0cb]">{entry.masteryDescription}</span>
               </div>
             </div>
           ))}
@@ -1519,16 +1552,16 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
 
 function ClassProficienciesCard({ savingThrows }: { savingThrows: string[] }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
+    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Saving Throw Proficiencies</div>
         </div>
         <div className="mt-4">
           <div className="flex flex-wrap gap-2">
             {savingThrows.map((value) => (
               <span
-                className="inline-flex items-center rounded-full border border-[#8a6a48] bg-[linear-gradient(180deg,rgba(101,70,49,0.94),rgba(54,35,25,0.98))] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] text-[#f2deb6]"
+                className="inline-flex items-center rounded-full border border-[#e9c176]/24 bg-[rgba(255,255,255,0.04)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] text-[#f2deb6]"
                 key={value}
               >
                 {value}
