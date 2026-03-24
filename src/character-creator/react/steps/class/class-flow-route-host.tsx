@@ -249,100 +249,102 @@ export function ClassFlowRouteHost(
             </div>
           </motion.header>
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
-            <img
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16]"
-              src={classStepFieldBackground}
-            />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
-            <ClassAggregateStepper model={shellModel.aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
+          <div className="cc-class-flow-chapter relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
+              <img
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16]"
+                src={classStepFieldBackground}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
+              <ClassAggregateStepper model={shellModel.aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
 
-            <div className="relative z-10 mt-3 flex min-h-0 flex-1">
-              <AnimatePresence initial={false} mode="wait">
-                {pendingTransition?.targetStepId === "weaponMasteries" ? (
-                  <motion.div
-                    key="weaponMasteries-loading"
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 w-full flex-1 self-stretch"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <WeaponMasteriesLoadingPane
-                      message={pendingTransition.message}
-                      theme={theme}
-                    />
-                  </motion.div>
-                ) : shellModel.currentPane === "classChoices" ? (
-                  <motion.div
-                    key="classChoices"
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 flex-col"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ClassSkillsPane controller={controller} shellContext={shellContext} state={state} />
-                  </motion.div>
-                ) : shellModel.currentPane === "classExpertise" || shellModel.currentPane === "classLanguages" || shellModel.currentPane === "classTools" ? (
-                  <motion.div
-                    key={shellModel.currentPane}
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 flex-col"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ClassAdvancementChoicePane controller={controller} shellContext={shellContext} state={state} />
-                  </motion.div>
-                ) : shellModel.currentPane === "weaponMasteries" ? (
-                  <motion.div
-                    key="weaponMasteries"
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 flex-col"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <WeaponMasteriesPane controller={controller} shellContext={shellContext} state={state} />
-                  </motion.div>
-                ) : shellModel.currentPane === "classItemChoices" ? (
-                  <motion.div
-                    key="classItemChoices"
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 flex-col"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ClassItemChoicesPane controller={controller} shellContext={shellContext} state={state} />
-                  </motion.div>
-                ) : shellModel.currentPane === "classSummary" ? (
-                  <motion.div
-                    key="classSummary"
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 flex-col"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ClassSummaryStepScreen controller={controller} shellContext={shellContext} state={state} step={step} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="class"
-                    animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                    className="flex h-full min-h-0 flex-col"
-                    exit={prefersReducedMotion ? undefined : { opacity: 0, x: 14 }}
-                    initial={prefersReducedMotion ? false : { opacity: 0, x: -14 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ClassSelectionPane controller={controller} state={state} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div className="relative z-10 mt-3 flex min-h-0 flex-1">
+                <AnimatePresence initial={false} mode="wait">
+                  {pendingTransition?.targetStepId === "weaponMasteries" ? (
+                    <motion.div
+                      key="weaponMasteries-loading"
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 w-full flex-1 self-stretch"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <WeaponMasteriesLoadingPane
+                        message={pendingTransition.message}
+                        theme={theme}
+                      />
+                    </motion.div>
+                  ) : shellModel.currentPane === "classChoices" ? (
+                    <motion.div
+                      key="classChoices"
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 flex-col"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <ClassSkillsPane controller={controller} shellContext={shellContext} state={state} />
+                    </motion.div>
+                  ) : shellModel.currentPane === "classExpertise" || shellModel.currentPane === "classLanguages" || shellModel.currentPane === "classTools" ? (
+                    <motion.div
+                      key={shellModel.currentPane}
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 flex-col"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <ClassAdvancementChoicePane controller={controller} shellContext={shellContext} state={state} />
+                    </motion.div>
+                  ) : shellModel.currentPane === "weaponMasteries" ? (
+                    <motion.div
+                      key="weaponMasteries"
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 flex-col"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <WeaponMasteriesPane controller={controller} shellContext={shellContext} state={state} />
+                    </motion.div>
+                  ) : shellModel.currentPane === "classItemChoices" ? (
+                    <motion.div
+                      key="classItemChoices"
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 flex-col"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <ClassItemChoicesPane controller={controller} shellContext={shellContext} state={state} />
+                    </motion.div>
+                  ) : shellModel.currentPane === "classSummary" ? (
+                    <motion.div
+                      key="classSummary"
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 flex-col"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <ClassSummaryStepScreen controller={controller} shellContext={shellContext} state={state} step={step} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="class"
+                      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+                      className="flex h-full min-h-0 flex-col"
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, x: 14 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: -14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <ClassSelectionPane controller={controller} state={state} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
@@ -478,8 +480,8 @@ function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "s
 
   return (
     <div className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
-      <div className="mb-5 flex items-end justify-between gap-4 px-2">
-        <div className="max-w-2xl">
+      <div className="cc-class-flow-vocations mb-5 flex items-end justify-between gap-4 px-2">
+        <div className="cc-class-flow-vocations__copy max-w-2xl">
           <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[#e9c176]/78">
             Vocations
           </div>
@@ -487,13 +489,13 @@ function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "s
             Choose the discipline that will define your first rites of battle, devotion, guile, or arcana.
           </div>
         </div>
-        <div className="hidden rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb] md:inline-flex">
+        <div className="cc-class-flow-vocations__badge rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb]">
           Select One Calling
         </div>
       </div>
       <motion.div
         animate={prefersReducedMotion ? undefined : "show"}
-        className="grid shrink-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+        className="cc-class-chooser-grid grid shrink-0 grid-cols-1 gap-4"
         initial={prefersReducedMotion ? false : "hidden"}
         variants={{
           hidden: {},
@@ -577,8 +579,8 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.78fr)]">
-      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+    <div className="cc-class-choice-layout">
+      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="border-b border-white/10 pb-4">
           {viewModel.primaryAbilityHint ? (
             <div className="inline-flex items-center gap-2 rounded-full border border-[#e9c176]/22 bg-[rgba(233,193,118,0.08)] px-3 py-1.5 font-fth-cc-body text-sm text-[#ddd5ce]">
@@ -589,7 +591,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
         </div>
 
         {viewModel.skillSection.hasChoices ? (
-          <div className="fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+          <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
             <div className="grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
                 <section className="grid gap-2.5" key={group.abilityAbbrev}>
@@ -622,7 +624,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
         )}
       </section>
 
-      <aside className="flex min-h-0 flex-col gap-4">
+      <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
           accent={theme.accent}
           glow={theme.glow}
@@ -746,10 +748,10 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.8fr)]">
-      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+    <div className="cc-class-choice-layout">
+      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         {viewModel.weaponMasterySection.hasChoices ? (
-          <div className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+          <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
             <div className="grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
                 <section className="grid gap-2.5" key={group.label}>
@@ -779,7 +781,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
         )}
       </section>
 
-      <aside className="flex min-h-0 flex-col gap-4">
+      <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
           accent={theme.accent}
           glow={theme.glow}
@@ -836,8 +838,8 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.78fr)]">
-      <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+    <div className="cc-class-choice-layout">
+      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="border-b border-white/10 pb-4">
           <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
             {viewModel.title}
@@ -846,7 +848,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
             {viewModel.description}
           </p>
         </div>
-        <div className="fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+        <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-2.5">
             {options.map((option, optionIndex) => (
               <ClassAdvancementOptionRow
@@ -861,7 +863,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
         </div>
       </section>
 
-      <aside className="flex min-h-0 flex-col gap-4">
+      <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
           accent={theme.accent}
           glow={theme.glow}
@@ -923,8 +925,8 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
   };
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.78fr)]">
-      <section className="fth-react-scrollbar flex min-h-0 flex-col overflow-y-auto rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+    <div className="cc-class-choice-layout">
+      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="border-b border-white/10 pb-4">
           <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
             {viewModel.title}
@@ -933,37 +935,39 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
             {viewModel.description}
           </p>
         </div>
-        <div className="mt-4 grid gap-4 pb-3 pt-2">
-          {viewModel.requirements.map((requirement, groupIndex) => {
-            const selectedSet = new Set(selectedByRequirement[requirement.id] ?? []);
-            const options = requirement.options.map((option) => ({
-              ...option,
-              checked: selectedSet.has(option.id),
-              disabled: !selectedSet.has(option.id) && selectedSet.size >= requirement.requiredCount,
-            }));
-            return (
-              <section className="grid gap-2.5" key={requirement.id}>
-                <div className="flex items-center gap-3 px-1">
-                  <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
-                    {requirement.title}
-                  </span>
+        <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
+          <div className="grid gap-4">
+            {viewModel.requirements.map((requirement, groupIndex) => {
+              const selectedSet = new Set(selectedByRequirement[requirement.id] ?? []);
+              const options = requirement.options.map((option) => ({
+                ...option,
+                checked: selectedSet.has(option.id),
+                disabled: !selectedSet.has(option.id) && selectedSet.size >= requirement.requiredCount,
+              }));
+              return (
+                <section className="grid gap-2.5" key={requirement.id}>
+                  <div className="flex items-center gap-3 px-1">
+                    <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
+                      {requirement.title}
+                    </span>
                     <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#bdb4c0]">
-                    Choose {requirement.requiredCount}
-                  </span>
-                  <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
-                </div>
-                {options.map((option, optionIndex) => (
-                  <ClassAdvancementOptionRow
-                    key={option.id}
-                    onToggle={(optionId) => onToggleOption(requirement.id, optionId, requirement.requiredCount)}
-                    option={option}
-                    prefersReducedMotion={prefersReducedMotion}
-                    rowIndex={groupIndex * 10 + optionIndex}
-                  />
-                ))}
-              </section>
-            );
-          })}
+                      Choose {requirement.requiredCount}
+                    </span>
+                    <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
+                  </div>
+                  {options.map((option, optionIndex) => (
+                    <ClassAdvancementOptionRow
+                      key={option.id}
+                      onToggle={(optionId) => onToggleOption(requirement.id, optionId, requirement.requiredCount)}
+                      option={option}
+                      prefersReducedMotion={prefersReducedMotion}
+                      rowIndex={groupIndex * 10 + optionIndex}
+                    />
+                  ))}
+                </section>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -1058,7 +1062,7 @@ function ClassCard({
         "group relative overflow-hidden rounded-[1.25rem] border border-[#e9c176]/16 bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200",
         "hover:-translate-y-1 hover:shadow-[0_30px_55px_rgba(0,0,0,0.34)]",
         selected &&
-          "border-[#e9c176]/55 shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_0_28px_rgba(233,193,118,0.18),0_30px_55px_rgba(0,0,0,0.38)] md:col-span-2 xl:col-span-3",
+          "border-[#e9c176]/55 shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_0_28px_rgba(233,193,118,0.18),0_30px_55px_rgba(0,0,0,0.38)]",
       )}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 18, scale: 0.975 }}
       transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}

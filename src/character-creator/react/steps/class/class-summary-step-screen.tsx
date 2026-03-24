@@ -67,10 +67,10 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
   ].filter((group) => group.entries.length > 0);
 
   return (
-    <section className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
-      <div className="grid gap-4">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(19rem,0.9fr)]">
-          <section className="overflow-hidden rounded-[1.6rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.98),rgba(14,15,20,0.99))] p-[0.32rem] shadow-[0_26px_48px_rgba(0,0,0,0.28)] md:p-[0.36rem]">
+    <section className="cc-class-summary fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
+      <div className="cc-class-summary__stack grid gap-4">
+        <div className="cc-class-summary__intro grid gap-4">
+          <section className="cc-class-summary__hero-shell overflow-hidden rounded-[1.6rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.98),rgba(14,15,20,0.99))] p-[0.32rem] shadow-[0_26px_48px_rgba(0,0,0,0.28)] md:p-[0.36rem]">
             <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-4 md:p-5">
               <div className="border-b border-white/10 pb-3">
                 <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em] text-[#e9c176]/78">
@@ -109,7 +109,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                 </div>
               </div>
 
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="cc-class-summary__metrics grid gap-3">
                   <SummaryMetric label="Hit Die" value={viewModel.hitDie} />
                   <SummaryMetric label="Saving Throws" value={viewModel.savingThrows.join(" / ")} />
                   {viewModel.primaryAbilitySummary ? (
@@ -120,7 +120,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
             </div>
           </section>
 
-          <aside className="grid gap-4 self-start">
+          <aside className="cc-class-summary__kit-column grid gap-4 self-start">
             <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
               <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-4 text-[#f1ddbc]">
                 <div className="border-b border-white/10 pb-3">
@@ -129,7 +129,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-4">
+                <div className="cc-class-summary__sigils mt-4 grid gap-4">
                   {openingKitGroups.length > 0 ? openingKitGroups.map((group) => (
                     <SelectionGroup
                       key={group.key}
@@ -149,7 +149,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
           </aside>
         </div>
 
-        <section className="overflow-hidden rounded-[1.55rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.3rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)] md:p-[0.32rem]">
+        <section className="cc-class-summary__ledger overflow-hidden rounded-[1.55rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.3rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)] md:p-[0.32rem]">
           <section className="rounded-[1.32rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-4 md:p-5">
             <div className="border-b border-white/10 pb-3">
               <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em] text-[#e6c88f]">
@@ -160,7 +160,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            <div className="cc-class-summary__ledger-grid mt-4 grid gap-3">
               <SummaryListCard
                 emptyLabel="No weapon proficiencies listed."
                 entries={viewModel.weaponProficiencies}
@@ -197,7 +197,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
             </div>
 
             {viewModel.hasFeatures ? (
-              <div className="mt-4 grid gap-3">
+              <div className="cc-class-summary__feature-list mt-4 grid gap-3">
                 {viewModel.features.map((feature) => {
                   const featureKey = feature.title;
                   const isExpanded = expandedFeature === featureKey;
@@ -306,7 +306,7 @@ function SummaryListCard({
   emptyLabel: string;
 }) {
   return (
-    <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
+    <section className="cc-class-summary__card rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
       <div className="flex items-center gap-3 border-b border-white/10 pb-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d] shadow-[0_8px_18px_rgba(0,0,0,0.14)]">
           <i className={cn(iconClass, "text-sm")} aria-hidden="true" />
@@ -320,7 +320,7 @@ function SummaryListCard({
         <div className="mt-3 flex flex-wrap gap-2">
           {entries.map((entry) => (
             <span
-              className="inline-flex items-center rounded-full border border-[#e9c176]/24 bg-[rgba(255,255,255,0.04)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] text-[#e9dcc6]"
+              className="inline-flex min-h-9 items-center rounded-full border border-[#e9c176]/24 bg-[rgba(255,255,255,0.04)] px-3 py-1.5 text-left font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] leading-5 text-[#e9dcc6]"
               key={entry}
             >
               {entry}
@@ -338,7 +338,7 @@ function SummaryListCard({
 
 function SelectionGroup({ title, iconClass, entries, accent = false }: SelectionGroupProps) {
   return (
-    <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
+    <section className="cc-class-summary__card rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
       <div className="flex items-center gap-3 border-b border-white/10 pb-3">
         <div className={cn(
           "flex h-10 w-10 items-center justify-center rounded-full border shadow-[0_8px_18px_rgba(0,0,0,0.14)]",
@@ -356,7 +356,7 @@ function SelectionGroup({ title, iconClass, entries, accent = false }: Selection
         {entries.map((entry) => (
           <span
             className={cn(
-              "inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em]",
+              "inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-left font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] leading-5",
               accent
                 ? "border-[#e9c176]/28 bg-[rgba(233,193,118,0.08)] text-[#f1deb8]"
                 : "border-white/10 bg-[rgba(255,255,255,0.04)] text-[#e9dcc6]",
