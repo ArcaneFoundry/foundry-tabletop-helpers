@@ -251,6 +251,14 @@ beforeEach(() => {
 });
 
 describe("step spells", () => {
+  it("uses the React rendering path for the grimoire selection screen", async () => {
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+
+    expect(step.renderMode).toBe("react");
+    expect(step.reactComponent).toBeTypeOf("function");
+  });
+
   it("filters available spells by resolved class spell list and max spell level", async () => {
     resolveClassSpellUuidsMock.mockResolvedValue(new Set([
       "Compendium.spell.light",

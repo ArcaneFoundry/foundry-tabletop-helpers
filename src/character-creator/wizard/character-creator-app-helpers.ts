@@ -5,6 +5,24 @@ import { isBuildFlowStep } from "../react/steps/build/build-flow-route-host";
 import { isClassFlowStep } from "../react/steps/class/class-flow-route-host";
 import { isOriginFlowStep } from "../react/steps/origin/origin-flow-route-host";
 
+function getChapterKey(stepId: string): "class" | "origins" | "build" | "finalize" {
+  if (isClassFlowStep(stepId) || stepId === "subclass") return "class";
+  if (isOriginFlowStep(stepId)) return "origins";
+  if (isBuildFlowStep(stepId) || stepId === "feats" || stepId === "spells") return "build";
+  return "finalize";
+}
+
+function getDefaultSceneKey(stepId: string, chapterKey: "class" | "origins" | "build" | "finalize"): string {
+  if (stepId === "weaponMasteries" || stepId === "equipment" || stepId === "equipmentShop") return "arsenal";
+  if (stepId === "spells" || stepId === "originChoices") return "grimoire";
+  if (stepId === "review") return "binding";
+  if (stepId === "portrait") return "visage";
+  if (chapterKey === "class") return "forge";
+  if (chapterKey === "origins") return "archives";
+  if (chapterKey === "build") return "ritual";
+  return "coronation";
+}
+
 export async function buildWizardShellContext(
   machine: WizardStateMachine,
   stepDef: WizardStepDefinition | undefined,
@@ -45,6 +63,13 @@ export async function buildWizardShellContext(
   const shellContentClass = (vmData.shellContentClass as string | undefined)
     ?? (isBuildFlowStep(machine.currentStepId) ? "cc-step-content--build-flow" : undefined);
   const nextButtonLabel = vmData.nextButtonLabel as string | undefined;
+  const chapterKey = (vmData.chapterKey as WizardShellContext["chapterKey"] | undefined) ?? getChapterKey(machine.currentStepId);
+  const chapterSceneKey = (vmData.chapterSceneKey as string | undefined) ?? getDefaultSceneKey(machine.currentStepId, chapterKey);
+  const chapterAccentToken = (vmData.chapterAccentToken as string | undefined) ?? chapterKey;
+  const panelStyleVariant = (vmData.panelStyleVariant as WizardShellContext["panelStyleVariant"] | undefined) ?? "artifact";
+  const motionProfile = (vmData.motionProfile as WizardShellContext["motionProfile"] | undefined) ?? "ceremonial";
+  const statusHintStyle = (vmData.statusHintStyle as WizardShellContext["statusHintStyle"] | undefined)
+    ?? (machine.isReviewStep ? "summary" : stepDef?.getStatusHint?.(machine.state) ? "progress" : "selection");
   const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
 
   return {
@@ -58,7 +83,13 @@ export async function buildWizardShellContext(
     isReviewStep: machine.isReviewStep,
     nextButtonLabel,
     statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
+    statusHintStyle,
     atmosphereClass: getStepAtmosphere(machine.currentStepId),
+    chapterKey,
+    chapterSceneKey,
+    chapterAccentToken,
+    panelStyleVariant,
+    motionProfile,
     headerTitle,
     headerSubtitle,
     headerDescription,

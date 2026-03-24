@@ -7,6 +7,7 @@
 
 import { MOD } from "../../logger";
 import { patchCardSelection } from "./card-select-utils";
+import { SubclassStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
 import type {
   WizardStepDefinition,
   WizardState,
@@ -38,6 +39,8 @@ export function createSubclassStep(): WizardStepDefinition {
     id: "subclass",
     label: "Subclass",
     icon: "fa-solid fa-book-sparkles",
+    renderMode: "react",
+    reactComponent: SubclassStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
     dependencies: ["class"],
 

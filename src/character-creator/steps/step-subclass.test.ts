@@ -116,6 +116,14 @@ beforeEach(() => {
 });
 
 describe("step subclass", () => {
+  it("uses the React rendering path for the subclass selection experience", async () => {
+    const { createSubclassStep } = await import("./step-subclass");
+    const step = createSubclassStep();
+
+    expect(step.renderMode).toBe("react");
+    expect(step.reactComponent).toBeTypeOf("function");
+  });
+
   it("only applies subclass selection once the class reaches level 3", async () => {
     const { createSubclassStep } = await import("./step-subclass");
     const step = createSubclassStep();

@@ -25,6 +25,7 @@ import {
   type SpellPreparationClassDocumentLike,
   type SpellScaleAdvancementLike,
 } from "../spell-preparation-policy";
+import { SpellsStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
 
 /* ── Constants ───────────────────────────────────────────── */
 
@@ -250,6 +251,8 @@ export function createSpellsStep(): WizardStepDefinition {
     id: "spells",
     label: "Spells",
     icon: "fa-solid fa-wand-sparkles",
+    renderMode: "react",
+    reactComponent: SpellsStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-spells.hbs`,
     dependencies: ["class", "subclass"],
 

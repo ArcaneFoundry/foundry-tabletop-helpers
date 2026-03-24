@@ -11,6 +11,7 @@ import type { WizardStepDefinition, WizardState, PortraitSelection, StepCallback
 import { isPortraitAvailable, generatePortraits } from "../portrait/portrait-client";
 import type { GeneratedPortrait } from "../portrait/portrait-client";
 import { buildPortraitPrompt } from "../portrait/portrait-prompt-builder";
+import { PortraitStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
 
 /* ── Step Definition ─────────────────────────────────────── */
 
@@ -19,6 +20,8 @@ export function createPortraitStep(): WizardStepDefinition {
     id: "portrait",
     label: "Portrait",
     icon: "fa-solid fa-image-portrait",
+    renderMode: "react",
+    reactComponent: PortraitStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-portrait.hbs`,
     dependencies: [],
 

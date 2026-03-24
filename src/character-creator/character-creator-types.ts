@@ -667,6 +667,7 @@ export interface WizardStepRenderController {
   getState(): WizardState;
   updateCurrentStepData(value: unknown, options?: { silent?: boolean }): void;
   refresh(): Promise<void>;
+  jumpToStep(stepId: string): void;
 }
 
 export interface ReactWizardStepProps {
@@ -755,8 +756,14 @@ export interface WizardShellContext {
   nextButtonLabel?: string;
   /** Short status hint for the navigation bar */
   statusHint: string;
+  statusHintStyle?: "progress" | "selection" | "warning" | "summary";
   /** Atmospheric gradient class for current step */
   atmosphereClass: string;
+  chapterKey?: "class" | "origins" | "build" | "finalize";
+  chapterSceneKey?: string;
+  chapterAccentToken?: string;
+  panelStyleVariant?: "artifact" | "recessed" | "glass" | "summary";
+  motionProfile?: "ceremonial" | "selection" | "loading" | "confirmation";
   /** Enhanced header fields — set by card-select steps to override the default header */
   headerTitle?: string;
   headerSubtitle?: string;

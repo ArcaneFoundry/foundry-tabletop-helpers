@@ -170,6 +170,14 @@ beforeEach(() => {
 });
 
 describe("step feats", () => {
+  it("uses the React rendering path for the feat and attunement screen", async () => {
+    const { createFeatsStep } = await import("./step-feats");
+    const step = createFeatsStep();
+
+    expect(step.renderMode).toBe("react");
+    expect(step.reactComponent).toBeTypeOf("function");
+  });
+
   it("stays applicable once the creator has crossed the first feat or ASI level", async () => {
     const { createFeatsStep } = await import("./step-feats");
     const step = createFeatsStep();

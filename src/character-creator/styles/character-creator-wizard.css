@@ -19,6 +19,28 @@
   position: relative;
   overflow: hidden;
   transition: background var(--cc-duration-slow) var(--cc-ease-out);
+  --arcane-scene-glow: rgba(211, 190, 235, 0.14);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.1);
+}
+
+.cc-wizard-shell[data-scene-key="forge"] {
+  --arcane-scene-glow: rgba(191, 108, 96, 0.16);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.12);
+}
+
+.cc-wizard-shell[data-scene-key="archives"] {
+  --arcane-scene-glow: rgba(120, 104, 177, 0.18);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.08);
+}
+
+.cc-wizard-shell[data-scene-key="grimoire"] {
+  --arcane-scene-glow: rgba(126, 91, 188, 0.2);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.08);
+}
+
+.cc-wizard-shell[data-scene-key="binding"] {
+  --arcane-scene-glow: rgba(233, 193, 118, 0.14);
+  --arcane-scene-spark: rgba(211, 190, 235, 0.12);
 }
 
 /* ── Atmospheric Backgrounds ─────────────────────────────── */
@@ -27,8 +49,8 @@
 .cc-atmosphere--arcane {
   background:
     radial-gradient(ellipse at 25% 100%, rgba(107, 79, 160, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 0%, rgba(107, 79, 160, 0.10) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 50%, rgba(200, 167, 93, 0.05) 0%, transparent 70%),
+    radial-gradient(ellipse at 75% 0%, rgba(107, 79, 160, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, var(--arcane-scene-spark) 0%, transparent 70%),
     var(--cc-bg-base);
 }
 
@@ -42,7 +64,7 @@
 .cc-atmosphere--shadow {
   background:
     radial-gradient(ellipse at 50% 100%, rgba(139, 30, 45, 0.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 20%, rgba(107, 79, 160, 0.10) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 20%, var(--arcane-scene-glow) 0%, transparent 45%),
     var(--cc-bg-base);
 }
 
@@ -56,7 +78,7 @@
 .cc-atmosphere--crimson {
   background:
     radial-gradient(ellipse at 40% 85%, rgba(139, 30, 45, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 15%, rgba(200, 167, 93, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 75% 15%, var(--arcane-scene-spark) 0%, transparent 45%),
     var(--cc-bg-base);
 }
 

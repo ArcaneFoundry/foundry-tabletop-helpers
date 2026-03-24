@@ -1,5 +1,56 @@
 /* ── Character Creator — Step Styles ──────────────────────── */
 
+.arcane-step-frame {
+  position: relative;
+  container-type: inline-size;
+}
+
+.arcane-step-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0.75rem;
+  pointer-events: none;
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at top, rgba(211, 190, 235, 0.08), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(233, 193, 118, 0.06), transparent 28%);
+  opacity: 0.95;
+}
+
+.arcane-step-frame[data-scene="forge"]::before {
+  background:
+    radial-gradient(circle at top, rgba(191, 108, 96, 0.1), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(233, 193, 118, 0.08), transparent 26%);
+}
+
+.arcane-step-frame[data-scene="grimoire"]::before {
+  background:
+    radial-gradient(circle at top, rgba(126, 91, 188, 0.12), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(233, 193, 118, 0.06), transparent 26%);
+}
+
+.arcane-prose {
+  color: rgb(215 208 203 / 1);
+  font-family: var(--font-fth-cc-body);
+  font-size: 0.98rem;
+  line-height: 1.8;
+}
+
+.arcane-prose :is(p, ul, ol) {
+  margin: 0 0 0.9rem;
+}
+
+.arcane-prose :is(h1, h2, h3, h4) {
+  color: rgb(243 230 204 / 1);
+  font-family: var(--font-fth-cc-display);
+  line-height: 1.1;
+  margin: 0 0 0.85rem;
+}
+
+.arcane-prose a {
+  color: rgb(233 193 118 / 1);
+}
+
 /* ============================================================
    ABILITY SCORES STEP
    ============================================================ */

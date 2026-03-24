@@ -42,6 +42,7 @@ import {
   getRequiredSpeciesSkillChoiceCount,
 } from "./origin-flow-utils";
 import { deriveEquipmentState, formatCurrencyCp, resolveEquipmentFlow } from "./equipment-flow-utils";
+import { ReviewStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -97,6 +98,8 @@ export function createReviewStep(): WizardStepDefinition {
     id: "review",
     label: "Review & Create",
     icon: "fa-solid fa-clipboard-check",
+    renderMode: "react",
+    reactComponent: ReviewStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-review.hbs`,
     dependencies: [],
     isApplicable: () => true,

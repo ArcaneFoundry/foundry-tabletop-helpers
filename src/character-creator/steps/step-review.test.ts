@@ -183,6 +183,14 @@ beforeEach(() => {
 });
 
 describe("step review", () => {
+  it("uses the React rendering path for the final ritual review", async () => {
+    const { createReviewStep } = await import("./step-review");
+    const step = createReviewStep();
+
+    expect(step.renderMode).toBe("react");
+    expect(step.reactComponent).toBeTypeOf("function");
+  });
+
   it("shows the prepared-spell policy in the spells summary for wizard creation", async () => {
     const { createReviewStep } = await import("./step-review");
     const step = createReviewStep();

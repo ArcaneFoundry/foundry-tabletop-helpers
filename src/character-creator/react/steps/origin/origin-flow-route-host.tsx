@@ -164,13 +164,13 @@ export function OriginFlowRouteHost(
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-fth-cc-gold/45 bg-[linear-gradient(180deg,rgba(249,237,216,0.98),rgba(236,219,191,0.98))] p-[0.35rem] shadow-[0_24px_60px_rgba(0,0,0,0.34)]"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
         initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),transparent_28%),linear-gradient(180deg,rgba(255,248,236,0.98),rgba(232,214,187,0.98))]" />
+        <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-[#b78d56]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.92),rgba(236,220,197,0.96))] shadow-[inset_0_0_0_1px_rgba(255,245,226,0.72)]">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
@@ -215,10 +215,10 @@ export function OriginFlowRouteHost(
             <img
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.18] mix-blend-multiply"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16]"
               src={classStepFieldBackground}
             />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,252,245,0.6),rgba(255,248,236,0.18)_52%,rgba(219,190,145,0.08)_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
             <ClassAggregateStepper model={shellModel.aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
 
             <div className="relative z-10 mt-3 flex min-h-0 flex-1">

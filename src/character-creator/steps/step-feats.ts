@@ -18,6 +18,7 @@ import type {
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { getPackAnalysisMap, isEntryRelevantForWorkflow } from "../data/pack-analysis";
 import { ABILITY_KEYS, ABILITY_LABELS, abilityModifier, formatModifier } from "../data/dnd5e-constants";
+import { FeatsStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
 
 /* ── Constants ───────────────────────────────────────────── */
 
@@ -47,6 +48,8 @@ export function createFeatsStep(): WizardStepDefinition {
     id: "feats",
     label: "Feats & ASI",
     icon: "fa-solid fa-star",
+    renderMode: "react",
+    reactComponent: FeatsStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-feats.hbs`,
     dependencies: ["class", "abilities"],
 
