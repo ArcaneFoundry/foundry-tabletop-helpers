@@ -46,6 +46,7 @@ coverage/
 *.lcov
 .Codex/
 .codex*/
+.worktrees/
 .playwright-cli/
 
 # Temporary files
