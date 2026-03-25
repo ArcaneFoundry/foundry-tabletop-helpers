@@ -62,6 +62,14 @@ describe("ensureNativeWindowResizeHandle", () => {
     expect(ensureNativeWindowResizeHandle(makeApp({ hasFrame: false }))).toBeNull();
   });
 
+  it("treats omitted hasFrame as a resizable app", () => {
+    const app = makeApp({ hasFrame: undefined });
+
+    expect(ensureNativeWindowResizeHandle(app)).toBe(app.window.resize);
+    expect(app.window.resize.classList.contains("fth-window-resize-handle")).toBe(true);
+    expect(app.window.resize.getAttribute("data-fth-window-affordance")).toBe("native");
+  });
+
   it("returns null when the app has no native resize handle", () => {
     expect(ensureNativeWindowResizeHandle(makeApp({ window: {} }))).toBeNull();
   });
