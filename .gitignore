@@ -12,6 +12,8 @@ pnpm-debug.log*
 # Build output
 dist/
 build/
+!src/character-creator/react/steps/build/
+!src/character-creator/react/steps/build/**
 *.zip
 *.tar.gz
 

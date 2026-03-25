@@ -1,10 +1,15 @@
 import { useLayoutEffect, useRef } from "react";
 
 import type { WizardStepDefinition } from "../../character-creator-types";
-import type { CharacterCreatorWizardController } from "../wizard-controller";
+
+interface LegacyStepController {
+  registerActiveStepElement(element: HTMLElement): void;
+  activateCurrentStep(element: HTMLElement): void;
+  cleanupActiveStep(stepDef: WizardStepDefinition | undefined, element: HTMLElement): void;
+}
 
 interface LegacyStepHostProps {
-  controller: CharacterCreatorWizardController;
+  controller: LegacyStepController;
   stepDef: WizardStepDefinition | undefined;
   stepContentHtml: string;
   className?: string;
