@@ -115,7 +115,7 @@ export function buildCharacterCreatorAppClass(): void {
       window: {
         resizable: true,
         icon: "fa-solid fa-hat-wizard",
-        title: "Character Creator",
+        title: "Character Creation",
       },
       position: { width: 860, height: 640 },
       actions: {

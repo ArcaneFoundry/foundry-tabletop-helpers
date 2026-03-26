@@ -138,8 +138,11 @@ describe("CharacterCreatorReactApp", () => {
     const mod = await import("./character-creator-react-app");
 
     mod.buildCharacterCreatorReactAppClass();
+    const AppClass = mod.getCharacterCreatorReactAppClass();
 
-    expect(mod.getCharacterCreatorReactAppClass()).not.toBeNull();
+    expect(AppClass).not.toBeNull();
+    expect((AppClass as { DEFAULT_OPTIONS?: { window?: { title?: string } } }).DEFAULT_OPTIONS?.window?.title)
+      .toBe("Character Creation");
     expect(buildLegacyCharacterCreatorAppClassMock).toHaveBeenCalled();
     expect(logDebugMock).toHaveBeenCalledWith("Character Creator: CharacterCreatorReactApp class built");
   });

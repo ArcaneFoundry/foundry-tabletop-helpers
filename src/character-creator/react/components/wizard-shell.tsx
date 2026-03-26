@@ -70,7 +70,7 @@ export function WizardShell({
           <div className="mb-4 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-[#e9c176]">
-                Arcane Creator
+                Character Creation
               </div>
               <div className="mt-2 font-fth-cc-display text-[1.6rem] leading-none text-[#f4e8d0]">
                 {chapterLabel}

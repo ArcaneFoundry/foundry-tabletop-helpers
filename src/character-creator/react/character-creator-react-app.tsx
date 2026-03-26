@@ -82,7 +82,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
     return (
       <div className="fth-react-app-shell flex h-full min-h-0 items-center justify-center bg-fth-cc-ink text-fth-cc-light">
         <div className="rounded-fth-cc-lg border border-white/10 bg-black/20 px-5 py-4 font-fth-cc-ui text-sm uppercase tracking-[0.18em] text-fth-cc-muted">
-          Loading Character Creator
+          Loading Character Creation
         </div>
       </div>
     );
@@ -204,7 +204,7 @@ export function buildCharacterCreatorReactAppClass(): void {
       window: {
         resizable: true,
         icon: "fa-solid fa-hat-wizard",
-        title: "Character Creator",
+        title: "Character Creation",
       },
       position: { width: 860, height: 640 },
     };

@@ -484,14 +484,14 @@ function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "s
       <div className="cc-class-flow-vocations mb-5 flex items-end justify-between gap-4 px-2">
         <div className="cc-class-flow-vocations__copy max-w-2xl">
           <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[#e9c176]/78">
-            Vocations
+            Classes
           </div>
           <div className="mt-2 font-fth-cc-body text-[1rem] leading-7 text-[#d0cad0]">
             Choose the discipline that will define your first rites of battle, devotion, guile, or arcana.
           </div>
         </div>
         <div className="cc-class-flow-vocations__badge rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb]">
-          Select One Calling
+          Select a Class
         </div>
       </div>
       <motion.div

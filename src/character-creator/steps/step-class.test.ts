@@ -213,7 +213,7 @@ describe("step class", () => {
     expect(loadPacksMock).toHaveBeenCalled();
     expect((viewModel.entries as Array<{ name: string }>).map((entry) => entry.name)).toEqual(["Wizard"]);
     expect(viewModel).toMatchObject({
-      stepLabel: "Choose Your Calling",
+      stepLabel: "Choose Your Class",
       entries: [
         expect.objectContaining({
           name: "Wizard",

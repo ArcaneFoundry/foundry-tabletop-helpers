@@ -94,7 +94,7 @@ export function ClassCard({
           {selected ? (
             <div className="pointer-events-none absolute right-4 top-16 flex items-center gap-2 rounded-full border border-[#e9c176]/45 bg-[rgba(233,193,118,0.14)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#f6e6c4] backdrop-blur-sm shadow-[0_0_16px_rgba(233,193,118,0.16)]">
               <i className="fa-solid fa-sparkles text-[0.72rem]" aria-hidden="true" />
-              Selected Calling
+              Selected Class
             </div>
           ) : null}
         </div>

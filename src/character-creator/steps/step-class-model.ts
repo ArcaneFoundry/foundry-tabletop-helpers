@@ -510,7 +510,7 @@ export async function getClassStepViewModel(state: WizardState): Promise<{
   return {
     stepId: "class",
     stepTitle: "Class",
-    stepLabel: "Choose Your Calling",
+    stepLabel: "Choose Your Class",
     stepIcon: "fa-solid fa-shield-halved",
     stepDescription:
       "Choose the path that will shape your legend, battle style, and defining talents.",

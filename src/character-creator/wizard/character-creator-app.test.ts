@@ -216,6 +216,8 @@ describe("character creator app shell", () => {
     mod.buildCharacterCreatorAppClass();
     const AppClass = mod.getCharacterCreatorAppClass();
     expect(AppClass).not.toBeNull();
+    expect((AppClass as { DEFAULT_OPTIONS?: { window?: { title?: string } } }).DEFAULT_OPTIONS?.window?.title)
+      .toBe("Character Creation");
 
     mod.openCharacterCreatorWizard();
 
