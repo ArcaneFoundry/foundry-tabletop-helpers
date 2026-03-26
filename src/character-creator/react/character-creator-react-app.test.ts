@@ -160,6 +160,8 @@ describe("CharacterCreatorReactApp", () => {
       _onRender(context: Record<string, never>, options: unknown): Promise<void>;
     };
     const root = new FakeElement("div");
+    const mount = new FakeElement("div");
+    root.setQueryResult("[data-fth-react-root]", mount);
     app.element = root;
     app._ensureController = vi.fn(() => ({ id: "controller" }));
     app._reactRenderer = {
@@ -171,8 +173,13 @@ describe("CharacterCreatorReactApp", () => {
     await app._onRender({}, {});
 
     expect(getFoundryReactMountMock.mock.calls.length).toBe(2);
+    expect(getFoundryReactMountMock.mock.calls[0]?.[0]).toBe(root);
     expect(ensureNativeWindowResizeHandleMock.mock.calls.length).toBe(2);
     expect(ensureNativeWindowResizeHandleMock.mock.calls[0]?.[0]).toBe(app);
     expect(ensureNativeWindowResizeHandleMock.mock.calls[1]?.[0]).toBe(app);
+    expect(app._ensureController).toHaveBeenCalledTimes(2);
+    expect(foundryReactRenderMock).toHaveBeenCalledTimes(2);
+    expect(foundryReactRenderMock.mock.calls[0]?.[0]).toBe(mount);
+    expect(foundryReactRenderMock.mock.calls[1]?.[0]).toBe(mount);
   });
 });
