@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -89,5 +90,35 @@ describe("class stepper layout", () => {
     expect(markup).not.toContain("fth-class-stepper__compact-row");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Expertise");
+  });
+
+  it("threads the live render sites through the layout seam", () => {
+    const classStepScreenSource = readFileSync(
+      new URL("./class-step-screen.tsx", import.meta.url),
+      "utf8",
+    );
+    const classFlowRouteHostSource = readFileSync(
+      new URL("./class-flow-route-host.tsx", import.meta.url),
+      "utf8",
+    );
+    const classChoicesStepScreenSource = readFileSync(
+      new URL("./class-choices-step-screen.tsx", import.meta.url),
+      "utf8",
+    );
+    const originFlowRouteHostSource = readFileSync(
+      new URL("../origin/origin-flow-route-host.tsx", import.meta.url),
+      "utf8",
+    );
+
+    for (const source of [
+      classStepScreenSource,
+      classFlowRouteHostSource,
+      classChoicesStepScreenSource,
+      originFlowRouteHostSource,
+    ]) {
+      expect(source).toContain("useClassStepperLayoutMode");
+      expect(source).toContain("layoutMode={layoutMode}");
+      expect(source).toContain("ref={setStepperContainer}");
+    }
   });
 });

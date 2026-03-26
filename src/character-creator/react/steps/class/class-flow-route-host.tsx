@@ -9,6 +9,7 @@ import type {
 } from "../../../character-creator-types";
 import { cn } from "../../../../ui/lib/cn";
 import { ClassAggregateStepper } from "./class-step-screen";
+import { useClassStepperLayoutMode } from "./class-stepper-layout";
 import { buildClassFlowShellModel } from "./build-class-flow-shell-model";
 import { ClassCard } from "./class-card";
 import { ClassSummaryStepScreen } from "./class-summary-step-screen";
@@ -183,6 +184,7 @@ export function ClassFlowRouteHost(
     () => buildClassFlowShellModel(state, shellContext.steps, shellContext.currentStepId),
     [shellContext.currentStepId, shellContext.steps, state],
   );
+  const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
   const theme = getClassTheme(shellModel.selectedClassIdentifier ?? "fighter");
   const titleStyle = getClassFlowTitleStyle(shellModel.headerTone, theme);
   const headerFrameStyle = getClassFlowHeaderFrameStyle(shellModel.headerTone, theme);
@@ -257,9 +259,15 @@ export function ClassFlowRouteHost(
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16]"
                 src={classStepFieldBackground}
+            />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
+            <div ref={setStepperContainer} className="relative z-10 w-full">
+              <ClassAggregateStepper
+                layoutMode={layoutMode}
+                model={shellModel.aggregateStepper}
+                prefersReducedMotion={prefersReducedMotion}
               />
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
-              <ClassAggregateStepper model={shellModel.aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
+            </div>
 
               <div className="relative z-10 mt-3 flex min-h-0 flex-1">
                 <AnimatePresence initial={false} mode="wait">

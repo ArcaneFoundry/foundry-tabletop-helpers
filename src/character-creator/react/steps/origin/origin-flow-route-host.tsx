@@ -13,6 +13,7 @@ import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import { ClassAggregateStepper } from "../class/class-step-screen";
 import { getClassTheme } from "../class/class-presentation";
+import { useClassStepperLayoutMode } from "../class/class-stepper-layout";
 import { buildBackgroundSelectionFromEntry } from "../../../steps/step-background";
 import { buildSpeciesSelectionFromEntry } from "../../../steps/step-species";
 import {
@@ -145,6 +146,7 @@ export function OriginFlowRouteHost(
     () => buildOriginFlowShellModel(state, shellContext.steps, shellContext.currentStepId),
     [shellContext.currentStepId, shellContext.steps, state],
   );
+  const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
   const theme = getClassTheme(shellModel.selectedClassIdentifier ?? "fighter");
 
   useEffect(() => {
@@ -219,7 +221,13 @@ export function OriginFlowRouteHost(
               src={classStepFieldBackground}
             />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
-            <ClassAggregateStepper model={shellModel.aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
+            <div ref={setStepperContainer} className="relative z-10 w-full">
+              <ClassAggregateStepper
+                layoutMode={layoutMode}
+                model={shellModel.aggregateStepper}
+                prefersReducedMotion={prefersReducedMotion}
+              />
+            </div>
 
             <div className="relative z-10 mt-3 flex min-h-0 flex-1">
               <AnimatePresence initial={false} mode="wait">

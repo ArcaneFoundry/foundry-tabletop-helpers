@@ -13,7 +13,11 @@ import {
   type ClassAggregatePresentationStatus,
   type ClassAggregateSubstepNode,
 } from "../../progress/build-class-aggregate-stepper-model";
-import { shouldShowClassStepperSubsteps, type ClassStepperLayoutMode } from "./class-stepper-layout";
+import {
+  shouldShowClassStepperSubsteps,
+  type ClassStepperLayoutMode,
+  useClassStepperLayoutMode,
+} from "./class-stepper-layout";
 import { buildClassSelectionFromEntry, getClassStepViewModel } from "../../../steps/step-class-model";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
@@ -65,6 +69,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
     () => buildClassAggregateStepperModel(state, shellContext.steps, shellContext.currentStepId),
     [shellContext.currentStepId, shellContext.steps, state],
   );
+  const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
 
   const onSelectEntry = async (entry: CreatorIndexEntry) => {
     const selection = await buildClassSelectionFromEntry(state, entry);
@@ -138,7 +143,13 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
               src={classStepFieldBackground}
             />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
-            <ClassAggregateStepper model={aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
+            <div ref={setStepperContainer} className="relative z-10 w-full">
+              <ClassAggregateStepper
+                layoutMode={layoutMode}
+                model={aggregateStepper}
+                prefersReducedMotion={prefersReducedMotion}
+              />
+            </div>
 
             {hasEntries ? (
               <div className="fth-react-scrollbar relative z-10 mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">

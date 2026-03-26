@@ -5,6 +5,7 @@ import type { ReactWizardStepProps } from "../../../character-creator-types";
 import { cn } from "../../../../ui/lib/cn";
 import { buildClassAggregateStepperModel } from "../../progress/build-class-aggregate-stepper-model";
 import { ClassAggregateStepper } from "./class-step-screen";
+import { useClassStepperLayoutMode } from "./class-stepper-layout";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 
@@ -81,6 +82,7 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
     () => buildClassAggregateStepperModel(state, shellContext.steps, shellContext.currentStepId),
     [shellContext.currentStepId, shellContext.steps, state],
   );
+  const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
   const maxCount = viewModel.skillSection.maxCount;
   const options = useMemo(
     () => viewModel.skillSection.options.map((option) => ({
@@ -167,7 +169,13 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
               src={classStepFieldBackground}
             />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,252,245,0.6),rgba(255,248,236,0.18)_52%,rgba(219,190,145,0.08)_100%)]" />
-            <ClassAggregateStepper model={aggregateStepper} prefersReducedMotion={prefersReducedMotion} />
+            <div ref={setStepperContainer} className="relative z-10 w-full">
+              <ClassAggregateStepper
+                layoutMode={layoutMode}
+                model={aggregateStepper}
+                prefersReducedMotion={prefersReducedMotion}
+              />
+            </div>
 
             <div className="relative z-10 mt-4 grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
               <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
