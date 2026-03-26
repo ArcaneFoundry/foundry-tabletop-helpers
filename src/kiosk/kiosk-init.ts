@@ -12,6 +12,7 @@ import { MOD, Log } from "../logger";
 import { getConfig, getGame, getUI } from "../types";
 import { isKioskPlayer, getKioskCanvasMode } from "../settings";
 import { buildKioskSheet } from "./kiosk-sheet";
+import { setKioskUiSuppressed } from "../ui/foundry/application-v2/kiosk-window-service";
 
 /** Sheet class ID as registered by registerLPCSSheet() in lpcs-sheet.ts */
 const LPCS_SHEET_CLASS = `${MOD}.LPCSSheet`;
@@ -42,8 +43,8 @@ export function initKioskReady(): void {
 
   Log.info("Kiosk: activating kiosk mode");
 
-  // Mark body so CSS can remove constraints (e.g. max-width on .lpcs-sheet)
-  document.body.classList.add("fth-kiosk");
+  // Mark body so CSS can remove constraints and suppress Foundry chrome.
+  setKioskUiSuppressed(true);
 
   // Close any open windows (welcome dialogs, tour prompts, etc.)
   const ui = getUI();
@@ -66,9 +67,6 @@ export function initKioskReady(): void {
     }
   }
 
-  // Hide Foundry UI chrome
-  hideUiChrome();
-
   // Switch all owned characters to LPCS sheet, then open the assigned
   // character maximized. Must be sequential — setFlag is async and
   // concurrent actor updates conflict in Foundry.
@@ -78,24 +76,6 @@ export function initKioskReady(): void {
 
   // Show fullscreen button — can't auto-fullscreen on mobile without user gesture
   injectFullscreenButton();
-}
-
-function hideUiChrome(): void {
-  const ids = ["navigation", "controls", "players", "hotbar"];
-  for (const id of ids) {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  }
-
-  // Collapse or hide sidebar
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sidebar = (getUI() as any)?.sidebar;
-  if (sidebar?.collapse) {
-    try { sidebar.collapse(); } catch { /* best-effort */ }
-  } else {
-    const sidebarEl = document.getElementById("sidebar");
-    if (sidebarEl) sidebarEl.style.display = "none";
-  }
 }
 
 /**

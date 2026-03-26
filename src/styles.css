@@ -111,6 +111,7 @@
 /* ── Kiosk Mode: Full-Viewport Container ──────────────────────────────────── */
 /* The kiosk sheet renders into this container (outside #ui-windows).
    positioned: false means no inline styles from Foundry — CSS wins naturally. */
+.fth-kiosk-host,
 #fth-kiosk-container {
   position: fixed;
   inset: 0;
@@ -126,7 +127,13 @@
     env(safe-area-inset-left, 0px);
 }
 
-#fth-kiosk-container .lpcs-sheet {
+.fth-kiosk-host > * {
+  width: 100%;
+  height: 100%;
+}
+
+#fth-kiosk-container .lpcs-sheet,
+.fth-kiosk-host .lpcs-sheet {
   max-width: none;
   width: 100%;
   height: 100%;

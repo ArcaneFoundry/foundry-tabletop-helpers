@@ -11,19 +11,7 @@
 
 import { Log } from "../logger";
 import { getLPCSSheetClass } from "../lpcs/lpcs-sheet";
-
-const KIOSK_CONTAINER_ID = "fth-kiosk-container";
-
-/** Ensure the fixed-position container exists on <body>. */
-function ensureContainer(): HTMLElement {
-  let el = document.getElementById(KIOSK_CONTAINER_ID);
-  if (!el) {
-    el = document.createElement("div");
-    el.id = KIOSK_CONTAINER_ID;
-    document.body.appendChild(el);
-  }
-  return el;
-}
+import { attachElementToKioskHost, getKioskWindowOptions } from "../ui/foundry/application-v2/kiosk-window-service";
 
 /**
  * Build a KioskLPCSSheet class that extends the runtime LPCSSheet.
@@ -46,16 +34,13 @@ function buildKioskSheetClass(): (new (...args: any[]) => any) | null {
       id: "lpcs-kiosk-{id}",
       classes: [...(Base.DEFAULT_OPTIONS.classes ?? []), "fth-kiosk-sheet"],
       window: {
-        ...Base.DEFAULT_OPTIONS.window,
-        frame: false,
-        positioned: false,
+        ...getKioskWindowOptions(Base.DEFAULT_OPTIONS.window),
       },
     };
 
     /** Insert into our own container instead of Foundry's #ui-windows. */
     _insertElement(element: HTMLElement): void {
-      const container = ensureContainer();
-      container.appendChild(element);
+      attachElementToKioskHost(element);
     }
 
     /** Kiosk sheet can never be dismissed. */
