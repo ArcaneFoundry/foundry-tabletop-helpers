@@ -6,9 +6,12 @@ export function getClassStepperLayoutMode(width: number): ClassStepperLayoutMode
   return width <= CLASS_STEPPER_COMPACT_BREAKPOINT ? "compact" : "wide";
 }
 
-export function shouldShowClassStepperSubsteps(
-  layoutMode: ClassStepperLayoutMode,
-  hasSubsteps: boolean,
-): boolean {
+export function shouldShowClassStepperSubsteps({
+  layoutMode,
+  hasSubsteps,
+}: {
+  layoutMode: ClassStepperLayoutMode;
+  hasSubsteps: boolean;
+}): boolean {
   return layoutMode === "wide" && hasSubsteps;
 }

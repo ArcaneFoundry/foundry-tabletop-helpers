@@ -13,6 +13,7 @@ import {
   type ClassAggregatePresentationStatus,
   type ClassAggregateSubstepNode,
 } from "../../progress/build-class-aggregate-stepper-model";
+import { shouldShowClassStepperSubsteps, type ClassStepperLayoutMode } from "./class-stepper-layout";
 import { buildClassSelectionFromEntry, getClassStepViewModel } from "../../../steps/step-class-model";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
@@ -223,16 +224,27 @@ function FlourishGem({ prefersReducedMotion }: { prefersReducedMotion: boolean }
 
 export function ClassAggregateStepper({
   model,
+  layoutMode = "wide",
   prefersReducedMotion,
 }: {
   model: ReturnType<typeof buildClassAggregateStepperModel>;
+  layoutMode?: ClassStepperLayoutMode;
   prefersReducedMotion: boolean;
 }) {
+  const shouldRenderSubsteps = shouldShowClassStepperSubsteps({
+    layoutMode,
+    hasSubsteps: model.showSubsteps && model.substeps.length > 0,
+  });
+
   return (
     <motion.nav
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       aria-label="Class Selection Progress"
-      className="relative mx-auto flex w-full max-w-5xl flex-col gap-3 border-b border-[#bea37d]/55 pb-4 text-[#5e4330]"
+      className={cn(
+        "fth-class-stepper relative mx-auto flex w-full max-w-5xl flex-col gap-3 border-b border-[#bea37d]/55 pb-4 text-[#5e4330]",
+        layoutMode === "compact" ? "fth-class-stepper--compact" : "fth-class-stepper--wide",
+      )}
+      data-layout-mode={layoutMode}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
       transition={{ delay: 0.14, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -246,7 +258,7 @@ export function ClassAggregateStepper({
         ))}
         <RailEndcap side="right" />
       </div>
-      {model.showSubsteps && model.substeps.length > 0 ? (
+      {shouldRenderSubsteps ? (
         <motion.div
           animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           className="relative z-10 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 pt-1"

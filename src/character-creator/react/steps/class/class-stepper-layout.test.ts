@@ -1,10 +1,53 @@
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CLASS_STEPPER_COMPACT_BREAKPOINT,
   getClassStepperLayoutMode,
   shouldShowClassStepperSubsteps,
 } from "./class-stepper-layout";
+
+vi.mock("motion/react", async () => {
+  const React = await import("react");
+  return {
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tag: string) =>
+          React.forwardRef((props: Record<string, unknown>, ref) => {
+            const {
+              animate: _animate,
+              children,
+              initial: _initial,
+              transition: _transition,
+              ...domProps
+            } = props;
+            return React.createElement(tag, { ...domProps, ref }, children as React.ReactNode);
+          }),
+      },
+    ),
+    useReducedMotion: () => true,
+  };
+});
+
+import { ClassAggregateStepper } from "./class-step-screen";
+
+function createAggregateStepperModel() {
+  return {
+    milestones: [
+      { id: "class", label: "Class", icon: "fa-solid fa-shield-halved", active: true, status: "selection-active" as const },
+      { id: "origins", label: "Origins", icon: "fa-solid fa-scroll", active: false, status: "pending" as const },
+      { id: "build", label: "Build", icon: "fa-solid fa-hammer", active: false, status: "pending" as const },
+      { id: "finalize", label: "Finalize", icon: "fa-solid fa-stars", active: false, status: "pending" as const },
+    ],
+    substeps: [
+      { id: "classChoices", label: "Skills", icon: "fa-solid fa-hand-sparkles", active: true, status: "selection-active" as const },
+      { id: "classExpertise", label: "Expertise", icon: "fa-solid fa-bullseye", active: false, status: "pending" as const },
+    ],
+    showSubsteps: true,
+  };
+}
 
 describe("class stepper layout", () => {
   it("switches to compact mode at and below the compact breakpoint", () => {
@@ -15,9 +58,33 @@ describe("class stepper layout", () => {
   });
 
   it("keeps substeps visible only when the layout is wide and substeps exist", () => {
-    expect(shouldShowClassStepperSubsteps("wide", true)).toBe(true);
-    expect(shouldShowClassStepperSubsteps("wide", false)).toBe(false);
-    expect(shouldShowClassStepperSubsteps("compact", true)).toBe(false);
-    expect(shouldShowClassStepperSubsteps("compact", false)).toBe(false);
+    expect(shouldShowClassStepperSubsteps({ layoutMode: "wide", hasSubsteps: true })).toBe(true);
+    expect(shouldShowClassStepperSubsteps({ layoutMode: "wide", hasSubsteps: false })).toBe(false);
+    expect(shouldShowClassStepperSubsteps({ layoutMode: "compact", hasSubsteps: true })).toBe(false);
+    expect(shouldShowClassStepperSubsteps({ layoutMode: "compact", hasSubsteps: false })).toBe(false);
+  });
+
+  it("hides substeps in compact mode while exposing the layout hook", () => {
+    const markup = renderToStaticMarkup(createElement(ClassAggregateStepper, {
+      layoutMode: "compact",
+      model: createAggregateStepperModel() as never,
+      prefersReducedMotion: true,
+    }));
+
+    expect(markup).toContain('data-layout-mode="compact"');
+    expect(markup).not.toContain("Skills");
+    expect(markup).not.toContain("Expertise");
+  });
+
+  it("keeps substeps visible in wide mode while exposing the layout hook", () => {
+    const markup = renderToStaticMarkup(createElement(ClassAggregateStepper, {
+      layoutMode: "wide",
+      model: createAggregateStepperModel() as never,
+      prefersReducedMotion: true,
+    }));
+
+    expect(markup).toContain('data-layout-mode="wide"');
+    expect(markup).toContain("Skills");
+    expect(markup).toContain("Expertise");
   });
 });
