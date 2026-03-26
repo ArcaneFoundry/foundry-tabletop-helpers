@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Log, MOD } from "../../logger";
 import { renderTemplate } from "../../types";
 import { getFoundryReactMount, FoundryReactRenderer } from "../../ui/foundry/react/foundry-react-application";
-import { ensureNativeWindowResizeHandle } from "../../ui/foundry/application-v2/window-resize-handle";
+import { ensureNativeWindowResizeHandle, type ApplicationV2Like } from "../../ui/foundry/application-v2/window-resize-handle";
 import type { GMConfig } from "../character-creator-types";
 import { buildWizardShellContext } from "../wizard/character-creator-app-helpers";
 import {
@@ -39,6 +39,8 @@ import {
 
 interface RuntimeApplicationBase {
   element?: Element | null;
+  hasFrame?: boolean;
+  window?: ApplicationV2Like["window"];
   render(options?: Record<string, unknown>): void;
   close(options?: unknown): Promise<void>;
   _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
