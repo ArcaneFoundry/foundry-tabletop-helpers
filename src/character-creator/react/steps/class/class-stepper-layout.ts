@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 export type ClassStepperLayoutMode = "wide" | "compact";
 
@@ -8,6 +8,35 @@ export function getClassStepperLayoutMode(width: number): ClassStepperLayoutMode
   return width <= CLASS_STEPPER_COMPACT_BREAKPOINT ? "compact" : "wide";
 }
 
+type LayoutModeTarget = Pick<HTMLElement, "getBoundingClientRect">;
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+export function syncClassStepperLayoutMode(
+  container: LayoutModeTarget | null,
+  setLayoutMode: (layoutMode: ClassStepperLayoutMode) => void,
+): (() => void) | undefined {
+  if (!container) return undefined;
+
+  const updateLayoutMode = (width: number) => {
+    setLayoutMode(getClassStepperLayoutMode(width));
+  };
+
+  updateLayoutMode(container.getBoundingClientRect().width);
+
+  if (typeof ResizeObserver === "undefined") return undefined;
+
+  const observer = new ResizeObserver((entries) => {
+    updateLayoutMode(entries[0]?.contentRect.width ?? container.getBoundingClientRect().width);
+  });
+
+  observer.observe(container as HTMLElement);
+
+  return () => {
+    observer.disconnect();
+  };
+}
+
 export function useClassStepperLayoutMode(): [
   ClassStepperLayoutMode,
   (container: HTMLElement | null) => void,
@@ -15,27 +44,7 @@ export function useClassStepperLayoutMode(): [
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [layoutMode, setLayoutMode] = useState<ClassStepperLayoutMode>("wide");
 
-  useEffect(() => {
-    if (!container) return;
-
-    const updateLayoutMode = (width: number) => {
-      setLayoutMode(getClassStepperLayoutMode(width));
-    };
-
-    updateLayoutMode(container.getBoundingClientRect().width);
-
-    if (typeof ResizeObserver === "undefined") return;
-
-    const observer = new ResizeObserver((entries) => {
-      updateLayoutMode(entries[0]?.contentRect.width ?? container.getBoundingClientRect().width);
-    });
-
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [container]);
+  useIsomorphicLayoutEffect(() => syncClassStepperLayoutMode(container, setLayoutMode), [container]);
 
   return [layoutMode, setContainer];
 }

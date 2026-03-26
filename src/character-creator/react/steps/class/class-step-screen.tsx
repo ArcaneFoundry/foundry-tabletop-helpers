@@ -327,7 +327,7 @@ function MilestoneNode({
       <span
         className={cn(
           "relative inline-flex items-center justify-center overflow-hidden rounded-full border shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)]",
-          compact ? "h-9 w-9 text-[0.76rem] md:h-10 md:w-10 md:text-sm" : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base",
+          compact ? "h-9 w-9 text-[0.76rem]" : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base",
           getMilestoneClassName(milestone.status),
         )}
         title={milestone.label}
@@ -347,7 +347,7 @@ function MilestoneNode({
         className={cn(
           "fth-class-stepper__milestone-label relative pb-1 font-fth-cc-ui uppercase",
           compact
-            ? "min-w-[4.75rem] text-[0.58rem] tracking-[0.14em] md:min-w-[5.25rem] md:text-[0.63rem]"
+            ? "min-w-[4.75rem] text-[0.58rem] tracking-[0.14em]"
             : "min-w-[6.25rem] text-[0.66rem] tracking-[0.18em] md:text-[0.72rem]",
           getMilestoneLabelClassName(milestone.status),
         )}

@@ -1,11 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import {
   CLASS_STEPPER_COMPACT_BREAKPOINT,
   getClassStepperLayoutMode,
+  syncClassStepperLayoutMode,
   shouldShowClassStepperSubsteps,
 } from "./class-stepper-layout";
 
@@ -92,33 +92,47 @@ describe("class stepper layout", () => {
     expect(markup).toContain("Expertise");
   });
 
-  it("threads the live render sites through the layout seam", () => {
-    const classStepScreenSource = readFileSync(
-      new URL("./class-step-screen.tsx", import.meta.url),
-      "utf8",
-    );
-    const classFlowRouteHostSource = readFileSync(
-      new URL("./class-flow-route-host.tsx", import.meta.url),
-      "utf8",
-    );
-    const classChoicesStepScreenSource = readFileSync(
-      new URL("./class-choices-step-screen.tsx", import.meta.url),
-      "utf8",
-    );
-    const originFlowRouteHostSource = readFileSync(
-      new URL("../origin/origin-flow-route-host.tsx", import.meta.url),
-      "utf8",
-    );
+  it("measures immediately and responds to resize events", () => {
+    const modes: string[] = [];
+    const element = {
+      getBoundingClientRect: () => ({ width: 640 }),
+    } as Pick<HTMLElement, "getBoundingClientRect">;
 
-    for (const source of [
-      classStepScreenSource,
-      classFlowRouteHostSource,
-      classChoicesStepScreenSource,
-      originFlowRouteHostSource,
-    ]) {
-      expect(source).toContain("useClassStepperLayoutMode");
-      expect(source).toContain("layoutMode={layoutMode}");
-      expect(source).toContain("ref={setStepperContainer}");
+    class MockResizeObserver {
+      static instances: MockResizeObserver[] = [];
+
+      readonly callback: ResizeObserverCallback;
+
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback;
+        MockResizeObserver.instances.push(this);
+      }
+
+      disconnect() {}
+
+      observe() {}
+
+      emit(width: number) {
+        this.callback([{ contentRect: { width } } as ResizeObserverEntry], this as unknown as ResizeObserver);
+      }
+    }
+
+    vi.stubGlobal("ResizeObserver", MockResizeObserver);
+
+    try {
+      const cleanup = syncClassStepperLayoutMode(element, (layoutMode) => {
+        modes.push(layoutMode);
+      });
+
+      expect(modes).toEqual(["wide"]);
+
+      MockResizeObserver.instances[0]?.emit(480);
+      expect(modes).toEqual(["wide", "compact"]);
+
+      cleanup?.();
+    } finally {
+      vi.unstubAllGlobals();
+      MockResizeObserver.instances = [];
     }
   });
 });
