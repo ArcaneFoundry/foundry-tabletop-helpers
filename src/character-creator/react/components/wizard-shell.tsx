@@ -177,7 +177,7 @@ export function WizardShell({
         </header>
       ) : null}
 
-      <div className="relative z-10 min-h-0 flex-1">{stepContent}</div>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden">{stepContent}</div>
 
       <motion.footer
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}

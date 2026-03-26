@@ -18,6 +18,7 @@ import {
   type ClassStepperLayoutMode,
   useClassStepperLayoutMode,
 } from "./class-stepper-layout";
+import { ClassSelectionGalleryPane } from "./class-selection-gallery-pane";
 import { buildClassSelectionFromEntry, getClassStepViewModel } from "../../../steps/step-class-model";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
@@ -64,7 +65,6 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
   }, [state]);
 
   const selectedUuid = (state.selections.class as ClassSelection | undefined)?.uuid ?? null;
-  const hasEntries = entries.length > 0;
   const aggregateStepper = useMemo(
     () => buildClassAggregateStepperModel(state, shellContext.steps, shellContext.currentStepId),
     [shellContext.currentStepId, shellContext.steps, state],
@@ -151,36 +151,22 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
               />
             </div>
 
-            {hasEntries ? (
-              <div className="fth-react-scrollbar relative z-10 mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
-                <motion.div
-                  animate={prefersReducedMotion ? undefined : "show"}
-                  className="grid shrink-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"
-                  initial={prefersReducedMotion ? false : "hidden"}
-                  variants={{
-                    hidden: {},
-                    show: {
-                      transition: {
-                        staggerChildren: 0.045,
-                        delayChildren: 0.14,
-                      },
-                    },
-                  }}
-                >
-                  {entries.map((entry) => (
-                    <ClassCard
-                      entry={entry}
-                      key={entry.uuid}
-                      onSelect={onSelectEntry}
-                      prefersReducedMotion={prefersReducedMotion}
-                      selected={selectedUuid === entry.uuid}
-                    />
-                  ))}
-                </motion.div>
-              </div>
-            ) : (
-              <EmptyState message={emptyMessage} prefersReducedMotion={prefersReducedMotion} />
-            )}
+            <div className="relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
+              <ClassSelectionGalleryPane
+                emptyState={<EmptyState message={emptyMessage} prefersReducedMotion={prefersReducedMotion} />}
+                entries={entries}
+                getEntryKey={(entry) => entry.uuid}
+                prefersReducedMotion={prefersReducedMotion}
+                renderEntry={(entry) => (
+                  <ClassCard
+                    entry={entry}
+                    onSelect={onSelectEntry}
+                    prefersReducedMotion={prefersReducedMotion}
+                    selected={selectedUuid === entry.uuid}
+                  />
+                )}
+              />
+            </div>
           </div>
         </div>
       </motion.div>

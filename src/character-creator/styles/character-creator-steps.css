@@ -58,7 +58,7 @@
   min-height: 0;
   min-width: 0;
   width: 100%;
-  max-width: 1120px;
+  max-width: 1440px;
   margin-inline: auto;
 }
 
@@ -76,6 +76,14 @@
 
 .cc-class-chooser-grid {
   grid-template-columns: 1fr;
+}
+
+.cc-class-selection-pane__intro {
+  flex: 0 0 auto;
+}
+
+.cc-class-selection-pane__gallery-scroll {
+  min-height: 0;
 }
 
 .cc-class-choice-layout {
@@ -122,6 +130,12 @@
 
   .cc-class-choice-layout__content-scroll {
     overflow-y: auto;
+  }
+}
+
+@container cc-class-chapter (min-width: 1100px) {
+  .cc-class-chooser-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -12,6 +12,7 @@ import { ClassAggregateStepper } from "./class-step-screen";
 import { useClassStepperLayoutMode } from "./class-stepper-layout";
 import { buildClassFlowShellModel } from "./build-class-flow-shell-model";
 import { ClassCard } from "./class-card";
+import { ClassSelectionGalleryPane } from "./class-selection-gallery-pane";
 import { ClassSummaryStepScreen } from "./class-summary-step-screen";
 import {
   buildClassSelectionFromEntry,
@@ -471,62 +472,33 @@ function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "s
     })));
   };
 
-  if (entries.length === 0) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="max-w-2xl rounded-[1.5rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.96),rgba(16,16,20,0.98))] px-8 py-10 text-center shadow-[0_24px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#e9c176]/45 bg-[radial-gradient(circle_at_35%_35%,#f1d08a,#8e6428)] text-[#2d1f0b] shadow-[0_0_20px_rgba(233,193,118,0.18)]">
-            <i className="fa-solid fa-triangle-exclamation text-xl" aria-hidden="true" />
-          </div>
-          <p className="m-0 font-fth-cc-display text-[1.5rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
-            No Classes Available
-          </p>
-          <p className="mt-3 font-fth-cc-body text-[1.02rem] leading-7 text-[#cbc2bc]">{emptyMessage}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
-      <div className="cc-class-flow-vocations mb-5 flex items-end justify-between gap-4 px-2">
-        <div className="cc-class-flow-vocations__copy max-w-2xl">
-          <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[#e9c176]/78">
-            Classes
-          </div>
-          <div className="mt-2 font-fth-cc-body text-[1rem] leading-7 text-[#d0cad0]">
-            Choose the discipline that will define your first rites of battle, devotion, guile, or arcana.
+    <ClassSelectionGalleryPane
+      emptyState={(
+        <div className="flex flex-1 items-center justify-center">
+          <div className="max-w-2xl rounded-[1.5rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.96),rgba(16,16,20,0.98))] px-8 py-10 text-center shadow-[0_24px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#e9c176]/45 bg-[radial-gradient(circle_at_35%_35%,#f1d08a,#8e6428)] text-[#2d1f0b] shadow-[0_0_20px_rgba(233,193,118,0.18)]">
+              <i className="fa-solid fa-triangle-exclamation text-xl" aria-hidden="true" />
+            </div>
+            <p className="m-0 font-fth-cc-display text-[1.5rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
+              No Classes Available
+            </p>
+            <p className="mt-3 font-fth-cc-body text-[1.02rem] leading-7 text-[#cbc2bc]">{emptyMessage}</p>
           </div>
         </div>
-        <div className="cc-class-flow-vocations__badge rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb]">
-          Select a Class
-        </div>
-      </div>
-      <motion.div
-        animate={prefersReducedMotion ? undefined : "show"}
-        className="cc-class-chooser-grid grid shrink-0 grid-cols-1 gap-4"
-        initial={prefersReducedMotion ? false : "hidden"}
-        variants={{
-          hidden: {},
-          show: {
-            transition: {
-              staggerChildren: 0.045,
-              delayChildren: 0.08,
-            },
-          },
-        }}
-      >
-        {entries.map((entry) => (
-          <ClassCard
-            entry={entry}
-            key={entry.uuid}
-            onSelect={onSelectEntry}
-            prefersReducedMotion={prefersReducedMotion}
-            selected={selectedUuid === entry.uuid}
-          />
-        ))}
-      </motion.div>
-    </div>
+      )}
+      entries={entries}
+      getEntryKey={(entry) => entry.uuid}
+      prefersReducedMotion={prefersReducedMotion}
+      renderEntry={(entry) => (
+        <ClassCard
+          entry={entry}
+          onSelect={onSelectEntry}
+          prefersReducedMotion={prefersReducedMotion}
+          selected={selectedUuid === entry.uuid}
+        />
+      )}
+    />
   );
 }
 
