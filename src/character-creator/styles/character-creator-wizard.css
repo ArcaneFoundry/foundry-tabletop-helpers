@@ -5,7 +5,7 @@
 .fth-cc-wizard {
   container-type: inline-size;
   container-name: cc-wizard;
-  --fth-cc-resize-handle-layer: 1;
+  --fth-cc-resize-handle-layer: 20;
 }
 
 .fth-cc-wizard .window-content {
@@ -14,7 +14,7 @@
 }
 
 .fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"] {
-  /* Keep the native handle above the footer chrome without changing layout. */
+  /* Keep the native handle above the shell layers so Foundry receives drag input. */
   position: absolute;
   right: 0.5rem;
   bottom: 0.5rem;
