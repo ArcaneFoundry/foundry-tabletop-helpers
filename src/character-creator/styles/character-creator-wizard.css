@@ -226,6 +226,37 @@
   box-shadow: 0 0 6px rgba(212, 175, 55, 0.4), 0 0 12px rgba(212, 175, 55, 0.2);
 }
 
+/* ── Class Stepper ───────────────────────────────────────── */
+
+.fth-class-stepper--compact {
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+}
+
+.fth-class-stepper--compact .fth-class-stepper__compact-row {
+  width: 100%;
+}
+
+.fth-class-stepper--compact .fth-class-stepper__milestone {
+  gap: 0.5rem;
+}
+
+.fth-class-stepper--compact .fth-class-stepper__milestone-label {
+  min-width: 4.75rem;
+  padding-bottom: 0.1rem;
+  letter-spacing: 0.14em;
+}
+
+.fth-class-stepper--compact .fth-class-stepper__connector {
+  width: 1.75rem;
+  opacity: 0.65;
+  background-image: linear-gradient(90deg, rgba(190, 163, 125, 0.1), rgba(190, 163, 125, 0.68), rgba(190, 163, 125, 0.1));
+}
+
+.fth-class-stepper--wide .fth-class-stepper__milestone-label {
+  letter-spacing: 0.18em;
+}
+
 /* Compact step indicator for narrow windows */
 @container cc-wizard (max-width: 500px) {
   .cc-step-indicator__step {

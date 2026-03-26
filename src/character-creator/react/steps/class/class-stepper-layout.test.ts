@@ -72,6 +72,8 @@ describe("class stepper layout", () => {
     }));
 
     expect(markup).toContain('data-layout-mode="compact"');
+    expect(markup.match(/fth-class-stepper__compact-row/g)).toHaveLength(2);
+    expect(markup).toContain("fth-class-stepper__connector");
     expect(markup).not.toContain("Skills");
     expect(markup).not.toContain("Expertise");
   });
@@ -84,6 +86,7 @@ describe("class stepper layout", () => {
     }));
 
     expect(markup).toContain('data-layout-mode="wide"');
+    expect(markup).not.toContain("fth-class-stepper__compact-row");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Expertise");
   });

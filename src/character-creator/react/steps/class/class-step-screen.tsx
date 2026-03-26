@@ -235,29 +235,50 @@ export function ClassAggregateStepper({
     layoutMode,
     hasSubsteps: model.showSubsteps && model.substeps.length > 0,
   });
+  const isCompactLayout = layoutMode === "compact";
+  const compactMilestoneRows = isCompactLayout
+    ? [model.milestones.slice(0, 2), model.milestones.slice(2)]
+    : [];
 
   return (
     <motion.nav
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       aria-label="Class Selection Progress"
       className={cn(
-        "fth-class-stepper relative mx-auto flex w-full max-w-5xl flex-col gap-3 border-b border-[#bea37d]/55 pb-4 text-[#5e4330]",
-        layoutMode === "compact" ? "fth-class-stepper--compact" : "fth-class-stepper--wide",
+        "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[#bea37d]/55 text-[#5e4330]",
+        isCompactLayout
+          ? "fth-class-stepper--compact max-w-3xl gap-2 pb-3"
+          : "fth-class-stepper--wide max-w-5xl gap-3 pb-4",
       )}
       data-layout-mode={layoutMode}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
       transition={{ delay: 0.14, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="relative z-10 flex items-center justify-center gap-3">
-        <RailEndcap side="left" />
-        {model.milestones.map((milestone, index) => (
-          <div className="flex items-center gap-3" key={milestone.id}>
-            <MilestoneNode milestone={milestone} prefersReducedMotion={prefersReducedMotion} />
-            {index < model.milestones.length - 1 ? <RailConnector /> : null}
-          </div>
-        ))}
-        <RailEndcap side="right" />
-      </div>
+      {isCompactLayout ? (
+        <div className="relative z-10 flex flex-col gap-2 px-1">
+          {compactMilestoneRows.map((row, rowIndex) => (
+            <div className="fth-class-stepper__compact-row flex items-center justify-center gap-2.5" key={`compact-row-${rowIndex}`}>
+              {row.map((milestone, index) => (
+                <div className="flex min-w-0 items-center gap-2.5" key={milestone.id}>
+                  <MilestoneNode milestone={milestone} prefersReducedMotion={prefersReducedMotion} compact />
+                  {index < row.length - 1 ? <RailConnector compact /> : null}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="relative z-10 flex items-center justify-center gap-3">
+          <RailEndcap side="left" />
+          {model.milestones.map((milestone, index) => (
+            <div className="flex items-center gap-3" key={milestone.id}>
+              <MilestoneNode milestone={milestone} prefersReducedMotion={prefersReducedMotion} />
+              {index < model.milestones.length - 1 ? <RailConnector /> : null}
+            </div>
+          ))}
+          <RailEndcap side="right" />
+        </div>
+      )}
       {shouldRenderSubsteps ? (
         <motion.div
           animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
@@ -277,19 +298,25 @@ export function ClassAggregateStepper({
 function MilestoneNode({
   milestone,
   prefersReducedMotion,
+  compact = false,
 }: {
   milestone: ClassAggregateMilestoneNode;
   prefersReducedMotion: boolean;
+  compact?: boolean;
 }) {
   return (
     <motion.div
       animate={prefersReducedMotion ? undefined : getMilestoneAnimate(milestone.status)}
-      className="relative flex items-center gap-2.5"
+      className={cn(
+        "fth-class-stepper__milestone relative flex items-center",
+        compact ? "gap-2" : "gap-2.5",
+      )}
       transition={getMilestoneTransition(milestone.status, prefersReducedMotion)}
     >
       <span
         className={cn(
-          "relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-sm shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)] md:h-12 md:w-12 md:text-base",
+          "relative inline-flex items-center justify-center overflow-hidden rounded-full border shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)]",
+          compact ? "h-9 w-9 text-[0.76rem] md:h-10 md:w-10 md:text-sm" : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base",
           getMilestoneClassName(milestone.status),
         )}
         title={milestone.label}
@@ -307,7 +334,10 @@ function MilestoneNode({
       </span>
       <span
         className={cn(
-          "relative min-w-[6.25rem] pb-1 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] md:text-[0.72rem]",
+          "fth-class-stepper__milestone-label relative pb-1 font-fth-cc-ui uppercase",
+          compact
+            ? "min-w-[4.75rem] text-[0.58rem] tracking-[0.14em] md:min-w-[5.25rem] md:text-[0.63rem]"
+            : "min-w-[6.25rem] text-[0.66rem] tracking-[0.18em] md:text-[0.72rem]",
           getMilestoneLabelClassName(milestone.status),
         )}
       >
@@ -366,8 +396,17 @@ function SubstepChip({
   );
 }
 
-function RailConnector() {
-  return <span aria-hidden="true" className="h-px w-10 bg-[linear-gradient(90deg,rgba(190,163,125,0.2),rgba(190,163,125,0.8),rgba(190,163,125,0.2))]" />;
+function RailConnector({ compact = false }: { compact?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "fth-class-stepper__connector",
+        "bg-[linear-gradient(90deg,rgba(190,163,125,0.2),rgba(190,163,125,0.8),rgba(190,163,125,0.2))]",
+        compact ? "h-px w-7 opacity-65" : "h-px w-10",
+      )}
+    />
+  );
 }
 
 function RailEndcap({ side }: { side: "left" | "right" }) {
