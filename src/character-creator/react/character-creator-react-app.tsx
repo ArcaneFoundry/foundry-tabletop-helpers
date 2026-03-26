@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Log, MOD } from "../../logger";
 import { renderTemplate } from "../../types";
 import { getFoundryReactMount, FoundryReactRenderer } from "../../ui/foundry/react/foundry-react-application";
+import { ensureNativeWindowResizeHandle } from "../../ui/foundry/application-v2/window-resize-handle";
 import type { GMConfig } from "../character-creator-types";
 import { buildWizardShellContext } from "../wizard/character-creator-app-helpers";
 import {
@@ -227,6 +228,7 @@ export function buildCharacterCreatorReactAppClass(): void {
 
     async _onRender(_context: Record<string, never>, _options: unknown): Promise<void> {
       const mount = getFoundryReactMount(this.element);
+      ensureNativeWindowResizeHandle(this);
       if (!mount) return;
 
       const controller = this._ensureController();
