@@ -10,6 +10,7 @@ const {
   foundryReactRenderMock,
   foundryReactUnmountMock,
   ensureNativeWindowResizeHandleMock,
+  ensureWindowSizeConstraintsMock,
 } = vi.hoisted(() => ({
   logWarnMock: vi.fn(),
   logDebugMock: vi.fn(),
@@ -20,6 +21,7 @@ const {
   foundryReactRenderMock: vi.fn(),
   foundryReactUnmountMock: vi.fn(),
   ensureNativeWindowResizeHandleMock: vi.fn(),
+  ensureWindowSizeConstraintsMock: vi.fn(),
 }));
 
 vi.mock("../../logger", () => ({
@@ -47,6 +49,10 @@ vi.mock("../../ui/foundry/react/foundry-react-application", () => ({
 
 vi.mock("../../ui/foundry/application-v2/window-resize-handle", () => ({
   ensureNativeWindowResizeHandle: ensureNativeWindowResizeHandleMock,
+}));
+
+vi.mock("../../ui/foundry/application-v2/window-size-constraints", () => ({
+  ensureWindowSizeConstraints: ensureWindowSizeConstraintsMock,
 }));
 
 class FakeElement {
@@ -147,7 +153,7 @@ describe("CharacterCreatorReactApp", () => {
     expect(logDebugMock).toHaveBeenCalledWith("Character Creator: CharacterCreatorReactApp class built");
   });
 
-  it("delegates resize handle wiring on every render", async () => {
+  it("delegates resize handle wiring and window constraint wiring on every render", async () => {
     const mod = await import("./character-creator-react-app");
 
     mod.buildCharacterCreatorReactAppClass();
@@ -180,6 +186,15 @@ describe("CharacterCreatorReactApp", () => {
     expect(ensureNativeWindowResizeHandleMock.mock.calls.length).toBe(2);
     expect(ensureNativeWindowResizeHandleMock.mock.calls[0]?.[0]).toBe(app);
     expect(ensureNativeWindowResizeHandleMock.mock.calls[1]?.[0]).toBe(app);
+    expect(ensureWindowSizeConstraintsMock.mock.calls.length).toBe(2);
+    expect(ensureWindowSizeConstraintsMock.mock.calls[0]?.[0]).toBe(app);
+    expect(ensureWindowSizeConstraintsMock.mock.calls[1]?.[0]).toBe(app);
+    expect(ensureWindowSizeConstraintsMock.mock.calls[0]?.[1]).toEqual({
+      minWidth: 760,
+      maxWidth: 1480,
+      minHeight: 560,
+      maxHeight: 1000,
+    });
     expect(app._ensureController).toHaveBeenCalledTimes(2);
     expect(foundryReactRenderMock).toHaveBeenCalledTimes(2);
     expect(foundryReactRenderMock.mock.calls[0]?.[0]).toBe(mount);

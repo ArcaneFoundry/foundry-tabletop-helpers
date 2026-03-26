@@ -5,6 +5,12 @@ import { Log, MOD } from "../../logger";
 import { renderTemplate } from "../../types";
 import { getFoundryReactMount, FoundryReactRenderer } from "../../ui/foundry/react/foundry-react-application";
 import { ensureNativeWindowResizeHandle, type ApplicationV2Like } from "../../ui/foundry/application-v2/window-resize-handle";
+import {
+  type ApplicationPositionLike,
+  type ApplicationV2PositionLike,
+  ensureWindowSizeConstraints,
+  type WindowSizeConstraints,
+} from "../../ui/foundry/application-v2/window-size-constraints";
 import type { GMConfig } from "../character-creator-types";
 import { buildWizardShellContext } from "../wizard/character-creator-app-helpers";
 import {
@@ -37,10 +43,11 @@ import {
   getStartingLevel,
 } from "../character-creator-settings";
 
-interface RuntimeApplicationBase {
+interface RuntimeApplicationBase extends ApplicationV2PositionLike {
   element?: Element | null;
   hasFrame?: boolean;
   window?: ApplicationV2Like["window"];
+  position?: Partial<ApplicationPositionLike> | null;
   render(options?: Record<string, unknown>): void;
   close(options?: unknown): Promise<void>;
   _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
@@ -69,6 +76,13 @@ const getFoundryAppClasses = () => {
 };
 
 let _CharacterCreatorReactAppClass: RuntimeApplicationClass | null = null;
+
+const CHARACTER_CREATOR_WINDOW_CONSTRAINTS = {
+  minWidth: 760,
+  maxWidth: 1480,
+  minHeight: 560,
+  maxHeight: 1000,
+} satisfies WindowSizeConstraints;
 
 function CharacterCreatorReactView({ controller }: { controller: CharacterCreatorWizardController }) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
@@ -231,6 +245,7 @@ export function buildCharacterCreatorReactAppClass(): void {
     async _onRender(_context: Record<string, never>, _options: unknown): Promise<void> {
       const mount = getFoundryReactMount(this.element);
       ensureNativeWindowResizeHandle(this);
+      ensureWindowSizeConstraints(this, CHARACTER_CREATOR_WINDOW_CONSTRAINTS);
       if (!mount) return;
 
       const controller = this._ensureController();
