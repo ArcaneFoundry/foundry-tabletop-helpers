@@ -12,6 +12,29 @@
   overflow: hidden;
 }
 
+.fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"] {
+  position: absolute;
+  right: 0.375rem;
+  bottom: 0.375rem;
+  z-index: 3;
+  width: 0.875rem;
+  height: 0.875rem;
+  min-width: 0.875rem;
+  min-height: 0.875rem;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  background:
+    linear-gradient(135deg, transparent 0 42%, rgba(255, 255, 255, 0.32) 42% 50%, transparent 50% 100%),
+    linear-gradient(135deg, rgba(18, 15, 22, 0.3), rgba(18, 15, 22, 0.18));
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 1px 4px rgba(0, 0, 0, 0.24);
+  cursor: nwse-resize;
+  opacity: 0.95;
+  pointer-events: auto;
+}
+
 .cc-wizard-shell {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
