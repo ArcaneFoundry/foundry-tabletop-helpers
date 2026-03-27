@@ -270,7 +270,7 @@ export function ClassFlowRouteHost(
               />
             </div>
 
-              <div className="relative z-10 mt-3 flex min-h-0 flex-1">
+              <div className="relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
                 <AnimatePresence initial={false} mode="wait">
                   {pendingTransition?.targetStepId === "weaponMasteries" ? (
                     <motion.div
