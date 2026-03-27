@@ -29,6 +29,8 @@ export type LanguageChoicesPaneProps = {
   selectedSummaryTitle?: string;
   selectedSummaryEmptyLabel?: string;
   statLabel?: string;
+  validationMessages?: string[];
+  validationTitle?: string;
   onChange: (chosen: string[]) => void;
 };
 
@@ -49,6 +51,8 @@ export function LanguageChoicesPane({
   selectedSummaryTitle = "Chosen Languages",
   selectedSummaryEmptyLabel = "No languages selected yet.",
   statLabel = "Selections",
+  validationMessages = [],
+  validationTitle = "Validation Notes",
   onChange,
 }: LanguageChoicesPaneProps) {
   const prefersReducedMotion = prefersReducedMotionProp ?? useReducedMotion() ?? false;
@@ -176,6 +180,23 @@ export function LanguageChoicesPane({
           title={selectedSummaryTitle}
           removable
         />
+        {validationMessages.length > 0 ? (
+          <section className="rounded-[1.15rem] border border-[#d6b57a]/55 bg-[linear-gradient(180deg,rgba(255,247,231,0.95),rgba(246,231,198,0.92))] px-4 py-3 shadow-[0_10px_20px_rgba(69,45,24,0.08)]">
+            <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#876145]">
+              {validationTitle}
+            </div>
+            <div className="mt-3 grid gap-2">
+              {validationMessages.map((message) => (
+                <div
+                  className="rounded-[0.95rem] border border-[#d6b57a]/35 bg-[rgba(255,255,255,0.42)] px-3 py-2 font-fth-cc-body text-[0.92rem] leading-6 text-[#5e4637]"
+                  key={message}
+                >
+                  {message}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
         <section className="rounded-[1.35rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(24,20,18,0.96),rgba(15,13,12,0.99))] p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]">
           <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#e9c176]/72">
             Guidance

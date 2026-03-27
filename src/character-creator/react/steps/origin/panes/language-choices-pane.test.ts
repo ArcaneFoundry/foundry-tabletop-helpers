@@ -73,4 +73,36 @@ describe("LanguageChoicesPane", () => {
     expect(markup).toContain("No languages selected yet.");
     expect(markup).toContain("0 / 2 chosen");
   });
+
+  it("renders species-specific summary labels, validation notes, and removable chips", () => {
+    const markup = renderToStaticMarkup(createElement(LanguageChoicesPane, {
+      description: "Choose the additional languages granted by the species.",
+      emptyMessage: "No species language choices are available.",
+      options: [
+        { id: "elvish", label: "Elvish" },
+        { id: "dwarvish", label: "Dwarvish" },
+      ],
+      onChange: vi.fn(),
+      prefersReducedMotion: true,
+      requiredCount: 2,
+      selectedIds: ["elvish"],
+      selectedSummaryEmptyLabel: "No species languages selected yet.",
+      selectedSummaryTitle: "Chosen Species Languages",
+      selectionLabel: "Select Species Languages",
+      statLabel: "Species Languages",
+      subtitle: "Elf",
+      title: "Choose Species Languages",
+      validationMessages: [
+        "Only 1 legal species language option remains, so this step will accept fewer picks than the species normally grants.",
+      ],
+      validationTitle: "Species Language Notes",
+    } as never));
+
+    expect(markup).toContain("Select Species Languages");
+    expect(markup).toContain("Chosen Species Languages");
+    expect(markup).toContain("Species Languages");
+    expect(markup).toContain("Species Language Notes");
+    expect(markup).toContain("cc-origin-summary-pill--interactive");
+    expect(markup).toContain("Only 1 legal species language option remains");
+  });
 });

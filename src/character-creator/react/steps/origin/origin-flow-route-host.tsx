@@ -241,10 +241,15 @@ export function OriginFlowRouteHost(
                       description={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.description ?? ""}
                       emptyMessage="No species language choices are available."
                       options={getSpeciesLanguageOptions(state)}
+                      selectedSummaryEmptyLabel="No species languages selected yet."
+                      selectedSummaryTitle="Chosen Species Languages"
+                      selectionLabel="Select Species Languages"
                       requiredCount={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.requiredCount ?? 0}
                       selectedIds={state.selections.speciesChoices?.chosenLanguages ?? []}
-                      selectionLabel="Select Languages"
+                      statLabel="Species Languages"
                       subtitle={state.selections.species?.name ?? "Species"}
+                      validationMessages={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.validationMessages ?? getSpeciesChoiceValidationMessages(state)}
+                      validationTitle="Species Language Notes"
                       title={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.title ?? "Choose Species Languages"}
                       onChange={(chosen) => {
                         state.selections.speciesChoices = {
