@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type {
   ReactWizardStepProps,
 } from "../../../character-creator-types";
-import { cn } from "../../../../ui/lib/cn";
 import { buildOriginFlowShellModel } from "./build-origin-flow-shell-model";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
@@ -18,11 +17,8 @@ import {
   getSpeciesChoiceValidationMessages,
 } from "../../../steps/origin-flow-utils";
 import {
-  CompactMetaChips,
   HeaderFlourish,
   HeroPortraitCard,
-  type OriginPaneProps,
-  SectionHeading,
   SummaryListCard,
 } from "./components/origin-pane-primitives";
 import { BackgroundAsiPane } from "./panes/background-asi-pane";
