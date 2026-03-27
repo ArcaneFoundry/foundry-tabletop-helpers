@@ -98,6 +98,7 @@
 .cc-class-selection-pane__gallery-inner {
   width: 100%;
   min-width: 0;
+  padding-top: 1.25rem;
 }
 
 .cc-class-chooser-grid {
