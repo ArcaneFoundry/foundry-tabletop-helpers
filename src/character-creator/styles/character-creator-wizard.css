@@ -6,11 +6,18 @@
   container-type: inline-size;
   container-name: cc-wizard;
   --fth-cc-resize-handle-layer: 20;
+  --fth-cc-shell-shadow: rgba(6, 7, 10, 0.72);
+  --fth-cc-shell-highlight: rgba(249, 230, 192, 0.08);
+  --fth-cc-shell-gold: rgba(233, 193, 118, 0.18);
+  --fth-cc-shell-plum: rgba(96, 74, 134, 0.16);
 }
 
 .fth-cc-wizard .window-content {
   padding: 0;
   overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(255, 244, 214, 0.05), transparent 32%),
+    linear-gradient(180deg, rgba(20, 15, 18, 0.98), rgba(12, 12, 15, 0.98));
 }
 
 .fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"] {
@@ -38,33 +45,37 @@
 .fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"]::before {
   content: "";
   position: absolute;
-  right: 0.14rem;
-  bottom: 0.14rem;
-  width: 0.96rem;
-  height: 0.96rem;
+  right: 0.08rem;
+  bottom: 0.08rem;
+  width: 1.08rem;
+  height: 1.08rem;
   border-radius: 0;
   background:
-    linear-gradient(135deg, transparent 0 32%, rgba(255, 255, 255, 0.08) 32% 100%),
+    linear-gradient(135deg, transparent 0 34%, rgba(255, 255, 255, 0.1) 34% 100%),
     repeating-linear-gradient(
       135deg,
       rgba(255, 255, 255, 0) 0 2px,
-      rgba(244, 232, 208, 0.92) 2px 3px,
+      rgba(244, 232, 208, 0.96) 2px 3px,
       rgba(255, 255, 255, 0) 3px 5px
     );
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 2px 8px rgba(0, 0, 0, 0.28);
-  opacity: 0.95;
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(17, 14, 17, 0.55),
+    0 6px 14px rgba(0, 0, 0, 0.34);
+  opacity: 1;
   pointer-events: none;
 }
 
 .fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"]::after {
   content: "";
   position: absolute;
-  inset: 0;
+  right: 0.28rem;
+  bottom: 0.28rem;
+  width: 1.4rem;
+  height: 1.4rem;
   background:
-    radial-gradient(circle at 100% 100%, rgba(233, 193, 118, 0.14), transparent 56%),
-    linear-gradient(135deg, transparent 0 44%, rgba(255, 255, 255, 0.03) 44% 100%);
+    linear-gradient(135deg, transparent 0 56%, rgba(255, 243, 214, 0.34) 56% 58%, transparent 58% 68%, rgba(233, 193, 118, 0.54) 68% 70%, transparent 70% 80%, rgba(255, 243, 214, 0.38) 80% 82%, transparent 82% 100%),
+    radial-gradient(circle at 100% 100%, rgba(233, 193, 118, 0.16), transparent 58%);
   opacity: 1;
   pointer-events: none;
 }
@@ -78,26 +89,60 @@
   transition: background var(--cc-duration-slow) var(--cc-ease-out);
   --arcane-scene-glow: rgba(211, 190, 235, 0.14);
   --arcane-scene-spark: rgba(233, 193, 118, 0.1);
+  background:
+    radial-gradient(circle at top, rgba(255, 245, 222, 0.06), transparent 26%),
+    linear-gradient(180deg, rgba(29, 24, 27, 0.98), rgba(15, 13, 17, 0.98));
+  box-shadow:
+    inset 0 1px 0 var(--fth-cc-shell-highlight),
+    inset 0 -28px 48px rgba(0, 0, 0, 0.28);
 }
 
 .cc-wizard-shell[data-scene-key="forge"] {
-  --arcane-scene-glow: rgba(191, 108, 96, 0.16);
-  --arcane-scene-spark: rgba(233, 193, 118, 0.12);
+  --arcane-scene-glow: rgba(191, 108, 96, 0.2);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.15);
 }
 
 .cc-wizard-shell[data-scene-key="archives"] {
-  --arcane-scene-glow: rgba(120, 104, 177, 0.18);
-  --arcane-scene-spark: rgba(233, 193, 118, 0.08);
+  --arcane-scene-glow: rgba(120, 104, 177, 0.22);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.12);
 }
 
 .cc-wizard-shell[data-scene-key="grimoire"] {
-  --arcane-scene-glow: rgba(126, 91, 188, 0.2);
-  --arcane-scene-spark: rgba(233, 193, 118, 0.08);
+  --arcane-scene-glow: rgba(126, 91, 188, 0.24);
+  --arcane-scene-spark: rgba(233, 193, 118, 0.12);
 }
 
 .cc-wizard-shell[data-scene-key="binding"] {
-  --arcane-scene-glow: rgba(233, 193, 118, 0.14);
-  --arcane-scene-spark: rgba(211, 190, 235, 0.12);
+  --arcane-scene-glow: rgba(233, 193, 118, 0.18);
+  --arcane-scene-spark: rgba(211, 190, 235, 0.15);
+}
+
+.cc-wizard-shell::before,
+.cc-wizard-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cc-wizard-shell::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
+    radial-gradient(circle at 20% 14%, var(--fth-cc-shell-plum), transparent 30%),
+    radial-gradient(circle at 84% 72%, rgba(122, 46, 38, 0.12), transparent 26%),
+    radial-gradient(circle at 50% 100%, var(--fth-cc-shell-gold), transparent 34%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.cc-wizard-shell::after {
+  inset: 0.65rem;
+  border-radius: 1.7rem;
+  border: 1px solid rgba(244, 232, 208, 0.035);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 36px 70px rgba(255, 244, 218, 0.018),
+    inset 0 -48px 80px var(--fth-cc-shell-shadow);
 }
 
 /* ── Atmospheric Backgrounds ─────────────────────────────── */
@@ -105,45 +150,45 @@
 
 .cc-atmosphere--arcane {
   background:
-    radial-gradient(ellipse at 25% 100%, rgba(107, 79, 160, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 0%, rgba(107, 79, 160, 0.1) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 50%, var(--arcane-scene-spark) 0%, transparent 70%),
-    var(--cc-bg-base);
+    radial-gradient(ellipse at 20% 100%, rgba(107, 79, 160, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 0%, rgba(107, 79, 160, 0.14) 0%, transparent 38%),
+    radial-gradient(ellipse at 50% 52%, rgba(233, 193, 118, 0.08) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(32, 25, 30, 0.96), rgba(13, 13, 16, 0.98));
 }
 
 .cc-atmosphere--nature {
   background:
-    radial-gradient(ellipse at 15% 90%, rgba(45, 107, 79, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 10%, rgba(74, 143, 168, 0.08) 0%, transparent 40%),
-    var(--cc-bg-base);
+    radial-gradient(ellipse at 15% 90%, rgba(45, 107, 79, 0.24) 0%, transparent 54%),
+    radial-gradient(ellipse at 84% 10%, rgba(74, 143, 168, 0.11) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(30, 28, 26, 0.96), rgba(14, 16, 16, 0.98));
 }
 
 .cc-atmosphere--shadow {
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(139, 30, 45, 0.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 20%, var(--arcane-scene-glow) 0%, transparent 45%),
-    var(--cc-bg-base);
+    radial-gradient(ellipse at 50% 100%, rgba(139, 30, 45, 0.22) 0%, transparent 48%),
+    radial-gradient(ellipse at 20% 18%, var(--arcane-scene-glow) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(30, 22, 24, 0.96), rgba(13, 12, 15, 0.98));
 }
 
 .cc-atmosphere--forge {
   background:
-    radial-gradient(ellipse at 60% 90%, rgba(200, 167, 93, 0.20) 0%, transparent 50%),
-    radial-gradient(ellipse at 10% 30%, rgba(139, 30, 45, 0.12) 0%, transparent 45%),
-    var(--cc-bg-base);
+    radial-gradient(ellipse at 62% 88%, rgba(200, 167, 93, 0.24) 0%, transparent 48%),
+    radial-gradient(ellipse at 12% 30%, rgba(139, 30, 45, 0.16) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(32, 25, 22, 0.96), rgba(16, 13, 13, 0.98));
 }
 
 .cc-atmosphere--crimson {
   background:
-    radial-gradient(ellipse at 40% 85%, rgba(139, 30, 45, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 15%, var(--arcane-scene-spark) 0%, transparent 45%),
-    var(--cc-bg-base);
+    radial-gradient(ellipse at 40% 85%, rgba(139, 30, 45, 0.25) 0%, transparent 52%),
+    radial-gradient(ellipse at 75% 15%, rgba(233, 193, 118, 0.12) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(35, 22, 23, 0.96), rgba(15, 12, 14, 0.98));
 }
 
 .cc-atmosphere--gold {
   background:
-    radial-gradient(ellipse at 50% 80%, rgba(212, 175, 55, 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(200, 167, 93, 0.10) 0%, transparent 45%),
-    var(--cc-bg-base);
+    radial-gradient(ellipse at 50% 80%, rgba(212, 175, 55, 0.22) 0%, transparent 56%),
+    radial-gradient(ellipse at 80% 20%, rgba(200, 167, 93, 0.14) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(33, 26, 21, 0.96), rgba(14, 13, 13, 0.98));
 }
 
 /* ── Step Indicator ──────────────────────────────────────── */
