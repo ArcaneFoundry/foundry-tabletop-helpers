@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 type SceneTool = {
   name: string;
@@ -59,6 +59,12 @@ vi.mock("./level-up/level-up-detection", () => ({
 }));
 
 describe("character creator init shell", () => {
+  let modPromise: Promise<typeof import("./character-creator-init")>;
+
+  beforeAll(() => {
+    modPromise = import("./character-creator-init");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -92,7 +98,7 @@ describe("character creator init shell", () => {
   });
 
   it("builds app classes, registers steps/level-up hooks, preloads templates, and hooks scene controls", async () => {
-    const mod = await import("./character-creator-init");
+    const mod = await modPromise;
     const namespacedLoadTemplatesMock = (
       (globalThis as Record<string, unknown>).foundry as {
         applications: { handlebars: { loadTemplates: ReturnType<typeof vi.fn> } };
@@ -125,7 +131,7 @@ describe("character creator init shell", () => {
   });
 
   it("adds a character creator scene tool and routes clicks to the wizard", async () => {
-    const mod = await import("./character-creator-init");
+    const mod = await modPromise;
 
     const controls = {
       tokens: {
@@ -169,7 +175,7 @@ describe("character creator init shell", () => {
       notifications: { info: notifyInfo },
     };
 
-    const mod = await import("./character-creator-init");
+    const mod = await modPromise;
     mod.initCharacterCreatorReady();
 
     expect(socketOn).toHaveBeenCalledWith("module.foundry-tabletop-helpers", expect.any(Function));
@@ -190,7 +196,7 @@ describe("character creator init shell", () => {
       user: { isGM: false, character: null },
     };
 
-    const mod = await import("./character-creator-init");
+    const mod = await modPromise;
     mod.initCharacterCreatorReady();
 
     expect(openCharacterCreatorWizardMock).toHaveBeenCalledTimes(1);

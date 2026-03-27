@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   logWarnMock,
@@ -127,7 +127,6 @@ function installFoundryAppClasses(): void {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.resetModules();
   FakeBaseApplication.instances = [];
   installFoundryAppClasses();
 
@@ -140,8 +139,15 @@ beforeEach(() => {
 });
 
 describe("CharacterCreatorReactApp", () => {
+  let modPromise: Promise<typeof import("./character-creator-react-app")>;
+
+  beforeAll(() => {
+    installFoundryAppClasses();
+    modPromise = import("./character-creator-react-app");
+  });
+
   it("builds the runtime class when ApplicationV2 is available", async () => {
-    const mod = await import("./character-creator-react-app");
+    const mod = await modPromise;
 
     mod.buildCharacterCreatorReactAppClass();
     const AppClass = mod.getCharacterCreatorReactAppClass();
@@ -154,7 +160,7 @@ describe("CharacterCreatorReactApp", () => {
   });
 
   it("delegates resize handle wiring and window constraint wiring on every render", async () => {
-    const mod = await import("./character-creator-react-app");
+    const mod = await modPromise;
 
     mod.buildCharacterCreatorReactAppClass();
     const AppClass = mod.getCharacterCreatorReactAppClass();
