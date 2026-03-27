@@ -3,7 +3,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import type {
   CreatorIndexEntry,
-  OriginFeatSelection,
   ReactWizardStepProps,
   WizardState,
 } from "../../../character-creator-types";
@@ -26,7 +25,6 @@ import {
 } from "../../../steps/origin-flow-utils";
 import {
   CompactMetaChips,
-  DetailCard,
   EmptySelectionState,
   HeaderFlourish,
   HeroPortraitCard,
@@ -40,6 +38,7 @@ import {
 import { BackgroundAsiPane } from "./panes/background-asi-pane";
 import { BackgroundSelectionPane } from "./panes/background-selection-pane";
 import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
+import { OriginFeatPane } from "./panes/origin-feat-pane";
 
 type SpeciesStepViewModel = {
   entries: Array<CreatorIndexEntry & { selected?: boolean; blurb?: string }>;
@@ -51,20 +50,6 @@ type BackgroundLanguagesViewModel = {
   title: string;
   description: string;
   requiredCount: number;
-};
-
-type OriginFeatViewModel = {
-  backgroundName: string;
-  className: string;
-  allowOriginFeatSwap: boolean;
-  defaultOriginFeatName: string | null;
-  originFeatName: string | null;
-  originFeatImg: string;
-  isCustomOriginFeat: boolean;
-  selectedOriginFeat?: (CreatorIndexEntry & { description?: string }) | null;
-  availableOriginFeats: Array<CreatorIndexEntry & { selected?: boolean }>;
-  hasOriginFeats: boolean;
-  originFeatEmptyMessage: string;
 };
 
 type SpeciesAdvancementViewModel = {
@@ -250,7 +235,12 @@ export function OriginFlowRouteHost(
                       }}
                     />
                   ) : shellModel.currentPane === "originChoices" ? (
-                    <OriginFeatPane controller={controller} shellContext={shellContext} state={state} />
+                    <OriginFeatPane
+                      controller={controller}
+                      prefersReducedMotion={prefersReducedMotion}
+                      shellContext={shellContext}
+                      state={state}
+                    />
                   ) : shellModel.currentPane === "species" ? (
                     <SpeciesSelectionPane controller={controller} shellContext={shellContext} state={state} />
                   ) : shellModel.currentPane === "speciesSkills" ? (
@@ -463,116 +453,6 @@ function LanguageChoicesPane({
           title="Chosen Languages"
           removable
         />
-      </aside>
-    </div>
-  );
-}
-
-function OriginFeatPane({ shellContext, state, controller }: OriginPaneProps) {
-  const viewModel = shellContext.stepViewModel as OriginFeatViewModel | undefined;
-  if (!viewModel) return null;
-
-  const backgroundFeatUuid = state.selections.background?.grants.originFeatUuid ?? null;
-  const selectedUuid = state.selections.originFeat?.uuid ?? state.selections.background?.grants.originFeatUuid ?? null;
-  const selectFeat = (entry: CreatorIndexEntry) => {
-    const originFeat: OriginFeatSelection = {
-      uuid: entry.uuid,
-      name: entry.name,
-      img: entry.img,
-      isCustom: entry.uuid !== backgroundFeatUuid,
-    };
-    state.selections.originFeat = originFeat;
-    void controller.refresh();
-  };
-  const revertToBackgroundDefault = () => {
-    if (!backgroundFeatUuid) return;
-    state.selections.originFeat = {
-      uuid: backgroundFeatUuid,
-      name: state.selections.background?.grants.originFeatName ?? "Origin Feat",
-      img: state.selections.background?.grants.originFeatImg ?? "",
-      isCustom: false,
-    };
-    void controller.refresh();
-  };
-
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <SectionHeading
-          eyebrow={viewModel.backgroundName}
-          title="Origin Feat"
-        />
-        {viewModel.hasOriginFeats ? (
-          <div className="cc-origin-feat-pane__list mt-4">
-            {viewModel.availableOriginFeats.map((entry) => {
-              const checked = entry.uuid === selectedUuid;
-              return (
-                <button
-                  className={cn(
-                    "cc-origin-feat-pane__option group relative overflow-hidden rounded-[1.15rem] border p-3 text-left shadow-[0_14px_24px_rgba(67,43,23,0.12)] transition",
-                    checked
-                      ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))]"
-                      : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))] hover:border-[#b68f63]",
-                  )}
-                  key={entry.uuid}
-                  onClick={() => selectFeat(entry)}
-                  type="button"
-                >
-                  <div className="cc-origin-feat-pane__option-grid grid grid-cols-[4.6rem_minmax(0,1fr)] gap-3">
-                    <div className="cc-origin-feat-pane__art aspect-square overflow-hidden rounded-[0.95rem] border border-[#d4bb96] bg-[#20130e]">
-                      {entry.img ? (
-                        <img alt={entry.name} className="h-full w-full object-cover" loading="lazy" src={entry.img} />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[#f0d2a6]">
-                          <i className="fa-solid fa-stars text-xl" aria-hidden="true" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="cc-origin-feat-pane__copy min-w-0">
-                      <div className="cc-origin-feat-pane__name font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">{entry.name}</div>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <EmptySelectionState message={viewModel.originFeatEmptyMessage || "No alternative origin feats are available."} />
-        )}
-      </section>
-
-      <aside className="grid gap-4 self-start">
-        <section className="rounded-[1.2rem] border border-[#d4bb96]/55 bg-[linear-gradient(180deg,rgba(255,251,244,0.95),rgba(242,228,203,0.92))] p-4 shadow-[0_10px_20px_rgba(69,45,24,0.08)]">
-          <div className="flex items-center gap-3 border-b border-[#cfb58f]/55 pb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d0aa6f]/75 bg-[radial-gradient(circle_at_35%_35%,#f7d691,#b77925)] text-white shadow-[0_8px_18px_rgba(0,0,0,0.14)]">
-              <i className="fa-solid fa-stars" aria-hidden="true" />
-            </div>
-            <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">
-              {viewModel.isCustomOriginFeat ? "Chosen Feat" : "Default Feat"}
-            </div>
-          </div>
-          {viewModel.originFeatName ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-[#d4bb96] bg-[rgba(255,252,246,0.82)] px-3 py-1.5 font-fth-cc-body text-[0.94rem] text-[#5f4636]">
-                {viewModel.originFeatName}
-              </span>
-            </div>
-          ) : (
-            <p className="mt-3 font-fth-cc-body text-[0.95rem] leading-6 text-[#6b5040]">
-              No feat has been confirmed yet.
-            </p>
-          )}
-          {viewModel.isCustomOriginFeat && backgroundFeatUuid ? (
-            <button
-              className="cc-origin-feat-pane__revert-btn mt-4 inline-flex items-center justify-center rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.16em] transition"
-              onClick={revertToBackgroundDefault}
-              type="button"
-            >
-              Use Background Default
-            </button>
-          ) : null}
-        </section>
-        <DetailCard entry={viewModel.selectedOriginFeat ?? null} fallbackIcon="fa-solid fa-scroll" />
       </aside>
     </div>
   );
