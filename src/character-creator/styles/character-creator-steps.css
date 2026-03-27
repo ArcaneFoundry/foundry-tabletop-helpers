@@ -68,6 +68,7 @@
 
 .cc-class-flow-vocations__copy {
   max-width: 34rem;
+  min-width: 0;
 }
 
 .cc-class-flow-vocations__badge {
@@ -170,16 +171,34 @@
 
 @container cc-class-chapter (max-width: 699px) {
   .cc-class-flow-vocations {
-    flex-direction: column;
     align-items: flex-start;
+    gap: 0.875rem;
+    margin-bottom: 0.875rem;
+    padding-inline: 0.35rem;
   }
 
   .cc-class-flow-vocations__copy {
     max-width: 100%;
+    flex: 1 1 auto;
   }
 
   .cc-class-flow-vocations__badge {
     align-self: flex-start;
+    flex: 0 0 auto;
+    margin-top: 0.1rem;
+    padding: 0.7rem 1rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+  }
+
+  .cc-class-flow-vocations__eyebrow {
+    letter-spacing: 0.26em;
+  }
+
+  .cc-class-flow-vocations__body {
+    margin-top: 0.55rem;
+    font-size: 0.94rem;
+    line-height: 1.5;
   }
 
   .cc-class-choice-layout {
