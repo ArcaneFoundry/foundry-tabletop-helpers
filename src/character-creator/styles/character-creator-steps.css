@@ -78,28 +78,77 @@
 .cc-class-selection-pane {
   width: 100%;
   min-width: 0;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(233, 193, 118, 0.14);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(121, 87, 162, 0.16), transparent 34%),
+    radial-gradient(circle at 88% 98%, rgba(233, 193, 118, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(24, 22, 28, 0.96), rgba(14, 14, 18, 0.99));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 233, 0.03),
+    0 22px 42px rgba(0, 0, 0, 0.22);
+}
+
+.cc-class-selection-pane::before,
+.cc-class-selection-pane::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cc-class-selection-pane::before {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(211, 190, 235, 0.08), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(233, 193, 118, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 18%);
+  opacity: 0.9;
+}
+
+.cc-class-selection-pane::after {
+  background: linear-gradient(180deg, rgba(10, 10, 14, 0.22), rgba(10, 10, 14, 0) 36%, rgba(10, 10, 14, 0.18) 100%);
 }
 
 .cc-class-selection-pane__gallery-shell {
   width: 100%;
   min-width: 0;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(233, 193, 118, 0.13);
+  background:
+    radial-gradient(circle at top, rgba(211, 190, 235, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(31, 28, 35, 0.88), rgba(16, 16, 21, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 243, 219, 0.03),
+    0 18px 34px rgba(0, 0, 0, 0.24);
 }
 
 .cc-class-selection-pane__gallery-shadow {
-  background: linear-gradient(180deg, rgba(10, 10, 14, 0.42) 0%, rgba(10, 10, 14, 0.14) 42%, transparent 100%);
+  background: linear-gradient(180deg, rgba(10, 10, 14, 0.56) 0%, rgba(10, 10, 14, 0.18) 42%, transparent 100%);
   transition: opacity var(--cc-duration-fast) var(--cc-ease-out);
 }
 
 .cc-class-selection-pane__gallery-scroll {
   width: 100%;
   min-width: 0;
+  position: relative;
   scrollbar-gutter: stable;
 }
 
 .cc-class-selection-pane__gallery-inner {
   width: 100%;
   min-width: 0;
-  padding-top: 1.25rem;
+  padding-top: 1.1rem;
+}
+
+.cc-class-selection-pane__intro {
+  position: relative;
+  z-index: 1;
 }
 
 .cc-class-chooser-grid {
@@ -108,11 +157,8 @@
   grid-template-columns: minmax(0, 20.9375rem);
 }
 
-.cc-class-selection-pane__intro {
-  flex: 0 0 auto;
-}
-
 .cc-class-selection-pane__gallery-scroll {
+  flex: 1 1 auto;
   min-height: 0;
 }
 
