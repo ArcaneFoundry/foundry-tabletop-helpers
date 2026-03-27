@@ -47,37 +47,6 @@ type SpeciesStepViewModel = {
   emptyMessage?: string;
 };
 
-type BackgroundAsiViewModel = {
-  backgroundName: string;
-  backgroundImg: string;
-  asiAbilities: Array<{
-    key: string;
-    label: string;
-    backgroundSuggested: boolean;
-    classRecommended: boolean;
-    emphasized: boolean;
-    options: Array<{ value: number; label: string; selected: boolean }>;
-  }>;
-  asiPointsUsed: number;
-  asiPoints: number;
-};
-
-type BackgroundSkillConflictViewModel = {
-  backgroundName: string;
-  className: string;
-  fixedBackgroundSkills: string[];
-  conflictingSkills: string[];
-  retainedSkills: string[];
-  selectedReplacementSkills: string[];
-  replacementCount: number;
-  requiredClassSkillCount: number;
-  replacementOptions: Array<{
-    id: string;
-    label: string;
-    abilityAbbrev: string;
-  }>;
-};
-
 type BackgroundLanguagesViewModel = {
   title: string;
   description: string;
