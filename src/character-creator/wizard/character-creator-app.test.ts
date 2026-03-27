@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const logWarnMock = vi.fn();
 const logDebugMock = vi.fn();
@@ -162,7 +162,6 @@ function installFoundryAppClasses(): void {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.resetModules();
   installFoundryAppClasses();
   FakeBaseApplication.instances = [];
   FakeWizardStateMachine.instances = [];
@@ -210,8 +209,15 @@ vi.mock("./wizard-state-machine", () => ({
 }));
 
 describe("character creator app shell", () => {
+  let modPromise: Promise<typeof import("./character-creator-app")>;
+
+  beforeAll(() => {
+    installFoundryAppClasses();
+    modPromise = import("./character-creator-app");
+  });
+
   it("builds the runtime class and opens the wizard", async () => {
-    const mod = await import("./character-creator-app");
+    const mod = await modPromise;
 
     mod.buildCharacterCreatorAppClass();
     const AppClass = mod.getCharacterCreatorAppClass();
@@ -229,7 +235,7 @@ describe("character creator app shell", () => {
   });
 
   it("prepares wizard shell context from the frozen config snapshot", async () => {
-    const mod = await import("./character-creator-app");
+    const mod = await modPromise;
 
     mod.buildCharacterCreatorAppClass();
     const AppClass = mod.getCharacterCreatorAppClass()!;
@@ -270,7 +276,7 @@ describe("character creator app shell", () => {
       sheet: { render: actorSheetRender },
     });
 
-    const mod = await import("./character-creator-app");
+    const mod = await modPromise;
     mod.buildCharacterCreatorAppClass();
     const AppClass = mod.getCharacterCreatorAppClass()!;
     const app = new AppClass() as FakeBaseApplication & {
@@ -302,7 +308,7 @@ describe("character creator app shell", () => {
   });
 
   it("warns instead of creating when the review step name is missing", async () => {
-    const mod = await import("./character-creator-app");
+    const mod = await modPromise;
     mod.buildCharacterCreatorAppClass();
     const AppClass = mod.getCharacterCreatorAppClass()!;
     const app = new AppClass() as FakeBaseApplication & {
