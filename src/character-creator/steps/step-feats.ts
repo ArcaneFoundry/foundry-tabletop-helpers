@@ -10,24 +10,17 @@ import { MOD } from "../../logger";
 import type {
   WizardStepDefinition,
   WizardState,
-  FeatSelection,
-  StepCallbacks,
-  AbilityKey,
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { getPackAnalysisMap, isEntryRelevantForWorkflow } from "../data/pack-analysis";
 import { ABILITY_KEYS, ABILITY_LABELS, abilityModifier, formatModifier } from "../data/dnd5e-constants";
-import { FeatsStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
+import { FeatsStepScreen } from "../react/steps/build/feats-step-screen";
 
 /* ── Constants ───────────────────────────────────────────── */
 
 /** Levels that grant an ASI/feat. */
 const ASI_LEVELS = [4, 8, 12, 16, 19];
-
-interface DatasetElementLike extends Element {
-  dataset: DOMStringMap;
-}
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -104,81 +97,7 @@ export function createFeatsStep(): WizardStepDefinition {
         emptyMessage: "No feats available. Check your GM configuration.",
       };
     },
-
-    onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
-      // Choice tabs (ASI vs Feat)
-      getDatasetElements(el, "[data-feat-choice]").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          const choice = getFeatChoice(tab.dataset.featChoice);
-          if (!choice) return;
-          const current = state.selections.feats ?? { choice: "asi" };
-          callbacks.setData({ ...current, choice } as FeatSelection);
-        });
-      });
-
-      // ASI ability toggles — patch selected state in-place
-      getDatasetElements(el, "[data-asi-ability]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const ability = getAbilityKey(btn.dataset.asiAbility);
-          if (!ability) return;
-          const current = state.selections.feats ?? { choice: "asi" };
-          const abilities = new Set(current.asiAbilities ?? []);
-
-          if (abilities.has(ability)) {
-            abilities.delete(ability);
-          } else if (abilities.size < 2) {
-            abilities.add(ability);
-          }
-
-          const newData = {
-            ...current,
-            choice: "asi" as const,
-            asiAbilities: [...abilities],
-          } satisfies FeatSelection;
-
-          callbacks.setData(newData);
-        });
-      });
-
-      // Feat card selection — patch selected state in-place
-      getDatasetElements(el, "[data-card-uuid]").forEach((card) => {
-        card.addEventListener("click", () => {
-          const uuid = card.dataset.cardUuid;
-          if (!uuid) return;
-          void (async () => {
-            const feats = await getAvailableFeats(state);
-            const entry = feats.find((e) => e.uuid === uuid);
-            if (!entry) return;
-
-            const newData = {
-              choice: "feat" as const,
-              featUuid: entry.uuid,
-              featName: entry.name,
-              featImg: entry.img,
-            } satisfies FeatSelection;
-
-            callbacks.setData(newData);
-          })();
-        });
-      });
-    },
   };
-}
-
-function getDatasetElements(root: ParentNode, selector: string): DatasetElementLike[] {
-  return Array.from(root.querySelectorAll(selector)).filter(isDatasetElementLike);
-}
-
-function getFeatChoice(value: string | undefined): "asi" | "feat" | null {
-  return value === "asi" || value === "feat" ? value : null;
-}
-
-function getAbilityKey(value: string | undefined): AbilityKey | null {
-  return ABILITY_KEYS.includes(value as AbilityKey) ? value as AbilityKey : null;
-}
-
-function isDatasetElementLike(value: unknown): value is DatasetElementLike {
-  return value instanceof Element && "dataset" in value;
 }
 
 export const __featsStepInternals = {
