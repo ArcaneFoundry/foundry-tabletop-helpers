@@ -34,50 +34,12 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: transparent url("/ui/resize-handle.webp") no-repeat center / contain;
   box-shadow: none;
   cursor: nwse-resize;
   opacity: 1;
   pointer-events: auto;
   overflow: visible;
-}
-
-.fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"]::before {
-  content: "";
-  position: absolute;
-  right: 0.08rem;
-  bottom: 0.08rem;
-  width: 1.08rem;
-  height: 1.08rem;
-  border-radius: 0;
-  background:
-    linear-gradient(135deg, transparent 0 34%, rgba(255, 255, 255, 0.1) 34% 100%),
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0) 0 2px,
-      rgba(244, 232, 208, 0.96) 2px 3px,
-      rgba(255, 255, 255, 0) 3px 5px
-    );
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(17, 14, 17, 0.55),
-    0 6px 14px rgba(0, 0, 0, 0.34);
-  opacity: 1;
-  pointer-events: none;
-}
-
-.fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"]::after {
-  content: "";
-  position: absolute;
-  right: 0.28rem;
-  bottom: 0.28rem;
-  width: 1.4rem;
-  height: 1.4rem;
-  background:
-    linear-gradient(135deg, transparent 0 56%, rgba(255, 243, 214, 0.34) 56% 58%, transparent 58% 68%, rgba(233, 193, 118, 0.54) 68% 70%, transparent 70% 80%, rgba(255, 243, 214, 0.38) 80% 82%, transparent 82% 100%),
-    radial-gradient(circle at 100% 100%, rgba(233, 193, 118, 0.16), transparent 58%);
-  opacity: 1;
-  pointer-events: none;
 }
 
 .cc-wizard-shell {
