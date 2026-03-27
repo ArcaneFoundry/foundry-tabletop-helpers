@@ -176,6 +176,7 @@ export interface FoundryPlaylistSound extends FoundryDocument {
   playing?: boolean;
   repeat?: boolean;
   sort?: number;
+  sound?: FoundryAudioSound | null;
   load?(): Promise<void>;
   sync?(): void;
 }
@@ -185,6 +186,15 @@ export interface FoundryPlaylist extends FoundryDocument {
   playSound?(sound: FoundryPlaylistSound): Promise<FoundryPlaylist>;
   stopSound?(sound: FoundryPlaylistSound): Promise<FoundryPlaylist>;
   stopAll?(): Promise<FoundryPlaylist>;
+}
+
+export interface FoundryAudioSound {
+  duration?: number;
+  loaded?: boolean;
+  loop?: boolean;
+  playing?: boolean;
+  play?(options?: Record<string, unknown>): Promise<unknown>;
+  stop?(): Promise<unknown> | void;
 }
 
 /* ── Socket ───────────────────────────────────────────────── */
