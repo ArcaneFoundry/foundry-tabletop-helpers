@@ -118,6 +118,7 @@ describe("soundscape trigger service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     registeredHooks.clear();
+    isGMMock.mockReturnValue(true);
     setWorld();
     resolveStoredSoundscapeStateMock.mockImplementation((sceneId?: string, context?: Record<string, unknown>) => ({
       profileId: "forest",
@@ -230,5 +231,75 @@ describe("soundscape trigger service", () => {
     });
     expect(syncResolvedSoundscapeMusicMock).toHaveBeenCalledTimes(2);
     expect(syncResolvedSoundscapeAmbienceMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("applies sunrise and sunset hooks directly while keeping Calendaria authoritative", async () => {
+    setWorld({
+      sceneDarkness: 0.1,
+      calendariaActive: true,
+      calendariaApi: {
+        isDaytime: () => true,
+        isNighttime: () => false,
+        getCurrentWeather: () => ({ key: "clear" }),
+      },
+    });
+    const mod = await loadService();
+
+    await mod.startSoundscapeTriggerService();
+    registeredHooks.get("calendaria.sunset")?.();
+    await flushMicrotasks();
+
+    expect(mod.getSoundscapeTriggerContext()).toEqual({
+      manualPreview: false,
+      inCombat: false,
+      timeOfDay: "night",
+      weather: "clear",
+    });
+
+    registeredHooks.get("calendaria.sunrise")?.();
+    await flushMicrotasks();
+
+    expect(mod.getSoundscapeTriggerContext()).toEqual({
+      manualPreview: false,
+      inCombat: false,
+      timeOfDay: "day",
+      weather: "clear",
+    });
+  });
+
+  it("cleans up hooks and resets context on stop", async () => {
+    const mod = await loadService();
+
+    await mod.startSoundscapeTriggerService();
+    expect(registeredHooks.size).toBeGreaterThan(0);
+
+    mod.stopSoundscapeTriggerService();
+
+    expect(offMock).toHaveBeenCalled();
+    expect(registeredHooks.size).toBe(0);
+    expect(mod.getSoundscapeTriggerContext()).toEqual({
+      manualPreview: false,
+      inCombat: false,
+      timeOfDay: null,
+      weather: null,
+    });
+  });
+
+  it("is a no-op for non-gm clients", async () => {
+    isGMMock.mockReturnValue(false);
+    const mod = await loadService();
+
+    await mod.startSoundscapeTriggerService();
+
+    expect(onMock).not.toHaveBeenCalled();
+    expect(resolveStoredSoundscapeStateMock).not.toHaveBeenCalled();
+    expect(syncResolvedSoundscapeMusicMock).not.toHaveBeenCalled();
+    expect(syncResolvedSoundscapeAmbienceMock).not.toHaveBeenCalled();
+    expect(mod.getSoundscapeTriggerContext()).toEqual({
+      manualPreview: false,
+      inCombat: false,
+      timeOfDay: null,
+      weather: null,
+    });
   });
 });

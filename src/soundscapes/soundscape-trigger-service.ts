@@ -22,6 +22,8 @@ interface SceneLike {
 interface CombatLike {
   active?: boolean;
   started?: boolean;
+  round?: unknown;
+  turn?: unknown;
 }
 
 interface WeatherLike {
@@ -42,6 +44,20 @@ interface CalendariaGlobalLike {
 }
 
 type ProviderPatch = Partial<Pick<SoundscapeTriggerContext, "inCombat" | "weather" | "timeOfDay">>;
+
+interface ProviderState {
+  combat: ProviderPatch;
+  coreScene: ProviderPatch;
+  calendaria: ProviderPatch;
+}
+
+function createProviderState(): ProviderState {
+  return {
+    combat: { inCombat: false },
+    coreScene: { timeOfDay: null },
+    calendaria: {},
+  };
+}
 
 function asNonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -65,6 +81,21 @@ function normalizeWeatherKey(value: unknown): string | null {
     ?? asNonEmptyString(value.label);
 }
 
+function normalizeWeatherPayload(value: unknown): string | null {
+  if (!isRecord(value)) return normalizeWeatherKey(value);
+  if (value.visualOnly === true) return null;
+  return normalizeWeatherKey(value.current) ?? normalizeWeatherKey(value);
+}
+
+function isCombatStarted(combat: CombatLike | null | undefined): boolean {
+  if (!combat) return false;
+  if (combat.started === true) return true;
+
+  const round = typeof combat.round === "number" ? combat.round : null;
+  const turn = typeof combat.turn === "number" ? combat.turn : null;
+  return (round ?? 0) > 0 || turn !== null;
+}
+
 function resolveTimeOfDayFromCalendaria(api: CalendariaApiLike | null): SoundscapeTimeOfDay | null {
   if (!api) return null;
   if (api.isDaytime?.() === true) return "day";
@@ -80,17 +111,10 @@ function getCalendariaApi(): CalendariaApiLike | null {
 
 export class SoundscapeTriggerService {
   private readonly hookRegistrations: HookRegistration[] = [];
-  private providerState: {
-    combat: ProviderPatch;
-    coreScene: ProviderPatch;
-    calendaria: ProviderPatch;
-  } = {
-      combat: { inCombat: false },
-      coreScene: { timeOfDay: null },
-      calendaria: {},
-    };
+  private providerState: ProviderState = createProviderState();
   private currentContext = normalizeSoundscapeTriggerContext({});
   private lastSyncKey: string | null = null;
+  private pendingSyncKey: string | null = null;
   private syncQueue: Promise<void> = Promise.resolve();
   private started = false;
 
@@ -109,12 +133,16 @@ export class SoundscapeTriggerService {
       hooks?.off?.(registration.event, registration.id);
     }
     this.hookRegistrations.length = 0;
+    this.providerState = createProviderState();
+    this.currentContext = normalizeSoundscapeTriggerContext({});
     this.started = false;
     this.lastSyncKey = null;
+    this.pendingSyncKey = null;
+    this.syncQueue = Promise.resolve();
   }
 
   getContext(): SoundscapeTriggerContext {
-    return this.currentContext;
+    return normalizeSoundscapeTriggerContext(this.currentContext);
   }
 
   async refresh(): Promise<void> {
@@ -175,9 +203,11 @@ export class SoundscapeTriggerService {
       void this.queueSync();
     });
     this.registerHook("calendaria.weatherChange", (weather?: unknown) => {
+      const nextWeather = normalizeWeatherPayload(weather);
+      if (nextWeather === null && isRecord(weather) && weather.visualOnly === true) return;
       this.providerState.calendaria = {
         ...this.providerState.calendaria,
-        weather: normalizeWeatherKey(weather) ?? this.readCalendariaPatch().weather ?? null,
+        weather: nextWeather ?? this.readCalendariaPatch().weather ?? null,
       };
       void this.queueSync();
     });
@@ -193,11 +223,11 @@ export class SoundscapeTriggerService {
   private readCombatPatch(): ProviderPatch {
     const game = getGame();
     const activeCombat = game?.combat;
-    if (activeCombat?.active === true || activeCombat?.started === true) {
+    if (isCombatStarted(activeCombat)) {
       return { inCombat: true };
     }
     const combats = game?.combats;
-    const inCombat = combats?.find((combat: CombatLike) => combat.started === true || combat.active === true) !== undefined;
+    const inCombat = combats?.find((combat: CombatLike) => isCombatStarted(combat)) !== undefined;
     return { inCombat };
   }
 
@@ -245,15 +275,23 @@ export class SoundscapeTriggerService {
     this.currentContext = nextContext;
 
     const nextKey = buildContextKey(sceneId, nextContext);
-    if (nextKey === this.lastSyncKey) return this.syncQueue;
-    this.lastSyncKey = nextKey;
+    if (nextKey === this.lastSyncKey || nextKey === this.pendingSyncKey) return this.syncQueue;
+    this.pendingSyncKey = nextKey;
 
-    const resolvedState = resolveStoredSoundscapeState(sceneId ?? undefined, nextContext);
     this.syncQueue = this.syncQueue
       .catch(() => undefined)
       .then(async () => {
-        await syncResolvedSoundscapeMusic(resolvedState);
-        await syncResolvedSoundscapeAmbience(resolvedState);
+        const resolvedState = resolveStoredSoundscapeState(sceneId ?? undefined, nextContext);
+        await Promise.all([
+          syncResolvedSoundscapeMusic(resolvedState),
+          syncResolvedSoundscapeAmbience(resolvedState),
+        ]);
+        this.lastSyncKey = nextKey;
+        this.pendingSyncKey = null;
+      })
+      .catch((error: unknown) => {
+        this.pendingSyncKey = null;
+        throw error;
       });
     return this.syncQueue;
   }
@@ -277,5 +315,7 @@ export const __soundscapeTriggerServiceInternals = {
   singletonService,
   buildContextKey,
   getCalendariaApi,
+  isCombatStarted,
   normalizeWeatherKey,
+  normalizeWeatherPayload,
 };
