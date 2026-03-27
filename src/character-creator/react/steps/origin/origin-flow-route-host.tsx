@@ -18,14 +18,13 @@ import {
 } from "../../../steps/origin-flow-utils";
 import {
   HeaderFlourish,
-  HeroPortraitCard,
-  SummaryListCard,
 } from "./components/origin-pane-primitives";
 import { BackgroundAsiPane } from "./panes/background-asi-pane";
 import { BackgroundSelectionPane } from "./panes/background-selection-pane";
 import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
 import { LanguageChoicesPane } from "./panes/language-choices-pane";
 import { OriginFeatPane } from "./panes/origin-feat-pane";
+import { OriginSummaryPane } from "./panes/origin-summary-pane";
 import { SpeciesItemChoicesPane } from "./panes/species-item-choices-pane";
 import { SpeciesSkillsPane } from "./panes/species-skills-pane";
 import { SpeciesSelectionPane } from "./panes/species-selection-pane";
@@ -41,28 +40,6 @@ type SpeciesAdvancementViewModel = {
   description: string;
   requiredCount: number;
   validationMessages?: string[];
-};
-
-type OriginSummaryViewModel = {
-  className: string;
-  backgroundName: string;
-  backgroundImage: string;
-  speciesName: string;
-  speciesImage: string;
-  fixedLanguages: string[];
-  selectedGrantGroups: Array<{
-    id: string;
-    title: string;
-    iconClass: string;
-    entries: string[];
-    source?: "background" | "species";
-  }>;
-  backgroundSkills: string[];
-  speciesTraits: string[];
-  speciesSkills: string[];
-  speciesItems: string[];
-  toolProficiency: string | null;
-  originFeatName: string | null;
 };
 
 const ORIGIN_FLOW_STEP_IDS = new Set([
@@ -177,7 +154,7 @@ export function OriginFlowRouteHost(
               />
             </div>
 
-            <div className="relative z-10 mt-3 flex min-h-0 flex-1">
+            <div className="relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
               <AnimatePresence initial={false} mode="wait">
                 <motion.div
                   key={shellModel.currentPane}
@@ -268,83 +245,6 @@ export function OriginFlowRouteHost(
           </div>
         </div>
       </motion.div>
-    </section>
-  );
-}
-
-function OriginSummaryPane({ shellContext }: Pick<ReactWizardStepProps, "shellContext">) {
-  const viewModel = shellContext.stepViewModel as OriginSummaryViewModel | undefined;
-  if (!viewModel) return null;
-
-  return (
-    <section className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
-      <div className="grid gap-4">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(19rem,0.95fr)]">
-          <section className="rounded-[1.5rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)] md:p-5">
-            <div className="border-b border-[#cfb58f]/55 pb-3">
-              <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#876145]">
-                {viewModel.className ? `${viewModel.className} Origins` : "Origins"}
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <HeroPortraitCard image={viewModel.backgroundImage} label={viewModel.backgroundName} iconClass="fa-solid fa-scroll" />
-              <HeroPortraitCard image={viewModel.speciesImage} label={viewModel.speciesName} iconClass="fa-solid fa-dna" />
-            </div>
-          </section>
-
-          <aside className="grid gap-4 self-start">
-            <SummaryListCard
-              emptyLabel="No fixed languages recorded."
-              entries={viewModel.fixedLanguages.map((entry) => ({ id: entry, label: entry }))}
-              iconClass="fa-solid fa-language"
-              title="Fixed Languages"
-            />
-            <SummaryListCard
-              emptyLabel="No species traits listed."
-              entries={viewModel.speciesTraits.map((entry) => ({ id: entry, label: entry }))}
-              iconClass="fa-solid fa-dna"
-              title="Species Traits"
-            />
-          </aside>
-        </div>
-
-        <section className="rounded-[1.5rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)] md:p-5">
-          <div className="border-b border-[#cfb58f]/55 pb-3">
-            <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#876145]">
-              Origin Summary
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3">
-            {viewModel.toolProficiency ? (
-              <SummaryListCard
-                emptyLabel="No tool proficiency recorded."
-                entries={[{ id: viewModel.toolProficiency, label: viewModel.toolProficiency }]}
-                iconClass="fa-solid fa-screwdriver-wrench"
-                title="Background Tool"
-              />
-            ) : null}
-            {viewModel.originFeatName ? (
-              <SummaryListCard
-                emptyLabel="No origin feat confirmed."
-                entries={[{ id: viewModel.originFeatName, label: viewModel.originFeatName }]}
-                iconClass="fa-solid fa-stars"
-                title="Origin Feat"
-              />
-            ) : null}
-            {viewModel.selectedGrantGroups.map((group) => (
-              <SummaryListCard
-                emptyLabel={`No selections recorded for ${group.title}.`}
-                entries={group.entries.map((entry) => ({ id: entry, label: entry }))}
-                iconClass={group.iconClass}
-                key={group.id}
-                title={group.title}
-              />
-            ))}
-          </div>
-        </section>
-      </div>
     </section>
   );
 }

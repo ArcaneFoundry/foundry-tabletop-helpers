@@ -469,6 +469,14 @@
   position: relative;
 }
 
+.cc-step-content--origin-flow {
+  display: flex;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .cc-step-content--class-select::before,
 .cc-step-content--class-select::after {
   content: "";
