@@ -171,7 +171,21 @@ export interface FoundryScene extends FoundryDocument {
   active?: boolean;
 }
 
-export interface FoundryPlaylist extends FoundryDocument {}
+export interface FoundryPlaylistSound extends FoundryDocument {
+  path?: string;
+  playing?: boolean;
+  repeat?: boolean;
+  sort?: number;
+  load?(): Promise<void>;
+  sync?(): void;
+}
+
+export interface FoundryPlaylist extends FoundryDocument {
+  sounds?: FoundryCollection<FoundryPlaylistSound>;
+  playSound?(sound: FoundryPlaylistSound): Promise<FoundryPlaylist>;
+  stopSound?(sound: FoundryPlaylistSound): Promise<FoundryPlaylist>;
+  stopAll?(): Promise<FoundryPlaylist>;
+}
 
 /* ── Socket ───────────────────────────────────────────────── */
 

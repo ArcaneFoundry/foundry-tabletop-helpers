@@ -14,6 +14,7 @@ export type {
   FoundrySettings,
   FoundryScene,
   FoundryPlaylist,
+  FoundryPlaylistSound,
   SettingRegistration,
   SettingMenuRegistration,
   FoundryCompendiumCollection,
