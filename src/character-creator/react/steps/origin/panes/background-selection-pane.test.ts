@@ -73,6 +73,9 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("data-selected=\"true\"");
     expect(markup).toContain("Selected Background");
     expect(markup).toContain("Choose Background");
+    expect(markup).toContain("flex h-full w-full flex-col");
+    expect(markup).toContain("flex h-full min-h-0 flex-1 flex-col");
+    expect(markup).toContain("min-h-[20rem] flex-1 overflow-hidden");
     expect(markup.indexOf("cc-origin-selection-pane__intro")).toBeLessThan(markup.indexOf("cc-origin-selection-pane__gallery-scroll"));
   });
 });
