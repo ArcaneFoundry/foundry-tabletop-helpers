@@ -1,6 +1,16 @@
 import type { PersistentSoundscapeLibrarySnapshot, ResolvedSoundscapeState, SoundscapeTriggerContext } from "./soundscape-types";
 import { getStoredSoundscapeLibrarySnapshot, resolveStoredSoundscapeState } from "./soundscape-accessors";
 import {
+  getSoundscapeAmbienceRuntimeSnapshot,
+  playStoredSoundscapeMoment,
+  stopStoredSoundscapeAmbience,
+  syncStoredSoundscapeAmbience,
+} from "./soundscape-ambience-controller";
+import type {
+  SoundscapeAmbienceRuntimeSnapshot,
+  SoundscapeMomentPlaybackResult,
+} from "./soundscape-ambience-runtime";
+import {
   getSoundscapeMusicRuntimeSnapshot,
   stopStoredSoundscapeMusic,
   syncStoredSoundscapeMusic,
@@ -15,6 +25,10 @@ export interface FthSoundscapeDebugApi {
   syncMusic: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => Promise<SoundscapeMusicRuntimeSnapshot>;
   stopMusic: () => Promise<void>;
   getMusicState: () => SoundscapeMusicRuntimeSnapshot;
+  syncAmbience: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => Promise<SoundscapeAmbienceRuntimeSnapshot>;
+  stopAmbience: () => Promise<void>;
+  getAmbienceState: () => SoundscapeAmbienceRuntimeSnapshot;
+  playMoment: (momentId: string, sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => Promise<SoundscapeMomentPlaybackResult>;
 }
 
 export interface FthSoundscapeApi {
@@ -30,6 +44,10 @@ export function buildSoundscapeApi(): FthSoundscapeApi {
       syncMusic: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => syncStoredSoundscapeMusic(sceneId, context),
       stopMusic: () => stopStoredSoundscapeMusic(),
       getMusicState: () => getSoundscapeMusicRuntimeSnapshot(),
+      syncAmbience: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => syncStoredSoundscapeAmbience(sceneId, context),
+      stopAmbience: () => stopStoredSoundscapeAmbience(),
+      getAmbienceState: () => getSoundscapeAmbienceRuntimeSnapshot(),
+      playMoment: (momentId: string, sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => playStoredSoundscapeMoment(momentId, sceneId, context),
     },
   };
 }
