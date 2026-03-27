@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 
 export type ClassStepperLayoutMode = "wide" | "compact";
 
-export const CLASS_STEPPER_COMPACT_BREAKPOINT = 520;
+export const CLASS_STEPPER_COMPACT_BREAKPOINT = 800;
 
 export function getClassStepperLayoutMode(width: number): ClassStepperLayoutMode {
   return width <= CLASS_STEPPER_COMPACT_BREAKPOINT ? "compact" : "wide";

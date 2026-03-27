@@ -52,9 +52,9 @@ function createAggregateStepperModel() {
 
 describe("class stepper layout", () => {
   it("switches to compact mode at and below the compact breakpoint", () => {
-    expect(CLASS_STEPPER_COMPACT_BREAKPOINT).toBe(520);
-    expect(getClassStepperLayoutMode(521)).toBe("wide");
-    expect(getClassStepperLayoutMode(520)).toBe("compact");
+    expect(CLASS_STEPPER_COMPACT_BREAKPOINT).toBe(800);
+    expect(getClassStepperLayoutMode(801)).toBe("wide");
+    expect(getClassStepperLayoutMode(800)).toBe("compact");
     expect(getClassStepperLayoutMode(319)).toBe("compact");
   });
 
@@ -95,7 +95,7 @@ describe("class stepper layout", () => {
   it("measures immediately and responds to resize events", () => {
     const modes: string[] = [];
     const element = {
-      getBoundingClientRect: () => ({ width: 640 }),
+      getBoundingClientRect: () => ({ width: 860 }),
     } as Pick<HTMLElement, "getBoundingClientRect">;
 
     class MockResizeObserver {
@@ -126,7 +126,7 @@ describe("class stepper layout", () => {
 
       expect(modes).toEqual(["wide"]);
 
-      MockResizeObserver.instances[0]?.emit(480);
+      MockResizeObserver.instances[0]?.emit(760);
       expect(modes).toEqual(["wide", "compact"]);
 
       cleanup?.();
