@@ -106,6 +106,7 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
               emptyMessage={viewModel.emptyMessage}
               feats={viewModel.feats}
               hasFeats={viewModel.hasFeats}
+              selectedFeat={selectedFeat}
               onSelectFeat={updateSelection}
             />
           )}
@@ -129,12 +130,47 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
             </div>
           ) : selectedFeat ? (
             <div className="space-y-4">
-              <img alt={selectedFeat.name} className="h-56 w-full rounded-[1.25rem] object-cover" src={selectedFeat.img} />
-              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">{selectedFeat.packLabel}</div>
-              <div className="font-fth-cc-display text-[1.3rem] text-[#f4e7cf]">{selectedFeat.name}</div>
+              <div className="overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,28,39,0.96),rgba(15,15,19,0.98))] shadow-[0_18px_36px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+                <div className="relative">
+                  <img alt={selectedFeat.name} className="h-56 w-full object-cover" src={selectedFeat.img} />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,9,0.08),rgba(5,5,9,0.58))]" />
+                  <div className="absolute left-4 top-4">
+                    <TokenPill>Selected Feat</TokenPill>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <div className="font-fth-cc-display text-[1.4rem] leading-none text-[#f9efd8] drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
+                      {selectedFeat.name}
+                    </div>
+                    <div className="mt-2 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#f0d8a6]">
+                      {selectedFeat.packLabel}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[1.15rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-3">
+                  <MicroLabel>Selection State</MicroLabel>
+                  <p className="m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#d8d0ca]">
+                    Bound into the build and ready to advance.
+                  </p>
+                </div>
+                <div className="rounded-[1.15rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-3">
+                  <MicroLabel>Source</MicroLabel>
+                  <p className="m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#d8d0ca]">
+                    {selectedFeat.packLabel}
+                  </p>
+                </div>
+              </div>
+              <p className="font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
+                The inspector keeps the selected feat visible as an artifact of the build. Use it to confirm the feat source and the card you are binding before advancing.
+              </p>
             </div>
           ) : (
-            <ArcaneEmptyState message="Choose a feat to inspect the artifact you are binding into the build." compact />
+            <ArcaneEmptyState
+              compact
+              message="Choose a feat to inspect the artifact you are binding into the build."
+              title="No feat selected"
+            />
           )}
         </ArcaneInspectorPanel>
       </div>
@@ -197,25 +233,50 @@ function FeatCatalogPanel({
   emptyMessage,
   feats,
   hasFeats,
+  selectedFeat,
   onSelectFeat,
 }: {
   currentSelection: FeatsStepSelection;
   emptyMessage: string;
   feats: FeatCatalogEntry[];
   hasFeats: boolean;
+  selectedFeat: FeatCatalogEntry | null;
   onSelectFeat: UpdateSelection;
 }) {
   return (
-    <div className="mt-5 grid gap-3">
-      {hasFeats ? feats.map((entry) => {
+    <div className="mt-5 space-y-4">
+      <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(31,25,36,0.95),rgba(17,17,22,0.98))] px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="max-w-2xl space-y-2">
+            <MicroLabel>Feat Catalog</MicroLabel>
+            <h3 className="font-fth-cc-display text-[1.35rem] leading-none text-[#f7e8c9]">
+              Choose a feat artifact to bind into the build
+            </h3>
+            <p className="font-fth-cc-body text-[0.95rem] leading-6 text-[#d5cdc7]">
+              Scan the catalog, compare the source labels, and pick the feat whose identity best fits the build you are shaping.
+            </p>
+          </div>
+          <ValueBadge>{feats.length} indexed</ValueBadge>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <TokenPill muted>
+            {selectedFeat ? `Selected: ${selectedFeat.name}` : "No feat selected"}
+          </TokenPill>
+          <TokenPill>
+            {hasFeats ? "Catalog available" : "Catalog sealed"}
+          </TokenPill>
+        </div>
+      </div>
+      {hasFeats ? <div className="grid gap-3">
+        {feats.map((entry) => {
         const checked = entry.uuid === currentSelection.featUuid;
         return (
           <button
             className={cn(
-              "group relative overflow-hidden rounded-[1.35rem] border p-3 text-left transition",
+              "group relative overflow-hidden rounded-[1.45rem] border p-0 text-left transition",
               checked
-                ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(70,45,67,0.86),rgba(28,22,34,0.96))] shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_18px_36px_rgba(0,0,0,0.22)]"
-                : "border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] hover:border-[#e9c176]/45",
+                ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(64,42,58,0.86),rgba(22,17,28,0.98))] shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_18px_36px_rgba(0,0,0,0.22)]"
+                : "border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] hover:border-[#e9c176]/45 hover:shadow-[0_12px_24px_rgba(0,0,0,0.12)]",
             )}
             key={entry.uuid}
             onClick={() => onSelectFeat({
@@ -224,21 +285,43 @@ function FeatCatalogPanel({
               featName: entry.name,
               featImg: entry.img,
             })}
+            aria-pressed={checked}
             type="button"
           >
-            <div className="grid grid-cols-[4.7rem_minmax(0,1fr)_auto] items-center gap-3">
-              <img alt={entry.name} className="h-[4.7rem] w-[4.7rem] rounded-[1rem] object-cover" src={entry.img} />
-              <div className="min-w-0">
-                <div className="font-fth-cc-display text-[1.2rem] text-[#f4e7cf]">{entry.name}</div>
-                <div className="mt-2 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
-                  {entry.packLabel}
+            <div className="grid min-h-[7.5rem] grid-cols-[6rem_minmax(0,1fr)] gap-4 p-4 md:min-h-[8.25rem] md:grid-cols-[7.25rem_minmax(0,1fr)] md:p-5">
+              <div className="relative overflow-hidden rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(0,0,0,0.16),rgba(0,0,0,0.52))]">
+                <img alt={entry.name} className="h-full w-full object-cover" src={entry.img} />
+                <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(8,8,12,0.9))] px-2 py-2">
+                  <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em] text-[#f1d8a4]">
+                    {entry.packLabel}
+                  </div>
                 </div>
               </div>
-              <SelectionSigil checked={checked} />
+              <div className="min-w-0 py-0.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <MicroLabel>{checked ? "Selected Feat" : "Feat Artifact"}</MicroLabel>
+                    <div className="mt-1 font-fth-cc-display text-[1.15rem] leading-tight text-[#f5e8cb] md:text-[1.24rem]">
+                      {entry.name}
+                    </div>
+                  </div>
+                  <SelectionSigil checked={checked} />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <TokenPill muted>{entry.packLabel}</TokenPill>
+                  <TokenPill>{checked ? "Bound to build" : "Select to bind"}</TokenPill>
+                </div>
+              </div>
             </div>
           </button>
         );
-      }) : <ArcaneEmptyState message={emptyMessage} />}
+        })}
+      </div> : (
+        <ArcaneEmptyState
+          message={emptyMessage}
+          title="No feats indexed"
+        />
+      )}
     </div>
   );
 }
@@ -312,10 +395,19 @@ function ArcaneInspectorPanel({
   );
 }
 
-function ArcaneEmptyState({ message, compact = false }: { message: string; compact?: boolean }) {
+function ArcaneEmptyState({
+  message,
+  compact = false,
+  title,
+}: {
+  message: string;
+  compact?: boolean;
+  title?: string;
+}) {
   return (
     <div className={cn("rounded-[1.2rem] border border-dashed border-white/12 bg-[rgba(255,255,255,0.03)] px-4 py-5 text-center", compact ? "py-4" : "py-8")}>
-      <p className="font-fth-cc-body text-[0.98rem] leading-7 text-[#d0c8c3]">{message}</p>
+      {title ? <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em] text-[#b7ab9d]">{title}</div> : null}
+      <p className={cn("font-fth-cc-body text-[0.98rem] leading-7 text-[#d0c8c3]", title ? "mt-2" : "mt-0")}>{message}</p>
     </div>
   );
 }

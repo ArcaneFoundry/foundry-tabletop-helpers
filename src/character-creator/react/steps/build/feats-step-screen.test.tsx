@@ -118,9 +118,47 @@ describe("FeatsStepScreen", () => {
     } as never));
 
     expect(markup).toContain("Feat Catalog");
+    expect(markup).toContain("Choose a feat artifact to bind into the build");
     expect(markup).toContain("Alert");
     expect(markup).toContain("Tough");
     expect(markup).toContain("Selected Feat");
     expect(markup).toContain("PHB");
+    expect(markup).toContain("Selected: Tough");
+    expect(markup).toContain("Bound to build");
+    expect(markup).toContain("Selection State");
+  });
+
+  it("renders an intentional empty catalog state when no feats are indexed", () => {
+    const markup = renderToStaticMarkup(createElement(FeatsStepScreen, {
+      controller: {
+        updateCurrentStepData: vi.fn(),
+      },
+      shellContext: {
+        stepViewModel: {
+          choice: "feat",
+          isAsi: false,
+          isFeat: true,
+          asiCount: 0,
+          maxAsiPicks: 2,
+          abilities: [],
+          feats: [],
+          selectedFeat: null,
+          hasFeats: false,
+          emptyMessage: "No feats available. Check your GM configuration.",
+        },
+      },
+      state: {
+        selections: {
+          feats: {
+            choice: "feat",
+          },
+        },
+      },
+      step: {},
+    } as never));
+
+    expect(markup).toContain("No feats indexed");
+    expect(markup).toContain("Catalog sealed");
+    expect(markup).toContain("No feats available. Check your GM configuration.");
   });
 });
