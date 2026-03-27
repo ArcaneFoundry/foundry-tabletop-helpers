@@ -74,24 +74,17 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(21rem,0.88fr)]">
         <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
-          <div className="flex flex-wrap gap-3">
-            <ModeToggleButton
-              active={viewModel.isAsi}
-              label="Ability Attunement"
-              onClick={() => updateSelection({
-                ...currentSelection,
-                choice: "asi",
-                featUuid: undefined,
-                featName: undefined,
-                featImg: undefined,
-              })}
-            />
-            <ModeToggleButton
-              active={viewModel.isFeat}
-              label="Feat Catalog"
-              onClick={() => updateSelection({ ...currentSelection, choice: "feat" })}
-            />
-          </div>
+          <ModeRail
+            activeChoice={viewModel.choice}
+            onChooseAsi={() => updateSelection({
+              ...currentSelection,
+              choice: "asi",
+              featUuid: undefined,
+              featName: undefined,
+              featImg: undefined,
+            })}
+            onChooseFeat={() => updateSelection({ ...currentSelection, choice: "feat" })}
+          />
 
           {viewModel.isAsi ? (
             <AsiAttunementPanel
@@ -142,6 +135,47 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
   );
 }
 
+function ModeRail({
+  activeChoice,
+  onChooseAsi,
+  onChooseFeat,
+}: {
+  activeChoice: "asi" | "feat";
+  onChooseAsi: () => void;
+  onChooseFeat: () => void;
+}) {
+  return (
+    <section className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(42,36,47,0.82),rgba(19,19,24,0.95))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <MicroLabel>Choose your rite</MicroLabel>
+          <p className="mt-2 font-fth-cc-body text-[0.92rem] leading-6 text-[#cdc4bf]">
+            Decide whether this level sharpens your core or binds a feat into your story.
+          </p>
+        </div>
+        <ValueBadge>{activeChoice === "asi" ? "Ability attunement" : "Feat binding"}</ValueBadge>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <ModeToggleButton
+          active={activeChoice === "asi"}
+          icon="fa-wand-sparkles"
+          label="Ability Attunement"
+          subtitle="Refine the scores that define your build."
+          onClick={onChooseAsi}
+        />
+        <ModeToggleButton
+          active={activeChoice === "feat"}
+          icon="fa-star"
+          label="Feat Catalog"
+          subtitle="Bind a legendary boon into the path."
+          onClick={onChooseFeat}
+        />
+      </div>
+    </section>
+  );
+}
+
 function AsiAttunementPanel({
   abilities,
   asiCount,
@@ -153,36 +187,79 @@ function AsiAttunementPanel({
   maxAsiPicks: number;
   onToggleAbility: (ability: AbilityKey) => void;
 }) {
+  const remaining = Math.max(maxAsiPicks - asiCount, 0);
+  const progress = maxAsiPicks > 0 ? Math.min(100, (asiCount / maxAsiPicks) * 100) : 0;
+
   return (
     <div className="mt-5 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <MicroLabel>Attunement Picks</MicroLabel>
-        <ValueBadge>{asiCount} / {maxAsiPicks}</ValueBadge>
+      <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.96),rgba(20,20,24,0.98))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <MicroLabel>Attunement field</MicroLabel>
+            <h4 className="mt-2 font-fth-cc-display text-[1.38rem] leading-none text-[#f4e7cf]">
+              Bind up to two abilities to the build
+            </h4>
+            <p className="mt-2 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#cdc4bf]">
+              Choose one ability twice or two different abilities once each. The ritual stays grounded in the same feat and ASI rules the creator already enforces.
+            </p>
+          </div>
+          <div className="min-w-[9rem] rounded-[1rem] border border-[#e2c48a]/18 bg-[rgba(246,228,193,0.08)] px-4 py-3 text-right">
+            <ValueBadge>{asiCount} / {maxAsiPicks}</ValueBadge>
+            <div className="mt-3 h-2 rounded-full bg-[rgba(255,255,255,0.07)]">
+              <div
+                className="h-full rounded-full bg-[linear-gradient(90deg,#f3d28e,#d5a84d)] transition-[width] duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="mt-2 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.22em] text-[#d9cda7]">
+              {remaining > 0 ? `${remaining} choice${remaining === 1 ? "" : "s"} remain` : "Attunement complete"}
+            </div>
+          </div>
+        </div>
       </div>
+
       {abilities.map((ability) => (
         <div
-          className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.22)]"
+          className={cn(
+            "rounded-[1.35rem] border p-4 shadow-[0_16px_30px_rgba(0,0,0,0.22)] transition",
+            ability.selected
+              ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(66,46,29,0.96),rgba(32,22,17,0.98))] shadow-[0_0_0_1px_rgba(233,193,118,0.22),0_18px_36px_rgba(0,0,0,0.25)]"
+              : "border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.96),rgba(20,20,24,0.98))]",
+          )}
           key={ability.key}
         >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{ability.label}</div>
-              <div className="mt-1 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{ability.label}</div>
+                <TokenPill muted={!ability.selected && !ability.atMax}>
+                  {ability.selected ? "Attuned" : ability.atMax ? "At max" : "Available"}
+                </TokenPill>
+              </div>
+              <div className="mt-2 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">
                 Current score {ability.score} • modifier {ability.modifier}
               </div>
+              <p className="mt-3 max-w-2xl font-fth-cc-body text-[0.94rem] leading-6 text-[#d5cec8]">
+                {ability.selected
+                  ? "This ability is already carrying part of your attunement."
+                  : ability.atMax
+                    ? "This score already sits at its cap, so it cannot take another attunement unless it is already selected."
+                    : "Select this score to bind one of your two attunement choices here."}
+              </p>
             </div>
             <button
               className={cn(
-                "rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em] transition",
+                "inline-flex items-center justify-center gap-2 self-start rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em] transition lg:self-center",
                 ability.selected
-                  ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d5a84d)] text-[#38260f]"
-                  : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e4ddd8] hover:border-[#e9c176]/45",
+                  ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d5a84d)] text-[#38260f] shadow-[0_10px_22px_rgba(0,0,0,0.18)]"
+                  : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e4ddd8] hover:border-[#e9c176]/45 hover:bg-[rgba(246,228,193,0.07)]",
                 ability.atMax && !ability.selected && "opacity-45",
               )}
               disabled={ability.atMax && !ability.selected}
               onClick={() => onToggleAbility(ability.key)}
               type="button"
             >
+              <i className={cn("fa-solid", ability.selected ? "fa-check" : "fa-wand-sparkles")} />
               {ability.selected ? "Attuned" : ability.atMax ? "At Maximum" : "Select"}
             </button>
           </div>
@@ -322,25 +399,37 @@ function ArcaneEmptyState({ message, compact = false }: { message: string; compa
 
 function ModeToggleButton({
   active,
+  icon,
   label,
+  subtitle,
   onClick,
 }: {
   active: boolean;
+  icon: string;
   label: string;
+  subtitle: string;
   onClick: () => void;
 }) {
   return (
     <button
       className={cn(
-        "rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.24em] transition",
+        "group flex min-h-[5rem] items-center gap-3 rounded-[1.15rem] border px-4 py-3 text-left transition",
         active
-          ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d9ab54)] text-[#39260d] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
-          : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#eadfda] hover:border-[#e9c176]/45",
+          ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(243,210,142,0.94),rgba(217,171,84,0.9))] text-[#39260d] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
+          : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#eadfda] hover:border-[#e9c176]/45 hover:bg-[rgba(246,228,193,0.06)]",
       )}
       onClick={onClick}
       type="button"
     >
-      {label}
+      <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full border transition", active ? "border-[#533c18]/30 bg-[rgba(56,38,15,0.18)]" : "border-white/12 bg-[rgba(255,255,255,0.04)]")}>
+        <i className={cn("fa-solid text-[0.95rem] transition", active ? "text-[#5a3f17]" : "text-[#d8cfc9]", icon)} />
+      </div>
+      <div className="min-w-0">
+        <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]">{label}</div>
+        <div className="mt-1 max-w-[18rem] font-fth-cc-body text-[0.82rem] leading-5 text-[#d8cfc9]/72">
+          {subtitle}
+        </div>
+      </div>
     </button>
   );
 }
