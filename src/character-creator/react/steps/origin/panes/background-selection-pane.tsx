@@ -39,7 +39,7 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
         <button
           aria-pressed={selected}
           className={cn(
-            "group relative overflow-hidden rounded-[1.05rem] border bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200 hover:brightness-[1.03]",
+            "group relative flex h-full w-full flex-col overflow-hidden rounded-[1.05rem] border bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200 hover:brightness-[1.03]",
             selected
               ? "border-[#e9c176]/70 shadow-[0_0_0_1px_rgba(233,193,118,0.26),0_0_30px_rgba(233,193,118,0.12),0_24px_50px_rgba(0,0,0,0.32)]"
               : "border-[#e9c176]/16",
@@ -64,11 +64,11 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
           <div className="pointer-events-none absolute inset-x-[0.42rem] top-[0.32rem] h-6 rounded-full bg-[linear-gradient(180deg,rgba(255,244,216,0.22),rgba(255,244,216,0))]" />
           <div
             className={cn(
-              "relative overflow-hidden rounded-[1.06rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08),inset_0_-16px_24px_rgba(0,0,0,0.26)]",
+              "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[1.06rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08),inset_0_-16px_24px_rgba(0,0,0,0.26)]",
               selected ? "border-[#d8b578]/70" : "border-[#4f3828]",
             )}
           >
-            <div className="overflow-hidden aspect-[0.96]">
+            <div className="min-h-[20rem] flex-1 overflow-hidden">
               {entry.img ? (
                 <img
                   alt={entry.name}
