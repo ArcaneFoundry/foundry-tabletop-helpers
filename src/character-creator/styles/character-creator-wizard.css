@@ -5,7 +5,6 @@
 .fth-cc-wizard {
   container-type: inline-size;
   container-name: cc-wizard;
-  --fth-cc-resize-handle-layer: 20;
   --fth-cc-shell-shadow: rgba(6, 7, 10, 0.72);
   --fth-cc-shell-highlight: rgba(249, 230, 192, 0.08);
   --fth-cc-shell-gold: rgba(233, 193, 118, 0.18);
@@ -18,28 +17,6 @@
   background:
     radial-gradient(circle at top, rgba(255, 244, 214, 0.05), transparent 32%),
     linear-gradient(180deg, rgba(20, 15, 18, 0.98), rgba(12, 12, 15, 0.98));
-}
-
-.fth-cc-wizard .fth-window-resize-handle[data-fth-window-affordance="native"] {
-  /* Keep the native handle above the shell layers so Foundry receives drag input. */
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: var(--fth-cc-resize-handle-layer);
-  width: 1.625rem;
-  height: 1.625rem;
-  min-width: 1.625rem;
-  min-height: 1.625rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent url("/ui/resize-handle.webp") no-repeat center / contain;
-  box-shadow: none;
-  cursor: nwse-resize;
-  opacity: 1;
-  pointer-events: auto;
-  overflow: visible;
 }
 
 .cc-wizard-shell {
