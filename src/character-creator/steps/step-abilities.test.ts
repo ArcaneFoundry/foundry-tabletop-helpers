@@ -56,4 +56,10 @@ describe("step abilities", () => {
     };
     expect(step.isComplete(completeState as never)).toBe(true);
   });
+
+  it("routes the step through a dedicated React component", () => {
+    const step = createAbilitiesStep();
+    expect(step.renderMode).toBe("react");
+    expect(step.reactComponent).toBeDefined();
+  });
 });
