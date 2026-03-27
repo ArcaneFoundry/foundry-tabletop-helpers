@@ -47,8 +47,8 @@ describe("ClassSelectionGalleryPane", () => {
     }));
 
     expect(markup).toContain("cc-class-selection-pane__intro");
-    expect(markup).toContain("cc-class-flow-vocations__eyebrow");
-    expect(markup).toContain("cc-class-flow-vocations__body");
+    expect(markup).toContain('data-class-selection-eyebrow="true"');
+    expect(markup).toContain('data-class-selection-body="true"');
     expect(markup).toContain("cc-class-selection-pane__gallery-scroll");
     expect(markup).toContain("cc-class-selection-pane__gallery-shadow");
     expect(markup).toContain("cc-class-selection-pane__gallery-inner");

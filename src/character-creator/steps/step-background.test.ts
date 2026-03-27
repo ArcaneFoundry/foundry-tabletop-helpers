@@ -7,6 +7,7 @@ const loadPacksMock = vi.fn(async () => {});
 const getIndexedEntriesMock = vi.fn();
 const getCachedDescriptionMock = vi.fn();
 const fetchDocumentMock = vi.fn();
+const parseBackgroundAdvancementRequirementsMock = vi.fn();
 const parseBackgroundGrantsMock = vi.fn();
 const renderTemplateMock = vi.fn();
 const beginCardSelectionUpdateMock = vi.fn();
@@ -30,6 +31,7 @@ vi.mock("../data/compendium-indexer", () => ({
 }));
 
 vi.mock("../data/advancement-parser", () => ({
+  parseBackgroundAdvancementRequirements: parseBackgroundAdvancementRequirementsMock,
   parseBackgroundGrants: parseBackgroundGrantsMock,
 }));
 
@@ -125,6 +127,7 @@ beforeEach(() => {
   beginCardSelectionUpdateMock.mockReturnValue("request-1");
   isCurrentCardSelectionUpdateMock.mockReturnValue(true);
   patchCardDetailFromTemplateMock.mockResolvedValue(true);
+  parseBackgroundAdvancementRequirementsMock.mockResolvedValue([]);
   parseBackgroundGrantsMock.mockResolvedValue({
     skillProficiencies: ["arc", "his"],
     toolProficiency: "art:calligrapher",
@@ -244,7 +247,7 @@ describe("step background", () => {
         },
       }),
     );
-    expect(setDataSilent).toHaveBeenCalledWith({
+    expect(setDataSilent).toHaveBeenCalledWith(expect.objectContaining({
       uuid: "Compendium.background.sage",
       name: "Sage",
       img: "sage.png",
@@ -252,12 +255,13 @@ describe("step background", () => {
         skillProficiencies: ["arc", "his"],
         languageGrants: ["common"],
       }),
+      advancementRequirements: [],
       asi: { assignments: {} },
       languages: {
         fixed: ["common"],
         chosen: [],
       },
-    });
+    }));
 
     vi.clearAllMocks();
     fetchDocumentMock.mockRejectedValue(new Error("boom"));

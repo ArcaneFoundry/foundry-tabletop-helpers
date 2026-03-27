@@ -29,6 +29,7 @@ import {
   registerCharacterCreatorHooks,
   initCharacterCreatorReady,
 } from "./character-creator/character-creator-init";
+import { registerSoundscapeSettings } from "./soundscapes/soundscape-settings";
 
 interface SceneControlTool {
   name: string;
@@ -86,6 +87,9 @@ function onInit(): void {
   // Character Creator & Level-Up Manager
   if (settings) registerCharacterCreatorSettings(settings);
   registerCharacterCreatorHooks();
+
+  // Reactive Soundscapes foundation settings
+  if (settings) registerSoundscapeSettings(settings);
 
   registerAssetManagerSceneControlHook();
 

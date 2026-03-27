@@ -24,6 +24,10 @@ export interface FoundryGame {
   users?: FoundryCollection<FoundryUser>;
   /** Collection of all actors in the world */
   actors?: FoundryCollection<FoundryDocument>;
+  /** Collection of all scenes in the world */
+  scenes?: FoundryCollection<FoundryScene>;
+  /** Collection of all playlists in the world */
+  playlists?: FoundryCollection<FoundryPlaylist>;
   /** Collection of all compendium packs */
   packs?: FoundryCollection<FoundryCompendiumCollection>;
   /** Settings manager */
@@ -152,12 +156,22 @@ export interface FoundryDocument {
   type?: string;
   system?: Record<string, unknown>;
   ownership?: Record<string, number>;
+  active?: boolean;
   sheet?: { render(opts?: { force?: boolean }): void };
+  getFlag?(scope: string, key: string): unknown;
+  setFlag?(scope: string, key: string, value: unknown): Promise<unknown>;
+  unsetFlag?(scope: string, key: string): Promise<unknown>;
   update(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<FoundryDocument>;
   createEmbeddedDocuments(type: string, data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<FoundryDocument[]>;
   toObject(): Record<string, unknown>;
   [key: string]: unknown;
 }
+
+export interface FoundryScene extends FoundryDocument {
+  active?: boolean;
+}
+
+export interface FoundryPlaylist extends FoundryDocument {}
 
 /* ── Socket ───────────────────────────────────────────────── */
 
@@ -256,4 +270,3 @@ export interface DocumentSheetConfigStatic {
     options?: { types?: string[] }
   ): void;
 }
-

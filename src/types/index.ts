@@ -12,6 +12,8 @@ export type {
   FoundryModule,
   FoundryCollection,
   FoundrySettings,
+  FoundryScene,
+  FoundryPlaylist,
   SettingRegistration,
   SettingMenuRegistration,
   FoundryCompendiumCollection,
@@ -51,4 +53,3 @@ export {
   hasProperty,
   isObject,
 } from "./guards";
-
