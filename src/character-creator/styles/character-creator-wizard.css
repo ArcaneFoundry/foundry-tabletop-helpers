@@ -249,28 +249,30 @@
 /* ── Class Stepper ───────────────────────────────────────── */
 
 .fth-class-stepper--compact {
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
+  gap: 0.9rem;
+  padding-bottom: 1rem;
 }
 
 .fth-class-stepper--compact .fth-class-stepper__compact-row {
   width: 100%;
+  align-items: center;
 }
 
 .fth-class-stepper--compact .fth-class-stepper__milestone {
-  gap: 0.5rem;
+  width: 100%;
+  gap: 0.9rem;
 }
 
 .fth-class-stepper--compact .fth-class-stepper__milestone-label {
-  min-width: 4.75rem;
-  padding-bottom: 0.1rem;
-  letter-spacing: 0.14em;
+  width: 100%;
+  padding-bottom: 0;
 }
 
 .fth-class-stepper--compact .fth-class-stepper__connector {
-  width: 1.75rem;
-  opacity: 0.65;
-  background-image: linear-gradient(90deg, rgba(190, 163, 125, 0.1), rgba(190, 163, 125, 0.68), rgba(190, 163, 125, 0.1));
+  width: 100%;
+  max-width: 5.25rem;
+  opacity: 0.82;
+  background-image: linear-gradient(90deg, rgba(190, 163, 125, 0.06), rgba(226, 192, 132, 0.94), rgba(190, 163, 125, 0.06));
 }
 
 .fth-class-stepper--wide .fth-class-stepper__milestone-label {

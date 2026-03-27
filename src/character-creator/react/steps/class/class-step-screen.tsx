@@ -244,7 +244,7 @@ export function ClassAggregateStepper({
       className={cn(
         "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[#bea37d]/55 text-[#5e4330]",
         isCompactLayout
-          ? "fth-class-stepper--compact max-w-3xl gap-2 pb-3"
+          ? "fth-class-stepper--compact max-w-4xl gap-3 pb-4"
           : "fth-class-stepper--wide max-w-5xl gap-3 pb-4",
       )}
       data-layout-mode={layoutMode}
@@ -252,17 +252,25 @@ export function ClassAggregateStepper({
       transition={{ delay: 0.14, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
     >
       {isCompactLayout ? (
-        <div className="relative z-10 flex flex-col gap-2 px-1">
-          {compactMilestoneRows.map((row, rowIndex) => (
-            <div className="fth-class-stepper__compact-row flex items-center justify-center gap-2.5" key={`compact-row-${rowIndex}`}>
-              {row.map((milestone, index) => (
-                <div className="flex min-w-0 items-center gap-2.5" key={milestone.id}>
-                  <MilestoneNode milestone={milestone} prefersReducedMotion={prefersReducedMotion} compact />
-                  {index < row.length - 1 ? <RailConnector compact /> : null}
+        <div className="relative z-10 flex flex-col gap-3 px-2 md:px-4">
+          {compactMilestoneRows.map((row, rowIndex) => {
+            const [leftMilestone, rightMilestone] = row;
+
+            return (
+              <div
+                className="fth-class-stepper__compact-row grid grid-cols-[minmax(0,1fr)_minmax(2.5rem,0.4fr)_minmax(0,1fr)] items-center gap-3"
+                key={`compact-row-${rowIndex}`}
+              >
+                <div className="flex min-w-0 items-center justify-end">
+                  {leftMilestone ? <MilestoneNode milestone={leftMilestone} prefersReducedMotion={prefersReducedMotion} compact /> : null}
                 </div>
-              ))}
-            </div>
-          ))}
+                <RailConnector compact />
+                <div className="flex min-w-0 items-center justify-start">
+                  {rightMilestone ? <MilestoneNode milestone={rightMilestone} prefersReducedMotion={prefersReducedMotion} compact /> : null}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="relative z-10 flex items-center justify-center gap-3">
@@ -306,14 +314,14 @@ function MilestoneNode({
       animate={prefersReducedMotion ? undefined : getMilestoneAnimate(milestone.status)}
       className={cn(
         "fth-class-stepper__milestone relative flex items-center",
-        compact ? "gap-2" : "gap-2.5",
+        compact ? "w-full gap-2.5" : "gap-2.5",
       )}
       transition={getMilestoneTransition(milestone.status, prefersReducedMotion)}
     >
       <span
         className={cn(
           "relative inline-flex items-center justify-center overflow-hidden rounded-full border shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)]",
-          compact ? "h-9 w-9 text-[0.76rem]" : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base",
+          compact ? "h-11 w-11 shrink-0 text-[0.9rem]" : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base",
           getMilestoneClassName(milestone.status),
         )}
         title={milestone.label}
@@ -331,25 +339,22 @@ function MilestoneNode({
       </span>
       <span
         className={cn(
-          "fth-class-stepper__milestone-label relative pb-1 font-fth-cc-ui uppercase",
+          "fth-class-stepper__milestone-label relative flex min-w-0 pb-1 font-fth-cc-ui uppercase",
           compact
-            ? "min-w-[4.75rem] text-[0.58rem] tracking-[0.14em]"
-            : "min-w-[6.25rem] text-[0.66rem] tracking-[0.18em] md:text-[0.72rem]",
+            ? "flex-1 text-[0.68rem] tracking-[0.16em]"
+            : "text-[0.7rem] tracking-[0.18em] md:text-[0.76rem]",
           getMilestoneLabelClassName(milestone.status),
         )}
       >
-        {milestone.status !== "pending" && milestone.status !== "skipped" ? (
-          <span
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-x-0 bottom-[0.1rem] h-px",
-              milestone.status === "in-progress"
-                ? "bg-[linear-gradient(90deg,rgba(78,140,124,0),rgba(78,140,124,0.82),rgba(78,140,124,0))]"
-                : "bg-[linear-gradient(90deg,rgba(203,152,69,0),rgba(203,152,69,0.82),rgba(203,152,69,0))]",
-            )}
-          />
-        ) : null}
-        <span className="relative z-10">{milestone.label}</span>
+        <span
+          className={cn(
+            "relative z-10 inline-flex min-w-0 items-center rounded-full border px-2.5 py-1 shadow-[0_10px_22px_rgba(0,0,0,0.16)] backdrop-blur-sm",
+            compact ? "min-h-[2.85rem] w-full justify-center px-3.5 py-1.5 text-center leading-tight" : "min-h-[2.1rem] items-center",
+            getMilestoneLabelSurfaceClassName(milestone.status),
+          )}
+        >
+          <span className="min-w-0 truncate">{milestone.label}</span>
+        </span>
       </span>
     </motion.div>
   );
@@ -366,29 +371,14 @@ function SubstepChip({
     <motion.div
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       className={cn(
-        "relative inline-flex items-center gap-1.5 px-1 py-1.5",
-        step.active
-          ? "text-[#1d453b]"
-          : step.status === "complete"
-            ? "text-[#5c3c16]"
-            : "text-[#6a4f3c]",
+        "relative inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-[0_10px_20px_rgba(0,0,0,0.16)] backdrop-blur-sm",
+        getSubstepChipClassName(step),
       )}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
       title={step.label}
     >
-      <i className={cn(step.icon, "text-[0.68rem]")} aria-hidden="true" />
-      <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] md:text-[0.62rem]">{step.label}</span>
-      {step.status !== "pending" ? (
-        <span
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-0 h-px",
-            step.active
-              ? "bg-[linear-gradient(90deg,rgba(78,140,124,0),rgba(78,140,124,0.82),rgba(78,140,124,0))]"
-              : "bg-[linear-gradient(90deg,rgba(203,152,69,0),rgba(203,152,69,0.82),rgba(203,152,69,0))]",
-          )}
-        />
-      ) : null}
+      <i className={cn(step.icon, "text-[0.74rem]")} aria-hidden="true" />
+      <span className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.14em] md:text-[0.66rem]">{step.label}</span>
     </motion.div>
   );
 }
@@ -456,7 +446,7 @@ function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
     case "selection-active":
       return "border-[#bf8b37] bg-[radial-gradient(circle_at_35%_28%,#fff4d6,#f1d18a_52%,#cb9643)] text-[#5b3816]";
     case "in-progress":
-      return "border-[#4c9180] bg-[radial-gradient(circle_at_35%_28%,#f2fffb,#c6ebe1_42%,#67b19f)] text-[#173931]";
+      return "border-[#c59b5c] bg-[radial-gradient(circle_at_35%_28%,#fff5df,#ead1a2_42%,#d2a25d)] text-[#543419]";
     case "complete":
     case "collapsed-complete":
       return "border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] text-[#4b3114]";
@@ -472,7 +462,7 @@ function getMilestoneHaloClassName(status: ClassAggregatePresentationStatus) {
     case "selection-active":
       return "bg-[radial-gradient(circle,rgba(219,177,94,0.28),rgba(219,177,94,0))]";
     case "in-progress":
-      return "bg-[radial-gradient(circle,rgba(89,177,154,0.3),rgba(89,177,154,0))]";
+      return "bg-[radial-gradient(circle,rgba(229,187,108,0.24),rgba(229,187,108,0))]";
     case "complete":
     case "collapsed-complete":
       return "bg-[radial-gradient(circle,rgba(214,169,77,0.18),rgba(214,169,77,0))]";
@@ -484,15 +474,43 @@ function getMilestoneHaloClassName(status: ClassAggregatePresentationStatus) {
 function getMilestoneLabelClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return "text-[#6b4722]";
+      return "text-[#f8e8c8]";
     case "in-progress":
-      return "text-[#295247]";
+      return "text-[#f8e6c4]";
     case "complete":
     case "collapsed-complete":
-      return "text-[#7c5a31]";
+      return "text-[#f4dfb6]";
     default:
-      return "text-[#8d7257]";
+      return "text-[#f2e4ca]";
   }
+}
+
+function getMilestoneLabelSurfaceClassName(status: ClassAggregatePresentationStatus) {
+  switch (status) {
+    case "selection-active":
+      return "border-[#d9ab63]/65 bg-[linear-gradient(180deg,rgba(104,65,27,0.82),rgba(53,33,17,0.92))]";
+    case "in-progress":
+      return "border-[#d3ab6c]/55 bg-[linear-gradient(180deg,rgba(90,58,29,0.8),rgba(43,28,16,0.92))]";
+    case "complete":
+    case "collapsed-complete":
+      return "border-[#d0a35a]/46 bg-[linear-gradient(180deg,rgba(84,55,27,0.78),rgba(42,28,17,0.9))]";
+    case "skipped":
+      return "border-white/12 bg-[rgba(255,255,255,0.05)]";
+    default:
+      return "border-white/12 bg-[rgba(255,255,255,0.06)]";
+  }
+}
+
+function getSubstepChipClassName(step: ClassAggregateSubstepNode) {
+  if (step.active) {
+    return "border-[#d5ae71]/55 bg-[linear-gradient(180deg,rgba(92,59,29,0.8),rgba(43,28,16,0.92))] text-[#f7e5c2]";
+  }
+
+  if (step.status === "complete") {
+    return "border-[#c89d56]/42 bg-[linear-gradient(180deg,rgba(77,50,25,0.74),rgba(39,26,15,0.86))] text-[#edd8b0]";
+  }
+
+  return "border-white/12 bg-[rgba(255,255,255,0.06)] text-[#ead9bb]";
 }
 
 function ClassCard({
