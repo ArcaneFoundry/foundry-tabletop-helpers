@@ -16,6 +16,9 @@ const buildSoundscapeApiMock = vi.fn(() => ({
     getLibrary: vi.fn(),
     resolve: vi.fn(),
     openStudio: vi.fn(),
+    syncMusic: vi.fn(async () => ({})),
+    stopMusic: vi.fn(async () => {}),
+    getMusicState: vi.fn(() => ({})),
   },
 }));
 
@@ -77,6 +80,9 @@ describe("fth api", () => {
     api.soundscapes.getLibrary();
     api.soundscapes.resolve();
     api.soundscapes.openStudio();
+    await api.soundscapes.syncMusic();
+    await api.soundscapes.stopMusic();
+    api.soundscapes.getMusicState();
 
     expect(setLevelMock).toHaveBeenCalledWith("debug");
     expect(openAssetManagerMock).toHaveBeenCalledTimes(1);
