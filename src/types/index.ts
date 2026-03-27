@@ -13,6 +13,7 @@ export type {
   FoundryCollection,
   FoundrySettings,
   FoundryScene,
+  FoundryCombat,
   FoundryPlaylist,
   FoundryPlaylistSound,
   FoundryAudioSound,
@@ -27,6 +28,8 @@ export type {
   NotificationOptions,
   FoundryUI,
   FoundryHooks,
+  CalendariaApi,
+  CalendariaWeatherState,
 } from "./foundry";
 
 // Type guards and accessors

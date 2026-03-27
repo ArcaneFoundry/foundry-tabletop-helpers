@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type HookCallback = (...args: unknown[]) => void;
 type SceneLike = { id: string; active?: boolean; darkness?: number };
-type CombatLike = { id: string; active?: boolean; started?: boolean };
+type CombatLike = { id: string; active?: boolean; started?: boolean; round?: number | null; turn?: number | null };
 
 const resolveStoredSoundscapeStateMock = vi.fn();
 const syncResolvedSoundscapeMusicMock = vi.fn(async () => undefined);
@@ -51,6 +51,8 @@ function setWorld({
   sceneActive = true,
   combatActive = false,
   combatStarted = false,
+  combatRound = null,
+  combatTurn = null,
   calendariaActive = false,
   calendariaApi = null,
 }: {
@@ -58,11 +60,19 @@ function setWorld({
   sceneActive?: boolean;
   combatActive?: boolean;
   combatStarted?: boolean;
+  combatRound?: number | null;
+  combatTurn?: number | null;
   calendariaActive?: boolean;
   calendariaApi?: typeof currentCalendariaApi;
 } = {}): void {
   currentScene = { id: "scene-1", active: sceneActive, darkness: sceneDarkness };
-  currentCombat = { id: "combat-1", active: combatActive, started: combatStarted };
+  currentCombat = {
+    id: "combat-1",
+    active: combatActive,
+    started: combatStarted,
+    round: combatRound,
+    turn: combatTurn,
+  };
   currentCalendariaActive = calendariaActive;
   currentCalendariaApi = calendariaApi;
 
@@ -192,6 +202,25 @@ describe("soundscape trigger service", () => {
     expect(syncResolvedSoundscapeAmbienceMock).toHaveBeenCalledTimes(3);
   });
 
+  it("does not treat an active but unstarted combat as in-combat", async () => {
+    setWorld({
+      combatActive: true,
+      combatStarted: false,
+      combatRound: null,
+      combatTurn: null,
+    });
+    const mod = await loadService();
+
+    await mod.startSoundscapeTriggerService();
+
+    expect(resolveStoredSoundscapeStateMock).toHaveBeenCalledWith("scene-1", expect.objectContaining({
+      inCombat: false,
+    }));
+    expect(mod.getSoundscapeTriggerContext()).toEqual(expect.objectContaining({
+      inCombat: false,
+    }));
+  });
+
   it("prefers Calendaria hooks and API data over core scene darkness", async () => {
     setWorld({
       sceneDarkness: 0.9,
@@ -265,6 +294,34 @@ describe("soundscape trigger service", () => {
       timeOfDay: "day",
       weather: "clear",
     });
+  });
+
+  it("ignores Calendaria visual-only weather previews", async () => {
+    setWorld({
+      calendariaActive: true,
+      calendariaApi: {
+        isDaytime: () => true,
+        isNighttime: () => false,
+        getCurrentWeather: () => ({ key: "clear" }),
+      },
+    });
+    const mod = await loadService();
+
+    await mod.startSoundscapeTriggerService();
+    registeredHooks.get("calendaria.weatherChange")?.({
+      visualOnly: true,
+      current: { key: "storm" },
+    });
+    await flushMicrotasks();
+
+    expect(mod.getSoundscapeTriggerContext()).toEqual({
+      manualPreview: false,
+      inCombat: false,
+      timeOfDay: "day",
+      weather: "clear",
+    });
+    expect(syncResolvedSoundscapeMusicMock).toHaveBeenCalledTimes(1);
+    expect(syncResolvedSoundscapeAmbienceMock).toHaveBeenCalledTimes(1);
   });
 
   it("cleans up hooks and resets context on stop", async () => {

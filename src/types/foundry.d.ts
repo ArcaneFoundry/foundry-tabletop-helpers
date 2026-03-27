@@ -179,6 +179,8 @@ export interface FoundryScene extends FoundryDocument {
 export interface FoundryCombat extends FoundryDocument {
   active?: boolean;
   started?: boolean;
+  round?: number | null;
+  turn?: number | null;
 }
 
 export interface FoundryPlaylistSound extends FoundryDocument {
