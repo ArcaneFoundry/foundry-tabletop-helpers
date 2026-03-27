@@ -49,6 +49,8 @@ describe("ClassSelectionGalleryPane", () => {
     expect(markup).toContain("cc-class-selection-pane__intro");
     expect(markup).toContain("cc-class-selection-pane__gallery-scroll");
     expect(markup).toContain("cc-class-selection-pane__gallery-shadow");
+    expect(markup).toContain("cc-class-selection-pane__gallery-inner");
+    expect(markup).toContain("pt-3");
     expect(markup).toContain('data-scroll-region="class-gallery"');
     expect(markup).toContain('data-scroll-shadow="false"');
     expect(markup.match(/overflow-y-auto/g)).toHaveLength(1);
