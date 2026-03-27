@@ -237,6 +237,52 @@ describe("step class", () => {
     expect((viewModel.entries as Array<Record<string, string>>)[0]?.primaryAbilityText).toBe("Intelligence");
   });
 
+  it("hydrates saving throw badge text from trait advancements that use the PHB plural title shape", async () => {
+    const { createClassStep } = await import("./step-class");
+    const step = createClassStep();
+
+    fetchDocumentMock.mockResolvedValueOnce({
+      system: {
+        description: {
+          value: "<p>Fury and endurance.</p>",
+        },
+        hitDice: "d12",
+        advancement: [
+          {
+            type: "Trait",
+            title: "Saving Throws Proficiencies",
+            level: 1,
+            classRestriction: "primary",
+            configuration: {
+              grants: ["saves:str", "saves:con"],
+            },
+          },
+        ],
+      },
+    });
+
+    const viewModel = await step.buildViewModel(makeState({
+      selections: {
+        class: {
+          uuid: "Compendium.class.fighter",
+          name: "Fighter",
+          img: "fighter.png",
+          identifier: "fighter",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: false,
+          spellcastingAbility: "",
+          spellcastingProgression: "",
+        },
+      },
+    }));
+
+    expect((viewModel.entries as Array<Record<string, string>>)[0]).toMatchObject({
+      savingThrowText: "Strength / Constitution",
+      savingThrowBadgeText: "STR / CON",
+    });
+  });
+
   it("exposes enabled classes through the internal helper", async () => {
     const { __classStepInternals } = await import("./step-class");
     const entries = __classStepInternals.getAvailableClasses(makeState({
@@ -389,6 +435,21 @@ describe("step class", () => {
             level: 14,
             configuration: {
               grants: ["saves:wis"],
+            },
+          },
+        ],
+      },
+    })).toEqual(["str", "con"]);
+    expect(__classStepInternals.getSavingThrowProficiencies({
+      system: {
+        advancement: [
+          {
+            type: "Trait",
+            title: "Saving Throws Proficiencies",
+            level: 1,
+            classRestriction: "primary",
+            configuration: {
+              grants: ["saves:str", "saves:con"],
             },
           },
         ],

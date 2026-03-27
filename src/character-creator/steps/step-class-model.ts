@@ -88,6 +88,14 @@ function formatTraitLabel(value: string): string {
     .join(" ");
 }
 
+function isSavingThrowTraitTitle(title: string): boolean {
+  return new Set([
+    "saving throws",
+    "saving throw proficiencies",
+    "saving throws proficiencies",
+  ]).has(title);
+}
+
 export function getSavingThrowProficiencies(doc: ClassDocumentLike | null): AbilityKey[] {
   const saves = doc?.system?.saves;
   if (Array.isArray(saves)) {
@@ -112,7 +120,7 @@ export function getSavingThrowProficiencies(doc: ClassDocumentLike | null): Abil
       const title = typeof entry.title === "string" ? entry.title.trim().toLowerCase() : "";
       const level = typeof entry.level === "number" ? entry.level : null;
       const classRestriction = entry.classRestriction;
-      return (title === "saving throws" || title === "saving throw proficiencies")
+      return isSavingThrowTraitTitle(title)
         && level === 1
         && classRestriction !== "secondary";
     })
