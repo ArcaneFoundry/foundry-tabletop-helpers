@@ -5,7 +5,13 @@ import type {
   AbilityScoreMethod,
   ReactWizardStepProps,
 } from "../../../character-creator-types";
-import { ABILITY_KEYS, POINT_BUY_BUDGET, POINT_BUY_MAX, POINT_BUY_MIN, STANDARD_ARRAY } from "../../../data/dnd5e-constants";
+import {
+  ABILITY_KEYS,
+  POINT_BUY_BUDGET,
+  POINT_BUY_MAX,
+  POINT_BUY_MIN,
+  STANDARD_ARRAY,
+} from "../../../data/dnd5e-constants";
 import {
   createAbilityStateForMethod,
   defaultAssignments,
@@ -71,26 +77,33 @@ const METHOD_COPY: Record<AbilityScoreMethod, {
     eyebrow: "Ritual / Dice-Driven",
     title: "Roll 4d6",
     summary: "Forge the six scores by chance, then assign the results one by one.",
-    detail: "Let the dice decide the shape of the build. Roll the full array, then place each value where it belongs.",
+    detail:
+      "Let the dice decide the shape of the build. Roll the full array, then place each value where it belongs.",
     inactive: "Open the ritual dice path.",
   },
   pointBuy: {
     eyebrow: "Budget / Tuning-Driven",
     title: "Point Buy",
     summary: "Spend 27 points deliberately. Every increase should feel like a choice.",
-    detail: "Tune the six abilities with a visible budget. The remaining pool should stay readable as you push any score upward.",
+    detail:
+      "Tune the six abilities with a visible budget. The remaining pool should stay readable as you push any score upward.",
     inactive: "Refine the build with a budget.",
   },
   standardArray: {
     eyebrow: "Disciplined Allocation",
     title: "Standard Array",
     summary: "Place the fixed array into the six abilities and keep the distribution clean.",
-    detail: "Use the established 15, 14, 13, 12, 10, 8 spread to lock in a balanced starting profile.",
+    detail:
+      "Use the established 15, 14, 13, 12, 10, 8 spread to lock in a balanced starting profile.",
     inactive: "Lock in the fixed array.",
   },
 };
 
-export function AbilityScoresStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
+export function AbilityScoresStepScreen({
+  shellContext,
+  state,
+  controller,
+}: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as AbilityStepViewModel | undefined;
   if (!viewModel) return null;
 
@@ -98,7 +111,10 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
   const selectedMethod = METHOD_COPY[viewModel.method];
   const isAssignmentMode = viewModel.isAssignment;
   const assignedCount = isAssignmentMode
-    ? ABILITY_KEYS.reduce((count, key) => count + (current.assignments[key] >= 0 ? 1 : 0), 0)
+    ? ABILITY_KEYS.reduce(
+        (count, key) => count + (current.assignments[key] >= 0 ? 1 : 0),
+        0,
+      )
     : 0;
   const openCount = isAssignmentMode ? ABILITY_KEYS.length - assignedCount : 0;
 
@@ -133,7 +149,10 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
     });
   };
 
-  const handleAssignmentChange = (key: AbilityKey, event: ChangeEvent<HTMLSelectElement>) => {
+  const handleAssignmentChange = (
+    key: AbilityKey,
+    event: ChangeEvent<HTMLSelectElement>,
+  ) => {
     const nextIndex = Number(event.target.value);
     const pool = current.method === "4d6" ? (current.rolledValues ?? []) : [...STANDARD_ARRAY];
     const nextAssignments = {
@@ -253,7 +272,9 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                 </button>
                 <span className="cc-roll-controls__state">
                   {viewModel.hasRolled
-                    ? (openCount > 0 ? `${openCount} values still open` : "Results ready for assignment")
+                    ? openCount > 0
+                      ? `${openCount} values still open`
+                      : "Results ready for assignment"
                     : "No rolls yet"}
                 </span>
               </div>
@@ -296,8 +317,12 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                     "cc-ability-card",
                     isAssigned ? "cc-ability-card--selected" : "",
                     isAssignmentMode ? "cc-ability-card--assignment" : "",
-                  ].filter(Boolean).join(" ")}
-                  data-assignment-state={isAssignmentMode ? (isAssigned ? "assigned" : "open") : "point-buy"}
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  data-assignment-state={
+                    isAssignmentMode ? (isAssigned ? "assigned" : "open") : "point-buy"
+                  }
                   key={ability.key}
                 >
                   <div className="cc-ability-card__header">
@@ -309,7 +334,9 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                       <div
                         className={[
                           "cc-ability-card__state",
-                          isAssigned ? "cc-ability-card__state--assigned" : "cc-ability-card__state--open",
+                          isAssigned
+                            ? "cc-ability-card__state--assigned"
+                            : "cc-ability-card__state--open",
                         ].join(" ")}
                       >
                         {isAssigned ? "Assigned" : "Open"}
@@ -329,7 +356,9 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                       <span className="cc-ability-card__bonus-plus">+</span>
                       <span className="cc-ability-card__bonus-pill">{ability.backgroundBonus}</span>
                       <span className="cc-ability-card__bonus-eq">=</span>
-                      <span className="cc-ability-card__bonus-pill cc-ability-card__bonus-pill--total">{ability.total}</span>
+                      <span className="cc-ability-card__bonus-pill cc-ability-card__bonus-pill--total">
+                        {ability.total}
+                      </span>
                     </div>
                   ) : (
                     <div className="cc-ability-card__bonus cc-ability-card__bonus--base-only">
@@ -358,7 +387,9 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                     </div>
                   ) : isAssignmentMode ? (
                     <div className="cc-ability-card__assignment-note">
-                      {isAssigned ? "Chosen from the pool below." : "Awaiting assignment from the pool below."}
+                      {isAssigned
+                        ? "Chosen from the pool below."
+                        : "Awaiting assignment from the pool below."}
                     </div>
                   ) : null}
                 </article>
@@ -379,19 +410,26 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
               </div>
               <p className="cc-assignments__hint">
                 {viewModel.isRoll
-                  ? (viewModel.hasRolled ? "Assign each rolled value to an ability score." : "Roll your ability scores, then assign them below.")
+                  ? viewModel.hasRolled
+                    ? "Assign each rolled value to an ability score."
+                    : "Roll your ability scores, then assign them below."
                   : "Assign each value from the standard array (15, 14, 13, 12, 10, 8) to an ability score."}
               </p>
-              {(viewModel.hasRolled || viewModel.isStandardArray) ? (
+              {viewModel.hasRolled || viewModel.isStandardArray ? (
                 <div className="cc-assignment-grid">
                   {viewModel.assignmentOptions.map((assignment) => (
                     <div className="cc-assignment-row" key={assignment.key}>
                       <div className="cc-assignment-row__meta">
-                        <label className="cc-assignment-row__label" htmlFor={`ability-assignment-${assignment.key}`}>
+                        <label
+                          className="cc-assignment-row__label"
+                          htmlFor={`ability-assignment-${assignment.key}`}
+                        >
                           {assignment.label}
                         </label>
                         <div className="cc-assignment-row__hint">
-                          {assignment.currentIdx >= 0 ? "Chosen from the pool below." : "Choose a score from the pool below."}
+                          {assignment.currentIdx >= 0
+                            ? "Chosen from the pool below."
+                            : "Choose a score from the pool below."}
                         </div>
                       </div>
                       <div className="cc-assignment-row__control">
@@ -415,10 +453,14 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                         <div
                           className={[
                             "cc-assignment-row__state",
-                            assignment.currentIdx >= 0 ? "cc-assignment-row__state--assigned" : "cc-assignment-row__state--open",
+                            assignment.currentIdx >= 0
+                              ? "cc-assignment-row__state--assigned"
+                              : "cc-assignment-row__state--open",
                           ].join(" ")}
                         >
-                          {assignment.currentIdx >= 0 ? `Value ${assignment.options[assignment.currentIdx]?.value ?? "?"}` : "Open"}
+                          {assignment.currentIdx >= 0
+                            ? `Value ${assignment.options[assignment.currentIdx]?.value ?? "?"}`
+                            : "Open"}
                         </div>
                       </div>
                     </div>
