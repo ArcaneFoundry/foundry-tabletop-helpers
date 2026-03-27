@@ -39,6 +39,23 @@ function splitSpeciesName(name: string): [string, string] {
   return [name.slice(0, commaIdx).trim(), name.slice(commaIdx + 1).trim()];
 }
 
+function summarizeDescription(descriptionHtml: string | null | undefined): string {
+  if (!descriptionHtml) return "";
+  const text = descriptionHtml
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "";
+  return text.length > 150 ? `${text.slice(0, 147).trimEnd()}...` : text;
+}
+
+function summarizeTraits(traits: string[]): string {
+  const visibleTraits = Array.from(new Set(traits)).filter(Boolean).slice(0, 3);
+  if (visibleTraits.length === 0) return "";
+  return `Traits: ${visibleTraits.join(", ")}`;
+}
+
 export async function buildSpeciesSelectionFromEntry(
   entry: CreatorIndexEntry,
 ): Promise<SpeciesSelection> {
@@ -86,6 +103,20 @@ export function createSpeciesStep(): WizardStepDefinition {
       await compendiumIndexer.loadPacks(state.config.packSources);
       const entries = getAvailableSpecies(state);
       const selected = state.selections.species;
+      const entryDetails = await Promise.all(entries.map(async (entry) => {
+        const [description, doc] = await Promise.all([
+          compendiumIndexer.getCachedDescription(entry.uuid),
+          compendiumIndexer.fetchDocument(entry.uuid),
+        ]);
+
+        const traits = doc ? Array.from(new Set(parseSpeciesTraits(doc))) : [];
+        return {
+          uuid: entry.uuid,
+          blurb: summarizeDescription(description) || summarizeTraits(traits),
+          traits,
+        };
+      }));
+      const detailsByUuid = new Map(entryDetails.map((entry) => [entry.uuid, entry] as const));
 
       // Sort entries so species with comma-separated names (e.g., "Tiefling, Abyssal")
       // are grouped by their base name, then sorted by subname within the group.
@@ -109,6 +140,8 @@ export function createSpeciesStep(): WizardStepDefinition {
         entries: sorted.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
+          blurb: detailsByUuid.get(e.uuid)?.blurb ?? "",
+          traits: detailsByUuid.get(e.uuid)?.traits ?? [],
         })),
         hasEntries: entries.length > 0,
         emptyMessage: "No species available. Check your GM configuration.",

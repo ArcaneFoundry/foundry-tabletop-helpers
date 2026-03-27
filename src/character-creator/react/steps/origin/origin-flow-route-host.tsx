@@ -2,9 +2,7 @@ import { useEffect, useMemo } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import type {
-  CreatorIndexEntry,
   ReactWizardStepProps,
-  WizardState,
 } from "../../../character-creator-types";
 import { cn } from "../../../../ui/lib/cn";
 import { buildOriginFlowShellModel } from "./build-origin-flow-shell-model";
@@ -13,7 +11,6 @@ import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp
 import { ClassAggregateStepper } from "../class/class-step-screen";
 import { getClassTheme } from "../class/class-presentation";
 import { useClassStepperLayoutMode } from "../class/class-stepper-layout";
-import { buildSpeciesSelectionFromEntry } from "../../../steps/step-species";
 import {
   buildEmptySpeciesChoicesState,
   getAvailableSpeciesSkillOptions,
@@ -24,12 +21,11 @@ import {
 } from "../../../steps/origin-flow-utils";
 import {
   CompactMetaChips,
-  EmptySelectionState,
   HeaderFlourish,
   HeroPortraitCard,
   type OriginPaneProps,
+  EmptySelectionState,
   SectionHeading,
-  SelectionPane,
   SelectionPip,
   StatCard,
   SummaryListCard,
@@ -39,12 +35,7 @@ import { BackgroundSelectionPane } from "./panes/background-selection-pane";
 import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
 import { LanguageChoicesPane } from "./panes/language-choices-pane";
 import { OriginFeatPane } from "./panes/origin-feat-pane";
-
-type SpeciesStepViewModel = {
-  entries: Array<CreatorIndexEntry & { selected?: boolean; blurb?: string }>;
-  selectedEntry?: (CreatorIndexEntry & { description?: string }) | null;
-  emptyMessage?: string;
-};
+import { SpeciesSelectionPane } from "./panes/species-selection-pane";
 
 type BackgroundLanguagesViewModel = {
   title: string;
@@ -281,105 +272,6 @@ export function OriginFlowRouteHost(
   );
 }
 
-function SpeciesSelectionPane({ shellContext, state, controller }: OriginPaneProps) {
-  const viewModel = shellContext.stepViewModel as SpeciesStepViewModel | undefined;
-  const entries = viewModel?.entries ?? [];
-  const selectedUuid = state.selections.species?.uuid ?? null;
-  const prefersReducedMotion = useReducedMotion() ?? false;
-
-  return (
-    <SelectionPane
-      description="Choose the lineage, ancestry, or folk your adventurer carries into the world."
-      emptyState={
-        <div className="rounded-[1.1rem] border border-dashed border-[#e9c176]/30 bg-[rgba(19,17,23,0.72)] px-4 py-5 font-fth-cc-body text-[#d1c4c6]">
-          {viewModel?.emptyMessage ?? "No species available."}
-        </div>
-      }
-      entries={entries}
-      eyebrow="Lineage"
-      getEntryKey={(entry) => entry.uuid}
-      prefersReducedMotion={prefersReducedMotion}
-      renderEntry={(entry) => {
-        const selected = selectedUuid === entry.uuid;
-        return (
-          <motion.button
-            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-            className={cn(
-              "group relative overflow-hidden rounded-[1.05rem] border bg-[linear-gradient(180deg,#6e4b31_0%,#3f291d_9%,#241711_100%)] p-[0.22rem] text-left shadow-[0_18px_34px_rgba(66,40,21,0.3)] transition duration-200 hover:brightness-[1.03] hover:shadow-[0_24px_40px_rgba(66,40,21,0.36)]",
-              selected
-                ? "border-[#d4b06c] shadow-[0_0_0_2px_rgba(212,176,108,0.36),0_0_24px_rgba(212,176,108,0.22),0_24px_42px_rgba(64,37,20,0.42)]"
-                : "border-[#6e4b30]",
-            )}
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-            onClick={() => {
-              void (async () => {
-                const selection = await buildSpeciesSelectionFromEntry(entry);
-                const stagedState = {
-                  ...state,
-                  selections: {
-                    ...state.selections,
-                    species: selection,
-                  },
-                } as WizardState;
-                state.selections.speciesChoices = buildEmptySpeciesChoicesState(stagedState);
-                controller.updateCurrentStepData(selection);
-              })();
-            }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            type="button"
-            whileHover={prefersReducedMotion ? undefined : { scale: 1.015, y: -2 }}
-            whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-          >
-            <div className="pointer-events-none absolute inset-[0.2rem] rounded-[0.78rem] border border-[#d9b074]/22 shadow-[inset_0_1px_0_rgba(255,240,219,0.14)]" />
-            <div className="pointer-events-none absolute inset-x-[0.42rem] top-[0.32rem] h-8 rounded-full bg-[linear-gradient(180deg,rgba(255,244,216,0.18),rgba(255,244,216,0))]" />
-            <div className="absolute inset-x-1 top-1 z-10 rounded-[0.72rem_0.72rem_0.25rem_0.25rem] border border-[#a27747]/65 bg-[linear-gradient(180deg,#6d452f_0%,#3a2318_100%)] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,235,204,0.24),0_4px_10px_rgba(0,0,0,0.18)]">
-              <div className="pointer-events-none absolute inset-x-2 top-0 h-px bg-[rgba(255,238,207,0.52)]" />
-              <div className="pointer-events-none absolute left-1 top-1 h-3 w-3 rounded-tl-[0.4rem] border-l border-t border-[#e1bc79]/55" />
-              <div className="pointer-events-none absolute right-1 top-1 h-3 w-3 rounded-tr-[0.4rem] border-r border-t border-[#e1bc79]/55" />
-              <div className="cc-origin-selection-card__title font-fth-cc-display text-center uppercase tracking-[0.04em] text-[#f7e5bf]">
-                {entry.name}
-              </div>
-            </div>
-            <div className="relative overflow-hidden rounded-[0.86rem] border border-[#b68f63]/70 bg-[#20130e] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.12)]">
-              <div className="overflow-hidden aspect-[0.86] pt-[2.9rem]">
-                {entry.img ? (
-                  <img
-                    alt=""
-                    aria-hidden="true"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-                    loading="lazy"
-                    src={entry.img}
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[#f0d2a6]">
-                    <i className="fa-solid fa-dna text-2xl" aria-hidden="true" />
-                  </div>
-                )}
-              </div>
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,247,233,0.08)_0%,transparent_16%,transparent_48%,rgba(18,10,8,0.2)_68%,rgba(10,7,6,0.88)_100%)] shadow-[inset_0_0_0_1px_rgba(240,209,153,0.35)]" />
-              <div className="pointer-events-none absolute left-2 top-2 h-4 w-4 rounded-tl-[0.5rem] border-l border-t border-[#d0a76c]/75" />
-              <div className="pointer-events-none absolute right-2 top-2 h-4 w-4 rounded-tr-[0.5rem] border-r border-t border-[#d0a76c]/75" />
-              <div className="pointer-events-none absolute bottom-2 left-2 h-4 w-4 rounded-bl-[0.5rem] border-b border-l border-[#d0a76c]/75" />
-              <div className="pointer-events-none absolute bottom-2 right-2 h-4 w-4 rounded-br-[0.5rem] border-b border-r border-[#d0a76c]/75" />
-            </div>
-            {selected ? (
-              <motion.div
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#f2d48f]/70 bg-[radial-gradient(circle_at_35%_35%,rgba(247,214,145,0.95),rgba(182,120,38,0.92))] text-white shadow-[0_6px_12px_rgba(0,0,0,0.24)]"
-                initial={{ opacity: 0, scale: 0.72, y: 6 }}
-                transition={{ type: "spring", stiffness: 460, damping: 24, mass: 0.75 }}
-              >
-                <i className="fa-solid fa-check text-[0.8rem]" aria-hidden="true" />
-              </motion.div>
-            ) : null}
-          </motion.button>
-        );
-      }}
-      selectionLabel="Select a Species"
-      title="Species"
-    />
-  );
-}
 
 function SpeciesSkillsPane({ shellContext, state, controller }: OriginPaneProps) {
   const viewModel = shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined;

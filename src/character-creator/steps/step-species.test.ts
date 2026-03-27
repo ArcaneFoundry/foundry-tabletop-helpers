@@ -128,8 +128,17 @@ beforeEach(() => {
       type: "race",
     },
   ]);
-  getCachedDescriptionMock.mockResolvedValue("<p>Species details</p>");
-  parseSpeciesTraitsMock.mockReturnValue(["Darkvision"]);
+  getCachedDescriptionMock.mockImplementation(async (uuid: string) => (
+    uuid === "Compendium.species.elf.high"
+      ? "<p>A graceful people of ancient memory.</p>"
+      : "<p>An adaptable folk of many roads.</p>"
+  ));
+  fetchDocumentMock.mockImplementation(async (uuid: string) => ({ uuid }));
+  parseSpeciesTraitsMock.mockImplementation((doc: { uuid: string }) => (
+    doc.uuid === "Compendium.species.elf.high"
+      ? ["Keen Senses", "Fey Ancestry"]
+      : ["Darkvision", "Versatility"]
+  ));
   parseSpeciesLanguagesMock.mockReturnValue({
     fixed: ["common"],
     choiceCount: 1,
@@ -146,7 +155,7 @@ beforeEach(() => {
 });
 
 describe("step species", () => {
-  it("builds an art-led species view model without description dependencies", async () => {
+  it("builds an art-led species view model with cached descriptions and parsed traits", async () => {
     const { createSpeciesStep } = await import("./step-species");
     const step = createSpeciesStep();
 
@@ -163,9 +172,22 @@ describe("step species", () => {
     }));
 
     expect(loadPacksMock).toHaveBeenCalled();
-    expect((viewModel.entries as Array<{ name: string; blurb?: string }>).map((entry) => entry.name)).toEqual(["Elf, High", "Human"]);
-    expect((viewModel.entries as Array<{ blurb?: string }>).every((entry) => entry.blurb == null)).toBe(true);
-    expect(getCachedDescriptionMock).not.toHaveBeenCalled();
+    expect(fetchDocumentMock).toHaveBeenCalledTimes(2);
+    expect(getCachedDescriptionMock).toHaveBeenCalledTimes(2);
+    expect(parseSpeciesTraitsMock).toHaveBeenCalledTimes(2);
+    expect((viewModel.entries as Array<{ name: string; blurb?: string; traits?: string[] }>).map((entry) => entry.name)).toEqual(["Elf, High", "Human"]);
+    expect(viewModel.entries).toEqual([
+      expect.objectContaining({
+        name: "Elf, High",
+        blurb: "A graceful people of ancient memory.",
+        traits: ["Keen Senses", "Fey Ancestry"],
+      }),
+      expect.objectContaining({
+        name: "Human",
+        blurb: "An adaptable folk of many roads.",
+        traits: ["Darkvision", "Versatility"],
+      }),
+    ]);
     expect(viewModel).toMatchObject({
       hasEntries: true,
       emptyMessage: "No species available. Check your GM configuration.",
@@ -196,7 +218,7 @@ describe("step species", () => {
     expect(setDataSilent).toHaveBeenCalledWith(expect.objectContaining({
       uuid: "Compendium.species.human",
       name: "Human",
-      traits: ["Darkvision"],
+      traits: ["Darkvision", "Versatility"],
       languageGrants: ["common"],
       skillGrants: ["prc"],
     }));
