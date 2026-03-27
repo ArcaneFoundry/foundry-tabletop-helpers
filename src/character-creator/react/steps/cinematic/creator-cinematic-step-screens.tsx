@@ -3,16 +3,13 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import type {
-  AbilityKey,
   CreatorIndexEntry,
-  FeatSelection,
   PortraitSelection,
   ReactWizardStepProps,
   SpellSelection,
   SubclassSelection,
 } from "../../../character-creator-types";
 import { cn } from "../../../../ui/lib/cn";
-import { ABILITY_LABELS } from "../../../data/dnd5e-constants";
 import { buildPortraitPrompt } from "../../../portrait/portrait-prompt-builder";
 import { generatePortraits } from "../../../portrait/portrait-client";
 import type { GeneratedPortrait } from "../../../portrait/portrait-client";
@@ -27,26 +24,6 @@ type SubclassStepViewModel = {
   entries: CinematicSelectionEntry[];
   selectedEntry?: CinematicSelectionEntry | null;
   emptyMessage?: string;
-};
-
-type FeatsStepViewModel = {
-  choice: "asi" | "feat";
-  isAsi: boolean;
-  isFeat: boolean;
-  abilities: Array<{
-    key: AbilityKey;
-    label: string;
-    score: number;
-    modifier: string;
-    selected: boolean;
-    atMax: boolean;
-  }>;
-  asiCount: number;
-  maxAsiPicks: number;
-  feats: CinematicSelectionEntry[];
-  selectedFeat?: CinematicSelectionEntry | null;
-  hasFeats: boolean;
-  emptyMessage: string;
 };
 
 type SpellViewModel = {
@@ -206,156 +183,6 @@ export function SubclassStepScreen({ shellContext, state, controller }: ReactWiz
             </div>
           ) : (
             <ArcaneEmptyState message="Select a specialization to inspect its future path." compact />
-          )}
-        </ArcaneInspectorPanel>
-      </div>
-    </ArcaneStepFrame>
-  );
-}
-
-export function FeatsStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
-  const viewModel = shellContext.stepViewModel as FeatsStepViewModel | undefined;
-  if (!viewModel) return null;
-
-  const currentSelection = state.selections.feats ?? { choice: "asi" as const };
-  const selectedFeat = viewModel.feats.find((entry) => entry.uuid === currentSelection.featUuid) ?? viewModel.selectedFeat ?? null;
-
-  const updateSelection = (selection: FeatSelection, silent = false) => {
-    controller.updateCurrentStepData(selection, silent ? { silent: true } : undefined);
-  };
-
-  const toggleAbility = (abilityKey: AbilityKey) => {
-    const selected = new Set(currentSelection.asiAbilities ?? []);
-    if (selected.has(abilityKey)) selected.delete(abilityKey);
-    else if (selected.size < 2) selected.add(abilityKey);
-    updateSelection({
-      ...currentSelection,
-      choice: "asi",
-      asiAbilities: [...selected],
-    });
-  };
-
-  return (
-    <ArcaneStepFrame scene="ritual">
-      <ArcaneHero
-        eyebrow="Build"
-        title="Shape Your Ascension"
-        description="Choose a feat to deepen your legend, or attune your essence through an ability score improvement."
-      />
-
-      <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(21rem,0.88fr)]">
-        <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
-          <div className="flex flex-wrap gap-3">
-            <ModeToggleButton
-              active={viewModel.isAsi}
-              label="Ability Attunement"
-              onClick={() => updateSelection({ ...currentSelection, choice: "asi", featUuid: undefined, featName: undefined, featImg: undefined })}
-            />
-            <ModeToggleButton
-              active={viewModel.isFeat}
-              label="Feat Catalog"
-              onClick={() => updateSelection({ ...currentSelection, choice: "feat" })}
-            />
-          </div>
-
-          {viewModel.isAsi ? (
-            <div className="mt-5 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <MicroLabel>Attunement Picks</MicroLabel>
-                <ValueBadge>{viewModel.asiCount} / {viewModel.maxAsiPicks}</ValueBadge>
-              </div>
-              {viewModel.abilities.map((ability) => (
-                <div
-                  className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.22)]"
-                  key={ability.key}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{ability.label}</div>
-                      <div className="mt-1 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">
-                        Current score {ability.score} • modifier {ability.modifier}
-                      </div>
-                    </div>
-                    <button
-                      className={cn(
-                        "rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em] transition",
-                        ability.selected
-                          ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d5a84d)] text-[#38260f]"
-                          : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e4ddd8] hover:border-[#e9c176]/45",
-                        ability.atMax && !ability.selected && "opacity-45",
-                      )}
-                      disabled={ability.atMax && !ability.selected}
-                      onClick={() => toggleAbility(ability.key)}
-                      type="button"
-                    >
-                      {ability.selected ? "Attuned" : ability.atMax ? "At Maximum" : "Select"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-3">
-              {viewModel.hasFeats ? viewModel.feats.map((entry) => {
-                const checked = entry.uuid === currentSelection.featUuid;
-                return (
-                  <button
-                    className={cn(
-                      "group relative overflow-hidden rounded-[1.35rem] border p-3 text-left transition",
-                      checked
-                        ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(70,45,67,0.86),rgba(28,22,34,0.96))] shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_18px_36px_rgba(0,0,0,0.22)]"
-                        : "border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] hover:border-[#e9c176]/45",
-                    )}
-                    key={entry.uuid}
-                    onClick={() => updateSelection({
-                      choice: "feat",
-                      featUuid: entry.uuid,
-                      featName: entry.name,
-                      featImg: entry.img,
-                    })}
-                    type="button"
-                  >
-                    <div className="grid grid-cols-[4.7rem_minmax(0,1fr)_auto] items-center gap-3">
-                      <img alt={entry.name} className="h-[4.7rem] w-[4.7rem] rounded-[1rem] object-cover" src={entry.img} />
-                      <div className="min-w-0">
-                        <div className="font-fth-cc-display text-[1.2rem] text-[#f4e7cf]">{entry.name}</div>
-                        <div className="mt-2 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
-                          {entry.packLabel}
-                        </div>
-                      </div>
-                      <SelectionSigil checked={checked} />
-                    </div>
-                  </button>
-                );
-              }) : <ArcaneEmptyState message={viewModel.emptyMessage} />}
-            </div>
-          )}
-        </ArcaneScrollPanel>
-
-        <ArcaneInspectorPanel
-          title={viewModel.isAsi ? "Attunement Summary" : (selectedFeat?.name ?? "Feat Details")}
-          eyebrow={viewModel.isAsi ? "Ability Scores" : "Selected Feat"}
-        >
-          {viewModel.isAsi ? (
-            <div className="space-y-3">
-              <ValueBadge>{viewModel.asiCount} of {viewModel.maxAsiPicks} picks chosen</ValueBadge>
-              <div className="flex flex-wrap gap-2">
-                {(currentSelection.asiAbilities ?? []).length > 0 ? (currentSelection.asiAbilities ?? []).map((ability) => (
-                  <TokenPill key={ability}>{ABILITY_LABELS[ability]}</TokenPill>
-                )) : <TokenPill muted>Choose one or two abilities</TokenPill>}
-              </div>
-              <p className="font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
-                Ability attunement keeps the build grounded in your core scores. Choose one ability twice or two different abilities once each, following the existing feat/ASI rules already enforced by the creator.
-              </p>
-            </div>
-          ) : selectedFeat ? (
-            <div className="space-y-4">
-              <img alt={selectedFeat.name} className="h-56 w-full rounded-[1.25rem] object-cover" src={selectedFeat.img} />
-              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">{selectedFeat.packLabel}</div>
-              <div className="font-fth-cc-display text-[1.3rem] text-[#f4e7cf]">{selectedFeat.name}</div>
-            </div>
-          ) : (
-            <ArcaneEmptyState message="Choose a feat to inspect the artifact you are binding into the build." compact />
           )}
         </ArcaneInspectorPanel>
       </div>

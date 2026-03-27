@@ -23,75 +23,6 @@ vi.mock("../data/pack-analysis", () => ({
   isEntryRelevantForWorkflow: isEntryRelevantForWorkflowMock,
 }));
 
-class FakeClassList {
-  private readonly values = new Set<string>();
-
-  toggle(token: string, force?: boolean): boolean {
-    if (force === true) {
-      this.values.add(token);
-      return true;
-    }
-    if (force === false) {
-      this.values.delete(token);
-      return false;
-    }
-    if (this.values.has(token)) {
-      this.values.delete(token);
-      return false;
-    }
-    this.values.add(token);
-    return true;
-  }
-
-  contains(token: string): boolean {
-    return this.values.has(token);
-  }
-}
-
-class FakeElement {
-  dataset: Record<string, string> = {};
-  textContent: string | null = null;
-  classList = new FakeClassList();
-  private readonly listeners = new Map<string, Array<() => void>>();
-  private readonly selectorMap = new Map<string, FakeElement | null>();
-  private readonly selectorAllMap = new Map<string, FakeElement[]>();
-  private readonly attrs = new Map<string, string>();
-
-  addEventListener(event: string, handler: () => void): void {
-    const list = this.listeners.get(event) ?? [];
-    list.push(handler);
-    this.listeners.set(event, list);
-  }
-
-  trigger(event: string): void {
-    for (const handler of this.listeners.get(event) ?? []) handler();
-  }
-
-  querySelector(selector: string): FakeElement | null {
-    return this.selectorMap.get(selector) ?? null;
-  }
-
-  querySelectorAll(selector: string): FakeElement[] {
-    return this.selectorAllMap.get(selector) ?? [];
-  }
-
-  setQuerySelector(selector: string, value: FakeElement | null): void {
-    this.selectorMap.set(selector, value);
-  }
-
-  setQuerySelectorAll(selector: string, values: FakeElement[]): void {
-    this.selectorAllMap.set(selector, values);
-  }
-
-  setAttribute(name: string, value: string): void {
-    this.attrs.set(name, value);
-  }
-
-  getAttribute(name: string): string | null {
-    return this.attrs.get(name) ?? null;
-  }
-}
-
 function makeState(overrides: Partial<WizardState> = {}): WizardState {
   return {
     currentStep: 0,
@@ -143,7 +74,6 @@ function makeState(overrides: Partial<WizardState> = {}): WizardState {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as Record<string, unknown>).Element = FakeElement;
   getPackAnalysisMapMock.mockResolvedValue(new Map([
     ["pack.feats", { collection: "pack.feats" }],
   ]));
@@ -176,6 +106,7 @@ describe("step feats", () => {
 
     expect(step.renderMode).toBe("react");
     expect(step.reactComponent).toBeTypeOf("function");
+    expect(step.onActivate).toBeUndefined();
   });
 
   it("stays applicable once the creator has crossed the first feat or ASI level", async () => {
@@ -211,6 +142,33 @@ describe("step feats", () => {
     expect((viewModel.feats as Array<{ name: string }>).map((feat) => feat.name)).toEqual(["Alert", "Tough"]);
   });
 
+  it("marks feat and attunement completion using the existing selection rules", async () => {
+    const { createFeatsStep } = await import("./step-feats");
+    const step = createFeatsStep();
+
+    expect(step.isComplete(makeState())).toBe(false);
+    expect(step.isComplete(makeState({
+      selections: {
+        ...makeState().selections,
+        feats: {
+          choice: "asi",
+          asiAbilities: ["str"],
+        },
+      },
+    }))).toBe(true);
+    expect(step.isComplete(makeState({
+      selections: {
+        ...makeState().selections,
+        feats: {
+          choice: "feat",
+          featUuid: "Compendium.feat.alert",
+          featName: "Alert",
+          featImg: "alert.png",
+        },
+      },
+    }))).toBe(true);
+  });
+
   it("exposes only enabled feats through the internal helper", async () => {
     const { __featsStepInternals } = await import("./step-feats");
     const entries = await __featsStepInternals.getAvailableFeats(makeState({
@@ -232,75 +190,6 @@ describe("step feats", () => {
     );
   });
 
-  it("rerenders through setData when asi toggles and feat-card selection change", async () => {
-    const { createFeatsStep } = await import("./step-feats");
-    const step = createFeatsStep();
-    const state = makeState();
-    const setData = vi.fn((value: unknown) => {
-      state.selections.feats = value as WizardState["selections"]["feats"];
-    });
-    const setDataSilent = vi.fn((value: unknown) => {
-      state.selections.feats = value as WizardState["selections"]["feats"];
-    });
-
-    const asiTab = new FakeElement();
-    asiTab.dataset.featChoice = "asi";
-    const featTab = new FakeElement();
-    featTab.dataset.featChoice = "feat";
-
-    const strBtn = new FakeElement();
-    strBtn.dataset.asiAbility = "str";
-    const conBtn = new FakeElement();
-    conBtn.dataset.asiAbility = "con";
-    const wisBtn = new FakeElement();
-    wisBtn.dataset.asiAbility = "wis";
-
-    const alertCard = new FakeElement();
-    alertCard.dataset.cardUuid = "Compendium.feat.alert";
-    const toughCard = new FakeElement();
-    toughCard.dataset.cardUuid = "Compendium.feat.tough";
-
-    const root = new FakeElement();
-    root.setQuerySelectorAll("[data-feat-choice]", [asiTab, featTab]);
-    root.setQuerySelectorAll("[data-asi-ability]", [strBtn, conBtn, wisBtn]);
-    root.setQuerySelectorAll("[data-card-uuid]", [alertCard, toughCard]);
-
-    step.onActivate?.(state, root as unknown as HTMLElement, {
-      setData,
-      setDataSilent,
-      rerender: vi.fn(),
-    });
-
-    featTab.trigger("click");
-    strBtn.trigger("click");
-    conBtn.trigger("click");
-    wisBtn.trigger("click");
-    toughCard.trigger("click");
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(setData).toHaveBeenNthCalledWith(1, { choice: "feat" });
-    expect(setData).toHaveBeenNthCalledWith(2, {
-      choice: "asi",
-      asiAbilities: ["str"],
-    });
-    expect(setData).toHaveBeenNthCalledWith(3, {
-      choice: "asi",
-      asiAbilities: ["str", "con"],
-    });
-    expect(setData).toHaveBeenNthCalledWith(4, {
-      choice: "asi",
-      asiAbilities: ["str", "con"],
-    });
-    expect(setData).toHaveBeenNthCalledWith(5, {
-      choice: "feat",
-      featUuid: "Compendium.feat.tough",
-      featName: "Tough",
-      featImg: "tough.png",
-    });
-    expect(setDataSilent).not.toHaveBeenCalled();
-  });
-
   it("filters out feats from packs that are not creator-feat relevant", async () => {
     isEntryRelevantForWorkflowMock.mockImplementation((entry: { uuid: string }) => entry.uuid === "Compendium.feat.tough");
 
@@ -310,5 +199,32 @@ describe("step feats", () => {
     expect((viewModel.feats as Array<{ uuid: string }>)).toEqual([
       expect.objectContaining({ uuid: "Compendium.feat.tough" }),
     ]);
+  });
+
+  it("surfaces the selected feat details without changing filtering or choice mechanics", async () => {
+    const { createFeatsStep } = await import("./step-feats");
+    const viewModel = await createFeatsStep().buildViewModel(makeState({
+      selections: {
+        ...makeState().selections,
+        feats: {
+          choice: "feat",
+          featUuid: "Compendium.feat.tough",
+          featName: "Tough",
+          featImg: "tough.png",
+        },
+      },
+    }));
+
+    expect(viewModel).toMatchObject({
+      choice: "feat",
+      isAsi: false,
+      isFeat: true,
+      selectedFeat: expect.objectContaining({
+        uuid: "Compendium.feat.tough",
+        name: "Tough",
+      }),
+    });
+    expect((viewModel.feats as Array<{ uuid: string; selected: boolean }>).find((entry) => entry.uuid === "Compendium.feat.tough"))
+      .toMatchObject({ selected: true });
   });
 });
