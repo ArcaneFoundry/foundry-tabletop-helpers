@@ -96,6 +96,11 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
 
   const current = getAbilityState(state);
   const selectedMethod = METHOD_COPY[viewModel.method];
+  const isAssignmentMode = viewModel.isAssignment;
+  const assignedCount = isAssignmentMode
+    ? ABILITY_KEYS.reduce((count, key) => count + (current.assignments[key] >= 0 ? 1 : 0), 0)
+    : 0;
+  const openCount = isAssignmentMode ? ABILITY_KEYS.length - assignedCount : 0;
 
   const updateState = (nextState: ReturnType<typeof getAbilityState>) => {
     controller.updateCurrentStepData(nextState);
@@ -195,13 +200,9 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                 <i className={method.icon} aria-hidden="true" />
               </span>
               <span className="cc-method-tab__content">
-                <span className="cc-method-tab__eyebrow">
-                  {METHOD_COPY[method.id].eyebrow}
-                </span>
+                <span className="cc-method-tab__eyebrow">{METHOD_COPY[method.id].eyebrow}</span>
                 <span className="cc-method-tab__label">{method.label}</span>
-                <span className="cc-method-tab__summary">
-                  {METHOD_COPY[method.id].summary}
-                </span>
+                <span className="cc-method-tab__summary">{METHOD_COPY[method.id].summary}</span>
               </span>
               <span className="cc-method-tab__state">
                 {method.active ? "Selected" : METHOD_COPY[method.id].inactive}
@@ -251,7 +252,9 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                   <span>{viewModel.hasRolled ? "Reroll All" : "Roll Abilities"}</span>
                 </button>
                 <span className="cc-roll-controls__state">
-                  {viewModel.hasRolled ? "Results ready for assignment" : "No rolls yet"}
+                  {viewModel.hasRolled
+                    ? (openCount > 0 ? `${openCount} values still open` : "Results ready for assignment")
+                    : "No rolls yet"}
                 </span>
               </div>
               {viewModel.hasRolled ? (
@@ -277,53 +280,103 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                 </p>
               </div>
               <span className="cc-roll-controls__state">
-                {viewModel.isAssignment ? "Six values need assignments" : "Ready"}
+                {openCount > 0 ? `${openCount} values still open` : "Array fully assigned"}
               </span>
             </div>
           ) : null}
 
           <div className="cc-ability-grid">
-            {viewModel.abilities.map((ability) => (
-              <div className="cc-ability-card" key={ability.key}>
-                <div className="cc-ability-card__abbrev">{ability.abbrev}</div>
-                <div className="cc-ability-card__value">{ability.total}</div>
-                <div className="cc-ability-card__modifier">{ability.modifierStr}</div>
-                {ability.backgroundBonus ? (
-                  <div className="cc-ability-card__bonus">
-                    <span className="cc-ability-card__bonus-base">{ability.value}</span>
-                    <span className="cc-ability-card__bonus-plus">+{ability.backgroundBonus}</span>
-                    <span className="cc-ability-card__bonus-eq">=</span>
-                    <span className="cc-ability-card__bonus-total">{ability.total}</span>
-                  </div>
-                ) : null}
-                <div className="cc-ability-card__label">{ability.label}</div>
+            {viewModel.abilities.map((ability) => {
+              const assignedIndex = current.assignments[ability.key];
+              const isAssigned = isAssignmentMode && assignedIndex >= 0;
 
-                {viewModel.isPointBuy ? (
-                  <div className="cc-ability-card__controls">
-                    <button
-                      className="cc-adjust-btn"
-                      disabled={!ability.canDecrement}
-                      onClick={() => handleAdjust(ability.key, -1)}
-                      type="button"
-                    >
-                      <i className="fa-solid fa-minus" aria-hidden="true" />
-                    </button>
-                    <button
-                      className="cc-adjust-btn"
-                      disabled={!ability.canIncrement}
-                      onClick={() => handleAdjust(ability.key, 1)}
-                      type="button"
-                    >
-                      <i className="fa-solid fa-plus" aria-hidden="true" />
-                    </button>
+              return (
+                <article
+                  className={[
+                    "cc-ability-card",
+                    isAssigned ? "cc-ability-card--selected" : "",
+                    isAssignmentMode ? "cc-ability-card--assignment" : "",
+                  ].filter(Boolean).join(" ")}
+                  data-assignment-state={isAssignmentMode ? (isAssigned ? "assigned" : "open") : "point-buy"}
+                  key={ability.key}
+                >
+                  <div className="cc-ability-card__header">
+                    <div className="cc-ability-card__identity">
+                      <div className="cc-ability-card__abbrev">{ability.abbrev}</div>
+                      <div className="cc-ability-card__label">{ability.label}</div>
+                    </div>
+                    {isAssignmentMode ? (
+                      <div
+                        className={[
+                          "cc-ability-card__state",
+                          isAssigned ? "cc-ability-card__state--assigned" : "cc-ability-card__state--open",
+                        ].join(" ")}
+                      >
+                        {isAssigned ? "Assigned" : "Open"}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            ))}
+
+                  <div className="cc-ability-card__scoreline">
+                    <div className="cc-ability-card__value">{ability.total}</div>
+                    <div className="cc-ability-card__modifier">{ability.modifierStr}</div>
+                  </div>
+
+                  {ability.backgroundBonus ? (
+                    <div className="cc-ability-card__bonus">
+                      <span className="cc-ability-card__bonus-label">Base + background</span>
+                      <span className="cc-ability-card__bonus-pill">{ability.value}</span>
+                      <span className="cc-ability-card__bonus-plus">+</span>
+                      <span className="cc-ability-card__bonus-pill">{ability.backgroundBonus}</span>
+                      <span className="cc-ability-card__bonus-eq">=</span>
+                      <span className="cc-ability-card__bonus-pill cc-ability-card__bonus-pill--total">{ability.total}</span>
+                    </div>
+                  ) : (
+                    <div className="cc-ability-card__bonus cc-ability-card__bonus--base-only">
+                      <span className="cc-ability-card__bonus-label">Base score only</span>
+                    </div>
+                  )}
+
+                  {viewModel.isPointBuy ? (
+                    <div className="cc-ability-card__controls">
+                      <button
+                        className="cc-adjust-btn"
+                        disabled={!ability.canDecrement}
+                        onClick={() => handleAdjust(ability.key, -1)}
+                        type="button"
+                      >
+                        <i className="fa-solid fa-minus" aria-hidden="true" />
+                      </button>
+                      <button
+                        className="cc-adjust-btn"
+                        disabled={!ability.canIncrement}
+                        onClick={() => handleAdjust(ability.key, 1)}
+                        type="button"
+                      >
+                        <i className="fa-solid fa-plus" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ) : isAssignmentMode ? (
+                    <div className="cc-ability-card__assignment-note">
+                      {isAssigned ? "Chosen from the pool below." : "Awaiting assignment from the pool below."}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
 
           {viewModel.isAssignment ? (
             <div className="cc-assignments">
+              <div className="cc-assignment-summary">
+                <div className="cc-assignment-summary__title">Assignment Pool</div>
+                <div className="cc-assignment-summary__stats">
+                  <span className="cc-assignment-summary__count">{assignedCount} assigned</span>
+                  <span className="cc-assignment-summary__divider">/</span>
+                  <span className="cc-assignment-summary__count">{ABILITY_KEYS.length} abilities</span>
+                  <span className="cc-assignment-summary__open">{openCount} open</span>
+                </div>
+              </div>
               <p className="cc-assignments__hint">
                 {viewModel.isRoll
                   ? (viewModel.hasRolled ? "Assign each rolled value to an ability score." : "Roll your ability scores, then assign them below.")
@@ -333,26 +386,41 @@ export function AbilityScoresStepScreen({ shellContext, state, controller }: Rea
                 <div className="cc-assignment-grid">
                   {viewModel.assignmentOptions.map((assignment) => (
                     <div className="cc-assignment-row" key={assignment.key}>
-                      <label className="cc-assignment-row__label" htmlFor={`ability-assignment-${assignment.key}`}>
-                        {assignment.label}
-                      </label>
-                      <select
-                        className="cc-assignment-row__select"
-                        id={`ability-assignment-${assignment.key}`}
-                        onChange={(event) => handleAssignmentChange(assignment.key, event)}
-                        value={assignment.currentIdx >= 0 ? String(assignment.currentIdx) : ""}
-                      >
-                        <option value="">—</option>
-                        {assignment.options.map((option) => (
-                          <option
-                            disabled={option.disabled}
-                            key={`${assignment.key}-${option.index}`}
-                            value={option.index}
-                          >
-                            {option.value}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="cc-assignment-row__meta">
+                        <label className="cc-assignment-row__label" htmlFor={`ability-assignment-${assignment.key}`}>
+                          {assignment.label}
+                        </label>
+                        <div className="cc-assignment-row__hint">
+                          {assignment.currentIdx >= 0 ? "Chosen from the pool below." : "Choose a score from the pool below."}
+                        </div>
+                      </div>
+                      <div className="cc-assignment-row__control">
+                        <select
+                          className="cc-assignment-row__select"
+                          id={`ability-assignment-${assignment.key}`}
+                          onChange={(event) => handleAssignmentChange(assignment.key, event)}
+                          value={assignment.currentIdx >= 0 ? String(assignment.currentIdx) : ""}
+                        >
+                          <option value="">—</option>
+                          {assignment.options.map((option) => (
+                            <option
+                              disabled={option.disabled}
+                              key={`${assignment.key}-${option.index}`}
+                              value={option.index}
+                            >
+                              {option.value}
+                            </option>
+                          ))}
+                        </select>
+                        <div
+                          className={[
+                            "cc-assignment-row__state",
+                            assignment.currentIdx >= 0 ? "cc-assignment-row__state--assigned" : "cc-assignment-row__state--open",
+                          ].join(" ")}
+                        >
+                          {assignment.currentIdx >= 0 ? `Value ${assignment.options[assignment.currentIdx]?.value ?? "?"}` : "Open"}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

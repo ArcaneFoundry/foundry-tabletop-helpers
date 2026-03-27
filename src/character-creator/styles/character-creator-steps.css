@@ -560,21 +560,27 @@
   margin-bottom: var(--cc-space-lg);
 }
 
-@container cc-wizard (max-width: 500px) {
+@container cc-wizard (max-width: 900px) {
   .cc-ability-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container cc-wizard (max-width: 560px) {
+  .cc-ability-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 .cc-ability-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--cc-space-2xs);
-  padding: var(--cc-space-md);
+  align-items: stretch;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-lg);
   background: linear-gradient(160deg, var(--cc-bg-surface) 0%, var(--cc-bg-glass) 100%);
   border: 1px solid var(--cc-border-subtle);
-  border-radius: 10px;
+  border-radius: 12px;
   position: relative;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -594,6 +600,34 @@
   background: linear-gradient(90deg, transparent, rgba(200, 167, 93, 0.3), transparent);
 }
 
+.cc-ability-card--assignment {
+  background:
+    radial-gradient(circle at top, rgba(211, 190, 235, 0.07), transparent 28%),
+    linear-gradient(160deg, var(--cc-bg-surface) 0%, rgba(24, 23, 28, 0.98) 100%);
+}
+
+.cc-ability-card--selected {
+  border-color: rgba(233, 193, 118, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(233, 193, 118, 0.18),
+    0 0 16px rgba(233, 193, 118, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cc-ability-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cc-space-sm);
+}
+
+.cc-ability-card__identity {
+  display: grid;
+  gap: 0.1rem;
+}
+
 .cc-ability-card__abbrev {
   font-size: var(--cc-text-xs);
   font-weight: 700;
@@ -602,8 +636,50 @@
   text-transform: uppercase;
 }
 
+.cc-ability-card__label {
+  font-size: var(--cc-text-sm);
+  font-weight: 600;
+  color: var(--cc-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+}
+
+.cc-ability-card__state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: 1.85rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--cc-border-subtle);
+  font-size: var(--cc-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cc-ability-card__state--assigned {
+  color: var(--cc-accent-gold);
+  background: rgba(233, 193, 118, 0.08);
+  border-color: rgba(233, 193, 118, 0.22);
+}
+
+.cc-ability-card__state--open {
+  color: var(--cc-text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cc-ability-card__scoreline {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  padding: 0.35rem 0 0.1rem;
+}
+
 .cc-ability-card__value {
-  font-size: var(--cc-text-3xl);
+  font-size: clamp(2.15rem, 4vw, 2.95rem);
   font-weight: 800;
   line-height: 1;
   color: var(--cc-text-primary);
@@ -612,24 +688,49 @@
 }
 
 .cc-ability-card__modifier {
-  font-size: var(--cc-text-md);
+  font-size: var(--cc-text-sm);
   font-weight: 700;
   color: var(--cc-accent-bronze);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .cc-ability-card__bonus {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.2em;
+  gap: 0.35rem;
+  flex-wrap: wrap;
   font-size: var(--cc-text-2xs);
   color: var(--cc-text-secondary);
   margin-top: var(--cc-space-2xs);
+  text-align: center;
+}
+
+.cc-ability-card__bonus-label {
+  width: 100%;
+  font-size: var(--cc-text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cc-text-secondary);
+}
+
+.cc-ability-card__bonus-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.3rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--cc-text-primary);
+  font-weight: 700;
 }
 
 .cc-ability-card__bonus-plus {
   color: var(--cc-accent-frost);
+  font-weight: 700;
 }
 
 .cc-ability-card__bonus-total {
@@ -637,16 +738,37 @@
   color: var(--cc-text-primary);
 }
 
-.cc-ability-card__label {
+.cc-ability-card__bonus--base-only {
+  justify-content: center;
+}
+
+.cc-ability-card__assignment-note {
+  margin-top: var(--cc-space-2xs);
   font-size: var(--cc-text-2xs);
   color: var(--cc-text-secondary);
-  margin-top: var(--cc-space-2xs);
+  text-align: center;
 }
 
 .cc-ability-card__controls {
   display: flex;
+  justify-content: center;
   gap: var(--cc-space-xs);
   margin-top: var(--cc-space-xs);
+}
+
+@container cc-wizard (max-width: 680px) {
+  .cc-ability-card {
+    padding: var(--cc-space-md);
+  }
+
+  .cc-ability-card__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cc-ability-card__state {
+    align-self: flex-start;
+  }
 }
 
 .cc-adjust-btn {
@@ -688,39 +810,103 @@
   margin-bottom: var(--cc-space-lg);
 }
 
+.cc-assignment-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-space-xs) var(--cc-space-md);
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  margin-bottom: var(--cc-space-sm);
+  border: 1px solid rgba(233, 193, 118, 0.14);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(233, 193, 118, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+.cc-assignment-summary__title {
+  font-family: var(--cc-font-display);
+  font-size: var(--cc-text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cc-accent-bronze);
+}
+
+.cc-assignment-summary__stats {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--cc-text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cc-text-secondary);
+}
+
+.cc-assignment-summary__count {
+  color: var(--cc-text-primary);
+  font-weight: 700;
+}
+
+.cc-assignment-summary__open {
+  color: var(--cc-accent-bronze);
+  font-weight: 700;
+}
+
 .cc-assignments__hint {
   font-size: var(--cc-text-sm);
   color: var(--cc-text-secondary);
   margin: 0 0 var(--cc-space-md) 0;
+  line-height: 1.5;
 }
 
 .cc-assignment-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
   gap: var(--cc-space-sm);
 }
 
-@container cc-wizard (max-width: 500px) {
+@container cc-wizard (max-width: 700px) {
   .cc-assignment-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container cc-wizard (max-width: 520px) {
+  .cc-assignment-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 .cc-assignment-row {
-  display: flex;
-  align-items: center;
-  gap: var(--cc-space-sm);
-  padding: var(--cc-space-xs) var(--cc-space-sm);
+  display: grid;
+  gap: var(--cc-space-xs);
+  padding: var(--cc-space-sm);
   background: var(--cc-bg-glass);
-  border-radius: 6px;
+  border-radius: 10px;
   border: 1px solid var(--cc-border-subtle);
 }
 
+.cc-assignment-row__meta {
+  display: grid;
+  gap: 0.15rem;
+}
+
 .cc-assignment-row__label {
-  font-size: var(--cc-text-sm);
+  font-size: var(--cc-text-xs);
   font-weight: 600;
   color: var(--cc-accent-bronze);
-  min-width: 32px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cc-assignment-row__hint {
+  font-size: var(--cc-text-2xs);
+  color: var(--cc-text-secondary);
+}
+
+.cc-assignment-row__control {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-xs);
 }
 
 .cc-assignment-row__select {
@@ -732,6 +918,31 @@
   border-radius: 4px;
   color: var(--cc-text-primary);
   font-size: var(--cc-text-sm);
+}
+
+.cc-assignment-row__state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.9rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: var(--cc-text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid var(--cc-border-subtle);
+}
+
+.cc-assignment-row__state--assigned {
+  background: rgba(233, 193, 118, 0.08);
+  border-color: rgba(233, 193, 118, 0.22);
+  color: var(--cc-accent-gold);
+}
+
+.cc-assignment-row__state--open {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--cc-text-secondary);
 }
 
 .cc-assignment-row__select option {

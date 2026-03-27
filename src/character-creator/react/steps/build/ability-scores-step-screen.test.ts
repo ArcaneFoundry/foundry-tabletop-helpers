@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AbilityScoresStepScreen } from "./ability-scores-step-screen";
 
 describe("AbilityScoresStepScreen", () => {
-  it("renders the point-buy method rail and budget HUD", () => {
+  it("renders the point-buy method rail, budget HUD, and upgraded score cards", () => {
     const markup = renderToStaticMarkup(createElement(AbilityScoresStepScreen, {
       controller: {
         updateCurrentStepData: vi.fn(),
@@ -64,6 +64,9 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("Budget / Tuning-Driven");
     expect(markup).toContain("Point Buy");
     expect(markup).toContain("Remaining");
+    expect(markup).toContain("Strength");
+    expect(markup).toContain("15");
+    expect(markup).toContain("Base score only");
     expect(markup).toContain("Point Cost Reference");
   });
 
@@ -130,7 +133,7 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("Dice Ritual");
   });
 
-  it("renders assignment controls for the standard array path", () => {
+  it("renders assignment controls with summary and open states for the standard array path", () => {
     const markup = renderToStaticMarkup(createElement(AbilityScoresStepScreen, {
       controller: {
         updateCurrentStepData: vi.fn(),
@@ -173,6 +176,15 @@ describe("AbilityScoresStepScreen", () => {
                 { index: 1, value: 14, selected: false, disabled: true },
               ],
             },
+            {
+              key: "dex",
+              label: "DEX",
+              currentIdx: -1,
+              options: [
+                { index: 0, value: 15, selected: false, disabled: false },
+                { index: 1, value: 14, selected: false, disabled: false },
+              ],
+            },
           ],
           pointBuyCosts: [],
         },
@@ -182,7 +194,7 @@ describe("AbilityScoresStepScreen", () => {
           abilities: {
             method: "standardArray",
             scores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
-            assignments: { str: 0, dex: 1, con: 2, int: 3, wis: 4, cha: 5 },
+            assignments: { str: 0, dex: -1, con: -1, int: -1, wis: -1, cha: -1 },
           },
         },
         config: {
@@ -196,6 +208,8 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("Assign each value from the standard array");
     expect(markup).toContain("Strength");
     expect(markup).toContain("STR");
-    expect(markup).toContain("option");
+    expect(markup).toContain("Assignment Pool");
+    expect(markup).toContain("Assigned");
+    expect(markup).toContain("Open");
   });
 });
