@@ -15,8 +15,6 @@ import {
   buildEmptySpeciesChoicesState,
   getAvailableSpeciesSkillOptions,
   getBackgroundLanguageOptions,
-  getSpeciesChoiceValidationMessages,
-  getSpeciesItemChoiceRequirements,
   getSpeciesLanguageOptions,
 } from "../../../steps/origin-flow-utils";
 import {
@@ -35,6 +33,7 @@ import { BackgroundSelectionPane } from "./panes/background-selection-pane";
 import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
 import { LanguageChoicesPane } from "./panes/language-choices-pane";
 import { OriginFeatPane } from "./panes/origin-feat-pane";
+import { SpeciesItemChoicesPane } from "./panes/species-item-choices-pane";
 import { SpeciesSelectionPane } from "./panes/species-selection-pane";
 
 type BackgroundLanguagesViewModel = {
@@ -343,99 +342,6 @@ function SpeciesSkillsPane({ shellContext, state, controller }: OriginPaneProps)
           title="Chosen Skills"
           removable
         />
-      </aside>
-    </div>
-  );
-}
-
-function SpeciesItemChoicesPane({ shellContext, state, controller }: OriginPaneProps) {
-  const viewModel = shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined;
-  const requirements = getSpeciesItemChoiceRequirements(state);
-  const validationMessages = viewModel?.validationMessages ?? getSpeciesChoiceValidationMessages(state);
-
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <SectionHeading eyebrow={state.selections.species?.name ?? "Species"} title={viewModel?.title ?? "Choose Species Gifts"} description={viewModel?.description ?? ""} />
-        <div className="mt-4 grid gap-4">
-          {requirements.map((requirement) => {
-            const selectedIds = state.selections.speciesChoices?.chosenItems?.[requirement.id] ?? [];
-            return (
-              <section
-                className="rounded-[1.2rem] border border-[#d4bb96]/55 bg-[linear-gradient(180deg,rgba(255,251,244,0.95),rgba(242,228,203,0.92))] p-4 shadow-[0_10px_20px_rgba(69,45,24,0.08)]"
-                key={requirement.id}
-              >
-                <div className="flex items-center justify-between gap-3 border-b border-[#cfb58f]/55 pb-3">
-                  <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">{requirement.title}</div>
-                  <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#855b3e]">
-                    {selectedIds.length} / {Math.min(requirement.requiredCount, requirement.itemChoices.length)}
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {requirement.itemChoices.map((option) => {
-                    const checked = selectedIds.includes(option.uuid);
-                    const maxCount = Math.min(requirement.requiredCount, requirement.itemChoices.length);
-                    const disabled = !checked && selectedIds.length >= maxCount;
-                    return (
-                      <button
-                        className={cn(
-                          "group relative overflow-hidden rounded-[1rem] border p-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
-                          checked
-                            ? "border-[#87a36a] bg-[linear-gradient(180deg,rgba(241,246,220,0.98),rgba(226,234,183,0.94))]"
-                            : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
-                          disabled && !checked && "opacity-60",
-                        )}
-                        disabled={disabled}
-                        key={option.uuid}
-                        onClick={() => {
-                          const current = new Set(state.selections.speciesChoices?.chosenItems?.[requirement.id] ?? []);
-                          if (current.has(option.uuid)) current.delete(option.uuid);
-                          else current.add(option.uuid);
-                          state.selections.speciesChoices = {
-                            ...(state.selections.speciesChoices ?? buildEmptySpeciesChoicesState(state)),
-                            chosenItems: {
-                              ...(state.selections.speciesChoices?.chosenItems ?? {}),
-                              [requirement.id]: [...current],
-                            },
-                          };
-                          void controller.refresh();
-                        }}
-                        type="button"
-                      >
-                        <div className="grid grid-cols-[3.8rem_minmax(0,1fr)] gap-3">
-                          <div className="aspect-square overflow-hidden rounded-[0.9rem] border border-[#d4bb96] bg-[#20130e]">
-                            {option.img ? (
-                              <img alt={option.name} className="h-full w-full object-cover" loading="lazy" src={option.img} />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-[#f0d2a6]">
-                                <i className="fa-solid fa-hand-sparkles" aria-hidden="true" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-fth-cc-body text-[0.98rem] font-semibold text-[#4c3524]">{option.name}</div>
-                            <CompactMetaChips chips={[checked ? "Selected" : "Available"]} />
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      </section>
-
-      <aside className="grid gap-4 self-start">
-        {validationMessages.map((message) => (
-          <div
-            className="rounded-[1.15rem] border border-[#d6b57a]/55 bg-[linear-gradient(180deg,rgba(255,247,231,0.95),rgba(246,231,198,0.92))] px-4 py-3 font-fth-cc-body text-[0.94rem] leading-6 text-[#5e4637]"
-            key={message}
-          >
-            {message}
-          </div>
-        ))}
       </aside>
     </div>
   );
