@@ -20,6 +20,7 @@ export type LanguageChoicesPaneProps = {
   title: string;
   subtitle: string;
   description: string;
+  guidance?: string;
   requiredCount: number;
   selectedIds: string[];
   options: LanguageChoiceOption[];
@@ -42,6 +43,7 @@ export function LanguageChoicesPane({
   title,
   subtitle,
   description,
+  guidance = "Choose the languages that best fit the character's story and background. The summary keeps the current picks visible so you can remove any choice before moving on.",
   requiredCount,
   selectedIds,
   options,
@@ -202,8 +204,7 @@ export function LanguageChoicesPane({
             Guidance
           </div>
           <p className="mt-3 font-fth-cc-body text-[0.96rem] leading-6 text-[#d0cad0]">
-            Choose the languages that best fit the character's story and background. The summary keeps the current
-            picks visible so you can remove any choice before moving on.
+            {guidance}
           </p>
         </section>
       </aside>

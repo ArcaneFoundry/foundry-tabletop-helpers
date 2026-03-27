@@ -51,6 +51,7 @@ describe("LanguageChoicesPane", () => {
     expect(markup).toContain("1 / 2 chosen");
     expect(markup).toContain("Chosen Languages");
     expect(markup).toContain("Elvish");
+    expect(markup).toContain("story and background");
   });
 
   it("shows the empty selected summary when no languages are chosen yet", () => {
@@ -92,6 +93,7 @@ describe("LanguageChoicesPane", () => {
       statLabel: "Species Languages",
       subtitle: "Elf",
       title: "Choose Species Languages",
+      guidance: "Choose the languages that fit your species and the life they have lived. The summary keeps the current picks visible so you can remove any choice before moving on.",
       validationMessages: [
         "Only 1 legal species language option remains, so this step will accept fewer picks than the species normally grants.",
       ],
@@ -104,5 +106,6 @@ describe("LanguageChoicesPane", () => {
     expect(markup).toContain("Species Language Notes");
     expect(markup).toContain("cc-origin-summary-pill--interactive");
     expect(markup).toContain("Only 1 legal species language option remains");
+    expect(markup).toContain("your species and the life they have lived");
   });
 });

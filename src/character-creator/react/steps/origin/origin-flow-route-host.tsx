@@ -212,6 +212,7 @@ export function OriginFlowRouteHost(
                   ) : shellModel.currentPane === "backgroundLanguages" ? (
                     <LanguageChoicesPane
                       description={(shellContext.stepViewModel as BackgroundLanguagesViewModel | undefined)?.description ?? ""}
+                      guidance="Choose the languages that best fit the character's story and background. The summary keeps the current picks visible so you can remove any choice before moving on."
                       emptyMessage="No background language choices are available."
                       options={getBackgroundLanguageOptions(state)}
                       requiredCount={(shellContext.stepViewModel as BackgroundLanguagesViewModel | undefined)?.requiredCount ?? 0}
@@ -239,6 +240,7 @@ export function OriginFlowRouteHost(
                   ) : shellModel.currentPane === "speciesLanguages" ? (
                     <LanguageChoicesPane
                       description={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.description ?? ""}
+                      guidance="Choose the languages that fit your species and the life they have lived. The summary keeps the current picks visible so you can remove any choice before moving on."
                       emptyMessage="No species language choices are available."
                       options={getSpeciesLanguageOptions(state)}
                       selectedSummaryEmptyLabel="No species languages selected yet."
