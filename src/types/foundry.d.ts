@@ -26,6 +26,10 @@ export interface FoundryGame {
   actors?: FoundryCollection<FoundryDocument>;
   /** Collection of all scenes in the world */
   scenes?: FoundryCollection<FoundryScene>;
+  /** Collection of combats in the world */
+  combats?: FoundryCollection<FoundryCombat>;
+  /** Active combat encounter */
+  combat?: FoundryCombat;
   /** Collection of all playlists in the world */
   playlists?: FoundryCollection<FoundryPlaylist>;
   /** Collection of all compendium packs */
@@ -169,6 +173,12 @@ export interface FoundryDocument {
 
 export interface FoundryScene extends FoundryDocument {
   active?: boolean;
+  darkness?: number;
+}
+
+export interface FoundryCombat extends FoundryDocument {
+  active?: boolean;
+  started?: boolean;
 }
 
 export interface FoundryPlaylistSound extends FoundryDocument {
@@ -236,6 +246,19 @@ export interface FoundryHooks {
   off(event: string, id: number): void;
   call(event: string, ...args: unknown[]): boolean;
   callAll(event: string, ...args: unknown[]): boolean;
+}
+
+export interface CalendariaWeatherState {
+  id?: string;
+  key?: string;
+  presetId?: string;
+  label?: string;
+}
+
+export interface CalendariaApi {
+  isDaytime?: () => boolean;
+  isNighttime?: () => boolean;
+  getCurrentWeather?: (zoneId?: string) => CalendariaWeatherState | string | null | undefined;
 }
 
 /* ── LPCS / ActorSheetV2 ──────────────────────────────────── */

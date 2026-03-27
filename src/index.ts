@@ -33,6 +33,7 @@ import { registerSoundscapeSettings } from "./soundscapes/soundscape-settings";
 import {
   registerSoundscapeStudioHooks,
 } from "./soundscapes/soundscape-studio-app";
+import { startSoundscapeTriggerService } from "./soundscapes/soundscape-trigger-service";
 
 interface SceneControlTool {
   name: string;
@@ -134,6 +135,7 @@ function onReady(): void {
   // Character Creator — ready-phase initialization
   initCharacterCreatorReady();
 
+  if (isGM()) void startSoundscapeTriggerService();
   attachFthApi();
 
   Log.debug("window.fth API attached");
