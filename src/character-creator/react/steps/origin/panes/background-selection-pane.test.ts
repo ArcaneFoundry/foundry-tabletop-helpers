@@ -24,9 +24,15 @@ vi.mock("motion/react", async () => {
 });
 
 import { shouldShowOriginSelectionScrollShadow } from "../components/origin-pane-primitives";
-import { BackgroundSelectionPane } from "./background-selection-pane";
+import { BackgroundSelectionPane, getBackgroundArtTreatment } from "./background-selection-pane";
 
 describe("BackgroundSelectionPane", () => {
+  it("detects square icon-style background art that needs the bleed treatment", () => {
+    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("icon-bleed");
+    expect(getBackgroundArtTreatment("modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp")).toBe("cover");
+    expect(getBackgroundArtTreatment("")).toBe("cover");
+  });
+
   it("toggles the origin selection scroll shadow from the scroll position helper", () => {
     expect(shouldShowOriginSelectionScrollShadow(0)).toBe(false);
     expect(shouldShowOriginSelectionScrollShadow(4)).toBe(true);
@@ -44,13 +50,13 @@ describe("BackgroundSelectionPane", () => {
             {
               uuid: "background-1",
               name: "Acolyte",
-              img: "acolyte.webp",
+              img: "modules/dnd-players-handbook/assets/icons/backgrounds/acolyte.webp",
               blurb: "Keeper of sacred rites.",
             },
             {
               uuid: "background-2",
               name: "Soldier",
-              img: "soldier.webp",
+              img: "modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp",
               blurb: "Veteran of hard campaigns.",
             },
           ],
@@ -76,6 +82,9 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("flex h-full w-full flex-col");
     expect(markup).toContain("flex h-full min-h-0 flex-1 flex-col");
     expect(markup).toContain("min-h-[20rem] flex-1 overflow-hidden");
+    expect(markup).toContain("data-background-art-treatment=\"icon-bleed\"");
+    expect(markup).toContain("data-background-art-treatment=\"cover\"");
+    expect(markup).toContain("scale-[1.45] object-cover opacity-70 blur-xl");
     expect(markup.indexOf("cc-origin-selection-pane__intro")).toBeLessThan(markup.indexOf("cc-origin-selection-pane__gallery-scroll"));
   });
 });

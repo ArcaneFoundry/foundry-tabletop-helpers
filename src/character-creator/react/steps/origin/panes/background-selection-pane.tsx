@@ -16,6 +16,11 @@ type BackgroundSelectionPaneProps = OriginPaneProps & {
   prefersReducedMotion: boolean;
 };
 
+export function getBackgroundArtTreatment(imageSrc: string | null | undefined): "cover" | "icon-bleed" {
+  if (!imageSrc) return "cover";
+  return imageSrc.includes("/assets/icons/backgrounds/") ? "icon-bleed" : "cover";
+}
+
 export function BackgroundSelectionPane({ shellContext, state, controller, prefersReducedMotion }: BackgroundSelectionPaneProps) {
   const viewModel = shellContext.stepViewModel as BackgroundStepViewModel | undefined;
   const entries = viewModel?.entries ?? [];
@@ -35,6 +40,7 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
       prefersReducedMotion={prefersReducedMotion}
       renderEntry={(entry) => {
         const selected = selectedUuid === entry.uuid;
+        const artTreatment = getBackgroundArtTreatment(entry.img);
         return (
         <button
           aria-pressed={selected}
@@ -68,14 +74,33 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
               selected ? "border-[#d8b578]/70" : "border-[#4f3828]",
             )}
           >
-            <div className="min-h-[20rem] flex-1 overflow-hidden">
+            <div
+              className="relative min-h-[20rem] flex-1 overflow-hidden"
+              data-background-art-treatment={artTreatment}
+            >
               {entry.img ? (
-                <img
-                  alt={entry.name}
-                  className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                  loading="lazy"
-                  src={entry.img}
-                />
+                <>
+                  {artTreatment === "icon-bleed" ? (
+                    <img
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 h-full w-full scale-[1.45] object-cover opacity-70 blur-xl saturate-[0.92]"
+                      loading="lazy"
+                      src={entry.img}
+                    />
+                  ) : null}
+                  <img
+                    alt={entry.name}
+                    className={cn(
+                      "relative h-full w-full object-cover transition duration-300",
+                      artTreatment === "icon-bleed"
+                        ? "scale-[1.14] group-hover:scale-[1.18]"
+                        : "group-hover:scale-[1.03]",
+                    )}
+                    loading="lazy"
+                    src={entry.img}
+                  />
+                </>
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#f0d2a6]">
                   <i className="fa-solid fa-scroll text-2xl" aria-hidden="true" />
