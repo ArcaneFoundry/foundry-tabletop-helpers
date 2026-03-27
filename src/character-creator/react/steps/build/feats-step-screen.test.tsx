@@ -53,14 +53,16 @@ describe("FeatsStepScreen", () => {
     } as never));
 
     expect(markup).toContain("Shape Your Ascension");
+    expect(markup).toContain("Choose your rite");
     expect(markup).toContain("Ability Attunement");
-    expect(markup).toContain("Attunement Picks");
+    expect(markup).toContain("Attunement field");
+    expect(markup).toContain("Bind up to two abilities to the build");
     expect(markup).toContain("Strength");
     expect(markup).toContain("Current score 15");
     expect(markup).toContain("Attuned");
-    expect(markup).toContain("At Maximum");
+    expect(markup).toContain("At max");
     expect(markup).toContain("Strength");
-    expect(markup).toContain("1 of 2 picks chosen");
+    expect(markup).toContain("1 choice remain");
     expect(markup).not.toContain("Choose a feat to inspect");
   });
 
@@ -117,6 +119,7 @@ describe("FeatsStepScreen", () => {
       step: {},
     } as never));
 
+    expect(markup).toContain("Choose your rite");
     expect(markup).toContain("Feat Catalog");
     expect(markup).toContain("Alert");
     expect(markup).toContain("Tough");
