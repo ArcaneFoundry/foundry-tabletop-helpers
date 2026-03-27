@@ -107,4 +107,54 @@ describe("BackgroundAsiPane", () => {
     expect(markup).toContain("Current Spread");
     expect(markup).toContain("Not enough points left");
   });
+
+  it("keeps the aptitude content inside a dedicated internal scroll owner", () => {
+    const markup = renderToStaticMarkup(createElement(BackgroundAsiPane, {
+      controller: {
+        refresh: vi.fn(),
+      },
+      prefersReducedMotion: true,
+      shellContext: {
+        stepViewModel: {
+          backgroundName: "Sage",
+          backgroundImg: "sage.webp",
+          asiPoints: 3,
+          asiPointsUsed: 1,
+          asiAbilities: [
+            {
+              key: "int",
+              label: "Intelligence",
+              backgroundSuggested: true,
+              classRecommended: true,
+              emphasized: true,
+              options: [
+                { value: 0, label: "Reset", selected: false },
+                { value: 1, label: "+1", selected: true },
+                { value: 2, label: "+2", selected: false },
+              ],
+            },
+          ],
+        },
+      },
+      state: {
+        selections: {
+          background: {
+            name: "Sage",
+            asi: {
+              assignments: {
+                int: 1,
+              },
+            },
+            grants: {
+              asiPoints: 3,
+            },
+          },
+        },
+      },
+    } as never));
+
+    expect(markup).toContain("data-origins-background-asi-scroll=\"true\"");
+    expect(markup).toContain("flex min-h-0 flex-1 flex-col overflow-hidden");
+    expect(markup).toContain("fth-react-scrollbar relative min-h-0 flex-1 overflow-y-auto p-4");
+  });
 });
