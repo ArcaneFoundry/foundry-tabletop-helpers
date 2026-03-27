@@ -38,6 +38,7 @@ const initCharacterCreatorReadyMock = vi.fn();
 const attachFthApiMock = vi.fn();
 const registerSoundscapeSettingsMock = vi.fn();
 const registerSoundscapeStudioHooksMock = vi.fn();
+const startSoundscapeTriggerServiceMock = vi.fn(async () => {});
 
 vi.mock("./logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -120,6 +121,10 @@ vi.mock("./soundscapes/soundscape-settings", () => ({
 
 vi.mock("./soundscapes/soundscape-studio-app", () => ({
   registerSoundscapeStudioHooks: registerSoundscapeStudioHooksMock,
+}));
+
+vi.mock("./soundscapes/soundscape-trigger-service", () => ({
+  startSoundscapeTriggerService: startSoundscapeTriggerServiceMock,
 }));
 
 describe("index shell", () => {
@@ -223,6 +228,7 @@ describe("index shell", () => {
     expect(autoOpenLPCSMock).toHaveBeenCalledTimes(1);
     expect(initCombatReadyMock).toHaveBeenCalledTimes(1);
     expect(initCharacterCreatorReadyMock).toHaveBeenCalledTimes(1);
+    expect(startSoundscapeTriggerServiceMock).toHaveBeenCalledTimes(1);
     expect(attachFthApiMock).toHaveBeenCalledTimes(1);
     expect(debugMock).toHaveBeenCalledWith("window.fth API attached");
   });

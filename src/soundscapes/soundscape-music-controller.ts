@@ -65,6 +65,12 @@ class SoundscapeMusicController {
 
 const singletonController = new SoundscapeMusicController();
 
+export async function syncResolvedSoundscapeMusic(
+  state: ResolvedSoundscapeState | null,
+): Promise<SoundscapeMusicRuntimeSnapshot> {
+  return await singletonController.syncResolvedState(state);
+}
+
 export async function syncStoredSoundscapeMusic(
   sceneId?: string,
   context?: Partial<SoundscapeTriggerContext>,
