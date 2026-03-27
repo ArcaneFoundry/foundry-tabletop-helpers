@@ -16,12 +16,9 @@ import { getClassTheme } from "../class/class-presentation";
 import { useClassStepperLayoutMode } from "../class/class-stepper-layout";
 import { buildSpeciesSelectionFromEntry } from "../../../steps/step-species";
 import {
-  applyBackgroundSkillConflictSelections,
   buildEmptySpeciesChoicesState,
-  getBackgroundSkillConflictOptions,
   getAvailableSpeciesSkillOptions,
   getBackgroundLanguageOptions,
-  getBackgroundSkillConflictReplacementCount,
   getOriginLanguageLabel,
   getSpeciesChoiceValidationMessages,
   getSpeciesItemChoiceRequirements,
@@ -41,6 +38,7 @@ import {
   SummaryListCard,
 } from "./components/origin-pane-primitives";
 import { BackgroundSelectionPane } from "./panes/background-selection-pane";
+import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
 
 type SpeciesStepViewModel = {
   entries: Array<CreatorIndexEntry & { selected?: boolean; blurb?: string }>;
@@ -61,22 +59,6 @@ type BackgroundAsiViewModel = {
   }>;
   asiPointsUsed: number;
   asiPoints: number;
-};
-
-type BackgroundSkillConflictViewModel = {
-  backgroundName: string;
-  className: string;
-  fixedBackgroundSkills: string[];
-  conflictingSkills: string[];
-  retainedSkills: string[];
-  selectedReplacementSkills: string[];
-  replacementCount: number;
-  requiredClassSkillCount: number;
-  replacementOptions: Array<{
-    id: string;
-    label: string;
-    abilityAbbrev: string;
-  }>;
 };
 
 type BackgroundLanguagesViewModel = {
@@ -258,7 +240,7 @@ export function OriginFlowRouteHost(
                       state={state}
                     />
                   ) : shellModel.currentPane === "backgroundSkillConflicts" ? (
-                    <BackgroundSkillConflictPane controller={controller} shellContext={shellContext} state={state} />
+                  <BackgroundSkillConflictPane controller={controller} shellContext={shellContext} state={state} />
                   ) : shellModel.currentPane === "backgroundAsi" ? (
                     <BackgroundAsiPane controller={controller} shellContext={shellContext} state={state} />
                   ) : shellModel.currentPane === "backgroundLanguages" ? (
@@ -313,108 +295,6 @@ export function OriginFlowRouteHost(
         </div>
       </motion.div>
     </section>
-  );
-}
-
-function BackgroundSkillConflictPane({ shellContext, state, controller }: OriginPaneProps) {
-  const viewModel = shellContext.stepViewModel as BackgroundSkillConflictViewModel | undefined;
-  if (!viewModel) return null;
-
-  const selectedIds = state.selections.skills?.chosen ?? [];
-  const persistedReplacementIds = Array.isArray(state.selections.backgroundSkillConflicts)
-    ? state.selections.backgroundSkillConflicts.filter((entry): entry is string => typeof entry === "string")
-    : [];
-  const selectedReplacementIds = persistedReplacementIds.filter((skill) => selectedIds.includes(skill));
-  const selectedReplacementSet = new Set(selectedReplacementIds);
-  const replacementOptions = viewModel.replacementOptions.length > 0
-    ? viewModel.replacementOptions
-    : getBackgroundSkillConflictOptions(state);
-  const replacementCount = viewModel.replacementCount || getBackgroundSkillConflictReplacementCount(state);
-
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <SectionHeading
-          eyebrow={viewModel.backgroundName}
-          title="Resolve Skill Overlap"
-          description={`${viewModel.backgroundName} already grants some skills you chose for ${viewModel.className}. Keep the background skills fixed, then choose replacement class skills to keep your training distinct.`}
-        />
-        <div className="mt-4 grid gap-3">
-          {replacementOptions.length > 0 ? replacementOptions.map((option) => {
-            const checked = selectedReplacementSet.has(option.id);
-            const disabled = !checked && selectedReplacementSet.size >= replacementCount;
-            return (
-              <button
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-[1rem] border px-4 py-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
-                  checked
-                    ? "border-[#87a36a] bg-[linear-gradient(180deg,rgba(241,246,220,0.98),rgba(226,234,183,0.94))]"
-                    : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
-                  disabled && !checked && "opacity-60",
-                )}
-                disabled={disabled}
-                key={option.id}
-                onClick={() => {
-                  const nextReplacements = new Set(selectedReplacementIds);
-                  if (nextReplacements.has(option.id)) nextReplacements.delete(option.id);
-                  else nextReplacements.add(option.id);
-                  applyBackgroundSkillConflictSelections(state, [...nextReplacements]);
-                  state.selections.backgroundSkillConflicts = [...nextReplacements];
-                  void controller.refresh();
-                }}
-                type="button"
-              >
-                <div>
-                  <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">{option.label}</div>
-                  <CompactMetaChips chips={[`${option.abilityAbbrev} keyed`, checked ? "Selected" : "Replacement option"]} />
-                </div>
-                <SelectionPip checked={checked} />
-              </button>
-            );
-          }) : (
-            <EmptySelectionState message="No legal replacement class skills remain after accounting for your background and any already-known skills." />
-          )}
-        </div>
-      </section>
-
-      <aside className="grid gap-4 self-start">
-        <StatCard label="Replacements" value={`${selectedReplacementSet.size} / ${replacementCount}`} />
-        <SummaryListCard
-          emptyLabel="No background skills recorded."
-          entries={viewModel.fixedBackgroundSkills.map((entry) => ({ id: entry, label: entry }))}
-          iconClass="fa-solid fa-scroll"
-          title="Fixed Background Skills"
-        />
-        <SummaryListCard
-          emptyLabel="No class skills remain locked in yet."
-          entries={viewModel.retainedSkills.map((entry) => ({ id: entry, label: entry }))}
-          iconClass="fa-solid fa-list-check"
-          title="Retained Class Skills"
-        />
-        <SummaryListCard
-          emptyLabel="No replacement skills selected yet."
-          entries={selectedReplacementIds.map((entry) => ({
-            id: entry,
-            label: replacementOptions.find((option) => option.id === entry)?.label ?? entry,
-          }))}
-          iconClass="fa-solid fa-repeat"
-          onRemove={(entryId) => {
-            const nextReplacements = selectedReplacementIds.filter((candidate) => candidate !== entryId);
-            applyBackgroundSkillConflictSelections(state, nextReplacements);
-            state.selections.backgroundSkillConflicts = nextReplacements;
-            void controller.refresh();
-          }}
-          title="Chosen Replacements"
-          removable
-        />
-        <SummaryListCard
-          emptyLabel="No overlapping skills were detected."
-          entries={viewModel.conflictingSkills.map((entry) => ({ id: entry, label: entry }))}
-          iconClass="fa-solid fa-triangle-exclamation"
-          title="Overlapping Skills"
-        />
-      </aside>
-    </div>
   );
 }
 
