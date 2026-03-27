@@ -4,6 +4,80 @@ import type { CreatorIndexEntry } from "../../../character-creator-types";
 import { cn } from "../../../../ui/lib/cn";
 import { getClassTheme } from "./class-presentation";
 
+const CARD_RESTING_SHADOW = "0 24px 50px rgba(0,0,0,0.28)";
+const CARD_HOVER_SHADOW = "0 30px 55px rgba(0,0,0,0.34)";
+const CARD_TAP_SHADOW = "0 18px 32px rgba(0,0,0,0.22)";
+const CARD_SELECTED_SHADOW =
+  "0 0 0 1px rgba(233,193,118,0.28),0 0 28px rgba(233,193,118,0.18),0 30px 55px rgba(0,0,0,0.38)";
+const CARD_SELECTED_HOVER_SHADOW =
+  "0 0 0 1px rgba(233,193,118,0.32),0 0 32px rgba(233,193,118,0.22),0 34px 58px rgba(0,0,0,0.4)";
+const CARD_SELECTED_TAP_SHADOW =
+  "0 0 0 1px rgba(233,193,118,0.24),0 0 24px rgba(233,193,118,0.16),0 22px 40px rgba(0,0,0,0.32)";
+
+const CARD_VARIANTS = {
+  hidden: {
+    opacity: 0,
+    y: 18,
+    scale: 0.975,
+  },
+  rest: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    boxShadow: CARD_RESTING_SHADOW,
+  },
+  selected: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    boxShadow: CARD_SELECTED_SHADOW,
+  },
+  hover: {
+    y: -6,
+    scale: 1.015,
+    boxShadow: CARD_HOVER_SHADOW,
+  },
+  selectedHover: {
+    y: -6,
+    scale: 1.015,
+    boxShadow: CARD_SELECTED_HOVER_SHADOW,
+  },
+  tap: {
+    y: -2,
+    scale: 0.992,
+    boxShadow: CARD_TAP_SHADOW,
+  },
+  selectedTap: {
+    y: -2,
+    scale: 0.992,
+    boxShadow: CARD_SELECTED_TAP_SHADOW,
+  },
+} as const;
+
+const CARD_ART_VARIANTS = {
+  hidden: {
+    scale: 1.01,
+  },
+  rest: {
+    scale: 1,
+  },
+  selected: {
+    scale: 1.004,
+  },
+  hover: {
+    scale: 1.03,
+  },
+  selectedHover: {
+    scale: 1.03,
+  },
+  tap: {
+    scale: 1.014,
+  },
+  selectedTap: {
+    scale: 1.014,
+  },
+} as const;
+
 export type ClassCardEntry = CreatorIndexEntry & {
   cardImg: string;
   selected: boolean;
@@ -34,17 +108,28 @@ export function ClassCard({
 
   return (
     <motion.div
-      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+      animate={selected ? "selected" : "rest"}
       className={cn(
-        "group relative overflow-hidden rounded-[1.25rem] border border-[#e9c176]/16 bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200",
-        "hover:-translate-y-1 hover:shadow-[0_30px_55px_rgba(0,0,0,0.34)]",
-        selected &&
-          "border-[#e9c176]/55 shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_0_28px_rgba(233,193,118,0.18),0_30px_55px_rgba(0,0,0,0.38)]",
+        "relative overflow-hidden rounded-[1.25rem] border border-[#e9c176]/16 bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left",
+        selected && "border-[#e9c176]/55",
       )}
-      initial={prefersReducedMotion ? false : { opacity: 0, y: 18, scale: 0.975 }}
-      transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
-      whileTap={prefersReducedMotion ? undefined : { scale: 0.985 }}
+      initial={prefersReducedMotion ? false : "hidden"}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              type: "spring",
+              stiffness: 440,
+              damping: 34,
+              mass: 0.9,
+            }
+      }
+      variants={CARD_VARIANTS}
+      whileHover={prefersReducedMotion ? undefined : selected ? "selectedHover" : "hover"}
+      whileTap={prefersReducedMotion ? undefined : selected ? "selectedTap" : "tap"}
+      style={{
+        willChange: prefersReducedMotion ? undefined : "transform, box-shadow",
+      }}
     >
       <button
         aria-pressed={selected}
@@ -64,11 +149,12 @@ export function ClassCard({
           }}
         >
           <div className={cn("overflow-hidden", getClassCardMediaClassName(selected))}>
-            <img
+            <motion.img
               alt={entry.name}
-              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover"
               loading="lazy"
               src={entry.cardImg}
+              variants={CARD_ART_VARIANTS}
             />
           </div>
           <div className="pointer-events-none absolute inset-0 rounded-[1.06rem] bg-[linear-gradient(180deg,rgba(255,247,233,0.04)_0%,transparent_22%,rgba(8,7,12,0.02)_42%,rgba(8,7,12,0.82)_100%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" />

@@ -63,6 +63,19 @@ describe("ClassCard", () => {
     expect(markup).toContain("STR / CON");
   });
 
+  it("uses motion-driven lift behavior without CSS hover transform classes", () => {
+    const markup = renderToStaticMarkup(createElement(ClassCard, {
+      entry: createEntry(),
+      onSelect: async () => {},
+      prefersReducedMotion: false,
+      selected: false,
+    }));
+
+    expect(markup).not.toContain("hover:-translate-y-1");
+    expect(markup).not.toContain("hover:shadow-[0_30px_55px_rgba(0,0,0,0.34)]");
+    expect(markup).not.toContain("group-hover:scale-[1.03]");
+  });
+
   it("uses the same media footprint for selected and unselected cards", () => {
     expect(getClassCardMediaClassName(true)).toBe(getClassCardMediaClassName(false));
   });
