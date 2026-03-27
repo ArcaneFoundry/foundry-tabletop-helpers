@@ -30,6 +30,9 @@ import {
   initCharacterCreatorReady,
 } from "./character-creator/character-creator-init";
 import { registerSoundscapeSettings } from "./soundscapes/soundscape-settings";
+import {
+  registerSoundscapeStudioHooks,
+} from "./soundscapes/soundscape-studio-app";
 
 interface SceneControlTool {
   name: string;
@@ -90,6 +93,7 @@ function onInit(): void {
 
   // Reactive Soundscapes foundation settings
   if (settings) registerSoundscapeSettings(settings);
+  registerSoundscapeStudioHooks();
 
   registerAssetManagerSceneControlHook();
 
