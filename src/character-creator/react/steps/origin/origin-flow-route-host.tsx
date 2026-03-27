@@ -18,7 +18,6 @@ import {
   buildEmptySpeciesChoicesState,
   getAvailableSpeciesSkillOptions,
   getBackgroundLanguageOptions,
-  getOriginLanguageLabel,
   getSpeciesChoiceValidationMessages,
   getSpeciesItemChoiceRequirements,
   getSpeciesLanguageOptions,
@@ -38,6 +37,7 @@ import {
 import { BackgroundAsiPane } from "./panes/background-asi-pane";
 import { BackgroundSelectionPane } from "./panes/background-selection-pane";
 import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
+import { LanguageChoicesPane } from "./panes/language-choices-pane";
 import { OriginFeatPane } from "./panes/origin-feat-pane";
 
 type SpeciesStepViewModel = {
@@ -226,6 +226,7 @@ export function OriginFlowRouteHost(
                       options={getBackgroundLanguageOptions(state)}
                       requiredCount={(shellContext.stepViewModel as BackgroundLanguagesViewModel | undefined)?.requiredCount ?? 0}
                       selectedIds={state.selections.background?.languages.chosen ?? []}
+                      selectionLabel="Select Languages"
                       subtitle={state.selections.background?.name ?? "Background"}
                       title={(shellContext.stepViewModel as BackgroundLanguagesViewModel | undefined)?.title ?? "Choose Languages"}
                       onChange={(chosen) => {
@@ -252,6 +253,7 @@ export function OriginFlowRouteHost(
                       options={getSpeciesLanguageOptions(state)}
                       requiredCount={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.requiredCount ?? 0}
                       selectedIds={state.selections.speciesChoices?.chosenLanguages ?? []}
+                      selectionLabel="Select Languages"
                       subtitle={state.selections.species?.name ?? "Species"}
                       title={(shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined)?.title ?? "Choose Species Languages"}
                       onChange={(chosen) => {
@@ -376,85 +378,6 @@ function SpeciesSelectionPane({ shellContext, state, controller }: OriginPanePro
       selectionLabel="Select a Species"
       title="Species"
     />
-  );
-}
-
-function LanguageChoicesPane({
-  title,
-  subtitle,
-  description,
-  requiredCount,
-  selectedIds,
-  options,
-  emptyMessage,
-  onChange,
-}: {
-  title: string;
-  subtitle: string;
-  description: string;
-  requiredCount: number;
-  selectedIds: string[];
-  options: Array<{ id: string; label: string }>;
-  emptyMessage: string;
-  onChange: (chosen: string[]) => void;
-}) {
-  const selectedSet = new Set(selectedIds);
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <SectionHeading eyebrow={subtitle} title={title} description={description} />
-        <div className="mt-4 grid gap-3">
-          {options.length > 0 ? options.map((option) => {
-            const checked = selectedSet.has(option.id);
-            const disabled = !checked && selectedSet.size >= requiredCount;
-            return (
-              <button
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-[1rem] border px-4 py-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
-                  checked
-                    ? "border-[#87a36a] bg-[linear-gradient(180deg,rgba(241,246,220,0.98),rgba(226,234,183,0.94))]"
-                    : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
-                  disabled && !checked && "opacity-60",
-                )}
-                disabled={disabled}
-                key={option.id}
-                onClick={() => {
-                  const next = new Set(selectedIds);
-                  if (next.has(option.id)) next.delete(option.id);
-                  else next.add(option.id);
-                  onChange([...next]);
-                }}
-                type="button"
-              >
-                <div>
-                  <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">{option.label}</div>
-                  <div className="mt-1 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.18em] text-[#89644b]">
-                    {getOriginLanguageLabel(option.id)}
-                  </div>
-                </div>
-                <SelectionPip checked={checked} />
-              </button>
-            );
-          }) : (
-            <EmptySelectionState message={emptyMessage} />
-          )}
-        </div>
-      </section>
-
-      <aside className="grid gap-4 self-start">
-        <StatCard label="Selections" value={`${selectedIds.length} / ${requiredCount}`} />
-        <SummaryListCard
-          emptyLabel="No languages selected yet."
-          entries={selectedIds.map((entry) => ({ id: entry, label: getOriginLanguageLabel(entry) }))}
-          iconClass="fa-solid fa-language"
-          onRemove={(entryId) => {
-            onChange(selectedIds.filter((candidate) => candidate !== entryId));
-          }}
-          title="Chosen Languages"
-          removable
-        />
-      </aside>
-    </div>
   );
 }
 
