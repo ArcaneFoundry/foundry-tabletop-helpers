@@ -128,9 +128,9 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
 
                   <div className="grid min-w-[14rem] grid-cols-3 gap-2 sm:min-w-[16rem]">
                     {ability.options.map((option) => {
+                      const selected = currentValue === option.value;
                       const blockedBySpend =
                         option.value > 0 && totalUsed - currentValue + option.value > viewModel.asiPoints;
-                      const selected = option.selected;
                       const disabled = blockedBySpend && !selected;
                       return (
                         <motion.button
