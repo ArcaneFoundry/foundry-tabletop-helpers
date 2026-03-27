@@ -8,8 +8,9 @@ import {
 } from "./character-creator/character-creator-init";
 import { getGame } from "./types";
 import { buildRotationApi, type FthRotationApi } from "./window-rotation/index";
+import { buildSoundscapeApi, type FthSoundscapeApi } from "./soundscapes/soundscape-api";
 
-export interface FthApi extends FthRotationApi, FthCombatApi {
+export interface FthApi extends FthRotationApi, FthCombatApi, FthSoundscapeApi {
   setLevel: (level: Level) => void;
   version?: string;
   assetManager: () => void;
@@ -28,6 +29,7 @@ export function buildFthApi(): FthApi {
     version: getFthVersion(),
     ...buildRotationApi(),
     ...buildCombatApi(),
+    ...buildSoundscapeApi(),
     assetManager: () => openAssetManager(),
     characterCreator: () => openCharacterCreatorWizard(),
     characterCreatorConfig: () => openGMConfigApp(),

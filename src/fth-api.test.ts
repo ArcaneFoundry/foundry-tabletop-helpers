@@ -11,6 +11,12 @@ const openLevelUpWizardMock = vi.fn();
 const buildRotationApiMock = vi.fn(() => ({
   rotateAll: vi.fn(),
 }));
+const buildSoundscapeApiMock = vi.fn(() => ({
+  soundscapes: {
+    getLibrary: vi.fn(),
+    resolve: vi.fn(),
+  },
+}));
 
 vi.mock("./logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -37,6 +43,10 @@ vi.mock("./window-rotation/index", () => ({
   buildRotationApi: buildRotationApiMock,
 }));
 
+vi.mock("./soundscapes/soundscape-api", () => ({
+  buildSoundscapeApi: buildSoundscapeApiMock,
+}));
+
 describe("fth api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -55,6 +65,7 @@ describe("fth api", () => {
 
     expect(buildRotationApiMock).toHaveBeenCalledTimes(1);
     expect(buildCombatApiMock).toHaveBeenCalledTimes(1);
+    expect(buildSoundscapeApiMock).toHaveBeenCalledTimes(1);
     expect(api.version).toBe("1.2.3");
 
     api.setLevel("debug");
@@ -62,6 +73,8 @@ describe("fth api", () => {
     api.characterCreator();
     api.characterCreatorConfig();
     api.levelUp("actor-1");
+    api.soundscapes.getLibrary();
+    api.soundscapes.resolve();
 
     expect(setLevelMock).toHaveBeenCalledWith("debug");
     expect(openAssetManagerMock).toHaveBeenCalledTimes(1);

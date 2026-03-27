@@ -36,6 +36,7 @@ const registerCharacterCreatorSettingsMock = vi.fn();
 const registerCharacterCreatorHooksMock = vi.fn();
 const initCharacterCreatorReadyMock = vi.fn();
 const attachFthApiMock = vi.fn();
+const registerSoundscapeSettingsMock = vi.fn();
 
 vi.mock("./logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -112,6 +113,10 @@ vi.mock("./fth-api", () => ({
   attachFthApi: attachFthApiMock,
 }));
 
+vi.mock("./soundscapes/soundscape-settings", () => ({
+  registerSoundscapeSettings: registerSoundscapeSettingsMock,
+}));
+
 describe("index shell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -160,6 +165,7 @@ describe("index shell", () => {
     expect(registerCombatSettingsMock).toHaveBeenCalledWith(settings);
     expect(registerAssetManagerSettingsMock).toHaveBeenCalledWith(settings);
     expect(registerCharacterCreatorSettingsMock).toHaveBeenCalledWith(settings);
+    expect(registerSoundscapeSettingsMock).toHaveBeenCalledWith(settings);
     expect(registerLPCSSheetMock).toHaveBeenCalledTimes(1);
     expect(preloadLPCSTemplatesMock).toHaveBeenCalledTimes(1);
     expect(registerInitiativeHooksMock).toHaveBeenCalledTimes(1);
