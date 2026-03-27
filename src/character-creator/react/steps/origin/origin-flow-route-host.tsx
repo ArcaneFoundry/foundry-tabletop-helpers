@@ -13,20 +13,16 @@ import { getClassTheme } from "../class/class-presentation";
 import { useClassStepperLayoutMode } from "../class/class-stepper-layout";
 import {
   buildEmptySpeciesChoicesState,
-  getAvailableSpeciesSkillOptions,
   getBackgroundLanguageOptions,
-  getSpeciesChoiceValidationMessages,
   getSpeciesLanguageOptions,
+  getSpeciesChoiceValidationMessages,
 } from "../../../steps/origin-flow-utils";
 import {
   CompactMetaChips,
   HeaderFlourish,
   HeroPortraitCard,
   type OriginPaneProps,
-  EmptySelectionState,
   SectionHeading,
-  SelectionPip,
-  StatCard,
   SummaryListCard,
 } from "./components/origin-pane-primitives";
 import { BackgroundAsiPane } from "./panes/background-asi-pane";
@@ -35,6 +31,7 @@ import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-p
 import { LanguageChoicesPane } from "./panes/language-choices-pane";
 import { OriginFeatPane } from "./panes/origin-feat-pane";
 import { SpeciesItemChoicesPane } from "./panes/species-item-choices-pane";
+import { SpeciesSkillsPane } from "./panes/species-skills-pane";
 import { SpeciesSelectionPane } from "./panes/species-selection-pane";
 
 type BackgroundLanguagesViewModel = {
@@ -276,82 +273,6 @@ export function OriginFlowRouteHost(
         </div>
       </motion.div>
     </section>
-  );
-}
-
-
-function SpeciesSkillsPane({ shellContext, state, controller }: OriginPaneProps) {
-  const viewModel = shellContext.stepViewModel as SpeciesAdvancementViewModel | undefined;
-  const options = getAvailableSpeciesSkillOptions(state);
-  const selectedIds = state.selections.speciesChoices?.chosenSkills ?? [];
-  const selectedSet = new Set(selectedIds);
-  const requiredCount = viewModel?.requiredCount ?? 0;
-
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <SectionHeading eyebrow={state.selections.species?.name ?? "Species"} title={viewModel?.title ?? "Choose Species Skills"} description={viewModel?.description ?? ""} />
-        <div className="mt-4 grid gap-3">
-          {options.length > 0 ? options.map((option) => {
-            const checked = selectedSet.has(option.id);
-            const disabled = !checked && selectedSet.size >= requiredCount;
-            return (
-              <button
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-[1rem] border px-4 py-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition",
-                  checked
-                    ? "border-[#87a36a] bg-[linear-gradient(180deg,rgba(241,246,220,0.98),rgba(226,234,183,0.94))]"
-                    : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
-                  disabled && !checked && "opacity-60",
-                )}
-                disabled={disabled}
-                key={option.id}
-                onClick={() => {
-                  const next = new Set(selectedIds);
-                  if (next.has(option.id)) next.delete(option.id);
-                  else next.add(option.id);
-                  state.selections.speciesChoices = {
-                    ...(state.selections.speciesChoices ?? buildEmptySpeciesChoicesState(state)),
-                    chosenSkills: [...next],
-                  };
-                  void controller.refresh();
-                }}
-                type="button"
-              >
-                <div>
-                  <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">{option.label}</div>
-                  <CompactMetaChips chips={[`${option.abilityAbbrev} keyed`, checked ? "Selected" : "Available"]} />
-                </div>
-                <SelectionPip checked={checked} />
-              </button>
-            );
-          }) : (
-            <EmptySelectionState message="No legal species skill options remain after your earlier choices." />
-          )}
-        </div>
-      </section>
-
-      <aside className="grid gap-4 self-start">
-        <StatCard label="Selections" value={`${selectedIds.length} / ${requiredCount}`} />
-        <SummaryListCard
-          emptyLabel="No species skills selected yet."
-          entries={selectedIds.map((entry) => ({
-            id: entry,
-            label: options.find((candidate) => candidate.id === entry)?.label ?? entry,
-          }))}
-          iconClass="fa-solid fa-list-check"
-          onRemove={(entryId) => {
-            state.selections.speciesChoices = {
-              ...(state.selections.speciesChoices ?? buildEmptySpeciesChoicesState(state)),
-              chosenSkills: selectedIds.filter((candidate) => candidate !== entryId),
-            };
-            void controller.refresh();
-          }}
-          title="Chosen Skills"
-          removable
-        />
-      </aside>
-    </div>
   );
 }
 
