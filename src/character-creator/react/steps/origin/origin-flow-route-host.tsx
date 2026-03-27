@@ -37,6 +37,7 @@ import {
   StatCard,
   SummaryListCard,
 } from "./components/origin-pane-primitives";
+import { BackgroundAsiPane } from "./panes/background-asi-pane";
 import { BackgroundSelectionPane } from "./panes/background-selection-pane";
 import { BackgroundSkillConflictPane } from "./panes/background-skill-conflict-pane";
 
@@ -59,6 +60,22 @@ type BackgroundAsiViewModel = {
   }>;
   asiPointsUsed: number;
   asiPoints: number;
+};
+
+type BackgroundSkillConflictViewModel = {
+  backgroundName: string;
+  className: string;
+  fixedBackgroundSkills: string[];
+  conflictingSkills: string[];
+  retainedSkills: string[];
+  selectedReplacementSkills: string[];
+  replacementCount: number;
+  requiredClassSkillCount: number;
+  replacementOptions: Array<{
+    id: string;
+    label: string;
+    abilityAbbrev: string;
+  }>;
 };
 
 type BackgroundLanguagesViewModel = {
@@ -242,7 +259,12 @@ export function OriginFlowRouteHost(
                   ) : shellModel.currentPane === "backgroundSkillConflicts" ? (
                   <BackgroundSkillConflictPane controller={controller} shellContext={shellContext} state={state} />
                   ) : shellModel.currentPane === "backgroundAsi" ? (
-                    <BackgroundAsiPane controller={controller} shellContext={shellContext} state={state} />
+                    <BackgroundAsiPane
+                      controller={controller}
+                      prefersReducedMotion={prefersReducedMotion}
+                      shellContext={shellContext}
+                      state={state}
+                    />
                   ) : shellModel.currentPane === "backgroundLanguages" ? (
                     <LanguageChoicesPane
                       description={(shellContext.stepViewModel as BackgroundLanguagesViewModel | undefined)?.description ?? ""}
@@ -395,82 +417,6 @@ function SpeciesSelectionPane({ shellContext, state, controller }: OriginPanePro
       selectionLabel="Select a Species"
       title="Species"
     />
-  );
-}
-
-function BackgroundAsiPane({ shellContext, state, controller }: OriginPaneProps) {
-  const viewModel = shellContext.stepViewModel as BackgroundAsiViewModel | undefined;
-  const background = state.selections.background;
-  if (!viewModel || !background) return null;
-
-  const totalUsed = Object.values(background.asi.assignments).reduce((sum, value) => sum + (value ?? 0), 0);
-
-  const applyValue = (abilityKey: string, value: number) => {
-    const nextAssignments = { ...background.asi.assignments };
-    const currentValue = nextAssignments[abilityKey as keyof typeof nextAssignments] ?? 0;
-    const otherTotal = totalUsed - currentValue;
-    if (otherTotal + value > background.grants.asiPoints) return;
-    if (value === 0) delete nextAssignments[abilityKey as keyof typeof nextAssignments];
-    else nextAssignments[abilityKey as keyof typeof nextAssignments] = value;
-    background.asi.assignments = nextAssignments;
-    void controller.refresh();
-  };
-
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-        <SectionHeading eyebrow={viewModel.backgroundName} title="Background Aptitudes" />
-        <div className="mt-4 grid gap-3">
-          {viewModel.asiAbilities.map((ability) => (
-            <div
-              className="rounded-[1.15rem] border border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))] p-4 shadow-[0_12px_22px_rgba(67,43,23,0.08)]"
-              key={ability.key}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">{ability.label}</div>
-                  <CompactMetaChips
-                    chips={[
-                      ability.backgroundSuggested ? "Background-aligned" : "",
-                      ability.classRecommended ? "Class synergy" : "",
-                    ].filter(Boolean)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  {ability.options.map((option) => (
-                    <button
-                      className={cn(
-                        "cc-asi-choice-btn",
-                        "rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.7rem] uppercase tracking-[0.16em] transition",
-                        option.selected
-                          ? "border-[#9daa58] bg-[linear-gradient(180deg,rgba(243,245,212,0.98),rgba(227,232,180,0.94))] text-[#42511e]"
-                          : "border-[#d4bb96] bg-[rgba(255,252,246,0.82)] text-[#7a5a41] hover:border-[#b89060]",
-                      )}
-                      data-selected={option.selected ? "true" : "false"}
-                      key={option.value}
-                      onClick={() => applyValue(ability.key, option.value)}
-                      type="button"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <aside className="grid gap-4 self-start">
-        <StatCard label="Points Assigned" value={`${totalUsed} / ${viewModel.asiPoints}`} />
-        <div className="rounded-[1.3rem] border border-[#d1b387]/60 bg-[linear-gradient(180deg,rgba(255,251,244,0.96),rgba(241,227,201,0.92))] p-4 shadow-[0_12px_22px_rgba(67,43,23,0.08)]">
-          <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#855b3e]">Guidance</div>
-          <p className="mt-3 font-fth-cc-body text-[0.97rem] leading-6 text-[#5f4636]">
-            Background improvements follow the 2024 origin rules. Build a spread that supports the character you want to play, then confirm the origin feat and species gifts that complete the picture.
-          </p>
-        </div>
-      </aside>
-    </div>
   );
 }
 
