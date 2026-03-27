@@ -15,6 +15,7 @@ const buildSoundscapeApiMock = vi.fn(() => ({
   soundscapes: {
     getLibrary: vi.fn(),
     resolve: vi.fn(),
+    openStudio: vi.fn(),
   },
 }));
 
@@ -75,6 +76,7 @@ describe("fth api", () => {
     api.levelUp("actor-1");
     api.soundscapes.getLibrary();
     api.soundscapes.resolve();
+    api.soundscapes.openStudio();
 
     expect(setLevelMock).toHaveBeenCalledWith("debug");
     expect(openAssetManagerMock).toHaveBeenCalledTimes(1);
