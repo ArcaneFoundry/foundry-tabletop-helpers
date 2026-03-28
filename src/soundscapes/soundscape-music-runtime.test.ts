@@ -123,10 +123,13 @@ describe("soundscape music runtime", () => {
     await runtime.sync(createResolvedState(program));
 
     expect(first.play).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
+    expect(runtime.getSnapshot()).toEqual({
+      activeProgramKey: "forest:calm",
       activeProgramId: "calm",
       activeAudioPath: "music/town-a.ogg",
+      pendingProgramKey: null,
       pendingDelayMs: null,
+      lastError: null,
     });
 
     timers.runNext();

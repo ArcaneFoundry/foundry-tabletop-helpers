@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -12,6 +13,14 @@ const {
   foundryReactUnmountMock,
   ensureNativeWindowResizeHandleMock,
   ensureWindowSizeConstraintsMock,
+  getSoundscapeSceneByIdMock,
+  resolveStoredSoundscapeStateMock,
+  getSoundscapeAmbienceRuntimeSnapshotMock,
+  playStoredSoundscapeMomentMock,
+  getSoundscapeMusicRuntimeSnapshotMock,
+  openSoundscapeStudioMock,
+  listSoundscapeScenesMock,
+  getSoundscapeTriggerContextMock,
 } = vi.hoisted(() => ({
   logWarnMock: vi.fn(),
   logDebugMock: vi.fn(),
@@ -24,6 +33,35 @@ const {
   foundryReactUnmountMock: vi.fn(),
   ensureNativeWindowResizeHandleMock: vi.fn(),
   ensureWindowSizeConstraintsMock: vi.fn(),
+  getSoundscapeSceneByIdMock: vi.fn(() => ({ id: "scene-1" })),
+  resolveStoredSoundscapeStateMock: vi.fn(() => null),
+  getSoundscapeAmbienceRuntimeSnapshotMock: vi.fn(() => ({
+    activeLayerIds: [],
+    loopAudioPaths: [],
+    activeRandomAudioPaths: [],
+    pendingRandomLayerIds: [],
+    lastError: null,
+  })),
+  playStoredSoundscapeMomentMock: vi.fn(async () => ({
+    played: true,
+    error: null,
+    audioPath: "moments/sting.ogg",
+    momentId: "sting",
+  })),
+  getSoundscapeMusicRuntimeSnapshotMock: vi.fn(() => ({
+    activeProgramId: null,
+    activeAudioPath: null,
+    pendingDelayMs: null,
+    lastError: null,
+  })),
+  openSoundscapeStudioMock: vi.fn(),
+  listSoundscapeScenesMock: vi.fn(() => [{ id: "scene-1", name: "Active Scene", active: true }]),
+  getSoundscapeTriggerContextMock: vi.fn(() => ({
+    manualPreview: false,
+    inCombat: false,
+    weather: null,
+    timeOfDay: "day",
+  })),
 }));
 
 vi.mock("../logger", () => ({
@@ -58,48 +96,29 @@ vi.mock("../ui/foundry/application-v2/window-size-constraints", () => ({
 }));
 
 vi.mock("./soundscape-accessors", () => ({
-  getSoundscapeSceneById: vi.fn(() => ({ id: "scene-1" })),
-  resolveStoredSoundscapeState: vi.fn(() => null),
+  getSoundscapeSceneById: getSoundscapeSceneByIdMock,
+  resolveStoredSoundscapeState: resolveStoredSoundscapeStateMock,
 }));
 
 vi.mock("./soundscape-ambience-controller", () => ({
-  getSoundscapeAmbienceRuntimeSnapshot: vi.fn(() => ({
-    activeLayerIds: [],
-    pendingRandomLayerIds: [],
-    lastError: null,
-  })),
-  playStoredSoundscapeMoment: vi.fn(async () => ({
-    played: true,
-    error: null,
-    audioPath: "moments/sting.ogg",
-    momentId: "sting",
-  })),
+  getSoundscapeAmbienceRuntimeSnapshot: getSoundscapeAmbienceRuntimeSnapshotMock,
+  playStoredSoundscapeMoment: playStoredSoundscapeMomentMock,
 }));
 
 vi.mock("./soundscape-music-controller", () => ({
-  getSoundscapeMusicRuntimeSnapshot: vi.fn(() => ({
-    activeProgramId: null,
-    activeAudioPath: null,
-    pendingDelayMs: null,
-    lastError: null,
-  })),
+  getSoundscapeMusicRuntimeSnapshot: getSoundscapeMusicRuntimeSnapshotMock,
 }));
 
 vi.mock("./soundscape-studio-app", () => ({
-  openSoundscapeStudio: vi.fn(),
+  openSoundscapeStudio: openSoundscapeStudioMock,
 }));
 
 vi.mock("./soundscape-studio-helpers", () => ({
-  listSoundscapeScenes: vi.fn(() => [{ id: "scene-1", name: "Active Scene", active: true }]),
+  listSoundscapeScenes: listSoundscapeScenesMock,
 }));
 
 vi.mock("./soundscape-trigger-service", () => ({
-  getSoundscapeTriggerContext: vi.fn(() => ({
-    manualPreview: false,
-    inCombat: false,
-    weather: null,
-    timeOfDay: "day",
-  })),
+  getSoundscapeTriggerContext: getSoundscapeTriggerContextMock,
 }));
 
 class FakeElement {
@@ -253,5 +272,71 @@ describe("SoundscapeLiveControlsApp", () => {
     mod.openSoundscapeLiveControls();
 
     expect(warn).toHaveBeenCalledWith("Soundscape Live Controls are only available to GMs.");
+  });
+
+  it("renders path-based runtime snapshot details and moment counts", async () => {
+    const mod = await modPromise;
+    mod.buildSoundscapeLiveControlsAppClass();
+    resolveStoredSoundscapeStateMock.mockReturnValue({
+      profileId: "forest",
+      assignmentSource: "worldDefault",
+      sceneId: "scene-1",
+      context: {
+        manualPreview: false,
+        inCombat: false,
+        weather: null,
+        timeOfDay: "day",
+      },
+      musicProgramId: "calm",
+      musicProgram: {
+        id: "calm",
+        name: "Calm",
+        audioPaths: ["music/live.ogg"],
+        selectionMode: "sequential",
+        delaySeconds: 0,
+      },
+      musicRuleId: "base",
+      ambienceLayerIds: [],
+      ambienceLayers: [],
+      ambienceRuleId: null,
+      soundMoments: [{
+        id: "sting",
+        name: "Sting",
+        audioPaths: ["moments/one.ogg", "moments/two.ogg"],
+        selectionMode: "random",
+      }],
+    } as never);
+    getSoundscapeMusicRuntimeSnapshotMock.mockReturnValue({
+      activeProgramId: "calm",
+      activeAudioPath: "music/live.ogg",
+      pendingDelayMs: 1200,
+      lastError: null,
+    } as never);
+    getSoundscapeAmbienceRuntimeSnapshotMock.mockReturnValue({
+      activeLayerIds: ["wind"],
+      loopAudioPaths: ["ambience/wind.ogg"],
+      activeRandomAudioPaths: ["ambience/gust.ogg"],
+      pendingRandomLayerIds: ["wind"],
+      lastError: null,
+    } as never);
+
+    const AppClass = mod.getSoundscapeLiveControlsAppClass();
+    const app = new (AppClass as unknown as new () => {
+      element: FakeElement | null;
+      _onRender: (_context: Record<string, never>, _options: unknown) => Promise<void>;
+    })();
+    const mount = new FakeElement("div");
+    const root = new FakeElement("section");
+    root.setQueryResult("[data-fth-react-root]", mount);
+    app.element = root;
+
+    await app._onRender({}, {});
+
+    const renderedElement = foundryReactRenderMock.mock.calls.at(-1)?.[1];
+    const markup = renderToStaticMarkup(renderedElement);
+
+    expect(markup).toContain("Audio Path");
+    expect(markup).toContain("music/live.ogg");
+    expect(markup).toContain("sting · 2 sounds");
   });
 });
