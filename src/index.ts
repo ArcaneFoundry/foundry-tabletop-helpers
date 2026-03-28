@@ -33,6 +33,7 @@ import { registerSoundscapeSettings } from "./soundscapes/soundscape-settings";
 import {
   registerSoundscapeStudioHooks,
 } from "./soundscapes/soundscape-studio-app";
+import { registerSoundscapeLiveControlsHooks } from "./soundscapes/soundscape-live-controls-app";
 import { startSoundscapeTriggerService } from "./soundscapes/soundscape-trigger-service";
 
 interface SceneControlTool {
@@ -95,6 +96,7 @@ function onInit(): void {
   // Reactive Soundscapes foundation settings
   if (settings) registerSoundscapeSettings(settings);
   registerSoundscapeStudioHooks();
+  registerSoundscapeLiveControlsHooks();
 
   registerAssetManagerSceneControlHook();
 

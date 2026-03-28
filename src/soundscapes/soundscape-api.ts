@@ -16,12 +16,14 @@ import {
   syncStoredSoundscapeMusic,
 } from "./soundscape-music-controller";
 import type { SoundscapeMusicRuntimeSnapshot } from "./soundscape-music-runtime";
+import { openSoundscapeLiveControls } from "./soundscape-live-controls-app";
 import { openSoundscapeStudio } from "./soundscape-studio-app";
 
 export interface FthSoundscapeDebugApi {
   getLibrary: () => PersistentSoundscapeLibrarySnapshot | null;
   resolve: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => ResolvedSoundscapeState | null;
   openStudio: () => void;
+  openLiveControls: () => void;
   syncMusic: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => Promise<SoundscapeMusicRuntimeSnapshot>;
   stopMusic: () => Promise<void>;
   getMusicState: () => SoundscapeMusicRuntimeSnapshot;
@@ -41,6 +43,7 @@ export function buildSoundscapeApi(): FthSoundscapeApi {
       getLibrary: () => getStoredSoundscapeLibrarySnapshot(),
       resolve: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => resolveStoredSoundscapeState(sceneId, context),
       openStudio: () => openSoundscapeStudio(),
+      openLiveControls: () => openSoundscapeLiveControls(),
       syncMusic: (sceneId?: string, context?: Partial<SoundscapeTriggerContext>) => syncStoredSoundscapeMusic(sceneId, context),
       stopMusic: () => stopStoredSoundscapeMusic(),
       getMusicState: () => getSoundscapeMusicRuntimeSnapshot(),
