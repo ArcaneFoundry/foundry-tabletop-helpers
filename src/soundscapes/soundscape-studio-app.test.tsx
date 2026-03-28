@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   logWarnMock,
@@ -120,6 +120,10 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("SoundscapeStudioApp", () => {
   let modPromise: Promise<typeof import("./soundscape-studio-app")>;
 
@@ -208,5 +212,75 @@ describe("SoundscapeStudioApp", () => {
     mod.openSoundscapeStudio();
 
     expect(warn).toHaveBeenCalledWith("Soundscape Studio is only available to GMs.");
+  });
+
+  it("appends trimmed audio paths without duplicating existing entries", async () => {
+    const mod = await modPromise;
+
+    expect(mod.__soundscapeStudioAppInternals.appendAudioPath([
+      "music/existing.ogg",
+    ], "  music/new-track.ogg  ")).toEqual([
+      "music/existing.ogg",
+      "music/new-track.ogg",
+    ]);
+
+    expect(mod.__soundscapeStudioAppInternals.appendAudioPath([
+      "music/existing.ogg",
+    ], " music/existing.ogg ")).toEqual([
+      "music/existing.ogg",
+    ]);
+  });
+
+  it("removes and reorders authored audio paths", async () => {
+    const mod = await modPromise;
+    const audioPaths = ["a.ogg", "b.ogg", "c.ogg"];
+
+    expect(mod.__soundscapeStudioAppInternals.removeAudioPath(audioPaths, 1)).toEqual([
+      "a.ogg",
+      "c.ogg",
+    ]);
+    expect(mod.__soundscapeStudioAppInternals.moveAudioPath(audioPaths, 1, "up")).toEqual([
+      "b.ogg",
+      "a.ogg",
+      "c.ogg",
+    ]);
+    expect(mod.__soundscapeStudioAppInternals.moveAudioPath(audioPaths, 1, "down")).toEqual([
+      "a.ogg",
+      "c.ogg",
+      "b.ogg",
+    ]);
+  });
+
+  it("opens the Foundry audio picker through CONFIG.ux.FilePicker and trims the selected path", async () => {
+    const mod = await modPromise;
+    const render = vi.fn();
+    const onSelect = vi.fn();
+    class Picker {
+      static calls: Array<{ type: string; current: string }> = [];
+
+      constructor(options: { type: string; current: string; callback: (path: string) => void }) {
+        Picker.calls.push({ type: options.type, current: options.current });
+        options.callback("  sounds/forest/wind.ogg  ");
+      }
+
+      render(force?: boolean): void {
+        render(force);
+      }
+    }
+
+    vi.stubGlobal("CONFIG", { ux: { FilePicker: Picker } });
+
+    const opened = mod.__soundscapeStudioAppInternals.openAudioPathPicker({
+      currentPath: "sounds/forest",
+      onSelect,
+    });
+
+    expect(opened).toBe(true);
+    expect(Picker.calls).toEqual([{
+      type: "audio",
+      current: "sounds/forest",
+    }]);
+    expect(onSelect).toHaveBeenCalledWith("sounds/forest/wind.ogg");
+    expect(render).toHaveBeenCalledWith(true);
   });
 });

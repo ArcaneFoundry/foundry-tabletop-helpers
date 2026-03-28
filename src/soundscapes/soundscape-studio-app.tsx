@@ -34,19 +34,17 @@ import {
   createSoundscapeRule,
   createSoundscapeSoundMoment,
   duplicateSoundscapeProfile,
-  listKnownPlaylists,
   listSoundscapeProfiles,
   listSoundscapeScenes,
-  parseUuidText,
   removeProfileFromLibrary,
   replaceProfileInLibrary,
   resolveSoundscapeStudioPreview,
   sanitizeSceneAssignmentsForProfileDeletion,
-  stringifyUuidText,
   updateStudioSceneAssignmentProfile,
   validateSoundscapeStudioData,
   type SoundscapeStudioValidationMessage,
 } from "./soundscape-studio-helpers";
+import { formatAudioPathLabel } from "./soundscape-audio-playback";
 
 interface RuntimeApplicationBase extends ApplicationV2PositionLike {
   element?: Element | null;
@@ -67,6 +65,18 @@ type RuntimeHandlebarsApplicationMixin = (base: RuntimeApplicationClass) => Runt
 interface RuntimeFoundryAppClasses {
   HandlebarsApplicationMixin?: RuntimeHandlebarsApplicationMixin;
   ApplicationV2?: RuntimeApplicationClass;
+}
+
+interface RuntimeFilePicker {
+  render(force?: boolean): void;
+}
+
+interface RuntimeFilePickerClass {
+  new (options: {
+    type: string;
+    current: string;
+    callback: (path: string) => void;
+  }): RuntimeFilePicker;
 }
 
 interface SceneControlTool {
@@ -137,12 +147,63 @@ function renderAssignmentBadge(
   return { label: "Unassigned", tone: "border-white/10 bg-white/[0.03] text-[#aba39a]" };
 }
 
+function getAudioFilePickerClass(): RuntimeFilePickerClass | null {
+  const g = globalThis as {
+    CONFIG?: { ux?: { FilePicker?: RuntimeFilePickerClass } };
+    FilePicker?: RuntimeFilePickerClass;
+  };
+  return g.CONFIG?.ux?.FilePicker ?? g.FilePicker ?? null;
+}
+
+function appendAudioPath(audioPaths: string[], nextPath: string): string[] {
+  const trimmedPath = nextPath.trim();
+  if (trimmedPath.length === 0 || audioPaths.includes(trimmedPath)) return audioPaths;
+  return [...audioPaths, trimmedPath];
+}
+
+function removeAudioPath(audioPaths: string[], index: number): string[] {
+  if (index < 0 || index >= audioPaths.length) return audioPaths;
+  return audioPaths.filter((_, currentIndex) => currentIndex !== index);
+}
+
+function moveAudioPath(audioPaths: string[], index: number, direction: "up" | "down"): string[] {
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || index >= audioPaths.length || targetIndex < 0 || targetIndex >= audioPaths.length) {
+    return audioPaths;
+  }
+
+  const nextAudioPaths = [...audioPaths];
+  const [selectedPath] = nextAudioPaths.splice(index, 1);
+  nextAudioPaths.splice(targetIndex, 0, selectedPath as string);
+  return nextAudioPaths;
+}
+
+function openAudioPathPicker(options: {
+  currentPath?: string;
+  onSelect: (path: string) => void;
+}): boolean {
+  const Picker = getAudioFilePickerClass();
+  if (!Picker) return false;
+
+  const picker = new Picker({
+    type: "audio",
+    current: options.currentPath ?? "",
+    callback: (path) => {
+      const trimmedPath = path.trim();
+      if (trimmedPath.length > 0) {
+        options.onSelect(trimmedPath);
+      }
+    },
+  });
+  picker.render(true);
+  return true;
+}
+
 function SoundscapeStudioView(): JSX.Element {
   const [library, setLibrary] = useState<PersistentSoundscapeLibrarySnapshot>(() => getSoundscapeLibrarySnapshot());
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(() => getNextSelectedProfileId(getSoundscapeLibrarySnapshot()));
   const [worldDefaultProfileId, setWorldDefaultProfileIdState] = useState<string | null>(() => getSoundscapeWorldDefaultProfileId());
   const [scenes] = useState(() => listSoundscapeScenes());
-  const [playlists] = useState(() => listKnownPlaylists());
   const [sceneAssignments, setSceneAssignments] = useState<Record<string, SoundscapeSceneAssignment | null>>({});
   const [previewSceneId, setPreviewSceneId] = useState<string | null>(null);
   const [previewContext, setPreviewContext] = useState<SoundscapeTriggerContext>(defaultPreviewContext);
@@ -172,6 +233,16 @@ function SoundscapeStudioView(): JSX.Element {
 
   function updateProfile(nextProfile: SoundscapeProfile): void {
     setLibrary((current) => replaceProfileInLibrary(current, nextProfile));
+  }
+
+  function openPickerOrWarn(options: {
+    currentPath?: string;
+    onSelect: (path: string) => void;
+  }): void {
+    const opened = openAudioPathPicker(options);
+    if (!opened) {
+      setStatus("Audio picker unavailable. Check Foundry FilePicker support and try again.");
+    }
   }
 
   function createProfile(): void {
@@ -407,42 +478,42 @@ function SoundscapeStudioView(): JSX.Element {
                           />
                         </LabeledField>
                       </div>
-                      <LabeledField label="Playlist UUIDs">
-                        <textarea
-                          className={studioTextAreaClassName()}
-                          onChange={(event) => updateProfile({
+                      <AudioPathField
+                        addLabel="Add Track"
+                        audioPaths={program.audioPaths}
+                        emptyMessage="No tracks selected yet. Browse Foundry audio assets to build this program one path at a time."
+                        label="Tracks"
+                        onAdd={() => openPickerOrWarn({
+                          currentPath: program.audioPaths.at(-1),
+                          onSelect: (path) => updateProfile({
                             ...selectedProfile,
                             musicPrograms: {
                               ...selectedProfile.musicPrograms,
-                              [program.id]: { ...program, audioPaths: parseUuidText(event.target.value) },
+                              [program.id]: { ...program, audioPaths: appendAudioPath(program.audioPaths, path) },
                             },
-                          })}
-                          rows={4}
-                          value={stringifyUuidText(program.audioPaths)}
-                        />
-                      </LabeledField>
+                          }),
+                        })}
+                        onMove={(index, direction) => updateProfile({
+                          ...selectedProfile,
+                          musicPrograms: {
+                            ...selectedProfile.musicPrograms,
+                            [program.id]: { ...program, audioPaths: moveAudioPath(program.audioPaths, index, direction) },
+                          },
+                        })}
+                        onRemove={(index) => updateProfile({
+                          ...selectedProfile,
+                          musicPrograms: {
+                            ...selectedProfile.musicPrograms,
+                            [program.id]: { ...program, audioPaths: removeAudioPath(program.audioPaths, index) },
+                          },
+                        })}
+                      />
                     </EntityCard>
                   ))}
                 </div>
               ) : (
-                <EmptyPanel message="Music programs decide how playlists are selected and how long the score rests between tracks." />
+                <EmptyPanel message="Music programs decide how authored tracks are selected and how long the score rests between tracks." />
               )}
-
-              {playlists.length > 0 ? (
-                <div className="mt-4 rounded-[1rem] border border-white/8 bg-black/20 p-3">
-                  <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#d7bc8c]/72">Known Playlists</div>
-                  <div className="mt-2 grid gap-2 md:grid-cols-2">
-                    {playlists.map((playlist) => (
-                      <div className="rounded-[0.85rem] border border-white/8 bg-white/[0.03] px-3 py-2" key={playlist.id}>
-                        <div className="font-fth-cc-body text-sm text-[#f2eadf]">{playlist.name}</div>
-                        <div className="mt-1 break-all font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#bbb1a7]">
-                          {playlist.uuid}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </StudioCard>
 
             <StudioCard
@@ -536,20 +607,36 @@ function SoundscapeStudioView(): JSX.Element {
                           />
                         </LabeledField>
                       </div>
-                      <LabeledField label="Sound UUIDs">
-                        <textarea
-                          className={studioTextAreaClassName()}
-                          onChange={(event) => updateProfile({
+                      <AudioPathField
+                        addLabel="Add Sound"
+                        audioPaths={layer.audioPaths}
+                        emptyMessage="No ambience sounds selected yet. Browse Foundry audio assets one at a time for this layer."
+                        label="Audio"
+                        onAdd={() => openPickerOrWarn({
+                          currentPath: layer.audioPaths.at(-1),
+                          onSelect: (path) => updateProfile({
                             ...selectedProfile,
                             ambienceLayers: {
                               ...selectedProfile.ambienceLayers,
-                              [layer.id]: { ...layer, audioPaths: parseUuidText(event.target.value) },
+                              [layer.id]: { ...layer, audioPaths: appendAudioPath(layer.audioPaths, path) },
                             },
-                          })}
-                          rows={4}
-                          value={stringifyUuidText(layer.audioPaths)}
-                        />
-                      </LabeledField>
+                          }),
+                        })}
+                        onMove={(index, direction) => updateProfile({
+                          ...selectedProfile,
+                          ambienceLayers: {
+                            ...selectedProfile.ambienceLayers,
+                            [layer.id]: { ...layer, audioPaths: moveAudioPath(layer.audioPaths, index, direction) },
+                          },
+                        })}
+                        onRemove={(index) => updateProfile({
+                          ...selectedProfile,
+                          ambienceLayers: {
+                            ...selectedProfile.ambienceLayers,
+                            [layer.id]: { ...layer, audioPaths: removeAudioPath(layer.audioPaths, index) },
+                          },
+                        })}
+                      />
                     </EntityCard>
                   ))}
                 </div>
@@ -621,20 +708,36 @@ function SoundscapeStudioView(): JSX.Element {
                           </select>
                         </LabeledField>
                       </div>
-                      <LabeledField label="Sound UUIDs">
-                        <textarea
-                          className={studioTextAreaClassName()}
-                          onChange={(event) => updateProfile({
+                      <AudioPathField
+                        addLabel="Add Sound"
+                        audioPaths={moment.audioPaths}
+                        emptyMessage="No moment sounds selected yet. Browse Foundry audio assets one path at a time."
+                        label="Audio"
+                        onAdd={() => openPickerOrWarn({
+                          currentPath: moment.audioPaths.at(-1),
+                          onSelect: (path) => updateProfile({
                             ...selectedProfile,
                             soundMoments: {
                               ...selectedProfile.soundMoments,
-                              [moment.id]: { ...moment, audioPaths: parseUuidText(event.target.value) },
+                              [moment.id]: { ...moment, audioPaths: appendAudioPath(moment.audioPaths, path) },
                             },
-                          })}
-                          rows={4}
-                          value={stringifyUuidText(moment.audioPaths)}
-                        />
-                      </LabeledField>
+                          }),
+                        })}
+                        onMove={(index, direction) => updateProfile({
+                          ...selectedProfile,
+                          soundMoments: {
+                            ...selectedProfile.soundMoments,
+                            [moment.id]: { ...moment, audioPaths: moveAudioPath(moment.audioPaths, index, direction) },
+                          },
+                        })}
+                        onRemove={(index) => updateProfile({
+                          ...selectedProfile,
+                          soundMoments: {
+                            ...selectedProfile.soundMoments,
+                            [moment.id]: { ...moment, audioPaths: removeAudioPath(moment.audioPaths, index) },
+                          },
+                        })}
+                      />
                     </EntityCard>
                   ))}
                 </div>
@@ -1062,6 +1165,70 @@ function EntityCard({
   );
 }
 
+function AudioPathField({
+  label,
+  audioPaths,
+  addLabel,
+  emptyMessage,
+  onAdd,
+  onMove,
+  onRemove,
+}: {
+  label: string;
+  audioPaths: string[];
+  addLabel: string;
+  emptyMessage: string;
+  onAdd: () => void;
+  onMove: (index: number, direction: "up" | "down") => void;
+  onRemove: (index: number) => void;
+}): JSX.Element {
+  return (
+    <LabeledField label={label}>
+      <div className="space-y-3 rounded-[1rem] border border-white/8 bg-black/15 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="font-fth-cc-body text-sm text-[#d8d0c7]">
+            Select Foundry audio assets one at a time and keep them in authored playback order.
+          </div>
+          <StudioInlineButton label={addLabel} onClick={onAdd} />
+        </div>
+
+        {audioPaths.length > 0 ? (
+          <div className="space-y-2">
+            {audioPaths.map((audioPath, index) => (
+              <div
+                className="flex flex-col gap-3 rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-3 md:flex-row md:items-start md:justify-between"
+                key={`${audioPath}-${index}`}
+              >
+                <div className="min-w-0">
+                  <div className="font-fth-cc-body text-sm font-semibold text-[#f2eadf]">{formatAudioPathLabel(audioPath)}</div>
+                  <div className="mt-1 break-all font-fth-cc-ui text-[0.58rem] tracking-[0.08em] text-[#bfb7ad]">
+                    {audioPath}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 md:justify-end">
+                  <PathActionButton
+                    disabled={index === 0}
+                    label="Move Up"
+                    onClick={() => onMove(index, "up")}
+                  />
+                  <PathActionButton
+                    disabled={index === audioPaths.length - 1}
+                    label="Move Down"
+                    onClick={() => onMove(index, "down")}
+                  />
+                  <PathActionButton label="Remove" onClick={() => onRemove(index)} tone="danger" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyPanel message={emptyMessage} />
+        )}
+      </div>
+    </LabeledField>
+  );
+}
+
 function EmptyPanel({ message }: { message: string }): JSX.Element {
   return (
     <div className="rounded-[1rem] border border-dashed border-white/10 bg-white/[0.02] px-4 py-5 font-fth-cc-body text-sm leading-6 text-[#c9c1b8]">
@@ -1145,16 +1312,35 @@ function StudioInlineButton({
   );
 }
 
+function PathActionButton({
+  label,
+  onClick,
+  disabled = false,
+  tone = "default",
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: "default" | "danger";
+}): JSX.Element {
+  return (
+    <button
+      className={studioButtonClassName(tone, disabled, "px-3 py-1.5 text-[0.54rem]")}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
 function studioInputClassName(extra = ""): string {
   return [
     "w-full rounded-[0.9rem] border border-white/10 bg-[rgba(255,255,255,0.04)] px-3 py-2 font-fth-cc-body text-sm text-[#f4ece1] outline-none transition placeholder:text-[#8e867d]",
     "focus:border-[#d7b776]/45 focus:bg-[rgba(255,255,255,0.06)]",
     extra,
   ].filter(Boolean).join(" ");
-}
-
-function studioTextAreaClassName(): string {
-  return `${studioInputClassName()} min-h-[7rem] resize-y`;
 }
 
 function studioButtonClassName(
@@ -1280,4 +1466,9 @@ function onGetSceneControlButtonsSoundscapeStudio(controls: SceneControls): void
 
 export const __soundscapeStudioAppInternals = {
   onGetSceneControlButtonsSoundscapeStudio,
+  getAudioFilePickerClass,
+  appendAudioPath,
+  removeAudioPath,
+  moveAudioPath,
+  openAudioPathPicker,
 };
