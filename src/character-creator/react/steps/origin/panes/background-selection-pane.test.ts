@@ -27,9 +27,9 @@ import { OriginDetailModal } from "../components/origin-pane-primitives";
 import { BackgroundSelectionPane, getBackgroundArtTreatment } from "./background-selection-pane";
 
 describe("BackgroundSelectionPane", () => {
-  it("defaults PHB background assets to cover unless they are explicitly allowlisted", () => {
-    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("cover");
-    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/wayfarer.webp")).toBe("cover");
+  it("treats PHB icon-style background art differently from scenic or journal art", () => {
+    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("icon-bleed");
+    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/wayfarer.webp")).toBe("icon-bleed");
     expect(getBackgroundArtTreatment("modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp")).toBe("cover");
     expect(getBackgroundArtTreatment("")).toBe("cover");
   });
@@ -92,13 +92,15 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("data-origin-gallery-card=\"true\"");
     expect(markup).toContain("Inspect background details for Acolyte");
     expect(markup).toContain("Inspect background details for Soldier");
+    expect(markup).toContain("Inspect background details for Wayfarer");
     expect(markup).toContain("Ability Scores");
     expect(markup).toContain("Alert");
     expect(markup).toContain("Athletics, Survival");
     expect(markup).not.toContain("Choose Background");
     expect(markup).not.toContain("Selected Background");
     expect(markup).not.toContain("Select a Background");
-    expect(markup.match(/data-background-art-treatment="cover"/g)).toHaveLength(3);
+    expect(markup.match(/data-background-art-treatment="icon-bleed"/g)).toHaveLength(2);
+    expect(markup.match(/data-background-art-treatment="cover"/g)).toHaveLength(1);
   });
 
   it("renders the local background detail modal shell", () => {

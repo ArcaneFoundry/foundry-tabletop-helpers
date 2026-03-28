@@ -31,13 +31,12 @@ type BackgroundSelectionPaneProps = OriginPaneProps & {
   prefersReducedMotion: boolean;
 };
 
-const BACKGROUND_ICON_BLEED_ALLOWLIST = new Set<string>([]);
+const BACKGROUND_ICON_BLEED_SEGMENT = "/assets/icons/backgrounds/";
 
 export function getBackgroundArtTreatment(imageSrc: string | null | undefined): "cover" | "icon-bleed" {
   if (!imageSrc) return "cover";
   const normalizedPath = imageSrc.toLowerCase();
-  if (!normalizedPath.includes("/assets/icons/backgrounds/")) return "cover";
-  return BACKGROUND_ICON_BLEED_ALLOWLIST.has(normalizedPath) ? "icon-bleed" : "cover";
+  return normalizedPath.includes(BACKGROUND_ICON_BLEED_SEGMENT) ? "icon-bleed" : "cover";
 }
 
 function formatSkillList(skillIds: string[]): string {
