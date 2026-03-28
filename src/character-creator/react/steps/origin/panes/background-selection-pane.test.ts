@@ -23,6 +23,7 @@ vi.mock("motion/react", async () => {
   };
 });
 
+import { OriginDetailModal } from "../components/origin-pane-primitives";
 import { BackgroundSelectionPane, getBackgroundArtTreatment } from "./background-selection-pane";
 
 describe("BackgroundSelectionPane", () => {
@@ -33,7 +34,7 @@ describe("BackgroundSelectionPane", () => {
     expect(getBackgroundArtTreatment("")).toBe("cover");
   });
 
-  it("renders the extracted background selection shell with selected-state confidence", () => {
+  it("renders the shared background gallery card system with a detail action", () => {
     const markup = renderToStaticMarkup(createElement(BackgroundSelectionPane, {
       controller: {
         updateCurrentStepData: vi.fn(),
@@ -46,18 +47,27 @@ describe("BackgroundSelectionPane", () => {
               uuid: "background-1",
               name: "Acolyte",
               img: "modules/dnd-players-handbook/assets/icons/backgrounds/acolyte.webp",
+              packId: "phb",
+              packLabel: "PHB",
+              type: "background",
               blurb: "Keeper of sacred rites.",
             },
             {
               uuid: "background-2",
               name: "Soldier",
               img: "modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp",
+              packId: "faerun",
+              packLabel: "Heroes of Faerun",
+              type: "background",
               blurb: "Veteran of hard campaigns.",
             },
             {
               uuid: "background-3",
               name: "Wayfarer",
               img: "modules/dnd-players-handbook/assets/icons/backgrounds/wayfarer.webp",
+              packId: "phb",
+              packLabel: "PHB",
+              type: "background",
               blurb: "A traveler who knows the road.",
             },
           ],
@@ -67,26 +77,49 @@ describe("BackgroundSelectionPane", () => {
         selections: {
           background: {
             uuid: "background-2",
+            grants: {
+              asiSuggested: ["str", "con"],
+              originFeatName: "Alert",
+              skillProficiencies: ["ath", "sur"],
+            },
           },
         },
       },
     } as never));
 
     expect(markup).toContain("cc-origin-selection-pane");
-    expect(markup).not.toContain("cc-origin-selection-pane__gallery-scroll");
-    expect(markup).not.toContain("data-origins-selection-scroll");
-    expect(markup).toContain("data-selected=\"true\"");
-    expect(markup).toContain("Selected Background");
-    expect(markup).toContain("Choose Background");
-    expect(markup).toContain("flex h-full w-full flex-row");
-    expect(markup).not.toContain("flex h-full w-full flex-col");
-    expect(markup).toContain("flex h-full min-h-0 flex-1 flex-col");
-    expect(markup).toContain("min-h-[20rem] flex-1 overflow-hidden");
-    expect(markup.match(/data-background-art-treatment="cover"/g)).toHaveLength(3);
-    expect(markup).not.toContain("data-background-art-treatment=\"icon-bleed\"");
-    expect(markup).not.toContain("scale-[1.45] object-cover opacity-70 blur-xl");
-    expect(markup).not.toContain("scale-[1.14] group-hover:scale-[1.18]");
     expect(markup).not.toContain("cc-origin-selection-pane__intro");
+    expect(markup).toContain("data-origin-gallery-card=\"true\"");
+    expect(markup).toContain("Inspect background details for Acolyte");
+    expect(markup).toContain("Inspect background details for Soldier");
+    expect(markup).toContain("Ability Scores");
+    expect(markup).toContain("Alert");
+    expect(markup).toContain("Athletics, Survival");
+    expect(markup).not.toContain("Choose Background");
+    expect(markup).not.toContain("Selected Background");
     expect(markup).not.toContain("Select a Background");
+    expect(markup.match(/data-background-art-treatment="cover"/g)).toHaveLength(3);
+  });
+
+  it("renders the local background detail modal shell", () => {
+    const markup = renderToStaticMarkup(createElement(OriginDetailModal, {
+      entry: {
+        uuid: "background-1",
+        name: "Acolyte",
+        img: "acolyte.webp",
+        packId: "phb",
+        packLabel: "PHB",
+        type: "background",
+        description: "<p>Detailed background text.</p>",
+      },
+      fallbackIcon: "fa-solid fa-scroll",
+      onClose: vi.fn(),
+      title: "Acolyte Background",
+    }));
+
+    expect(markup).toContain("data-origin-detail-modal=\"true\"");
+    expect(markup).toContain("Acolyte Background");
+    expect(markup).toContain("Detailed background text.");
+    expect(markup).toContain("Close Acolyte Background");
   });
 });

@@ -26,7 +26,7 @@ vi.mock("motion/react", async () => {
 import { OriginFeatPane } from "./origin-feat-pane";
 
 describe("OriginFeatPane", () => {
-  it("renders default framing, current selection confidence, and the revert action", () => {
+  it("renders a simplified feat list, current selection summary, and the revert action", () => {
     const markup = renderToStaticMarkup(createElement(OriginFeatPane, {
       controller: {
         refresh: vi.fn(),
@@ -74,12 +74,62 @@ describe("OriginFeatPane", () => {
     } as never));
 
     expect(markup).toContain("Origin Feat");
-    expect(markup).toContain("Default Recommendation");
+    expect(markup).not.toContain("Default Recommendation");
+    expect(markup).not.toContain("Selection Mode");
     expect(markup).toContain("Background default");
     expect(markup).toContain("Custom feat active");
     expect(markup).toContain("Current Selection");
     expect(markup).toContain("Revert To Background Default");
     expect(markup).toContain("Selected feat");
     expect(markup).toContain("Lucky");
+  });
+
+  it("omits the empty-description filler in the detail card", () => {
+    const markup = renderToStaticMarkup(createElement(OriginFeatPane, {
+      controller: {
+        refresh: vi.fn(),
+      },
+      prefersReducedMotion: true,
+      shellContext: {
+        stepViewModel: {
+          backgroundName: "Acolyte",
+          className: "Fighter",
+          allowOriginFeatSwap: true,
+          defaultOriginFeatName: "Magic Initiate (Cleric)",
+          originFeatName: "Lucky",
+          originFeatImg: "",
+          isCustomOriginFeat: true,
+          selectedOriginFeat: {
+            uuid: "feat-custom",
+            name: "Lucky",
+            img: "",
+          },
+          availableOriginFeats: [
+            { uuid: "feat-custom", name: "Lucky", img: "" },
+          ],
+          hasOriginFeats: true,
+          originFeatEmptyMessage: "",
+        },
+      },
+      state: {
+        selections: {
+          background: {
+            grants: {
+              originFeatUuid: "feat-default",
+              originFeatName: "Magic Initiate (Cleric)",
+              originFeatImg: "",
+            },
+          },
+          originFeat: {
+            uuid: "feat-custom",
+            name: "Lucky",
+            img: "",
+            isCustom: true,
+          },
+        },
+      },
+    } as never));
+
+    expect(markup).not.toContain("No description is available in the current compendium data.");
   });
 });

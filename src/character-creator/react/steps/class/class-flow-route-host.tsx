@@ -622,7 +622,6 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
 
       <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
-          accent={theme.accent}
           glow={theme.glow}
           maxCount={maxCount}
           selectedCount={selectedKeys.length}
@@ -856,9 +855,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
 
       <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
-          accent={theme.accent}
           glow={theme.glow}
-          label="Weapon Types Chosen"
           maxCount={maxCount}
           selectedCount={selectedIds.length}
           title="Masteries Summary"
@@ -962,7 +959,6 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
 
       <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <AdvancementSummaryCard
-          accent={theme.accent}
           glow={theme.glow}
           guidance={paneCopy.guidance}
           label={paneCopy.summaryLabel}
@@ -1049,28 +1045,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
           </p>
         </div>
         <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
-          <div className="rounded-[1.1rem] border border-[#e9c176]/[0.14] bg-[rgba(255,255,255,0.03)] px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
-                  Guided Requirement Groups
-                </div>
-                <div className="mt-1 font-fth-cc-body text-[0.94rem] leading-6 text-[#d0cad0]">
-                  Each grant resolves independently. Pick the items for each requirement, then confirm them in the summary rail.
-                </div>
-              </div>
-              <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                <span className="inline-flex items-center rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
-                  {viewModel.requirements.length} group{viewModel.requirements.length === 1 ? "" : "s"}
-                </span>
-                <span className="inline-flex items-center rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
-                  {totalSelected} / {totalRequired} chosen
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4">
+          <div className="grid gap-4">
             {viewModel.requirements.map((requirement, groupIndex) => {
               const selectedSet = new Set(selectedByRequirement[requirement.id] ?? []);
               const options = requirement.options.map((option) => ({
@@ -1079,7 +1054,6 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
                 disabled: !selectedSet.has(option.id) && selectedSet.size >= requirement.requiredCount,
               }));
               const selectedCount = selectedSet.size;
-              const remaining = Math.max(0, requirement.requiredCount - selectedCount);
               return (
                 <section
                   className="cc-class-item-choice-group rounded-[1.35rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(31,26,24,0.98),rgba(18,15,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,240,219,0.03),0_18px_34px_rgba(0,0,0,0.18)]"
@@ -1101,10 +1075,9 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
 
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <div className="inline-flex whitespace-nowrap rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
-                        {selectedCount} / {requirement.requiredCount} selected
-                      </div>
-                      <div className="inline-flex whitespace-nowrap rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#9f95a6]">
-                        {remaining > 0 ? `${remaining} remaining` : "Requirement met"}
+                        {selectedCount >= requirement.requiredCount
+                          ? `${requirement.requiredCount} / ${requirement.requiredCount} ready`
+                          : `${selectedCount} / ${requirement.requiredCount} chosen`}
                       </div>
                     </div>
                   </div>
@@ -1129,9 +1102,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
 
       <aside className="flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
-          accent={theme.accent}
           glow={theme.glow}
-          label="Class Options Chosen"
           maxCount={totalRequired}
           selectedCount={totalSelected}
           title="Selection Summary"
@@ -1265,7 +1236,6 @@ function SkillOptionRow({
 function AdvancementSummaryCard({
   selectedCount,
   maxCount,
-  accent,
   glow,
   guidance,
   title = "Selection Summary",
@@ -1273,7 +1243,6 @@ function AdvancementSummaryCard({
 }: {
   selectedCount: number;
   maxCount: number;
-  accent: string;
   glow: string;
   guidance: string;
   title?: string;
@@ -1285,27 +1254,29 @@ function AdvancementSummaryCard({
       style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
     >
       <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-white/10 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
-            <div
-              className="flex h-20 w-20 flex-col items-center justify-center rounded-full border text-[#fff9ea] shadow-[inset_0_2px_0_rgba(255,244,225,0.22),0_12px_24px_rgba(0,0,0,0.24)]"
-              style={{
-                borderColor: accent,
-                background: `radial-gradient(circle at 35% 30%, rgba(247,214,145,0.98), ${accent})`,
-              }}
-            >
-              <div className="flex items-end leading-none">
-                <span className="font-fth-cc-display text-[2.2rem]">{selectedCount}</span>
-                <span className="ml-1 font-fth-cc-display text-[1.55rem] opacity-90">/{maxCount}</span>
-              </div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+            <div className="mt-2 font-fth-cc-display text-[1.65rem] leading-none text-[#fff4df]">
+              {selectedCount}
+              <span className="ml-1 text-[1rem] opacity-75">/ {maxCount}</span>
             </div>
-            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
+            <div className="mt-2 font-fth-cc-body text-[1rem] text-[#d9d0c5]">{label}</div>
           </div>
-          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#d9d0c5]">{label}</div>
-          <div className="mt-2 font-fth-cc-body text-[0.88rem] leading-6 text-[#bfb5c2]">{guidance}</div>
+          <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#fff7e5]">
+            {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
+          </div>
         </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
+              background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
+            }}
+          />
+        </div>
+        <div className="mt-3 font-fth-cc-body text-[0.88rem] leading-6 text-[#bfb5c2]">{guidance}</div>
       </div>
     </section>
   );
@@ -1314,17 +1285,13 @@ function AdvancementSummaryCard({
 function SelectionSummaryCard({
   selectedCount,
   maxCount,
-  accent,
   glow,
   title = "Selection Summary",
-  label = "Skills Chosen",
 }: {
   selectedCount: number;
   maxCount: number;
-  accent: string;
   glow: string;
   title?: string;
-  label?: string;
 }) {
   return (
     <section
@@ -1332,25 +1299,26 @@ function SelectionSummaryCard({
       style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
     >
       <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-white/10 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
-            <div
-              className="flex h-20 w-20 flex-col items-center justify-center rounded-full border text-[#fff9ea] shadow-[inset_0_2px_0_rgba(255,244,225,0.22),0_12px_24px_rgba(0,0,0,0.24)]"
-              style={{
-                borderColor: accent,
-                background: `radial-gradient(circle at 35% 30%, rgba(247,214,145,0.98), ${accent})`,
-              }}
-            >
-              <div className="flex items-end leading-none">
-                <span className="font-fth-cc-display text-[2.2rem]">{selectedCount}</span>
-                <span className="ml-1 font-fth-cc-display text-[1.55rem] opacity-90">/{maxCount}</span>
-              </div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+            <div className="mt-2 font-fth-cc-display text-[1.65rem] leading-none text-[#fff4df]">
+              {selectedCount}
+              <span className="ml-1 text-[1rem] opacity-75">/ {maxCount}</span>
             </div>
-            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
           </div>
-          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#d9d0c5]">{label}</div>
+          <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#fff7e5]">
+            {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
+          </div>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
+              background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
+            }}
+          />
         </div>
       </div>
     </section>
@@ -1413,7 +1381,7 @@ function ClassAdvancementOptionRow({
       </span>
       <span
         className={cn(
-          "relative flex h-10 items-center justify-center rounded-[0.75rem] border px-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.12em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border px-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.12em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked
             ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
             : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
@@ -1421,10 +1389,7 @@ function ClassAdvancementOptionRow({
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
         {option.checked ? (
-          <span className="inline-flex items-center gap-1.5">
-            <i className="fa-solid fa-check" aria-hidden="true" />
-            <span>Chosen</span>
-          </span>
+          <i className="fa-solid fa-check" aria-hidden="true" />
         ) : (
           <i className="fa-solid fa-hexagon" aria-hidden="true" />
         )}

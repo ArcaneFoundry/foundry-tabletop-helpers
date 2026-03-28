@@ -7,8 +7,6 @@ import {
   CompactMetaChips,
   DetailCard,
   EmptySelectionState,
-  SectionHeading,
-  StatCard,
   SummaryListCard,
 } from "../components/origin-pane-primitives";
 
@@ -62,32 +60,20 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
       <section className="rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(22,20,27,0.98),rgba(11,11,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
-        <SectionHeading
-          eyebrow={viewModel.backgroundName}
-          title="Origin Feat"
-          description="Your background offers a default feat, but you can pivot into a different origin expression if a custom choice creates a stronger identity for the character you want to play."
-        />
-
-        <div className="mt-4 rounded-[1.2rem] border border-[#e9c176]/16 bg-[rgba(255,255,255,0.02)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03)]">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
-                Default Recommendation
-              </div>
-              <div className="mt-1 font-fth-cc-body text-[0.98rem] leading-6 text-[#d7d1d9]">
-                {viewModel.defaultOriginFeatName
-                  ? `${viewModel.backgroundName} recommends ${viewModel.defaultOriginFeatName} as the default origin feat.`
-                  : "No default origin feat has been recorded for this background."}
-              </div>
-            </div>
-            <CompactMetaChips
-              chips={[
-                viewModel.defaultOriginFeatName ? `Default: ${viewModel.defaultOriginFeatName}` : "",
-                viewModel.isCustomOriginFeat ? "Custom feat active" : "Using background default",
-              ].filter(Boolean)}
-              tone="dark"
-            />
+        <div className="border-b border-[#e9c176]/14 pb-4">
+          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
+            {viewModel.backgroundName}
           </div>
+          <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+            Origin Feat
+          </div>
+          <CompactMetaChips
+            chips={[
+              viewModel.defaultOriginFeatName ? `Default: ${viewModel.defaultOriginFeatName}` : "",
+              viewModel.isCustomOriginFeat ? "Custom feat active" : "Using background default",
+            ].filter(Boolean)}
+            tone="dark"
+          />
         </div>
 
         {viewModel.hasOriginFeats ? (
@@ -99,7 +85,7 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
                 <motion.button
                   animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
                   className={cn(
-                    "group relative overflow-hidden rounded-[1.15rem] border p-3 text-left shadow-[0_14px_24px_rgba(67,43,23,0.12)] transition duration-200",
+                    "group relative overflow-hidden rounded-[1.1rem] border p-3 text-left shadow-[0_14px_24px_rgba(67,43,23,0.12)] transition duration-200",
                     selected
                       ? "border-[#d6bb83] bg-[linear-gradient(180deg,rgba(250,240,215,0.98),rgba(229,206,157,0.94))]"
                       : "border-[#7f6646] bg-[linear-gradient(180deg,rgba(54,42,31,0.98),rgba(23,18,15,0.99))] hover:border-[#cda56c]",
@@ -114,7 +100,7 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
                   whileHover={prefersReducedMotion ? undefined : { scale: 1.01, y: -1 }}
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
                 >
-                  <div className="grid grid-cols-[4.9rem_minmax(0,1fr)] gap-3">
+                  <div className="grid grid-cols-[4.6rem_minmax(0,1fr)] items-start gap-3">
                     <div className="aspect-square overflow-hidden rounded-[0.95rem] border border-[#d4bb96]/50 bg-[#20130e]">
                       {entry.img ? (
                         <img alt={entry.name} className="h-full w-full object-cover" loading="lazy" src={entry.img} />
@@ -134,25 +120,13 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
                       )}>
                         {entry.name}
                       </div>
-                      <p className={cn(
-                        "mt-1 font-fth-cc-body text-[0.9rem] leading-5",
-                        selected ? "text-[#6b5040]" : "text-[#cabebf]",
-                      )}>
-                        {selected
-                          ? "Currently selected for this character."
-                          : isBackgroundDefault
-                            ? "Recommended by the chosen background."
-                            : "Alternative origin feat option."}
-                      </p>
-                      <div className="mt-3">
-                        <CompactMetaChips
-                          chips={[
-                            isBackgroundDefault ? "Background default" : "Custom option",
-                            selected ? "Selected feat" : "",
-                          ].filter(Boolean)}
-                          tone={selected ? "light" : "dark"}
-                        />
-                      </div>
+                      <CompactMetaChips
+                        chips={[
+                          isBackgroundDefault ? "Background default" : "Alternate feat",
+                          selected ? "Selected feat" : "",
+                        ].filter(Boolean)}
+                        tone={selected ? "light" : "dark"}
+                      />
                     </div>
                   </div>
                 </motion.button>
@@ -167,7 +141,6 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
       </section>
 
       <aside className="grid gap-4 self-start">
-        <StatCard label="Selection Mode" value={viewModel.isCustomOriginFeat ? "Custom" : "Default"} />
         <section className="rounded-[1.2rem] border border-[#e9c176]/16 bg-[linear-gradient(180deg,rgba(29,24,20,0.96),rgba(16,14,13,0.99))] p-4 shadow-[0_14px_26px_rgba(0,0,0,0.18)]">
           <div className="flex items-center justify-between gap-3 border-b border-white/8 pb-3">
             <div>
@@ -207,7 +180,7 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
             </button>
           ) : null}
         </section>
-        <DetailCard entry={viewModel.selectedOriginFeat ?? null} fallbackIcon="fa-solid fa-scroll" />
+        <DetailCard entry={viewModel.selectedOriginFeat ?? null} fallbackIcon="fa-solid fa-scroll" hideEmptyDescription />
       </aside>
     </div>
   );

@@ -228,6 +228,7 @@ describe("step class summary", () => {
       overview: "",
       primaryAbilitySummary: "STR / DEX",
       startingLevel: 1,
+      featureHeading: "First-Level Features",
       hitDie: "d10",
       savingThrows: ["STR", "CON"],
       chosenSkills: ["Athletics", "Survival"],

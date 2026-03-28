@@ -224,6 +224,7 @@ describe("ClassFlowRouteHost", () => {
             overview: "",
             primaryAbilitySummary: "STR / CHA",
             startingLevel: 1,
+            featureHeading: "First-Level Features",
             hitDie: "d10",
             featureCount: 1,
             chosenSkills: ["Athletics"],
@@ -248,7 +249,7 @@ describe("ClassFlowRouteHost", () => {
       } as never),
     );
 
-    expect(markup).toContain("Current-Level Features");
+    expect(markup).toContain("First-Level Features");
     expect(markup).toContain("cc-class-summary__feature-list");
     expect(markup).toContain('style="padding-block:1rem;padding-inline:1.25rem"');
     expect(markup).toContain("Hit Die");
@@ -426,20 +427,22 @@ describe("ClassFlowRouteHost", () => {
       } as never),
     );
 
-    expect(markup).toContain("Guided Requirement Groups");
-    expect(markup).toContain("2 groups");
-    expect(markup).toContain("2 / 3 chosen");
+    expect(markup).not.toContain("Guided Requirement Groups");
+    expect(markup).toContain("Selection Summary");
+    expect(markup).toContain("/ 3");
+    expect(markup).toContain("1 left");
     expect(markup).toContain('data-class-item-choice-group="combat-style"');
     expect(markup).toContain('data-class-item-choice-group="martial-training"');
     expect(markup).toContain("Group 1");
     expect(markup).toContain("Group 2");
     expect(markup).toContain("Combat Style");
     expect(markup).toContain("Martial Training");
-    expect(markup).toContain("Requirement met");
-    expect(markup).toContain("1 remaining");
+    expect(markup).toContain("1 / 1 ready");
+    expect(markup).toContain("1 / 2 chosen");
     expect(markup).toContain("Combat Style choice");
     expect(markup).toContain("Martial Training choice");
     expect(markup).toContain("Chosen Features");
+    expect(markup).not.toContain("Chosen</span>");
   });
 
   it.each([

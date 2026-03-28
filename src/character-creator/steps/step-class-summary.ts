@@ -149,6 +149,18 @@ function dedupeEntries(entries: string[]): string[] {
   return [...normalized.values()];
 }
 
+function getLevelAwareFeatureHeading(level: number): string {
+  const labels: Record<number, string> = {
+    1: "First-Level Features",
+    2: "Second-Level Features",
+    3: "Third-Level Features",
+    4: "Fourth-Level Features",
+    5: "Fifth-Level Features",
+  };
+
+  return labels[level] ?? `Level ${level} Features`;
+}
+
 function isClassSkillsComplete(state: WizardState): boolean {
   const requiredClassSkills = Math.min(state.selections.class?.skillCount ?? 0, state.selections.class?.skillPool?.length ?? 0);
   return (state.selections.skills?.chosen.length ?? 0) >= requiredClassSkills;
@@ -418,6 +430,7 @@ export function createClassSummaryStep(): WizardStepDefinition {
           ?? getClassRecommendation(classSelection?.identifier ?? "").primaryAbilities,
         ),
         startingLevel: state.config.startingLevel,
+        featureHeading: getLevelAwareFeatureHeading(state.config.startingLevel),
         hitDie: classSelection?.hitDie ?? "d8",
         featureCount: features.length,
         chosenSkills: (state.selections.skills?.chosen ?? []).map(skillLabel),

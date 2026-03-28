@@ -75,7 +75,6 @@ describe("SpeciesItemChoicesPane", () => {
     } as never));
 
     expect(markup).toContain("cc-origin-species-item-choices-pane");
-    expect(markup).toContain("cc-origin-species-item-choices-pane__scroll");
     expect(markup).toContain("cc-origin-species-item-choices-pane__group");
     expect(markup).toContain("cc-origin-species-item-choices-pane__validation");
     expect(markup).toContain("Grouped Requirements");

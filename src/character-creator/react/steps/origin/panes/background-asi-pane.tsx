@@ -5,8 +5,6 @@ import { cn } from "../../../../../ui/lib/cn";
 import type { OriginPaneProps } from "../components/origin-pane-primitives";
 import {
   CompactMetaChips,
-  HeroPortraitCard,
-  SectionHeading,
   StatCard,
   SummaryListCard,
 } from "../components/origin-pane-primitives";
@@ -57,30 +55,26 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
     }));
 
   return (
-    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
+    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.32fr)_minmax(18rem,0.68fr)]">
       <section className="relative isolate rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(22,19,25,0.98),rgba(12,12,15,0.99))] shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
         <div className="relative z-10 p-4">
-          <SectionHeading
-            eyebrow={viewModel.backgroundName}
-            title="Background Ability Scores"
-            description="Distribute the background points where they do the most work. The highlighted cues show where this background and your class both point you, while the buttons keep the spend within the allowed limit."
-          />
-
-          <div className="mt-4 rounded-[1.2rem] border border-[#e9c176]/[0.14] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="rounded-[1.2rem] border border-[#e9c176]/[0.14] bg-[rgba(255,255,255,0.03)] px-4 py-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/72">Spend guide</div>
-                <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.96rem] leading-6 text-[#d0cad0]">
-                  Use the allocation chips to spot background-aligned and class-synergy picks at a glance. Positive choices
-                  are disabled when they would exceed the remaining budget, so invalid totals are visible before they can be
-                  applied.
+                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/72">
+                  {viewModel.backgroundName}
+                </div>
+                <div className="mt-2 font-fth-cc-display text-[1.34rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+                  Background Ability Scores
+                </div>
+                <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.95rem] leading-6 text-[#d0cad0]">
+                  Assign the available background points. Each choice shows the value it sets and whether the remaining budget still allows it.
                 </p>
               </div>
               <CompactMetaChips
                 chips={[
                   `${totalUsed}/${viewModel.asiPoints} spent`,
                   remainingPoints > 0 ? `${remainingPoints} remaining` : "Fully assigned",
-                  "Invalid totals disabled",
                 ]}
                 tone="dark"
               />
@@ -90,54 +84,54 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
           <div className="mt-4 grid gap-3">
             {viewModel.asiAbilities.map((ability) => {
               const currentValue = background.asi.assignments[ability.key as keyof typeof background.asi.assignments] ?? 0;
-              const hasSuggestedCue = ability.backgroundSuggested || ability.classRecommended;
+              const tone = ability.backgroundSuggested || ability.classRecommended || currentValue > 0;
+
               return (
                 <article
-                  className="rounded-[1.28rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(34,27,21,0.96),rgba(21,16,13,0.99))] p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]"
+                  className={cn(
+                    "rounded-[1.28rem] border p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]",
+                    tone
+                      ? "border-[#e9c176]/[0.18] bg-[linear-gradient(180deg,rgba(40,31,24,0.98),rgba(20,16,13,0.99))]"
+                      : "border-white/10 bg-[linear-gradient(180deg,rgba(32,27,24,0.94),rgba(18,15,15,0.99))]",
+                  )}
                   key={ability.key}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex flex-wrap items-start gap-4">
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f5ead5]">{ability.label}</div>
-                        <div
-                          className={cn(
-                            "rounded-full border px-2.5 py-1 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em]",
-                            currentValue > 0
-                              ? "border-[#e9c176]/55 bg-[rgba(233,193,118,0.1)] text-[#f8e4bf]"
-                              : "border-white/10 bg-white/5 text-[#c7c0ca]",
-                          )}
-                        >
-                          {currentValue > 0 ? `+${currentValue}` : "Unassigned"}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="inline-flex h-12 min-w-12 items-center justify-center rounded-[0.9rem] border border-[#e9c176]/32 bg-[rgba(233,193,118,0.08)] px-3 font-fth-cc-display text-[1.1rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+                          {ability.label.slice(0, 3)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f5ead5]">{ability.label}</div>
+                          <div className="mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em] text-[#d5b98a]">
+                            Current value {currentValue > 0 ? `+${currentValue}` : "unassigned"}
+                          </div>
                         </div>
                       </div>
-                      <p className="mt-2 max-w-2xl font-fth-cc-body text-[0.95rem] leading-6 text-[#d0cad0]">
-                        {ability.backgroundSuggested ? "This background recommends this score." : "This score is optional, but it remains available within the allowed pool."}
-                        {ability.classRecommended ? " It also supports your class direction." : ""}
-                      </p>
-                      <div className="mt-3">
-                        <CompactMetaChips
-                          chips={[
-                            ability.backgroundSuggested ? "Background-aligned" : "",
-                            ability.classRecommended ? "Class synergy" : "",
-                            currentValue > 0 ? "Applied" : "",
-                          ]}
-                          tone="dark"
-                        />
-                      </div>
+                      <CompactMetaChips
+                        chips={[
+                          ability.backgroundSuggested ? "Background-aligned" : "",
+                          ability.classRecommended ? "Class synergy" : "",
+                          currentValue > 0 ? "Applied" : "",
+                        ]}
+                        tone="dark"
+                      />
                     </div>
 
-                    <div className="grid min-w-[14rem] grid-cols-3 gap-2 sm:min-w-[16rem]">
+                    <div className="flex min-w-[18rem] flex-1 flex-wrap gap-2">
                       {ability.options.map((option) => {
                         const selected = currentValue === option.value;
                         const blockedBySpend =
                           option.value > 0 && totalUsed - currentValue + option.value > viewModel.asiPoints;
                         const disabled = blockedBySpend && !selected;
+                        const remainingAfterChoice = viewModel.asiPoints - (totalUsed - currentValue + option.value);
+
                         return (
                           <motion.button
                             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
                             className={cn(
-                              "flex flex-col items-start gap-1 rounded-[0.95rem] border px-3 py-2 text-left shadow-[0_12px_22px_rgba(0,0,0,0.1)] transition duration-200",
+                              "min-w-[5.6rem] flex-1 rounded-[0.95rem] border px-3 py-2.5 text-left shadow-[0_12px_22px_rgba(0,0,0,0.1)] transition duration-200",
                               selected
                                 ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(250,232,186,0.96),rgba(228,202,135,0.92))] text-[#4c3524]"
                                 : disabled
@@ -155,27 +149,21 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
                             whileHover={prefersReducedMotion || disabled ? undefined : { scale: 1.012, y: -1 }}
                             whileTap={prefersReducedMotion || disabled ? undefined : { scale: 0.99 }}
                           >
-                            <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]">{option.label}</div>
-                            <div className="font-fth-cc-body text-[0.66rem] leading-none text-inherit/75">
-                              {selected ? "Applied" : blockedBySpend ? "Not enough points left" : option.value === 0 ? "Reset this score" : "Available"}
+                            <div className="font-fth-cc-display text-[1rem] uppercase tracking-[0.08em]">{option.label}</div>
+                            <div className="mt-1 font-fth-cc-body text-[0.72rem] leading-5 text-inherit/75">
+                              {selected
+                                ? "Applied"
+                                : blockedBySpend
+                                  ? "Not enough points left"
+                                  : option.value === 0
+                                    ? "Reset this score"
+                                    : `${remainingAfterChoice} left after pick`}
                             </div>
                           </motion.button>
                         );
                       })}
                     </div>
                   </div>
-
-                  {hasSuggestedCue ? (
-                    <div className="mt-3">
-                      <CompactMetaChips
-                        chips={[
-                          ability.backgroundSuggested ? "Background-aligned" : "",
-                          ability.classRecommended ? "Class synergy" : "",
-                        ]}
-                        tone="dark"
-                      />
-                    </div>
-                  ) : null}
                 </article>
               );
             })}
@@ -184,7 +172,6 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
       </section>
 
       <aside className="grid gap-4 self-start">
-        <HeroPortraitCard image={viewModel.backgroundImg} label={viewModel.backgroundName} iconClass="fa-solid fa-chart-line" />
         <StatCard label="Points Spent" value={`${totalUsed} / ${viewModel.asiPoints}`} />
         <StatCard label="Points Remaining" value={`${remainingPoints}`} />
         <SummaryListCard
@@ -193,13 +180,6 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
           iconClass="fa-solid fa-chart-simple"
           title="Current Spread"
         />
-        <section className="rounded-[1.35rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(24,20,18,0.96),rgba(15,13,12,0.99))] p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]">
-          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#e9c176]/72">Guidance</div>
-          <p className="mt-3 font-fth-cc-body text-[0.96rem] leading-6 text-[#d0cad0]">
-            Background improvements should feel deliberate and readable. Use the recommended abilities first, keep an eye on
-            the remaining budget, and let the disabled choices make the invalid totals obvious before they happen.
-          </p>
-        </section>
       </aside>
     </div>
   );

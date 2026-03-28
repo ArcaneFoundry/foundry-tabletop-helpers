@@ -27,7 +27,7 @@ vi.mock("motion/react", async () => {
 import { LanguageChoicesPane } from "./language-choices-pane";
 
 describe("LanguageChoicesPane", () => {
-  it("renders a reusable language choice shell with counts, selection summary, and removable picks", () => {
+  it("renders a simplified language header while keeping the summary rail", () => {
     const markup = renderToStaticMarkup(createElement(LanguageChoicesPane, {
       description: "Choose two languages that suit the background.",
       emptyMessage: "No background language choices are available.",
@@ -45,10 +45,11 @@ describe("LanguageChoicesPane", () => {
     } as never));
 
     expect(markup).not.toContain("data-origins-language-scroll");
-    expect(markup).toContain("Select Languages");
+    expect(markup).not.toContain("Select Languages");
     expect(markup).toContain("Choose Languages");
     expect(markup).toContain("Acolyte");
-    expect(markup).toContain("1 / 2 chosen");
+    expect(markup).toContain("Requirement");
+    expect(markup).toContain("1 / 2 selected");
     expect(markup).toContain("Chosen Languages");
     expect(markup).toContain("Elvish");
     expect(markup).toContain("story and background");
@@ -73,7 +74,7 @@ describe("LanguageChoicesPane", () => {
     } as never));
 
     expect(markup).toContain("No languages selected yet.");
-    expect(markup).toContain("0 / 2 chosen");
+    expect(markup).toContain("0 / 2 selected");
   });
 
   it("renders species-specific summary labels, validation notes, and removable chips", () => {
@@ -101,7 +102,6 @@ describe("LanguageChoicesPane", () => {
       validationTitle: "Species Language Notes",
     } as never));
 
-    expect(markup).toContain("Select Species Languages");
     expect(markup).toContain("Chosen Species Languages");
     expect(markup).toContain("Species Languages");
     expect(markup).toContain("Species Language Notes");

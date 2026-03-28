@@ -27,7 +27,7 @@ vi.mock("motion/react", async () => {
 import { SpeciesSelectionPane } from "./species-selection-pane";
 
 describe("SpeciesSelectionPane", () => {
-  it("renders the extracted species gallery shell with stronger selected-state confidence", () => {
+  it("renders species cards with the shared gallery system and no top intro chrome", () => {
     const markup = renderToStaticMarkup(createElement(SpeciesSelectionPane, {
       controller: {
         updateCurrentStepData: vi.fn(),
@@ -62,16 +62,13 @@ describe("SpeciesSelectionPane", () => {
     } as never));
 
     expect(markup).toContain("cc-origin-selection-pane");
-    expect(markup).toContain("cc-origin-selection-pane__intro");
-    expect(markup).not.toContain("cc-origin-selection-pane__gallery-scroll");
-    expect(markup).toContain("Select a Species");
-    expect(markup).toContain("Selected Species");
-    expect(markup).toContain("Choose Species");
+    expect(markup).not.toContain("cc-origin-selection-pane__intro");
+    expect(markup).toContain("data-origin-gallery-card=\"true\"");
     expect(markup).toContain("Keen Senses");
+    expect(markup).toContain("Fey Ancestry");
     expect(markup).toContain("Stonecunning");
-    expect(markup).toContain("Mythic lineage");
+    expect(markup).not.toContain("Select a Species");
+    expect(markup).not.toContain("Choose Species");
     expect(markup).toContain("data-selected=\"true\"");
-    expect(markup).toContain("Selected Species");
-    expect(markup.indexOf("cc-origin-selection-pane__intro")).toBeLessThan(markup.indexOf("cc-origin-selection-pane__gallery-inner"));
   });
 });

@@ -84,10 +84,19 @@ export function createBackgroundStep(): WizardStepDefinition {
       const detailSelectedEntry = selectedEntry
         ? { ...selectedEntry, description: await compendiumIndexer.getCachedDescription(selectedEntry.uuid) }
         : null;
-      const entryBlurbs = await Promise.all(
-        entries.map(async (entry) => [entry.uuid, summarizeDescription(await compendiumIndexer.getCachedDescription(entry.uuid))] as const),
+      const entryDetails = await Promise.all(
+        entries.map(async (entry) => {
+          const description = await compendiumIndexer.getCachedDescription(entry.uuid);
+          return [
+            entry.uuid,
+            {
+              description,
+              blurb: summarizeDescription(description),
+            },
+          ] as const;
+        }),
       );
-      const blurbByUuid = new Map(entryBlurbs);
+      const detailsByUuid = new Map(entryDetails);
 
       return {
         stepId: "background",
@@ -102,7 +111,8 @@ export function createBackgroundStep(): WizardStepDefinition {
         entries: entries.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
-          blurb: blurbByUuid.get(e.uuid) ?? "",
+          description: detailsByUuid.get(e.uuid)?.description ?? "",
+          blurb: detailsByUuid.get(e.uuid)?.blurb ?? "",
         })),
         selectedEntry: detailSelectedEntry,
         detailPaneHtml: detailSelectedEntry

@@ -26,7 +26,7 @@ vi.mock("motion/react", async () => {
 import { BackgroundAsiPane } from "./background-asi-pane";
 
 describe("BackgroundAsiPane", () => {
-  it("renders a clearer allocation surface with spend, guidance, and invalid-state copy", () => {
+  it("renders the simplified allocator with budget-aware option copy", () => {
     const markup = renderToStaticMarkup(createElement(BackgroundAsiPane, {
       controller: {
         refresh: vi.fn(),
@@ -98,8 +98,8 @@ describe("BackgroundAsiPane", () => {
     } as never));
 
     expect(markup).toContain("Background Ability Scores");
-    expect(markup).toContain("Spend guide");
-    expect(markup).toContain("Invalid totals disabled");
+    expect(markup).not.toContain("Spend guide");
+    expect(markup).toContain("Current value");
     expect(markup).toContain("Background-aligned");
     expect(markup).toContain("Class synergy");
     expect(markup).toContain("Points Spent");

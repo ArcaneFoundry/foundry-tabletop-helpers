@@ -3,7 +3,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { getOriginLanguageLabel } from "../../../../steps/origin-flow-utils";
 import { cn } from "../../../../../ui/lib/cn";
 import {
-  CompactMetaChips,
   EmptySelectionState,
   StatCard,
   SummaryListCard,
@@ -47,7 +46,7 @@ export function LanguageChoicesPane({
   selectedIds,
   options,
   emptyMessage,
-  selectionLabel,
+  selectionLabel: _selectionLabel,
   prefersReducedMotion: prefersReducedMotionProp,
   selectedSummaryTitle = "Chosen Languages",
   selectedSummaryEmptyLabel = "No languages selected yet.",
@@ -64,30 +63,31 @@ export function LanguageChoicesPane({
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
       <section className="relative isolate flex flex-col rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
         <div className="px-4 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e9c176]/[0.16] pb-4">
-            <div className="min-w-0 max-w-3xl">
-              <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
-                {subtitle}
+          <div className="border-b border-[#e9c176]/[0.16] pb-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0 max-w-3xl">
+                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
+                  {subtitle}
+                </div>
+                <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+                  {title}
+                </div>
+                <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-6 text-[#d0cad0]">
+                  {description}
+                </p>
               </div>
-              <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#f5ead5]">
-                {title}
-              </div>
-              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-6 text-[#d0cad0]">
-                {description}
-              </p>
-            </div>
 
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <div className="inline-flex whitespace-nowrap rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb]">
-                {selectionLabel}
+              <div className="rounded-[0.95rem] border border-[#e9c176]/20 bg-[rgba(255,255,255,0.03)] px-3 py-2 text-right">
+                <div className="font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.2em] text-[#d5b98a]">
+                  Requirement
+                </div>
+                <div className="mt-1 font-fth-cc-body text-[0.95rem] font-semibold text-[#f5ead5]">
+                  {selectedIds.length} / {requiredCount} selected
+                </div>
+                <div className="mt-1 font-fth-cc-body text-[0.82rem] leading-5 text-[#bdb6c2]">
+                  {remainingCount > 0 ? `${remainingCount} more needed` : "Ready to continue"}
+                </div>
               </div>
-              <CompactMetaChips
-                chips={[
-                  `${selectedIds.length} / ${requiredCount} chosen`,
-                  remainingCount > 0 ? `${remainingCount} remaining` : "Requirement met",
-                ]}
-                tone="dark"
-              />
             </div>
           </div>
 
