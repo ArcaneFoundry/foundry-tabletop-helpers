@@ -90,6 +90,8 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("cc-origin-selection-pane");
     expect(markup).not.toContain("cc-origin-selection-pane__intro");
     expect(markup).toContain("data-origin-gallery-card=\"true\"");
+    expect(markup).toContain("data-origin-gallery-footer=\"true\"");
+    expect(markup).toContain("data-origin-gallery-meta=\"true\"");
     expect(markup).toContain("Inspect background details for Acolyte");
     expect(markup).toContain("Inspect background details for Soldier");
     expect(markup).toContain("Inspect background details for Wayfarer");

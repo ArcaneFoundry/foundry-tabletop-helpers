@@ -245,6 +245,7 @@ export function OriginGalleryCard({
 }) {
   const visibleMeta = (meta ?? []).filter((entry) => entry.value.trim().length > 0);
   const visibleTags = tags.filter(Boolean);
+  const hasFooterContent = Boolean(blurb?.trim()) || visibleMeta.length > 0 || visibleTags.length > 0;
 
   return (
     <motion.article
@@ -303,49 +304,60 @@ export function OriginGalleryCard({
               {title}
             </div>
           </div>
-          <div className="absolute inset-x-3 bottom-3 z-10">
-            <div className="rounded-[1rem] border border-[#efd29a]/36 bg-[linear-gradient(180deg,rgba(22,14,10,0.18),rgba(12,8,7,0.82))] px-3 py-3 shadow-[0_12px_22px_rgba(0,0,0,0.2)] backdrop-blur-[4px]">
-              {blurb ? (
-                <p className="line-clamp-3 font-fth-cc-body text-[0.84rem] leading-5 text-[#f0dcc1]">
-                  {blurb}
-                </p>
-              ) : null}
-              {visibleMeta.length > 0 ? (
-                <div className={cn("grid gap-2", blurb ? "mt-2.5" : "")}>
-                  {visibleMeta.map((entry) => (
-                    <div
-                      className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-2 rounded-[0.8rem] border border-white/10 bg-[rgba(255,255,255,0.04)] px-2.5 py-2"
-                      key={`${entry.label}-${entry.value}`}
-                    >
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#e9c176]/32 bg-[rgba(233,193,118,0.1)] text-[#f7d691]">
-                        <i className={entry.iconClass} aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block font-fth-cc-ui text-[0.55rem] uppercase tracking-[0.18em] text-[#d5b98a]">
-                          {entry.label}
+          {hasFooterContent ? (
+            <div className="absolute inset-x-3 bottom-3 z-10">
+              <div
+                className="rounded-[1rem] border border-[#efd29a]/36 bg-[linear-gradient(180deg,rgba(22,14,10,0.18),rgba(12,8,7,0.82))] px-3 py-3 shadow-[0_12px_22px_rgba(0,0,0,0.2)] backdrop-blur-[4px]"
+                data-origin-gallery-footer="true"
+              >
+                {blurb ? (
+                  <p className="line-clamp-3 font-fth-cc-body text-[0.84rem] leading-5 text-[#f0dcc1]">
+                    {blurb}
+                  </p>
+                ) : null}
+                {visibleMeta.length > 0 ? (
+                  <div
+                    className={cn(
+                      "flex flex-wrap gap-2",
+                      blurb ? "mt-2.5" : "",
+                    )}
+                    data-origin-gallery-meta="true"
+                  >
+                    {visibleMeta.map((entry) => (
+                      <div
+                        className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2.5 py-1.5"
+                        key={`${entry.label}-${entry.value}`}
+                      >
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#e9c176]/32 bg-[rgba(233,193,118,0.1)] text-[#f7d691]">
+                          <i className={entry.iconClass} aria-hidden="true" />
                         </span>
-                        <span className="mt-0.5 block font-fth-cc-body text-[0.8rem] leading-5 text-[#f7e5bf]">
-                          {entry.value}
+                        <span className="min-w-0">
+                          <span className="block font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em] text-[#d5b98a]">
+                            {entry.label}
+                          </span>
+                          <span className="block font-fth-cc-body text-[0.76rem] leading-5 text-[#f7e5bf]">
+                            {entry.value}
+                          </span>
                         </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {visibleTags.length > 0 ? (
+                  <div className={cn("flex flex-wrap gap-1.5", blurb || visibleMeta.length > 0 ? "mt-2.5" : "")}>
+                    {visibleTags.map((tag) => (
+                      <span
+                        className="rounded-full border border-[#efd29a]/45 bg-[rgba(255,252,246,0.08)] px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.16em] text-[#f6deb0]"
+                        key={tag}
+                      >
+                        {tag}
                       </span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              {visibleTags.length > 0 ? (
-                <div className={cn("flex flex-wrap gap-1.5", blurb || visibleMeta.length > 0 ? "mt-2.5" : "")}>
-                  {visibleTags.map((tag) => (
-                    <span
-                      className="rounded-full border border-[#efd29a]/45 bg-[rgba(255,252,246,0.08)] px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.16em] text-[#f6deb0]"
-                      key={tag}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </button>
       {selected ? (
