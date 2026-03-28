@@ -34,7 +34,7 @@ describe("ClassSelectionGalleryPane", () => {
     expect(shouldShowClassSelectionGalleryScrollShadow(1)).toBe(true);
   });
 
-  it("renders a fixed intro block above the sole gallery scroll owner", () => {
+  it("renders a compact intro block above the sole gallery scroll owner", () => {
     const markup = renderToStaticMarkup(createElement(ClassSelectionGalleryPane<TestEntry>, {
       emptyState: createElement("div", null, "Empty"),
       entries: [
@@ -48,7 +48,7 @@ describe("ClassSelectionGalleryPane", () => {
 
     expect(markup).toContain("cc-class-selection-pane__intro");
     expect(markup).toContain('data-class-selection-eyebrow="true"');
-    expect(markup).toContain('data-class-selection-body="true"');
+    expect(markup).not.toContain('data-class-selection-body="true"');
     expect(markup).toContain("cc-class-selection-pane__gallery-scroll");
     expect(markup).toContain("cc-class-selection-pane__gallery-shadow");
     expect(markup).toContain("cc-class-selection-pane__gallery-inner");

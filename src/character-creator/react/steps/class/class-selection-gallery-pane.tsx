@@ -38,21 +38,15 @@ export function ClassSelectionGalleryPane<TEntry>({
   return (
     <div className="cc-class-selection-pane relative isolate flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-[1.5rem] border border-[#e9c176]/[0.14] pb-2 pt-2 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
       <div
-        className="cc-class-selection-pane__intro cc-class-flow-vocations relative z-[1] mb-5 flex items-end justify-between gap-4 px-2"
+        className="cc-class-selection-pane__intro cc-class-flow-vocations relative z-[1] mb-4 flex items-center justify-between gap-4 px-2"
         data-class-selection-intro="true"
       >
-        <div className="min-w-0 max-w-[34rem] flex-1" data-class-selection-copy="true">
+        <div className="min-w-0 flex-1" data-class-selection-copy="true">
           <div
             className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[#e9c176]/78"
             data-class-selection-eyebrow="true"
           >
             Classes
-          </div>
-          <div
-            className="mt-2 font-fth-cc-body text-[1rem] leading-7 text-[#d0cad0]"
-            data-class-selection-body="true"
-          >
-            Choose the discipline that will define your first rites of battle, devotion, guile, or arcana.
           </div>
         </div>
         <div
