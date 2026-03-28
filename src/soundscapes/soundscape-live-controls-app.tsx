@@ -14,11 +14,13 @@ import { getSoundscapeSceneById, resolveStoredSoundscapeState } from "./soundsca
 import {
   getSoundscapeAmbienceRuntimeSnapshot,
   playStoredSoundscapeMoment,
+  stopStoredSoundscapeAmbience,
   syncStoredSoundscapeAmbience,
 } from "./soundscape-ambience-controller";
 import type { SoundscapeMomentPlaybackResult } from "./soundscape-ambience-runtime";
 import {
   getSoundscapeMusicRuntimeSnapshot,
+  stopStoredSoundscapeMusic,
   syncStoredSoundscapeMusic,
 } from "./soundscape-music-controller";
 import { openSoundscapeStudio } from "./soundscape-studio-app";
@@ -68,6 +70,15 @@ interface SceneControls {
 }
 
 interface SoundscapeSceneStartResult {
+  sceneId: string | null;
+  context: SoundscapeTriggerContext;
+  resolvedState: ResolvedSoundscapeState | null;
+  musicSnapshot: ReturnType<typeof getSoundscapeMusicRuntimeSnapshot>;
+  ambienceSnapshot: ReturnType<typeof getSoundscapeAmbienceRuntimeSnapshot>;
+  status: string;
+}
+
+interface SoundscapeSceneStopResult {
   sceneId: string | null;
   context: SoundscapeTriggerContext;
   resolvedState: ResolvedSoundscapeState | null;
@@ -150,6 +161,29 @@ async function startCurrentSceneSoundscape(): Promise<SoundscapeSceneStartResult
   };
 }
 
+async function stopCurrentSceneSoundscape(): Promise<SoundscapeSceneStopResult> {
+  const context = getSoundscapeTriggerContext();
+  const sceneId = getSoundscapeSceneById()?.id ?? null;
+
+  await Promise.all([
+    stopStoredSoundscapeMusic(),
+    stopStoredSoundscapeAmbience(),
+  ]);
+
+  const resolvedState = resolveStoredSoundscapeState(sceneId ?? undefined, context);
+
+  return {
+    sceneId,
+    context,
+    resolvedState,
+    musicSnapshot: getSoundscapeMusicRuntimeSnapshot(),
+    ambienceSnapshot: getSoundscapeAmbienceRuntimeSnapshot(),
+    status: sceneId
+      ? `Stopped current soundscape playback for ${normalizeSceneLabel(sceneId)}.`
+      : "Stopped current soundscape playback.",
+  };
+}
+
 function SoundscapeLiveControlsView(): JSX.Element {
   const [context, setContext] = useState<SoundscapeTriggerContext>(() => getSoundscapeTriggerContext());
   const [resolvedState, setResolvedState] = useState<ResolvedSoundscapeState | null>(() => resolveStoredSoundscapeState(undefined, getSoundscapeTriggerContext()));
@@ -158,6 +192,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
   const [status, setStatus] = useState("Reading live soundscape state...");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStartingScene, setIsStartingScene] = useState(false);
+  const [isStoppingScene, setIsStoppingScene] = useState(false);
   const [playingMomentId, setPlayingMomentId] = useState<string | null>(null);
 
   async function refreshState(reason = "Live soundscape state refreshed."): Promise<void> {
@@ -188,6 +223,28 @@ function SoundscapeLiveControlsView(): JSX.Element {
       setStatus("Unable to start the current soundscape.");
     } finally {
       setIsStartingScene(false);
+    }
+  }
+
+  async function stopScene(): Promise<void> {
+    setIsStoppingScene(true);
+
+    try {
+      const result = await stopCurrentSceneSoundscape();
+      setContext(result.context);
+      setResolvedState(result.resolvedState);
+      setMusicSnapshot(result.musicSnapshot);
+      setAmbienceSnapshot(result.ambienceSnapshot);
+      setStatus(result.status);
+    } catch {
+      const nextContext = getSoundscapeTriggerContext();
+      setContext(nextContext);
+      setResolvedState(resolveStoredSoundscapeState(undefined, nextContext));
+      setMusicSnapshot(getSoundscapeMusicRuntimeSnapshot());
+      setAmbienceSnapshot(getSoundscapeAmbienceRuntimeSnapshot());
+      setStatus("Unable to stop the current soundscape.");
+    } finally {
+      setIsStoppingScene(false);
     }
   }
 
@@ -247,12 +304,22 @@ function SoundscapeLiveControlsView(): JSX.Element {
           </div>
           <div className="flex flex-wrap gap-2">
             <LiveControlsButton
-              disabled={isRefreshing || isStartingScene}
+              disabled={isRefreshing || isStartingScene || isStoppingScene}
               label={isStartingScene ? "Starting..." : "Begin Scene"}
               onClick={() => void beginScene()}
               tone="gold"
             />
-            <LiveControlsButton disabled={isRefreshing} label={isRefreshing ? "Refreshing..." : "Refresh"} onClick={() => void refreshState()} tone="gold" />
+            <LiveControlsButton
+              disabled={isRefreshing || isStartingScene || isStoppingScene}
+              label={isStoppingScene ? "Stopping..." : "Stop Current Soundscape"}
+              onClick={() => void stopScene()}
+            />
+            <LiveControlsButton
+              disabled={isRefreshing || isStoppingScene}
+              label={isRefreshing ? "Refreshing..." : "Refresh"}
+              onClick={() => void refreshState()}
+              tone="gold"
+            />
             <LiveControlsButton label="Open Studio" onClick={() => openSoundscapeStudio()} />
           </div>
         </div>
@@ -533,4 +600,5 @@ function onGetSceneControlButtonsSoundscapeLiveControls(controls: SceneControls)
 export const __soundscapeLiveControlsAppInternals = {
   onGetSceneControlButtonsSoundscapeLiveControls,
   startCurrentSceneSoundscape,
+  stopCurrentSceneSoundscape,
 };

@@ -17,8 +17,10 @@ const {
   resolveStoredSoundscapeStateMock,
   getSoundscapeAmbienceRuntimeSnapshotMock,
   playStoredSoundscapeMomentMock,
+  stopStoredSoundscapeAmbienceMock,
   syncStoredSoundscapeAmbienceMock,
   getSoundscapeMusicRuntimeSnapshotMock,
+  stopStoredSoundscapeMusicMock,
   syncStoredSoundscapeMusicMock,
   openSoundscapeStudioMock,
   listSoundscapeScenesMock,
@@ -44,6 +46,7 @@ const {
     pendingRandomLayerIds: [],
     lastError: null,
   })),
+  stopStoredSoundscapeAmbienceMock: vi.fn(async () => {}),
   syncStoredSoundscapeAmbienceMock: vi.fn(async () => ({
     activeLayerIds: [],
     loopAudioPaths: [],
@@ -63,6 +66,7 @@ const {
     pendingDelayMs: null,
     lastError: null,
   })),
+  stopStoredSoundscapeMusicMock: vi.fn(async () => {}),
   syncStoredSoundscapeMusicMock: vi.fn(async () => ({
     activeProgramId: null,
     activeAudioPath: null,
@@ -118,11 +122,13 @@ vi.mock("./soundscape-accessors", () => ({
 vi.mock("./soundscape-ambience-controller", () => ({
   getSoundscapeAmbienceRuntimeSnapshot: getSoundscapeAmbienceRuntimeSnapshotMock,
   playStoredSoundscapeMoment: playStoredSoundscapeMomentMock,
+  stopStoredSoundscapeAmbience: stopStoredSoundscapeAmbienceMock,
   syncStoredSoundscapeAmbience: syncStoredSoundscapeAmbienceMock,
 }));
 
 vi.mock("./soundscape-music-controller", () => ({
   getSoundscapeMusicRuntimeSnapshot: getSoundscapeMusicRuntimeSnapshotMock,
+  stopStoredSoundscapeMusic: stopStoredSoundscapeMusicMock,
   syncStoredSoundscapeMusic: syncStoredSoundscapeMusicMock,
 }));
 
@@ -356,6 +362,7 @@ describe("SoundscapeLiveControlsApp", () => {
     expect(markup).toContain("Audio Path");
     expect(markup).toContain("music/live.ogg");
     expect(markup).toContain("Begin Scene");
+    expect(markup).toContain("Stop Current Soundscape");
     expect(markup).toContain("sting · 2 sounds");
   });
 
@@ -433,5 +440,70 @@ describe("SoundscapeLiveControlsApp", () => {
     expect(syncStoredSoundscapeMusicMock).not.toHaveBeenCalled();
     expect(syncStoredSoundscapeAmbienceMock).not.toHaveBeenCalled();
     expect(result.status).toBe("No active soundscape assignment is resolving for this scene.");
+  });
+
+  it("stops the current live soundscape through the live-controls helper", async () => {
+    const mod = await modPromise;
+    resolveStoredSoundscapeStateMock.mockReturnValue({
+      profileId: "forest",
+      assignmentSource: "scene",
+      sceneId: "scene-1",
+      context: {
+        manualPreview: false,
+        inCombat: false,
+        weather: null,
+        timeOfDay: "day",
+      },
+      musicProgramId: "calm",
+      musicProgram: {
+        id: "calm",
+        name: "Calm",
+        audioPaths: ["music/live.ogg"],
+        selectionMode: "sequential",
+        delaySeconds: 0,
+      },
+      musicRuleId: "base",
+      ambienceLayerIds: ["wind"],
+      ambienceLayers: [{
+        id: "wind",
+        name: "Wind",
+        audioPaths: ["ambience/wind.ogg"],
+        mode: "loop",
+        minDelaySeconds: 0,
+        maxDelaySeconds: 0,
+      }],
+      ambienceRuleId: "base",
+      soundMoments: [],
+    } as never);
+    getSoundscapeMusicRuntimeSnapshotMock.mockReturnValue({
+      activeProgramId: null,
+      activeAudioPath: null,
+      pendingDelayMs: null,
+      lastError: null,
+    } as never);
+    getSoundscapeAmbienceRuntimeSnapshotMock.mockReturnValue({
+      activeLayerIds: [],
+      loopAudioPaths: [],
+      activeRandomAudioPaths: [],
+      pendingRandomLayerIds: [],
+      lastError: null,
+    } as never);
+
+    const result = await mod.__soundscapeLiveControlsAppInternals.stopCurrentSceneSoundscape();
+
+    expect(stopStoredSoundscapeMusicMock).toHaveBeenCalledTimes(1);
+    expect(stopStoredSoundscapeAmbienceMock).toHaveBeenCalledTimes(1);
+    expect(result.resolvedState?.profileId).toBe("forest");
+    expect(result.musicSnapshot.activeProgramId).toBeNull();
+    expect(result.ambienceSnapshot.activeLayerIds).toEqual([]);
+    expect(result.status).toBe("Stopped current soundscape playback for Active Scene.");
+  });
+
+  it("surfaces stop failures to the caller", async () => {
+    const mod = await modPromise;
+    stopStoredSoundscapeMusicMock.mockRejectedValueOnce(new Error("boom"));
+
+    await expect(mod.__soundscapeLiveControlsAppInternals.stopCurrentSceneSoundscape()).rejects.toThrow("boom");
+    expect(stopStoredSoundscapeAmbienceMock).toHaveBeenCalledTimes(1);
   });
 });
