@@ -1036,14 +1036,6 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
   return (
     <div className="cc-class-choice-layout">
       <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
-        <div className="border-b border-white/10 pb-4">
-          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
-            {viewModel.title}
-          </div>
-          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#c7c0cb]">
-            {viewModel.description}
-          </p>
-        </div>
         <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-4">
             {viewModel.requirements.map((requirement, groupIndex) => {
@@ -1076,8 +1068,8 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <div className="inline-flex whitespace-nowrap rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
                         {selectedCount >= requirement.requiredCount
-                          ? `${requirement.requiredCount} / ${requirement.requiredCount} ready`
-                          : `${selectedCount} / ${requirement.requiredCount} chosen`}
+                          ? "Ready"
+                          : `${selectedCount} / ${requirement.requiredCount}`}
                       </div>
                     </div>
                   </div>
@@ -1106,11 +1098,12 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
           maxCount={totalRequired}
           selectedCount={totalSelected}
           title="Selection Summary"
+          compact
         />
         <ClassAdvancementSelectedCard
           emptyMessage="No class options selected yet."
           entries={selectedEntries}
-          title="Chosen Features"
+          title="Selected Features"
         />
       </aside>
     </div>
@@ -1287,12 +1280,46 @@ function SelectionSummaryCard({
   maxCount,
   glow,
   title = "Selection Summary",
+  compact = false,
 }: {
   selectedCount: number;
   maxCount: number;
   glow: string;
   title?: string;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <section
+        className="overflow-hidden rounded-[1.3rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
+        style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
+      >
+        <div className="rounded-[1.02rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-3 text-[#f1ddbc]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+              <div className="mt-1 font-fth-cc-body text-[0.92rem] leading-6 text-[#d9d0c5]">
+                {selectedCount} of {maxCount} selected
+              </div>
+            </div>
+            <div className="font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em] text-[#c7bdca]">
+              {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
+            </div>
+          </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
+                background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
+              }}
+            />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"

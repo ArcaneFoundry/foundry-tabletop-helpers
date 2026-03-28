@@ -427,22 +427,23 @@ describe("ClassFlowRouteHost", () => {
       } as never),
     );
 
-    expect(markup).not.toContain("Guided Requirement Groups");
+    expect(markup).not.toContain("Choose Your Class Features");
     expect(markup).toContain("Selection Summary");
-    expect(markup).toContain("/ 3");
-    expect(markup).toContain("1 left");
+    expect(markup).toContain("2 of 3 selected");
     expect(markup).toContain('data-class-item-choice-group="combat-style"');
     expect(markup).toContain('data-class-item-choice-group="martial-training"');
     expect(markup).toContain("Group 1");
     expect(markup).toContain("Group 2");
     expect(markup).toContain("Combat Style");
     expect(markup).toContain("Martial Training");
-    expect(markup).toContain("1 / 1 ready");
-    expect(markup).toContain("1 / 2 chosen");
+    expect(markup).toContain("Ready");
+    expect(markup).toContain("1 / 2");
     expect(markup).toContain("Combat Style choice");
     expect(markup).toContain("Martial Training choice");
-    expect(markup).toContain("Chosen Features");
-    expect(markup).not.toContain("Chosen</span>");
+    expect(markup).toContain("Selected Features");
+    expect(markup).toContain('data-choice-state="selected"');
+    expect(markup).toContain('data-choice-state="available"');
+    expect(markup).not.toContain("Chosen");
   });
 
   it.each([
