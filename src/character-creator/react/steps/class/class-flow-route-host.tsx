@@ -668,6 +668,19 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
     [options, selectedSet],
   );
 
+  const masteryGroupStyles = [
+    {
+      label: "Simple Weapons",
+      pillClass: "border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] text-[#f1d9b3]",
+      panelClass: "border-[#8c6a47]/30 bg-[linear-gradient(180deg,rgba(75,49,34,0.28),rgba(28,22,17,0.14))]",
+    },
+    {
+      label: "Martial Weapons",
+      pillClass: "border-[#4f6478]/75 bg-[linear-gradient(180deg,#36424f_0%,#1f2832_100%)] text-[#d6dfeb]",
+      panelClass: "border-[#4f6478]/28 bg-[linear-gradient(180deg,rgba(40,53,67,0.26),rgba(20,26,34,0.14))]",
+    },
+  ] as const;
+
   const masteryReference = useMemo<MasteryReferenceEntry[]>(() => {
     const masteryMap = new Map<string, MasteryReferenceEntry>();
     for (const option of options) {
@@ -706,7 +719,9 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
       groups.set(groupKey, existing);
     }
 
-    return Array.from(groups.entries()).map(([label, entries]) => ({ label, entries }));
+    return masteryGroupStyles
+      .map((group) => ({ label: group.label, entries: groups.get(group.label) ?? [] }))
+      .filter((group) => group.entries.length > 0);
   }, [options]);
 
   const onToggleMastery = (weaponId: string) => {
@@ -749,24 +764,85 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
       <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         {viewModel.weaponMasterySection.hasChoices ? (
           <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
-            <div className="grid gap-4">
+            <div className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+              <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-3">
+                  <div className="min-w-0">
+                    <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">
+                      Weapon Masteries
+                    </div>
+                    <div className="mt-2 flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-[0.9rem] border border-[#e9c176]/24 bg-[linear-gradient(180deg,rgba(233,193,118,0.16),rgba(70,48,22,0.42))] text-[#f3dfb5] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        <i className="fa-solid fa-swords" aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0">
+                        <h2 className="font-fth-cc-display text-[1.18rem] uppercase tracking-[0.08em] text-[#f6ebcf]">
+                          {viewModel.className} weaponry
+                        </h2>
+                        <p className="mt-1 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#c9c1cc]">
+                          Choose from Simple and Martial weapons in a locked order, then read the selected masteries and reference notes on the right.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid min-w-[11rem] gap-2 text-right">
+                    <span className="inline-flex items-center justify-center rounded-full border border-[#e9c176]/20 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.18em] text-[#f1d9b3]">
+                      {selectedEntries.length}/{maxCount} chosen
+                    </span>
+                    <span className="inline-flex items-center justify-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.18em] text-[#bcc1cc]">
+                      Simple first, Martial second
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {masteryGroupStyles.map((pill) => (
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.16em] shadow-[0_10px_18px_rgba(47,29,18,0.14)]",
+                        pill.pillClass,
+                      )}
+                      key={pill.label}
+                    >
+                      {pill.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
-                <section className="grid gap-2.5" key={group.label}>
+                <section
+                  className={cn("grid gap-2.5 rounded-[1.35rem] border p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]", masteryGroupStyles.find((pill) => pill.label === group.label)?.panelClass)}
+                  data-weapon-mastery-group={group.label}
+                  key={group.label}
+                >
                   <div className="flex items-center gap-3 px-1">
-                    <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] shadow-[0_10px_18px_rgba(47,29,18,0.14)]",
+                        masteryGroupStyles.find((pill) => pill.label === group.label)?.pillClass,
+                      )}
+                    >
                       {group.label}
                     </span>
                     <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
+                    <span className="inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] text-[#c5bdca]">
+                      {group.entries.length} options
+                    </span>
                   </div>
-                  {group.entries.map((option, optionIndex) => (
-                    <WeaponMasteryRow
-                      key={option.id}
-                      onToggle={onToggleMastery}
-                      option={option}
-                      prefersReducedMotion={prefersReducedMotion}
-                      rowIndex={groupIndex * 12 + optionIndex}
-                    />
-                  ))}
+                  <div className="grid gap-2.5">
+                    {group.entries.map((option, optionIndex) => (
+                      <WeaponMasteryRow
+                        key={option.id}
+                        onToggle={onToggleMastery}
+                        option={option}
+                        prefersReducedMotion={prefersReducedMotion}
+                        rowIndex={groupIndex * 12 + optionIndex}
+                      />
+                    ))}
+                  </div>
                 </section>
               ))}
             </div>
@@ -1390,12 +1466,13 @@ function WeaponMasteryRow({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       aria-pressed={option.checked}
       className={cn(
-        "group relative grid w-full grid-cols-[3.7rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
+        "group relative grid w-full grid-cols-[4.15rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition md:px-4",
         option.checked
-          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
-          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
+          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.72),rgba(36,31,24,0.98))] shadow-[0_16px_28px_rgba(0,0,0,0.24)]"
+          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))]",
         option.disabled && !option.checked && "opacity-60",
       )}
+      data-weapon-mastery-row="true"
       disabled={option.disabled && !option.checked}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.id)}
@@ -1410,9 +1487,9 @@ function WeaponMasteryRow({
     >
       <span
         className={cn(
-        "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-        option.checked ? "border-[#e9c176]/52" : "border-white/12",
-      )}
+          "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+          option.checked ? "border-[#e9c176]/52" : "border-white/12",
+        )}
       >
         <img alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" src={option.img} />
         <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,236,0.12),rgba(16,10,7,0.22))]" />
@@ -1452,14 +1529,17 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
       <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Chosen Weapons</div>
+          <div className="mt-2 font-fth-cc-body text-[0.82rem] leading-5 text-[#cfc6d0]">
+            Weapons you have already mastered in this class path.
+          </div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {selectedEntries.length > 0 ? selectedEntries.map((entry) => (
             <div
-              className="grid grid-cols-[2.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[0.95rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-2 py-2"
+              className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] px-2.5 py-2.5 shadow-[0_10px_18px_rgba(0,0,0,0.1)]"
               key={entry.id}
             >
-              <span className="overflow-hidden rounded-[0.7rem] border border-[#e9c176]/20">
+              <span className="overflow-hidden rounded-[0.8rem] border border-[#e9c176]/20">
                 <img alt="" aria-hidden="true" className="h-10 w-10 object-cover" loading="lazy" src={entry.img} />
               </span>
               <span className="min-w-0">
@@ -1487,12 +1567,15 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
       <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-white/10 pb-3 text-center">
           <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Mastery Techniques</div>
+          <div className="mt-2 font-fth-cc-body text-[0.82rem] leading-5 text-[#cfc6d0]">
+            Reference the technique each selected weapon unlocks.
+          </div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {entries.map((entry) => (
             <div
               className={cn(
-                "grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 rounded-[0.95rem] border px-3 py-3",
+                "grid grid-cols-[2.1rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 rounded-[1rem] border px-3 py-3",
                 entry.sourceWeapons.length > 0
                   ? "border-[#e9c176]/22 bg-[rgba(233,193,118,0.07)]"
                   : "border-transparent bg-transparent",

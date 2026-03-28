@@ -254,6 +254,92 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("Hit Die");
   });
 
+  it("renders the mounted weapon masteries pane with ordered groups and readable rails", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ClassFlowRouteHost, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "weaponMasteries",
+          steps: createSteps(),
+          stepViewModel: {
+            classIdentifier: "fighter",
+            className: "Fighter",
+            weaponMasterySection: {
+              hasChoices: true,
+              chosenCount: 1,
+              maxCount: 2,
+              selectedEntries: [
+                { id: "club", label: "Club", img: "club.webp", mastery: "Push", tooltip: "A simple bludgeon." },
+              ],
+              options: [
+                {
+                  id: "halberd",
+                  uuid: "Compendium.test.items.Item.halberd",
+                  identifier: "halberd",
+                  name: "Halberd",
+                  img: "halberd.webp",
+                  weaponType: "Martial Melee",
+                  mastery: "Topple",
+                  masteryDescription: "Large sweeping strikes.",
+                  weaponDescription: "A polearm for heavy blows.",
+                  tooltip: "A martial polearm.",
+                  checked: false,
+                  disabled: false,
+                },
+                {
+                  id: "club",
+                  uuid: "Compendium.test.items.Item.club",
+                  identifier: "club",
+                  name: "Club",
+                  img: "club.webp",
+                  weaponType: "Simple Melee",
+                  mastery: "Push",
+                  masteryDescription: "Drive foes back.",
+                  weaponDescription: "A basic club.",
+                  tooltip: "A simple bludgeon.",
+                  checked: true,
+                  disabled: false,
+                },
+                {
+                  id: "longsword",
+                  uuid: "Compendium.test.items.Item.longsword",
+                  identifier: "longsword",
+                  name: "Longsword",
+                  img: "longsword.webp",
+                  weaponType: "Martial Melee",
+                  mastery: "Vex",
+                  masteryDescription: "Turn momentum into advantage.",
+                  weaponDescription: "A knightly blade.",
+                  tooltip: "A martial sword.",
+                  checked: false,
+                  disabled: false,
+                },
+              ],
+              emptyMessage: "No weapon masteries available.",
+            },
+          },
+        },
+        state: createState(),
+        step: {} as never,
+      } as never),
+    );
+
+    const simpleIndex = markup.indexOf('data-weapon-mastery-group="Simple Weapons"');
+    const martialIndex = markup.indexOf('data-weapon-mastery-group="Martial Weapons"');
+
+    expect(markup).toContain("Weapon Masteries");
+    expect(markup).toContain("Simple first, Martial second");
+    expect(markup).toContain('data-weapon-mastery-row="true"');
+    expect(markup).toContain("Chosen Weapons");
+    expect(markup).toContain("Mastery Techniques");
+    expect(simpleIndex).toBeGreaterThanOrEqual(0);
+    expect(martialIndex).toBeGreaterThanOrEqual(0);
+    expect(simpleIndex).toBeLessThan(martialIndex);
+    expect(markup).toContain("md:px-4");
+  });
+
   it.each([
     ["expertise", "Choose Expert Skills", "Expertise Picks", "Chosen Expertise"],
     ["languages", "Choose Languages", "Languages Chosen", "Chosen Languages"],
