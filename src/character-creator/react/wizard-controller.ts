@@ -224,13 +224,17 @@ export class CharacterCreatorWizardController implements WizardStepRenderControl
   }
 
   updateCurrentStepData(value: unknown, options?: { silent?: boolean }): void {
+    this.updateStepData(this._machine.currentStepId, value, options);
+  }
+
+  updateStepData(stepId: string, value: unknown, options?: { silent?: boolean }): void {
     if (options?.silent) {
-      this._machine.setStepData(this._machine.currentStepId, value);
+      this._machine.setStepData(stepId, value);
       this._syncShellState();
       return;
     }
 
-    this._machine.setStepData(this._machine.currentStepId, value);
+    this._machine.setStepData(stepId, value);
     void this.refresh();
   }
 

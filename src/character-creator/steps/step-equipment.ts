@@ -12,6 +12,7 @@ import {
   syncEquipmentSelectionSnapshot,
 } from "./equipment-flow-utils";
 import { EquipmentStepScreen } from "../react/steps/build/equipment-step-screen";
+import { EquipmentShopStepScreen } from "../react/steps/build/equipment-shop-step-screen";
 
 function hasRequiredEquipmentSelections(state: WizardState): boolean {
   const selection = getEquipmentSelection(state);
@@ -93,6 +94,7 @@ export function createEquipmentShopStep(): WizardStepDefinition {
     label: "Shop",
     icon: "fa-solid fa-store",
     renderMode: "react",
+    reactComponent: EquipmentShopStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-placeholder.hbs`,
     dependencies: ["equipment"],
     isApplicable: (state) => {

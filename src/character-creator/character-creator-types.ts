@@ -665,6 +665,7 @@ export interface StepCallbacks {
 
 export interface WizardStepRenderController {
   getState(): WizardState;
+  updateStepData(stepId: string, value: unknown, options?: { silent?: boolean }): void;
   updateCurrentStepData(value: unknown, options?: { silent?: boolean }): void;
   refresh(): Promise<void>;
   jumpToStep(stepId: string): void;

@@ -148,6 +148,51 @@ describe("CharacterCreatorWizardController", () => {
     expect(controller.getSnapshot().shellContext?.statusHint).toBe("");
   });
 
+  it("can update a different step key while keeping the current mounted step active", async () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("equipment", {
+        isComplete: (state) => Boolean(state.selections.equipment),
+      }),
+      makeStep("equipmentShop", {
+        getStatusHint: (state) => (state.selections.equipment?.remainingGoldCp ?? 0) > 0 ? "Spend or save your remaining gold" : "",
+      }),
+      makeStep("review"),
+    ]);
+
+    machine.setStepData("equipment", {
+      classOptionId: "class-gold",
+      backgroundOptionId: "background-kit",
+      remainingGoldCp: 10000,
+    });
+
+    const controller = new CharacterCreatorWizardController(machine, {
+      renderTemplate: async (path, data) => `<div data-template="${path}">${String(data.stepTitle)}</div>`,
+      getStepAtmosphere: () => "cc-atmosphere--forge",
+      closeWizard: async () => undefined,
+    });
+
+    await controller.initialize();
+    controller.goNext();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(machine.currentStepId).toBe("equipmentShop");
+
+    controller.updateStepData("equipment", {
+      classOptionId: "class-gold",
+      backgroundOptionId: "background-kit",
+      remainingGoldCp: 9400,
+    }, { silent: true });
+
+    expect(machine.currentStepId).toBe("equipmentShop");
+    expect(machine.state.selections.equipment).toMatchObject({
+      classOptionId: "class-gold",
+      backgroundOptionId: "background-kit",
+      remainingGoldCp: 9400,
+    });
+    expect(controller.getSnapshot().shellContext?.statusHint).toBe("Spend or save your remaining gold");
+  });
+
   it("deactivates the active step before moving to the next step", async () => {
     const onDeactivate = vi.fn();
     const machine = new WizardStateMachine(makeConfig(), [

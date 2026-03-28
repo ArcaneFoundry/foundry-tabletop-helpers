@@ -140,6 +140,7 @@ describe("step equipment", () => {
   it("shows the shop step only when equipment selections leave spendable funds", () => {
     const step = createEquipmentShopStep();
     expect(step.isApplicable(makeState() as never)).toBe(false);
+    expect(step.reactComponent).toBeTypeOf("function");
     expect(step.isApplicable(makeState({
       selections: {
         equipment: {
