@@ -49,7 +49,8 @@ describe("ClassSummaryStepScreen", () => {
     expect(markup).toContain("Hit Die");
     expect(markup).toContain("Saving Throws");
     expect(markup).toContain("Prime Attribute");
-    expect(markup).toContain("aspect-[1.6]");
+    expect(markup).toContain("aspect-[2.05]");
+    expect(markup).toContain("md:aspect-[1.78]");
     expect(markup).toContain("px-5 py-4");
     expect(markup).toContain('style="padding-block:1rem;padding-inline:1.25rem"');
     expect(markup).toContain("First-Level Features");

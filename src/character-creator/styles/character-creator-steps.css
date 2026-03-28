@@ -3184,19 +3184,19 @@
   line-height: 1.45;
 }
 
-@container cc-class-summary (min-width: 760px) {
+@container cc-class-summary (min-width: 680px) {
   .cc-class-summary__intro {
-    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.9fr);
+    grid-template-columns: minmax(0, 1.04fr) minmax(17rem, 0.96fr);
   }
 }
 
-@container cc-class-summary (max-width: 759px) {
+@container cc-class-summary (max-width: 679px) {
   .cc-class-summary__hero-shell {
-    padding: 0.28rem;
+    padding: 0.2rem;
   }
 
   .cc-class-summary__kit-column {
-    gap: var(--cc-space-md);
+    gap: var(--cc-space-sm);
   }
 }
 

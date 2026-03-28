@@ -80,19 +80,19 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
       <div className="cc-class-summary__stack grid gap-4">
         <div className="cc-class-summary__intro grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
           <section className="cc-class-summary__hero-shell overflow-hidden rounded-[1.6rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.98),rgba(14,15,20,0.99))] p-[0.24rem] shadow-[0_26px_48px_rgba(0,0,0,0.28)] md:p-[0.3rem]">
-            <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-[0.9rem] md:p-[1.1rem]">
-              <div className="border-b border-white/10 pb-2.5">
+            <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-[0.75rem] md:p-[0.9rem]">
+              <div className="border-b border-white/10 pb-2">
                 <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em] text-[#e9c176]/78">
                   Vocation Bound
                 </div>
-                <div className="mt-2 font-fth-cc-display text-[1.45rem] leading-none text-[#f5ead5] md:text-[1.8rem]">
+                <div className="mt-1.5 font-fth-cc-display text-[1.4rem] leading-none text-[#f5ead5] md:text-[1.7rem]">
                   {viewModel.className}
                 </div>
               </div>
 
-              <div className="mt-3 grid gap-3">
+              <div className="mt-2.5 grid gap-2.5">
                 <div
-                  className="relative mx-auto aspect-[1.6] w-full overflow-hidden rounded-[1.35rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08)] md:aspect-[1.34]"
+                  className="relative mx-auto aspect-[2.05] w-full overflow-hidden rounded-[1.35rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08)] md:aspect-[1.78]"
                   style={{ borderColor: `${theme.frame}aa`, boxShadow: `inset 0 0 0 1px rgba(250,229,194,0.08), 0 0 28px ${theme.glow}` }}
                 >
                   {viewModel.classImage ? (
@@ -109,9 +109,9 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                   )}
                   <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,247,233,0.04),transparent_24%,rgba(8,7,12,0.06)_58%,rgba(8,7,12,0.88)_100%)]" />
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(14,14,18,0.7),rgba(14,14,18,0))]" />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
-                    <div className="mx-auto max-w-2xl rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,15,20,0.62),rgba(15,15,20,0.86))] px-4 py-3 text-center backdrop-blur-md">
-                      <p className="m-0 font-fth-cc-body text-[0.95rem] italic leading-6 text-[#f0e3ce] drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] md:text-[1rem]">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
+                    <div className="mx-auto max-w-2xl rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,15,20,0.62),rgba(15,15,20,0.86))] px-4 py-2.5 text-center backdrop-blur-md">
+                      <p className="m-0 font-fth-cc-body text-[0.9rem] italic leading-5 text-[#f0e3ce] drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] md:text-[0.96rem]">
                         {viewModel.overview || `A level ${viewModel.startingLevel} ${viewModel.className.toLowerCase()} stands ready to step from calling into origin.`}
                       </p>
                     </div>
