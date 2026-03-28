@@ -11,7 +11,7 @@ interface RuntimeSoundFactory {
   create?: (data: Record<string, unknown>) => Promise<RuntimeSoundLike | null | undefined>;
   fromPath?: (path: string) => Promise<RuntimeSoundLike | null | undefined>;
   fromSource?: (path: string) => Promise<RuntimeSoundLike | null | undefined>;
-  new (data?: unknown): RuntimeSoundLike;
+  new (src: string, options?: Record<string, unknown>): RuntimeSoundLike;
 }
 
 export interface SoundscapeAudioHandle {
@@ -71,7 +71,7 @@ async function createRuntimeSound(path: string): Promise<RuntimeSoundLike | null
   }
 
   try {
-    return new Factory({ src: path });
+    return new Factory(path);
   } catch {
     return null;
   }
