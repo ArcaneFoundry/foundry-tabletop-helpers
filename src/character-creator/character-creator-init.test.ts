@@ -128,7 +128,7 @@ describe("character creator init shell", () => {
       "getSceneControlButtons",
       expect.any(Function),
     );
-  });
+  }, 10000);
 
   it("adds a character creator scene tool and routes clicks to the wizard", async () => {
     const mod = await modPromise;

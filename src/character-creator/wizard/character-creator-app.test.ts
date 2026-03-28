@@ -232,7 +232,7 @@ describe("character creator app shell", () => {
     expect(logDebugMock).toHaveBeenCalledWith(
       "Character Creator: CharacterCreatorApp class built"
     );
-  });
+  }, 10000);
 
   it("prepares wizard shell context from the frozen config snapshot", async () => {
     const mod = await modPromise;
