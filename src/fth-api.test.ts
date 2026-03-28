@@ -16,6 +16,7 @@ const buildSoundscapeApiMock = vi.fn(() => ({
     getLibrary: vi.fn(),
     resolve: vi.fn(),
     openStudio: vi.fn(),
+    openLiveControls: vi.fn(),
     syncMusic: vi.fn(async () => ({})),
     stopMusic: vi.fn(async () => {}),
     getMusicState: vi.fn(() => ({})),
@@ -84,6 +85,7 @@ describe("fth api", () => {
     api.soundscapes.getLibrary();
     api.soundscapes.resolve();
     api.soundscapes.openStudio();
+    api.soundscapes.openLiveControls();
     await api.soundscapes.syncMusic();
     await api.soundscapes.stopMusic();
     api.soundscapes.getMusicState();

@@ -38,6 +38,7 @@ const initCharacterCreatorReadyMock = vi.fn();
 const attachFthApiMock = vi.fn();
 const registerSoundscapeSettingsMock = vi.fn();
 const registerSoundscapeStudioHooksMock = vi.fn();
+const registerSoundscapeLiveControlsHooksMock = vi.fn();
 const startSoundscapeTriggerServiceMock = vi.fn(async () => {});
 
 vi.mock("./logger", () => ({
@@ -123,6 +124,10 @@ vi.mock("./soundscapes/soundscape-studio-app", () => ({
   registerSoundscapeStudioHooks: registerSoundscapeStudioHooksMock,
 }));
 
+vi.mock("./soundscapes/soundscape-live-controls-app", () => ({
+  registerSoundscapeLiveControlsHooks: registerSoundscapeLiveControlsHooksMock,
+}));
+
 vi.mock("./soundscapes/soundscape-trigger-service", () => ({
   startSoundscapeTriggerService: startSoundscapeTriggerServiceMock,
 }));
@@ -177,6 +182,7 @@ describe("index shell", () => {
     expect(registerCharacterCreatorSettingsMock).toHaveBeenCalledWith(settings);
     expect(registerSoundscapeSettingsMock).toHaveBeenCalledWith(settings);
     expect(registerSoundscapeStudioHooksMock).toHaveBeenCalledTimes(1);
+    expect(registerSoundscapeLiveControlsHooksMock).toHaveBeenCalledTimes(1);
     expect(registerLPCSSheetMock).toHaveBeenCalledTimes(1);
     expect(preloadLPCSTemplatesMock).toHaveBeenCalledTimes(1);
     expect(registerInitiativeHooksMock).toHaveBeenCalledTimes(1);

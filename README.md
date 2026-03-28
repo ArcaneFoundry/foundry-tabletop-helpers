@@ -59,6 +59,16 @@ A FilePicker replacement for GMs with a companion server for heavier media workf
 - Optional server-backed optimization and thumbnail generation
 - Folder creation and file/folder deletion through the companion server
 
+### Reactive Soundscapes
+
+GM-authored scene soundscapes with live trigger support and in-play manual controls.
+
+- Soundscape Studio for authoring music programs, ambience layers, manual moments, and trigger rules
+- Dedicated `Soundscape Live Controls` window for firing authored manual moments during play
+- V1 trigger support for combat, day/night, and Calendaria weather changes
+- Scene-specific soundscape assignments with world-default fallback
+- Small `window.fth.soundscapes` API for opening tools and firing moments from macros
+
 ### Character Creator And Level-Up Manager
 
 Wizard-style dnd5e character workflows for onboarding and progression.
@@ -98,6 +108,7 @@ The module now exposes settings across several areas:
 - Live Play Character Sheet: enable, auto-open, default tab, death save mode
 - Combat: initiative dialog, damage workflows, monster preview, party summary, rules reference, token health
 - Asset Vault: enable, server URL/token, optimization behavior, preset overrides
+- Reactive Soundscapes: authored library, world default, and playback runtime support
 - Character Creator: enablement, auto-open, GM config, source selection, rules options
 
 ## Public API
@@ -118,6 +129,10 @@ window.fth.assetManager();
 window.fth.characterCreator();
 window.fth.characterCreatorConfig();
 window.fth.levelUp("ACTOR_ID");
+
+window.fth.soundscapes.openStudio();
+window.fth.soundscapes.openLiveControls();
+window.fth.soundscapes.playMoment("sting");
 ```
 
 You can also adjust logging from the console:
