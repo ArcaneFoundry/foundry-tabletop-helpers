@@ -147,6 +147,38 @@ describe("soundscape music runtime", () => {
     });
   });
 
+  it("uses duration populated during load when scheduling track completion", async () => {
+    const timers = createFakeTimers();
+    let durationSeconds = 0;
+    const track = {
+      path: "music/runtime-duration.ogg",
+      get durationSeconds() {
+        return durationSeconds;
+      },
+      load: vi.fn(async (): Promise<void> => {
+        durationSeconds = 1.5;
+      }),
+      play: vi.fn(async (): Promise<boolean> => true),
+      stop: vi.fn(async (): Promise<void> => {}),
+    };
+    const program: SoundscapeMusicProgram = {
+      id: "runtime-duration",
+      name: "Runtime Duration",
+      audioPaths: [track.path],
+      selectionMode: "sequential",
+      delaySeconds: 0,
+    };
+    const runtime = new SoundscapeMusicRuntime({
+      resolveAudioPath: async () => track,
+      timers: timers.api,
+    });
+
+    await runtime.sync(createResolvedState(program));
+
+    expect(timers.handles).toHaveLength(1);
+    expect(timers.handles[0]?.delay).toBe(1500);
+  });
+
   it("uses deterministic random selection without repeating immediately when alternatives exist", async () => {
     const timers = createFakeTimers();
     const handles = [

@@ -215,6 +215,43 @@ describe("soundscape ambience runtime", () => {
     });
   });
 
+  it("uses duration populated during load when scheduling random ambience cleanup", async () => {
+    const timers = createFakeTimers();
+    let durationSeconds = 0;
+    const gust = {
+      path: "ambience/runtime-duration.ogg",
+      get durationSeconds() {
+        return durationSeconds;
+      },
+      load: vi.fn(async (): Promise<void> => {
+        durationSeconds = 2.25;
+      }),
+      play: vi.fn(async (): Promise<boolean> => true),
+      stop: vi.fn(async (): Promise<void> => {}),
+    };
+    const runtime = new SoundscapeAmbienceRuntime({
+      resolveAudioPath: async () => gust,
+      timers: timers.api,
+    });
+
+    await runtime.sync(createResolvedState({
+      ambienceLayers: [{
+        id: "runtime-duration",
+        name: "Runtime Duration",
+        mode: "random",
+        audioPaths: [gust.path],
+        minDelaySeconds: 0,
+        maxDelaySeconds: 0,
+      }],
+    }));
+
+    timers.runNext();
+    await flushAsyncWork();
+
+    expect(timers.handles).toHaveLength(2);
+    expect(timers.handles[1]?.delay).toBe(2250);
+  });
+
   it("plays manual moments using direct audio paths", async () => {
     const sting = createAudioHandle("moments/sting.ogg", 1);
     const runtime = new SoundscapeAmbienceRuntime({
