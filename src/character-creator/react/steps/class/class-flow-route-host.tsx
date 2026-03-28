@@ -37,6 +37,8 @@ type SkillChoiceOption = {
   tooltip: string;
 };
 
+const CLASS_SKILL_ABILITY_ORDER = ["STR", "DEX", "CON", "WIS", "INT", "CHA"] as const;
+
 type ClassChoicesStepViewModel = {
   classIdentifier: string;
   primaryAbilityHint: string;
@@ -535,12 +537,16 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
   const groupedOptions = useMemo(() => {
     const groups = new Map<string, SkillChoiceOption[]>();
     for (const option of options) {
-      const key = option.abilityAbbrev;
+      const key = option.abilityAbbrev.trim().toUpperCase();
       const existing = groups.get(key) ?? [];
       existing.push(option);
       groups.set(key, existing);
     }
-    return Array.from(groups.entries()).map(([abilityAbbrev, entries]) => ({ abilityAbbrev, entries }));
+
+    return CLASS_SKILL_ABILITY_ORDER.flatMap((abilityAbbrev) => {
+      const entries = groups.get(abilityAbbrev);
+      return entries ? [{ abilityAbbrev, entries }] : [];
+    });
   }, [options]);
 
   const onToggleSkill = (skillKey: string) => {
@@ -575,7 +581,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
           <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
             <div className="grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
-                <section className="grid gap-2.5" key={group.abilityAbbrev}>
+                <section className="grid gap-2.5" data-class-skill-group={group.abilityAbbrev} key={group.abilityAbbrev}>
                   <div className="flex items-center gap-3 px-1">
                     <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
                       {group.abilityAbbrev}
@@ -1039,12 +1045,13 @@ function SkillOptionRow({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       aria-pressed={option.checked}
       className={cn(
-        "group relative grid w-full grid-cols-[3.4rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-2 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
+        "group relative grid w-full grid-cols-[3.4rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border py-2 pl-5 pr-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition md:pl-6",
         option.checked
           ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
         option.disabled && !option.checked && "opacity-60",
       )}
+      data-class-skill-row="true"
       disabled={option.disabled && !option.checked}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.key)}

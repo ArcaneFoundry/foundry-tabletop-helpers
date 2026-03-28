@@ -55,6 +55,8 @@ const CLASS_THEMES: Record<string, { frame: string; glow: string; sigil: string 
   wizard: { frame: "#7ea3d5", glow: "rgba(111,154,215,0.34)", sigil: "fa-solid fa-hat-wizard" },
 };
 
+const FEATURE_ROW_PADDING_STYLE = { paddingBlock: "1rem", paddingInline: "1.25rem" } as const;
+
 export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as ClassSummaryViewModel | undefined;
   const [expandedFeature, setExpandedFeature] = useState<string | null>(null);
@@ -212,6 +214,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                     >
                       <button
                         className="flex w-full items-start gap-3 px-5 py-4 text-left"
+                        style={FEATURE_ROW_PADDING_STYLE}
                         onClick={() => setExpandedFeature(isExpanded ? null : featureKey)}
                         type="button"
                       >
