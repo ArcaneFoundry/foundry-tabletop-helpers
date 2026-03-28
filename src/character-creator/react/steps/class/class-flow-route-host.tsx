@@ -997,6 +997,22 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
   const theme = getClassTheme(viewModel.classIdentifier);
   const totalRequired = viewModel.requirements.reduce((sum, requirement) => sum + requirement.requiredCount, 0);
   const totalSelected = Object.values(selectedByRequirement).reduce((sum, values) => sum + values.length, 0);
+  const selectedEntries = useMemo(
+    () =>
+      viewModel.requirements.flatMap((requirement) => {
+        const selectedSet = new Set(selectedByRequirement[requirement.id] ?? []);
+        return requirement.options
+          .filter((option) => selectedSet.has(option.id))
+          .map((option) => ({
+            id: option.id,
+            key: `${requirement.id}:${option.id}`,
+            label: option.label,
+            description: `${requirement.title} choice`,
+            iconClass: option.iconClass ?? "fa-solid fa-sparkles",
+          }));
+      }),
+    [selectedByRequirement, viewModel.requirements],
+  );
 
   const onToggleOption = (requirementId: string, optionId: string, limit: number) => {
     const currentSelections = new Set(selectedByRequirement[requirementId] ?? []);
@@ -1033,7 +1049,28 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
           </p>
         </div>
         <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
-          <div className="grid gap-4">
+          <div className="rounded-[1.1rem] border border-[#e9c176]/[0.14] bg-[rgba(255,255,255,0.03)] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
+                  Guided Requirement Groups
+                </div>
+                <div className="mt-1 font-fth-cc-body text-[0.94rem] leading-6 text-[#d0cad0]">
+                  Each grant resolves independently. Pick the items for each requirement, then confirm them in the summary rail.
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                <span className="inline-flex items-center rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
+                  {viewModel.requirements.length} group{viewModel.requirements.length === 1 ? "" : "s"}
+                </span>
+                <span className="inline-flex items-center rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
+                  {totalSelected} / {totalRequired} chosen
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4">
             {viewModel.requirements.map((requirement, groupIndex) => {
               const selectedSet = new Set(selectedByRequirement[requirement.id] ?? []);
               const options = requirement.options.map((option) => ({
@@ -1041,26 +1078,48 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
                 checked: selectedSet.has(option.id),
                 disabled: !selectedSet.has(option.id) && selectedSet.size >= requirement.requiredCount,
               }));
+              const selectedCount = selectedSet.size;
+              const remaining = Math.max(0, requirement.requiredCount - selectedCount);
               return (
-                <section className="grid gap-2.5" key={requirement.id}>
-                  <div className="flex items-center gap-3 px-1">
-                    <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
-                      {requirement.title}
-                    </span>
-                    <span className="font-fth-cc-body text-[0.95rem] font-semibold text-[#bdb4c0]">
-                      Choose {requirement.requiredCount}
-                    </span>
-                    <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
+                <section
+                  className="cc-class-item-choice-group rounded-[1.35rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(31,26,24,0.98),rgba(18,15,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,240,219,0.03),0_18px_34px_rgba(0,0,0,0.18)]"
+                  data-class-item-choice-group={requirement.id}
+                  key={requirement.id}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#e9c176]/[0.12] pb-3">
+                    <div className="min-w-0 max-w-3xl">
+                      <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.26em] text-[#e9c176]/72">
+                        Group {groupIndex + 1}
+                      </div>
+                      <div className="mt-1 font-fth-cc-body text-[1rem] font-semibold text-[#f5ead5]">
+                        {requirement.title}
+                      </div>
+                      <div className="mt-1 font-fth-cc-body text-[0.92rem] leading-6 text-[#d0cad0]">
+                        Choose up to {requirement.requiredCount} option{requirement.requiredCount === 1 ? "" : "s"} from this grant.
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <div className="inline-flex whitespace-nowrap rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#c6c0cb]">
+                        {selectedCount} / {requirement.requiredCount} selected
+                      </div>
+                      <div className="inline-flex whitespace-nowrap rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em] text-[#9f95a6]">
+                        {remaining > 0 ? `${remaining} remaining` : "Requirement met"}
+                      </div>
+                    </div>
                   </div>
-                  {options.map((option, optionIndex) => (
-                    <ClassAdvancementOptionRow
-                      key={option.id}
-                      onToggle={(optionId) => onToggleOption(requirement.id, optionId, requirement.requiredCount)}
-                      option={option}
-                      prefersReducedMotion={prefersReducedMotion}
-                      rowIndex={groupIndex * 10 + optionIndex}
-                    />
-                  ))}
+
+                  <div className="mt-4 grid gap-3">
+                    {options.map((option, optionIndex) => (
+                      <ClassAdvancementOptionRow
+                        key={option.id}
+                        onToggle={(optionId) => onToggleOption(requirement.id, optionId, requirement.requiredCount)}
+                        option={option}
+                        prefersReducedMotion={prefersReducedMotion}
+                        rowIndex={groupIndex * 10 + optionIndex}
+                      />
+                    ))}
+                  </div>
                 </section>
               );
             })}
@@ -1079,9 +1138,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
         />
         <ClassAdvancementSelectedCard
           emptyMessage="No class options selected yet."
-          entries={viewModel.requirements.flatMap((requirement) =>
-            requirement.options.filter((option) => (selectedByRequirement[requirement.id] ?? []).includes(option.id))
-          )}
+          entries={selectedEntries}
           title="Chosen Features"
         />
       </aside>

@@ -340,6 +340,108 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("md:px-4");
   });
 
+  it("renders class item choices as guided grouped decisions with contextual selection summaries", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ClassFlowRouteHost, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "classItemChoices",
+          steps: createSteps(),
+          stepViewModel: {
+            classIdentifier: "fighter",
+            className: "Fighter",
+            type: "itemChoices",
+            title: "Choose Your Class Features",
+            description: "Select the class feature options granted by your class at the current starting level.",
+            requirements: [
+              {
+                id: "combat-style",
+                title: "Combat Style",
+                requiredCount: 1,
+                selectedIds: ["defense"],
+                options: [
+                  { id: "defense", label: "Defense", checked: true, disabled: false, description: "Combat Style", iconClass: "fa-solid fa-shield-halved" },
+                  { id: "two-weapon", label: "Two-Weapon Fighting", checked: false, disabled: false, description: "Combat Style", iconClass: "fa-solid fa-hand-fist" },
+                ],
+              },
+              {
+                id: "martial-training",
+                title: "Martial Training",
+                requiredCount: 2,
+                selectedIds: ["battleaxe"],
+                options: [
+                  { id: "battleaxe", label: "Battleaxe", checked: true, disabled: false, description: "Martial Training", iconClass: "fa-solid fa-swords" },
+                  { id: "longbow", label: "Longbow", checked: false, disabled: false, description: "Martial Training", iconClass: "fa-solid fa-bullseye" },
+                  { id: "flail", label: "Flail", checked: false, disabled: true, description: "Martial Training", iconClass: "fa-solid fa-hexagon" },
+                ],
+              },
+            ],
+          },
+        },
+        state: {
+          ...createState(),
+          selections: {
+            ...createState().selections,
+            class: {
+              ...createState().selections.class,
+              classAdvancementRequirements: [
+                {
+                  id: "combat-style",
+                  type: "itemChoices",
+                  title: "Combat Style",
+                  level: 1,
+                  advancementType: "ItemChoice",
+                  requiredCount: 1,
+                  pool: [],
+                  groupKey: "itemChoices",
+                  itemChoices: [],
+                },
+                {
+                  id: "martial-training",
+                  type: "itemChoices",
+                  title: "Martial Training",
+                  level: 1,
+                  advancementType: "ItemChoice",
+                  requiredCount: 2,
+                  pool: [],
+                  groupKey: "itemChoices",
+                  itemChoices: [],
+                },
+              ],
+            },
+            classAdvancements: {
+              expertiseSkills: [],
+              chosenLanguages: [],
+              chosenTools: [],
+              itemChoices: {
+                "combat-style": ["defense"],
+                "martial-training": ["battleaxe"],
+              },
+            },
+          },
+        } as never,
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain("Guided Requirement Groups");
+    expect(markup).toContain("2 groups");
+    expect(markup).toContain("2 / 3 chosen");
+    expect(markup).toContain('data-class-item-choice-group="combat-style"');
+    expect(markup).toContain('data-class-item-choice-group="martial-training"');
+    expect(markup).toContain("Group 1");
+    expect(markup).toContain("Group 2");
+    expect(markup).toContain("Combat Style");
+    expect(markup).toContain("Martial Training");
+    expect(markup).toContain("Requirement met");
+    expect(markup).toContain("1 remaining");
+    expect(markup).toContain("Combat Style choice");
+    expect(markup).toContain("Martial Training choice");
+    expect(markup).toContain("Chosen Features");
+  });
+
   it.each([
     ["expertise", "Choose Expert Skills", "Expertise Picks", "Chosen Expertise"],
     ["languages", "Choose Languages", "Languages Chosen", "Chosen Languages"],
