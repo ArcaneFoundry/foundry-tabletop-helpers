@@ -65,6 +65,7 @@ const CLASS_THEMES: Record<string, { accent: string; glow: string; sigil: string
 };
 
 const PROFICIENCY_BONUS = "+2";
+const CLASS_SKILL_ABILITY_ORDER = ["STR", "DEX", "CON", "WIS", "INT", "CHA"] as const;
 
 export function ClassChoicesStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as ClassChoicesStepViewModel | undefined;
@@ -92,16 +93,7 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
     })),
     [maxCount, selectedSet, viewModel.skillSection.options],
   );
-  const groupedOptions = useMemo(() => {
-    const groups = new Map<string, SkillChoiceOption[]>();
-    for (const option of options) {
-      const key = option.abilityAbbrev;
-      const existing = groups.get(key) ?? [];
-      existing.push(option);
-      groups.set(key, existing);
-    }
-    return Array.from(groups.entries()).map(([abilityAbbrev, entries]) => ({ abilityAbbrev, entries }));
-  }, [options]);
+  const groupedOptions = useMemo(() => groupSkillChoicesByAbility(options), [options]);
 
   const onToggleSkill = (skillKey: string) => {
     const option = options.find((candidate) => candidate.key === skillKey);
@@ -432,6 +424,22 @@ function FlourishGem() {
 
 function getClassTheme(identifier: string) {
   return CLASS_THEMES[identifier.trim().toLowerCase()] ?? CLASS_THEMES.fighter;
+}
+
+export function groupSkillChoicesByAbility(options: SkillChoiceOption[]) {
+  const groups = new Map<string, SkillChoiceOption[]>();
+
+  for (const option of options) {
+    const key = option.abilityAbbrev.trim().toUpperCase();
+    const existing = groups.get(key) ?? [];
+    existing.push(option);
+    groups.set(key, existing);
+  }
+
+  return CLASS_SKILL_ABILITY_ORDER.flatMap((abilityAbbrev) => {
+    const entries = groups.get(abilityAbbrev);
+    return entries ? [{ abilityAbbrev, entries }] : [];
+  });
 }
 
 function abilityLabel(abbrev: string): string {
