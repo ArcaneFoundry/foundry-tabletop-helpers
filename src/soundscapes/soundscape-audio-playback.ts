@@ -91,7 +91,9 @@ export async function resolveAudioPathPlayback(path: string): Promise<Soundscape
 
   return {
     path: trimmedPath,
-    durationSeconds: normalizeDurationSeconds(sound),
+    get durationSeconds(): number {
+      return normalizeDurationSeconds(sound);
+    },
     async load(): Promise<void> {
       await sound.load?.();
     },
