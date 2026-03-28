@@ -411,23 +411,12 @@ function RailEndcap({ side }: { side: "left" | "right" }) {
 function getMilestoneAnimate(status: ClassAggregatePresentationStatus) {
   if (status === "selection-active" || status === "in-progress") {
     return {
-      boxShadow: [
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(68,169,143,0)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 10px 20px rgba(76,53,36,0.16),0 0 18px rgba(68,169,143,0.28)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(68,169,143,0)",
-      ],
       scale: [1, 1.03, 1],
     };
   }
 
   if (status === "complete" || status === "collapsed-complete") {
-    return {
-      boxShadow: [
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(214,169,77,0)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 10px 20px rgba(76,53,36,0.16),0 0 12px rgba(214,169,77,0.18)",
-        "inset 0 1px 0 rgba(255,245,226,0.78),0 8px 16px rgba(76,53,36,0.14),0 0 0 rgba(214,169,77,0)",
-      ],
-    };
+    return undefined;
   }
 
   return undefined;
