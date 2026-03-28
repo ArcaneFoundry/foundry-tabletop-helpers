@@ -50,7 +50,7 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
           <button
             aria-pressed={selected}
             className={cn(
-              "group relative flex h-full w-full flex-col overflow-hidden rounded-[1.05rem] border bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200 hover:brightness-[1.03]",
+              "group relative flex h-full w-full flex-row overflow-hidden rounded-[1.05rem] border bg-[linear-gradient(180deg,rgba(46,42,48,0.94),rgba(15,15,19,0.98))] p-[0.22rem] text-left shadow-[0_24px_50px_rgba(0,0,0,0.28)] transition duration-200 hover:brightness-[1.03]",
               selected
                 ? "border-[#e9c176]/70 shadow-[0_0_0_1px_rgba(233,193,118,0.26),0_0_30px_rgba(233,193,118,0.12),0_24px_50px_rgba(0,0,0,0.32)]"
                 : "border-[#e9c176]/16",
