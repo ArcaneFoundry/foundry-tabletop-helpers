@@ -27,8 +27,8 @@ import { shouldShowOriginSelectionScrollShadow } from "../components/origin-pane
 import { BackgroundSelectionPane, getBackgroundArtTreatment } from "./background-selection-pane";
 
 describe("BackgroundSelectionPane", () => {
-  it("detects square icon-style background art that needs the bleed treatment", () => {
-    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("icon-bleed");
+  it("normalizes mixed background art sources to the same treatment", () => {
+    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("cover");
     expect(getBackgroundArtTreatment("modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp")).toBe("cover");
     expect(getBackgroundArtTreatment("")).toBe("cover");
   });
@@ -59,6 +59,12 @@ describe("BackgroundSelectionPane", () => {
               img: "modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp",
               blurb: "Veteran of hard campaigns.",
             },
+            {
+              uuid: "background-3",
+              name: "Wayfarer",
+              img: "modules/dnd-players-handbook/assets/icons/backgrounds/wayfarer.webp",
+              blurb: "A traveler who knows the road.",
+            },
           ],
         },
       },
@@ -80,9 +86,9 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("flex h-full w-full flex-col");
     expect(markup).toContain("flex h-full min-h-0 flex-1 flex-col");
     expect(markup).toContain("min-h-[20rem] flex-1 overflow-hidden");
-    expect(markup).toContain("data-background-art-treatment=\"icon-bleed\"");
     expect(markup).toContain("data-background-art-treatment=\"cover\"");
-    expect(markup).toContain("scale-[1.45] object-cover opacity-70 blur-xl");
+    expect(markup).not.toContain("data-background-art-treatment=\"icon-bleed\"");
+    expect(markup).not.toContain("scale-[1.45] object-cover opacity-70 blur-xl");
     expect(markup).not.toContain("cc-origin-selection-pane__intro");
     expect(markup).not.toContain("Select a Background");
   });
