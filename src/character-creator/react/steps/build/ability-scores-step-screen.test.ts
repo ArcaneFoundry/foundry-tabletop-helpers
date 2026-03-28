@@ -78,6 +78,9 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("15");
     expect(markup).toContain("Base score only");
     expect(markup).toContain("Point Cost Reference");
+    expect(markup).toContain("cc-method-tabs");
+    expect(markup).toContain("cc-method-panel");
+    expect(markup.match(/overflow-y-auto/g)).toHaveLength(1);
   });
 
   it("renders the roll ritual and readiness summary", () => {
