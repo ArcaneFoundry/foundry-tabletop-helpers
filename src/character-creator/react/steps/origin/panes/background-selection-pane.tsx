@@ -16,9 +16,13 @@ type BackgroundSelectionPaneProps = OriginPaneProps & {
   prefersReducedMotion: boolean;
 };
 
+const BACKGROUND_ICON_BLEED_ALLOWLIST = new Set<string>([]);
+
 export function getBackgroundArtTreatment(imageSrc: string | null | undefined): "cover" | "icon-bleed" {
   if (!imageSrc) return "cover";
-  return imageSrc.includes("/assets/icons/backgrounds/") ? "icon-bleed" : "cover";
+  const normalizedPath = imageSrc.toLowerCase();
+  if (!normalizedPath.includes("/assets/icons/backgrounds/")) return "cover";
+  return BACKGROUND_ICON_BLEED_ALLOWLIST.has(normalizedPath) ? "icon-bleed" : "cover";
 }
 
 export function BackgroundSelectionPane({ shellContext, state, controller, prefersReducedMotion }: BackgroundSelectionPaneProps) {
