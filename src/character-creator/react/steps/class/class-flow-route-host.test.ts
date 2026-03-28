@@ -31,7 +31,7 @@ import { ClassFlowRouteHost } from "./class-flow-route-host";
 function createState(): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["class", "classChoices", "classExpertise", "classLanguages", "weaponMasteries", "classSummary"],
+    applicableSteps: ["class", "classChoices", "classExpertise", "classLanguages", "classTools", "weaponMasteries", "classSummary"],
     selections: {
       class: {
         uuid: "Compendium.test.classes.Item.fighter",
@@ -77,10 +77,82 @@ function createSteps() {
     { id: "classChoices", label: "Skills", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: true },
     { id: "classExpertise", label: "Expertise", icon: "fa-solid fa-bullseye", status: "pending" as const, active: false },
     { id: "classLanguages", label: "Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
+    { id: "classTools", label: "Tools", icon: "fa-solid fa-screwdriver-wrench", status: "pending" as const, active: false },
     { id: "weaponMasteries", label: "Masteries", icon: "fa-solid fa-swords", status: "pending" as const, active: false },
     { id: "classSummary", label: "Summary", icon: "fa-solid fa-scroll", status: "pending" as const, active: false },
     { id: "review", label: "Review", icon: "fa-solid fa-stars", status: "pending" as const, active: false },
   ];
+}
+
+function createAdvancementViewModel(type: "expertise" | "languages" | "tools") {
+  const configurations = {
+    expertise: {
+      title: "Choose Your Expertise",
+      description: "Refine the skills your class has already trained.",
+      statusLabel: "Choose Expert Skills",
+      summaryLabel: "Expertise Picks",
+      selectedTitle: "Chosen Expertise",
+      emptyMessage: "No expertise choices selected yet.",
+      guidance: "Choose the expertise upgrades that define the class's strongest edge.",
+      options: [
+        { id: "acrobatics", label: "Acrobatics", description: "Already sharp.", iconClass: "fa-solid fa-person-running" },
+        { id: "athletics", label: "Athletics", description: "Build this edge.", iconClass: "fa-solid fa-dumbbell" },
+      ],
+    },
+    languages: {
+      title: "Choose Your Languages",
+      description: "Add the tongues this class can communicate in.",
+      statusLabel: "Choose Languages",
+      summaryLabel: "Languages Chosen",
+      selectedTitle: "Chosen Languages",
+      emptyMessage: "No class languages selected yet.",
+      guidance: "Choose the languages your class features grant and keep the count readable.",
+      options: [
+        { id: "elvish", label: "Elvish", description: "Literate and fluent.", iconClass: "fa-solid fa-language" },
+        { id: "dwarvish", label: "Dwarvish", description: "A useful second tongue.", iconClass: "fa-solid fa-language" },
+      ],
+    },
+    tools: {
+      title: "Choose Your Tools",
+      description: "Select the tools this class teaches you to use.",
+      statusLabel: "Choose Tool Proficiencies",
+      summaryLabel: "Tool Picks",
+      selectedTitle: "Chosen Tools",
+      emptyMessage: "No class tools selected yet.",
+      guidance: "Choose the tool proficiencies your class trains into your kit.",
+      options: [
+        { id: "smith", label: "Smith's Tools", description: "An earned trade.", iconClass: "fa-solid fa-screwdriver-wrench" },
+        { id: "thieves", label: "Thieves' Tools", description: "A quieter option.", iconClass: "fa-solid fa-toolbox" },
+      ],
+    },
+  }[type];
+
+  return {
+    classIdentifier: "fighter",
+    className: "Fighter",
+    type,
+    title: configurations.title,
+    description: configurations.description,
+    selectedCount: 1,
+    requiredCount: 2,
+    selectedEntries: [{
+      id: configurations.options[0].id,
+      label: configurations.options[0].label,
+      description: configurations.options[0].description,
+      iconClass: configurations.options[0].iconClass,
+    }],
+    options: configurations.options.map((option, index) => ({
+      id: option.id,
+      key: option.id,
+      label: option.label,
+      abilityAbbrev: type === "expertise" ? "STR" : type === "languages" ? "INT" : "DEX",
+      checked: index === 0,
+      disabled: false,
+      iconClass: option.iconClass,
+      description: option.description,
+      tooltip: `${option.label} tooltip`,
+    })),
+  } as never;
 }
 
 describe("ClassFlowRouteHost", () => {
@@ -180,5 +252,30 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("cc-class-summary__feature-list");
     expect(markup).toContain('style="padding-block:1rem;padding-inline:1.25rem"');
     expect(markup).toContain("Hit Die");
+  });
+
+  it.each([
+    ["expertise", "Choose Expert Skills", "Expertise Picks", "Chosen Expertise"],
+    ["languages", "Choose Languages", "Languages Chosen", "Chosen Languages"],
+    ["tools", "Choose Tool Proficiencies", "Tool Picks", "Chosen Tools"],
+  ] as const)("renders distinct advancement chrome for %s", (type, statusLabel, summaryLabel, selectedTitle) => {
+    const markup = renderToStaticMarkup(
+      createElement(ClassFlowRouteHost, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: type === "expertise" ? "classExpertise" : type === "languages" ? "classLanguages" : "classTools",
+          steps: createSteps(),
+          stepViewModel: createAdvancementViewModel(type),
+        },
+        state: createState(),
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain(statusLabel);
+    expect(markup).toContain(summaryLabel);
+    expect(markup).toContain(selectedTitle);
   });
 });

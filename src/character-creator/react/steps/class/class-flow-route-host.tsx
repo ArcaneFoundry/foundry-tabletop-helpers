@@ -124,6 +124,15 @@ type ClassAdvancementCommonStepViewModel = {
   options: ClassAdvancementChoiceOption[];
 };
 
+type ClassAdvancementPaneCopy = {
+  eyebrow: string;
+  statusLabel: string;
+  summaryLabel: string;
+  selectedTitle: string;
+  emptyMessage: string;
+  guidance: string;
+};
+
 type ClassItemChoiceRequirementViewModel = {
   id: string;
   title: string;
@@ -654,17 +663,6 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
     [maxCount, selectedSet, viewModel.weaponMasterySection.options],
   );
 
-  const groupedOptions = useMemo(() => {
-    const groups = new Map<string, WeaponMasteryChoiceOption[]>();
-    for (const option of options) {
-      const groupKey = option.weaponType.startsWith("Martial") ? "Martial Weapons" : "Simple Weapons";
-      const existing = groups.get(groupKey) ?? [];
-      existing.push(option);
-      groups.set(groupKey, existing);
-    }
-    return Array.from(groups.entries()).map(([label, entries]) => ({ label, entries }));
-  }, [options]);
-
   const selectedEntries = useMemo(
     () => options.filter((option) => selectedSet.has(option.id)),
     [options, selectedSet],
@@ -698,6 +696,18 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
       return left.mastery.localeCompare(right.mastery);
     });
   }, [options, selectedSet]);
+
+  const groupedOptions = useMemo(() => {
+    const groups = new Map<string, WeaponMasteryChoiceOption[]>();
+    for (const option of options) {
+      const groupKey = option.weaponType.startsWith("Martial") ? "Martial Weapons" : "Simple Weapons";
+      const existing = groups.get(groupKey) ?? [];
+      existing.push(option);
+      groups.set(groupKey, existing);
+    }
+
+    return Array.from(groups.entries()).map(([label, entries]) => ({ label, entries }));
+  }, [options]);
 
   const onToggleMastery = (weaponId: string) => {
     const option = options.find((candidate) => candidate.id === weaponId);
@@ -788,6 +798,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
   const viewModel = shellContext.stepViewModel as ClassAdvancementCommonStepViewModel | undefined;
   const prefersReducedMotion = useReducedMotion() ?? false;
   if (!viewModel) return null;
+  const paneCopy = getClassAdvancementPaneCopy(viewModel.type);
 
   const [selectedIds, setSelectedIds] = useState<string[]>(viewModel.selectedEntries.map((entry) => entry.id));
 
@@ -828,12 +839,35 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
     <div className="cc-class-choice-layout">
       <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="border-b border-white/10 pb-4">
-          <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
-            {viewModel.title}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
+              {paneCopy.eyebrow}
+            </span>
+            <span className="rounded-full border border-[#e9c176]/18 bg-[rgba(233,193,118,0.08)] px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.16em] text-[#d7bb8a]">
+              {paneCopy.statusLabel}
+            </span>
           </div>
-          <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#c7c0cb]">
-            {viewModel.description}
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-fth-cc-display text-[1.28rem] uppercase tracking-[0.08em] text-[#f1e6d3]">
+                {viewModel.title}
+              </div>
+              <p className="mt-2 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-[#c7c0cb]">
+                {viewModel.description}
+              </p>
+            </div>
+            <div className="rounded-[1rem] border border-[#e9c176]/18 bg-[rgba(233,193,118,0.08)] px-4 py-3 text-right shadow-[0_14px_24px_rgba(0,0,0,0.12)]">
+              <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.2em] text-[#d7bb8a]">
+                {paneCopy.summaryLabel}
+              </div>
+              <div className="mt-1 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em] text-[#f6e3be]">
+                {selectedIds.length}/{viewModel.requiredCount}
+              </div>
+              <div className="mt-1 font-fth-cc-body text-[0.88rem] text-[#d8d0c7]">
+                {selectedIds.length >= viewModel.requiredCount ? "Selection complete." : paneCopy.guidance}
+              </div>
+            </div>
+          </div>
         </div>
         <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-2.5">
@@ -851,18 +885,18 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
       </section>
 
       <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
-        <SelectionSummaryCard
+        <AdvancementSummaryCard
           accent={theme.accent}
           glow={theme.glow}
-          label={getSelectionSummaryLabel(viewModel.type)}
+          guidance={paneCopy.guidance}
+          label={paneCopy.summaryLabel}
           maxCount={viewModel.requiredCount}
           selectedCount={selectedIds.length}
-          title="Selection Summary"
         />
         <ClassAdvancementSelectedCard
-          emptyMessage={getEmptySelectionMessage(viewModel.type)}
+          emptyMessage={paneCopy.emptyMessage}
           entries={options.filter((option) => selectedSet.has(option.id))}
-          title={getSelectedCardTitle(viewModel.type)}
+          title={paneCopy.selectedTitle}
         />
       </aside>
     </div>
@@ -1095,6 +1129,55 @@ function SkillOptionRow({
   );
 }
 
+function AdvancementSummaryCard({
+  selectedCount,
+  maxCount,
+  accent,
+  glow,
+  guidance,
+  title = "Selection Summary",
+  label = "Choices Selected",
+}: {
+  selectedCount: number;
+  maxCount: number;
+  accent: string;
+  glow: string;
+  guidance: string;
+  title?: string;
+  label?: string;
+}) {
+  return (
+    <section
+      className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
+      style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
+    >
+      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+        <div className="border-b border-white/10 pb-3 text-center">
+          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
+            <div
+              className="flex h-20 w-20 flex-col items-center justify-center rounded-full border text-[#fff9ea] shadow-[inset_0_2px_0_rgba(255,244,225,0.22),0_12px_24px_rgba(0,0,0,0.24)]"
+              style={{
+                borderColor: accent,
+                background: `radial-gradient(circle at 35% 30%, rgba(247,214,145,0.98), ${accent})`,
+              }}
+            >
+              <div className="flex items-end leading-none">
+                <span className="font-fth-cc-display text-[2.2rem]">{selectedCount}</span>
+                <span className="ml-1 font-fth-cc-display text-[1.55rem] opacity-90">/{maxCount}</span>
+              </div>
+            </div>
+            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
+          </div>
+          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#d9d0c5]">{label}</div>
+          <div className="mt-2 font-fth-cc-body text-[0.88rem] leading-6 text-[#bfb5c2]">{guidance}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SelectionSummaryCard({
   selectedCount,
   maxCount,
@@ -1157,13 +1240,14 @@ function ClassAdvancementOptionRow({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       aria-pressed={option.checked}
       className={cn(
-        "group relative grid w-full grid-cols-[3rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-3 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
+        "group relative grid w-full grid-cols-[3rem_minmax(0,1fr)_4.75rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-3 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
         option.checked
           ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
         option.disabled && !option.checked && "opacity-60",
       )}
       disabled={option.disabled && !option.checked}
+      data-choice-state={option.checked ? "selected" : "available"}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.id)}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
@@ -1196,14 +1280,21 @@ function ClassAdvancementOptionRow({
       </span>
       <span
         className={cn(
-          "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+          "relative flex h-10 items-center justify-center rounded-[0.75rem] border px-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.12em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked
             ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
             : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
-        {option.checked ? <i className="fa-solid fa-check" aria-hidden="true" /> : <i className="fa-solid fa-hexagon" aria-hidden="true" />}
+        {option.checked ? (
+          <span className="inline-flex items-center gap-1.5">
+            <i className="fa-solid fa-check" aria-hidden="true" />
+            <span>Chosen</span>
+          </span>
+        ) : (
+          <i className="fa-solid fa-hexagon" aria-hidden="true" />
+        )}
       </span>
     </motion.button>
   );
@@ -1251,36 +1342,35 @@ function ClassAdvancementSelectedCard({
   );
 }
 
-function getSelectionSummaryLabel(type: ClassAdvancementCommonStepViewModel["type"]): string {
+function getClassAdvancementPaneCopy(type: ClassAdvancementCommonStepViewModel["type"]): ClassAdvancementPaneCopy {
   switch (type) {
     case "expertise":
-      return "Expertise Picks";
+      return {
+        eyebrow: "Expertise",
+        statusLabel: "Choose Expert Skills",
+        summaryLabel: "Expertise Picks",
+        selectedTitle: "Chosen Expertise",
+        emptyMessage: "No expertise choices selected yet.",
+        guidance: "Choose the expertise upgrades that define the class's strongest edge.",
+      };
     case "languages":
-      return "Languages Chosen";
+      return {
+        eyebrow: "Languages",
+        statusLabel: "Choose Languages",
+        summaryLabel: "Languages Chosen",
+        selectedTitle: "Chosen Languages",
+        emptyMessage: "No class languages selected yet.",
+        guidance: "Choose the languages your class features grant and keep the count readable.",
+      };
     case "tools":
-      return "Tool Picks";
-  }
-}
-
-function getSelectedCardTitle(type: ClassAdvancementCommonStepViewModel["type"]): string {
-  switch (type) {
-    case "expertise":
-      return "Chosen Expertise";
-    case "languages":
-      return "Chosen Languages";
-    case "tools":
-      return "Chosen Tools";
-  }
-}
-
-function getEmptySelectionMessage(type: ClassAdvancementCommonStepViewModel["type"]): string {
-  switch (type) {
-    case "expertise":
-      return "No expertise choices selected yet.";
-    case "languages":
-      return "No class languages selected yet.";
-    case "tools":
-      return "No class tools selected yet.";
+      return {
+        eyebrow: "Tools",
+        statusLabel: "Choose Tool Proficiencies",
+        summaryLabel: "Tool Picks",
+        selectedTitle: "Chosen Tools",
+        emptyMessage: "No class tools selected yet.",
+        guidance: "Choose the tool proficiencies your class trains into your kit.",
+      };
   }
 }
 
@@ -1320,9 +1410,9 @@ function WeaponMasteryRow({
     >
       <span
         className={cn(
-          "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-          option.checked ? "border-[#e9c176]/52" : "border-white/12",
-        )}
+        "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        option.checked ? "border-[#e9c176]/52" : "border-white/12",
+      )}
       >
         <img alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" src={option.img} />
         <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,236,0.12),rgba(16,10,7,0.22))]" />
