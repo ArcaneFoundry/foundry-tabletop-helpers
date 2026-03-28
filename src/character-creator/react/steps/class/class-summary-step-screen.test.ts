@@ -48,6 +48,7 @@ describe("ClassSummaryStepScreen", () => {
     expect(markup).toContain("Saving Throws");
     expect(markup).toContain("Prime Attribute");
     expect(markup).toContain("px-5 py-4");
+    expect(markup).toContain('style="padding-block:1rem;padding-inline:1.25rem"');
     expect(markup).toContain("Current-Level Features");
     expect(markup.indexOf("Opening Kit")).toBeLessThan(markup.indexOf("Hit Die"));
   });
