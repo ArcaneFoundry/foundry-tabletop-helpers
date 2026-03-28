@@ -111,6 +111,7 @@ describe("step equipment", () => {
     const step = createEquipmentStep();
     const viewModel = await step.buildViewModel(makeState() as never);
 
+    expect(step.reactComponent).toBeTypeOf("function");
     expect(ensureEquipmentShopMetadataReadyMock).toHaveBeenCalled();
     expect(resolveEquipmentFlowMock).toHaveBeenCalled();
     expect(viewModel).toMatchObject({

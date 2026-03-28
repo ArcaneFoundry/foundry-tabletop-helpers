@@ -11,6 +11,7 @@ import {
   resolveEquipmentFlow,
   syncEquipmentSelectionSnapshot,
 } from "./equipment-flow-utils";
+import { EquipmentStepScreen } from "../react/steps/build/equipment-step-screen";
 
 function hasRequiredEquipmentSelections(state: WizardState): boolean {
   const selection = getEquipmentSelection(state);
@@ -65,6 +66,7 @@ export function createEquipmentStep(): WizardStepDefinition {
     label: "Equipment",
     icon: "fa-solid fa-sack",
     renderMode: "react",
+    reactComponent: EquipmentStepScreen,
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-placeholder.hbs`,
     dependencies: ["class", "background"],
     isApplicable: (state) => Boolean(state.selections.class?.uuid && state.selections.background?.uuid),
