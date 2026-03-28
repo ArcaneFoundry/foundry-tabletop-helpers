@@ -11,7 +11,7 @@ import {
 describe("soundscape normalization", () => {
   it("creates an empty snapshot fallback", () => {
     expect(createEmptySoundscapeLibrarySnapshot()).toMatchObject({
-      formatVersion: 1,
+      formatVersion: 2,
       profiles: {},
     });
   });
@@ -23,7 +23,7 @@ describe("soundscape normalization", () => {
           name: "Forest",
           musicPrograms: {
             calm: {
-              playlistUuids: ["Playlist.one", "Playlist.one", 42],
+              audioPaths: ["sounds/one.ogg", "sounds/one.ogg", 42],
               selectionMode: "weird",
               delaySeconds: -5,
             },
@@ -31,14 +31,14 @@ describe("soundscape normalization", () => {
           ambienceLayers: {
             birds: {
               mode: "random",
-              soundUuids: ["PlaylistSound.one", "", "PlaylistSound.one"],
+              audioPaths: ["sounds/wind.ogg", "", "sounds/wind.ogg"],
               minDelaySeconds: 8,
               maxDelaySeconds: 2,
             },
           },
           soundMoments: {
             sting: {
-              soundUuids: ["PlaylistSound.sting"],
+              audioPaths: ["sounds/sting.ogg"],
               selectionMode: "weird",
             },
           },
@@ -57,12 +57,12 @@ describe("soundscape normalization", () => {
     });
 
     expect(snapshot.profiles.forest?.musicPrograms.calm).toMatchObject({
-      playlistUuids: ["Playlist.one"],
+      audioPaths: ["sounds/one.ogg"],
       selectionMode: "sequential",
       delaySeconds: 0,
     });
     expect(snapshot.profiles.forest?.ambienceLayers.birds).toMatchObject({
-      soundUuids: ["PlaylistSound.one"],
+      audioPaths: ["sounds/wind.ogg"],
       minDelaySeconds: 8,
       maxDelaySeconds: 8,
     });
@@ -86,7 +86,7 @@ describe("soundscape normalization", () => {
             calm: {
               id: "calm",
               name: "Calm",
-              playlistUuids: ["Playlist.calm"],
+              audioPaths: ["music/calm.ogg"],
               selectionMode: "sequential",
               delaySeconds: 0,
             },
@@ -96,7 +96,7 @@ describe("soundscape normalization", () => {
               id: "birds",
               name: "Birds",
               mode: "loop",
-              soundUuids: ["PlaylistSound.birds"],
+              audioPaths: ["ambience/birds.ogg"],
               minDelaySeconds: 0,
               maxDelaySeconds: 0,
             },

@@ -71,7 +71,7 @@ vi.mock("./soundscape-ambience-controller", () => ({
   playStoredSoundscapeMoment: vi.fn(async () => ({
     played: true,
     error: null,
-    soundUuid: "Compendium.fth.sound.sting",
+    audioPath: "moments/sting.ogg",
     momentId: "sting",
   })),
 }));
@@ -79,7 +79,7 @@ vi.mock("./soundscape-ambience-controller", () => ({
 vi.mock("./soundscape-music-controller", () => ({
   getSoundscapeMusicRuntimeSnapshot: vi.fn(() => ({
     activeProgramId: null,
-    activePlaylistUuid: null,
+    activeAudioPath: null,
     pendingDelayMs: null,
     lastError: null,
   })),

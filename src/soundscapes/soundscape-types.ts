@@ -1,6 +1,6 @@
-export const SOUNDSCAPE_LIBRARY_FORMAT_VERSION = 1;
+export const SOUNDSCAPE_LIBRARY_FORMAT_VERSION = 2;
 
-export type SoundscapeUuid = string;
+export type SoundscapeAudioPath = string;
 export type SoundscapeSelectionMode = "sequential" | "random";
 export type SoundscapeLayerMode = "loop" | "random";
 export type SoundscapeMomentMode = "single" | "random";
@@ -11,7 +11,7 @@ export type SoundscapeAssignmentSource = "scene" | "worldDefault";
 export interface SoundscapeMusicProgram {
   id: string;
   name: string;
-  playlistUuids: SoundscapeUuid[];
+  audioPaths: SoundscapeAudioPath[];
   selectionMode: SoundscapeSelectionMode;
   delaySeconds: number;
 }
@@ -20,7 +20,7 @@ export interface SoundscapeAmbienceLayer {
   id: string;
   name: string;
   mode: SoundscapeLayerMode;
-  soundUuids: SoundscapeUuid[];
+  audioPaths: SoundscapeAudioPath[];
   minDelaySeconds: number;
   maxDelaySeconds: number;
 }
@@ -28,7 +28,7 @@ export interface SoundscapeAmbienceLayer {
 export interface SoundscapeSoundMoment {
   id: string;
   name: string;
-  soundUuids: SoundscapeUuid[];
+  audioPaths: SoundscapeAudioPath[];
   selectionMode: SoundscapeMomentMode;
 }
 

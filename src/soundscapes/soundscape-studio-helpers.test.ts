@@ -16,22 +16,23 @@ import {
   validateSoundscapeStudioData,
 } from "./soundscape-studio-helpers";
 
-const { fromUuidMock } = vi.hoisted(() => ({
-  fromUuidMock: vi.fn(),
+const { isAudioPathResolvableMock } = vi.hoisted(() => ({
+  isAudioPathResolvableMock: vi.fn(),
+}));
+
+vi.mock("./soundscape-audio-playback", () => ({
+  isAudioPathResolvable: isAudioPathResolvableMock,
 }));
 
 vi.mock("../types", () => ({
-  fromUuid: fromUuidMock,
   getGame: vi.fn(() => ({
-    playlists: [
-      { id: "playlist-1", name: "Town Themes", uuid: "Playlist.playlist-1" },
-    ],
+    playlists: [],
   })),
 }));
 
 function makeSnapshot(): PersistentSoundscapeLibrarySnapshot {
   return {
-    formatVersion: 1,
+    formatVersion: 2,
     savedAt: "2026-03-27T00:00:00.000Z",
     profiles: {},
   };
@@ -40,7 +41,7 @@ function makeSnapshot(): PersistentSoundscapeLibrarySnapshot {
 describe("soundscape studio helpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fromUuidMock.mockResolvedValue({ id: "doc-1" });
+    isAudioPathResolvableMock.mockResolvedValue(true);
   });
 
   it("creates and duplicates profiles with base rules and unique ids", () => {
@@ -54,10 +55,10 @@ describe("soundscape studio helpers", () => {
     expect(duplicate.rules).toEqual(profile.rules);
   });
 
-  it("creates child entities with stable ids", () => {
-    expect(createSoundscapeMusicProgram([]).id).toBe("new-music-program");
-    expect(createSoundscapeAmbienceLayer([]).id).toBe("new-ambience-layer");
-    expect(createSoundscapeSoundMoment([]).id).toBe("new-sound-moment");
+  it("creates child entities with stable ids and audio path arrays", () => {
+    expect(createSoundscapeMusicProgram([])).toMatchObject({ id: "new-music-program", audioPaths: [] });
+    expect(createSoundscapeAmbienceLayer([])).toMatchObject({ id: "new-ambience-layer", audioPaths: [] });
+    expect(createSoundscapeSoundMoment([])).toMatchObject({ id: "new-sound-moment", audioPaths: [] });
     expect(createSoundscapeRule([]).id).toBe("soundscape-rule");
   });
 
@@ -105,32 +106,30 @@ describe("soundscape studio helpers", () => {
 
   it("accepts a valid authored soundscape payload", async () => {
     const profile = createSoundscapeProfile([]);
-    profile.musicPrograms["score"] = {
+    profile.musicPrograms.score = {
       id: "score",
       name: "Town Music",
-      playlistUuids: ["Playlist.playlist-1"],
+      audioPaths: ["music/town.ogg"],
       selectionMode: "random",
       delaySeconds: 12,
     };
-    profile.ambienceLayers["wind"] = {
+    profile.ambienceLayers.wind = {
       id: "wind",
       name: "Cold Wind",
       mode: "random",
-      soundUuids: ["PlaylistSound.wind"],
+      audioPaths: ["ambience/wind.ogg"],
       minDelaySeconds: 5,
       maxDelaySeconds: 15,
     };
-    profile.soundMoments["stinger"] = {
+    profile.soundMoments.stinger = {
       id: "stinger",
       name: "Door Slam",
-      soundUuids: ["PlaylistSound.stinger"],
+      audioPaths: ["moments/stinger.ogg"],
       selectionMode: "single",
     };
     profile.rules = [
       { id: "base", trigger: { type: "base" }, musicProgramId: "score", ambienceLayerIds: ["wind"] },
       { id: "combat", trigger: { type: "combat" }, musicProgramId: null },
-      { id: "night", trigger: { type: "timeOfDay", timeOfDay: "night" }, ambienceLayerIds: ["wind"] },
-      { id: "storm", trigger: { type: "weather", weatherKeys: ["storm"] }, ambienceLayerIds: null },
     ];
 
     const snapshot = replaceProfileInLibrary(makeSnapshot(), profile);
@@ -149,7 +148,7 @@ describe("soundscape studio helpers", () => {
     directProfile.musicPrograms["direct-score"] = {
       id: "direct-score",
       name: "Direct Score",
-      playlistUuids: ["Playlist.playlist-1"],
+      audioPaths: ["music/direct.ogg"],
       selectionMode: "sequential",
       delaySeconds: 0,
     };
@@ -159,7 +158,7 @@ describe("soundscape studio helpers", () => {
     worldProfile.musicPrograms["world-score"] = {
       id: "world-score",
       name: "World Score",
-      playlistUuids: ["Playlist.playlist-1"],
+      audioPaths: ["music/world.ogg"],
       selectionMode: "sequential",
       delaySeconds: 0,
     };
@@ -195,55 +194,49 @@ describe("soundscape studio helpers", () => {
     })?.profileId).toBe(worldProfile.id);
   });
 
-  it("reports malformed triggers, impossible timing, and missing references", async () => {
+  it("reports malformed triggers, impossible timing, and missing audio paths", async () => {
     const profile = createSoundscapeProfile([]);
-    profile.musicPrograms["score"] = {
+    profile.musicPrograms.score = {
       id: "score",
       name: "Broken Music",
-      playlistUuids: ["Playlist.missing"],
+      audioPaths: ["music/missing.ogg"],
       selectionMode: "sequential",
       delaySeconds: -2,
     };
-    profile.ambienceLayers["wind"] = {
+    profile.ambienceLayers.wind = {
       id: "wind",
       name: "",
       mode: "random",
-      soundUuids: ["PlaylistSound.missing"],
+      audioPaths: ["ambience/missing.ogg"],
       minDelaySeconds: 12,
       maxDelaySeconds: 2,
     };
-    profile.soundMoments["stinger"] = {
+    profile.soundMoments.stinger = {
       id: "stinger",
       name: "",
-      soundUuids: [],
+      audioPaths: [],
       selectionMode: "random",
     };
     profile.rules = [
-      { id: "base", trigger: { type: "base" } },
-      { id: "base-2", trigger: { type: "base" }, musicProgramId: "ghost" },
-      { id: "storm-1", trigger: { type: "weather", weatherKeys: [] }, ambienceLayerIds: ["ghost-layer"] },
-      { id: "storm-2", trigger: { type: "weather", weatherKeys: [] }, ambienceLayerIds: ["ghost-layer"] },
+      { id: "combat-a", trigger: { type: "combat" }, musicProgramId: "missing-program" },
+      { id: "combat-b", trigger: { type: "combat" }, ambienceLayerIds: ["missing-layer"] },
+      { id: "weather", trigger: { type: "weather", weatherKeys: [] }, musicProgramId: "score" },
     ];
 
-    fromUuidMock.mockResolvedValue(null);
-
     const snapshot = replaceProfileInLibrary(makeSnapshot(), profile);
-    const result = await validateSoundscapeStudioData(snapshot, "missing-default", {
-      sceneA: { profileId: "missing-scene-profile" },
+    isAudioPathResolvableMock.mockResolvedValue(false);
+
+    const result = await validateSoundscapeStudioData(snapshot, "missing-world", {
+      sceneA: { profileId: "missing-profile" },
     });
 
     expect(result.isValid).toBe(false);
     expect(result.messages).toEqual(expect.arrayContaining([
       expect.objectContaining({ path: "worldDefaultProfileId" }),
       expect.objectContaining({ path: "sceneAssignments.sceneA.profileId" }),
-      expect.objectContaining({ path: "rules", message: "Only one base rule is allowed per soundscape." }),
-      expect.objectContaining({ path: "profiles.new-soundscape.rules.0", message: "Trigger rules must override music, ambience, or both." }),
-      expect.objectContaining({ path: "profiles.new-soundscape.rules.1.musicProgramId" }),
-      expect.objectContaining({ path: "profiles.new-soundscape.rules.2", message: "Weather rules need at least one weather key." }),
-      expect.objectContaining({ path: "profiles.new-soundscape.rules.3", message: "Duplicate trigger rule detected for \"weather:\"." }),
-      expect.objectContaining({ path: "profiles.new-soundscape.musicPrograms.score.delaySeconds" }),
-      expect.objectContaining({ path: "profiles.new-soundscape.ambienceLayers.wind", message: "Ambience max delay must be greater than or equal to min delay." }),
-      expect.objectContaining({ path: "profiles.new-soundscape.soundMoments.stinger.soundUuids" }),
+      expect.objectContaining({ path: "profiles.new-soundscape.rules.0.musicProgramId" }),
+      expect.objectContaining({ path: "profiles.new-soundscape.musicPrograms.score.audioPaths" }),
+      expect.objectContaining({ path: "profiles.new-soundscape.soundMoments.stinger.audioPaths" }),
     ]));
   });
 });

@@ -72,7 +72,7 @@ export function normalizeSoundscapeMusicProgram(raw: unknown, fallbackId = "musi
   return {
     id: sanitizeString(parsed.id) ?? fallbackId,
     name: sanitizeString(parsed.name) ?? "Untitled Music Program",
-    playlistUuids: uniqueStrings(parsed.playlistUuids),
+    audioPaths: uniqueStrings(parsed.audioPaths),
     selectionMode: normalizeSoundscapeSelectionMode(parsed.selectionMode),
     delaySeconds: normalizeNonNegativeNumber(parsed.delaySeconds, 0),
   };
@@ -86,7 +86,7 @@ export function normalizeSoundscapeAmbienceLayer(raw: unknown, fallbackId = "amb
     id: sanitizeString(parsed.id) ?? fallbackId,
     name: sanitizeString(parsed.name) ?? "Untitled Ambience Layer",
     mode: parsed.mode === "random" ? "random" : "loop",
-    soundUuids: uniqueStrings(parsed.soundUuids),
+    audioPaths: uniqueStrings(parsed.audioPaths),
     minDelaySeconds,
     maxDelaySeconds: Math.max(minDelaySeconds, maxDelayCandidate),
   };
@@ -97,7 +97,7 @@ export function normalizeSoundscapeSoundMoment(raw: unknown, fallbackId = "sound
   return {
     id: sanitizeString(parsed.id) ?? fallbackId,
     name: sanitizeString(parsed.name) ?? "Untitled Sound Moment",
-    soundUuids: uniqueStrings(parsed.soundUuids),
+    audioPaths: uniqueStrings(parsed.audioPaths),
     selectionMode: normalizeSoundscapeMomentMode(parsed.selectionMode),
   };
 }

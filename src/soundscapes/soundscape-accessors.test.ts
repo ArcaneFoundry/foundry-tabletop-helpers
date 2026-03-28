@@ -52,7 +52,7 @@ describe("soundscape accessors", () => {
     await setSoundscapeWorldDefaultProfileId("forest");
 
     expect(getStoredSoundscapeLibrarySnapshot()).toMatchObject({
-      formatVersion: 1,
+      formatVersion: 2,
       profiles: {
         forest: {
           id: "forest",
@@ -144,7 +144,7 @@ describe("soundscape accessors", () => {
     const store = new Map<string, unknown>();
     store.set(`${MOD}.${SOUNDSCAPE_SETTINGS.WORLD_DEFAULT_PROFILE_ID}`, "forest");
     store.set(`${MOD}.${SOUNDSCAPE_SETTINGS.LIBRARY}`, JSON.stringify({
-      formatVersion: 1,
+      formatVersion: 2,
       savedAt: "2026-03-27T00:00:00.000Z",
       profiles: {
         forest: {
@@ -154,7 +154,7 @@ describe("soundscape accessors", () => {
             calm: {
               id: "calm",
               name: "Calm",
-              playlistUuids: ["Playlist.forest"],
+              audioPaths: ["music/forest.ogg"],
               selectionMode: "sequential",
               delaySeconds: 0,
             },
@@ -195,7 +195,7 @@ describe("soundscape accessors", () => {
     const store = new Map<string, unknown>();
     store.set(`${MOD}.${SOUNDSCAPE_SETTINGS.WORLD_DEFAULT_PROFILE_ID}`, "forest");
     store.set(`${MOD}.${SOUNDSCAPE_SETTINGS.LIBRARY}`, JSON.stringify({
-      formatVersion: 1,
+      formatVersion: 2,
       savedAt: "2026-03-27T00:00:00.000Z",
       profiles: {
         forest: {
@@ -205,7 +205,7 @@ describe("soundscape accessors", () => {
             calm: {
               id: "calm",
               name: "Calm",
-              playlistUuids: ["Playlist.calm"],
+              audioPaths: ["music/calm.ogg"],
               selectionMode: "sequential",
               delaySeconds: 0,
             },
@@ -215,7 +215,7 @@ describe("soundscape accessors", () => {
               id: "birds",
               name: "Birds",
               mode: "loop",
-              soundUuids: ["PlaylistSound.birds"],
+              audioPaths: ["ambience/birds.ogg"],
               minDelaySeconds: 0,
               maxDelaySeconds: 0,
             },

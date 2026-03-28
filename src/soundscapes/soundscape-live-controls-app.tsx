@@ -162,7 +162,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
     setAmbienceSnapshot(getSoundscapeAmbienceRuntimeSnapshot());
 
     if (result.played) {
-      setStatus(`Played ${momentName}${result.soundUuid ? ` (${result.soundUuid})` : ""}.`);
+      setStatus(`Played ${momentName}${result.audioPath ? ` (${result.audioPath})` : ""}.`);
     } else {
       setStatus(result.error ?? `Unable to play ${momentName}.`);
     }
@@ -226,7 +226,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
                     <div className="min-w-0">
                       <div className="font-fth-cc-display text-[1.08rem] text-[#f5e5c6]">{moment.name}</div>
                       <div className="mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#c7bcad]">
-                        {moment.id} · {moment.soundUuids.length} sound{moment.soundUuids.length === 1 ? "" : "s"}
+                        {moment.id} · {moment.audioPaths.length} sound{moment.audioPaths.length === 1 ? "" : "s"}
                       </div>
                     </div>
                     <LiveControlsButton
@@ -248,7 +248,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
           <LiveControlsCard title="Runtime Snapshot">
             <div className="grid gap-3">
               <RuntimePill label="Music Program" value={musicSnapshot.activeProgramId ?? "Idle"} />
-              <RuntimePill label="Playlist" value={musicSnapshot.activePlaylistUuid ?? "None"} />
+              <RuntimePill label="Audio Path" value={musicSnapshot.activeAudioPath ?? "None"} />
               <RuntimePill label="Queued Delay" value={musicSnapshot.pendingDelayMs !== null ? `${musicSnapshot.pendingDelayMs} ms` : "None"} />
               <RuntimePill label="Ambience Layers" value={ambienceSnapshot.activeLayerIds.length > 0 ? ambienceSnapshot.activeLayerIds.join(", ") : "Idle"} />
               <RuntimePill label="Random Layers Pending" value={ambienceSnapshot.pendingRandomLayerIds.length > 0 ? ambienceSnapshot.pendingRandomLayerIds.join(", ") : "None"} />
