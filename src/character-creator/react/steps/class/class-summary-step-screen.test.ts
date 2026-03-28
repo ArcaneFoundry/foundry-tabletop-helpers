@@ -133,6 +133,6 @@ describe("ClassSummaryStepScreen", () => {
     );
 
     expect(markup).toContain("Skills Chosen");
-    expect(markup).toContain("lg:col-span-2");
+    expect(markup).toContain("md:col-span-2");
   });
 });

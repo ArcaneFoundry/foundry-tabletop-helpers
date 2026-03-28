@@ -12,6 +12,14 @@ export type OriginGalleryMetaItem = {
   value: string;
 };
 
+export function handleOriginGalleryCornerActionClick(
+  event: { stopPropagation: () => void },
+  onClick: () => void,
+): void {
+  event.stopPropagation();
+  onClick();
+}
+
 type SelectionPaneProps<TEntry> = {
   entries: TEntry[];
   emptyState: ReactNode;
@@ -265,10 +273,7 @@ export function OriginGalleryCard({
         <button
           aria-label={cornerAction.label}
           className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[rgba(8,8,12,0.42)] text-[#e9c176] backdrop-blur-sm transition hover:border-[#e9c176]/48 hover:bg-[rgba(233,193,118,0.12)]"
-          onClick={(event) => {
-            event.stopPropagation();
-            cornerAction.onClick();
-          }}
+          onClick={(event) => handleOriginGalleryCornerActionClick(event, cornerAction.onClick)}
           type="button"
         >
           <i className={cornerAction.iconClass} aria-hidden="true" />

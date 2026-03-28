@@ -347,7 +347,7 @@ function SelectionGroup({ title, iconClass, entries, accent = false, wide = fals
   return (
     <section className={cn(
       "cc-class-summary__card w-full rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_28px_rgba(0,0,0,0.18)]",
-      wide ? "lg:col-span-2" : "",
+      wide ? "md:col-span-2 lg:col-span-2" : "",
     )}>
       <div className="flex items-center gap-3 border-b border-white/10 pb-3">
         <div className={cn(
