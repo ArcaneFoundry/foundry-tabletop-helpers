@@ -40,7 +40,6 @@ type SelectionGroupProps = {
   iconClass: string;
   entries: string[];
   accent?: boolean;
-  wide?: boolean;
 };
 
 const CLASS_THEMES: Record<string, { frame: string; glow: string; sigil: string }> = {
@@ -80,9 +79,9 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
     <section className="cc-class-summary flex flex-col px-1 pb-2 pt-2">
       <div className="cc-class-summary__stack grid gap-4">
         <div className="cc-class-summary__intro grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
-          <section className="cc-class-summary__hero-shell overflow-hidden rounded-[1.6rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.98),rgba(14,15,20,0.99))] p-[0.32rem] shadow-[0_26px_48px_rgba(0,0,0,0.28)] md:p-[0.36rem]">
-            <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-4 md:p-5">
-              <div className="border-b border-white/10 pb-3">
+          <section className="cc-class-summary__hero-shell overflow-hidden rounded-[1.6rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.98),rgba(14,15,20,0.99))] p-[0.24rem] shadow-[0_26px_48px_rgba(0,0,0,0.28)] md:p-[0.3rem]">
+            <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] p-[0.9rem] md:p-[1.1rem]">
+              <div className="border-b border-white/10 pb-2.5">
                 <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em] text-[#e9c176]/78">
                   Vocation Bound
                 </div>
@@ -91,9 +90,9 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-4">
+              <div className="mt-3 grid gap-3">
                 <div
-                  className="relative mx-auto aspect-[1.38] w-full overflow-hidden rounded-[1.35rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08)] md:aspect-[1.15]"
+                  className="relative mx-auto aspect-[1.6] w-full overflow-hidden rounded-[1.35rem] border bg-[#140f16] shadow-[inset_0_0_0_1px_rgba(250,229,194,0.08)] md:aspect-[1.34]"
                   style={{ borderColor: `${theme.frame}aa`, boxShadow: `inset 0 0 0 1px rgba(250,229,194,0.08), 0 0 28px ${theme.glow}` }}
                 >
                   {viewModel.classImage ? (
@@ -110,7 +109,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                   )}
                   <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,247,233,0.04),transparent_24%,rgba(8,7,12,0.06)_58%,rgba(8,7,12,0.88)_100%)]" />
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(14,14,18,0.7),rgba(14,14,18,0))]" />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
                     <div className="mx-auto max-w-2xl rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,15,20,0.62),rgba(15,15,20,0.86))] px-4 py-3 text-center backdrop-blur-md">
                       <p className="m-0 font-fth-cc-body text-[0.95rem] italic leading-6 text-[#f0e3ce] drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] md:text-[1rem]">
                         {viewModel.overview || `A level ${viewModel.startingLevel} ${viewModel.className.toLowerCase()} stands ready to step from calling into origin.`}
@@ -131,7 +130,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                   </div>
                 </div>
 
-                <div className="cc-class-summary__sigils mt-4 grid gap-4 md:grid-cols-2">
+                <div className="cc-class-summary__sigils mt-4 grid gap-4">
                   {openingKitGroups.length > 0 ? openingKitGroups.map((group) => (
                     <SelectionGroup
                       key={group.key}
@@ -139,7 +138,6 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                       entries={group.entries}
                       iconClass={group.iconClass}
                       title={group.title}
-                      wide={openingKitGroups.length === 1}
                     />
                   )) : (
                     <div className="rounded-[1rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-5 font-fth-cc-body text-[#c5bcc2]">
@@ -343,11 +341,10 @@ function SummaryListCard({
   );
 }
 
-function SelectionGroup({ title, iconClass, entries, accent = false, wide = false }: SelectionGroupProps) {
+function SelectionGroup({ title, iconClass, entries, accent = false }: SelectionGroupProps) {
   return (
     <section className={cn(
       "cc-class-summary__card w-full rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_28px_rgba(0,0,0,0.18)]",
-      wide ? "md:col-span-2 lg:col-span-2" : "",
     )}>
       <div className="flex items-center gap-3 border-b border-white/10 pb-3">
         <div className={cn(

@@ -44,13 +44,20 @@ describe("ClassSummaryStepScreen", () => {
 
     expect(markup).toContain("Opening Kit");
     expect(markup).toContain("cc-class-summary__kit-metrics");
+    expect(markup).toContain("cc-class-summary__sigils");
     expect(markup).not.toContain("cc-class-summary__metrics");
     expect(markup).toContain("Hit Die");
     expect(markup).toContain("Saving Throws");
     expect(markup).toContain("Prime Attribute");
+    expect(markup).toContain("aspect-[1.6]");
     expect(markup).toContain("px-5 py-4");
     expect(markup).toContain('style="padding-block:1rem;padding-inline:1.25rem"');
     expect(markup).toContain("First-Level Features");
+    expect(markup).toContain("Skills Chosen");
+    expect(markup).toContain("Weapon Masteries");
+    expect(markup).toContain("Battleaxe (Topple)");
+    expect(markup.indexOf("Skills Chosen")).toBeLessThan(markup.indexOf("Weapon Masteries"));
+    expect(markup).not.toContain("md:grid-cols-2");
     expect(markup.indexOf("Opening Kit")).toBeLessThan(markup.indexOf("Hit Die"));
   });
 
@@ -95,7 +102,7 @@ describe("ClassSummaryStepScreen", () => {
     expect(markup).not.toContain("Current-Level Features");
   });
 
-  it("lets a single opening-kit card span the wider layout", () => {
+  it("keeps opening-kit cards stacked full width in the summary view", () => {
     const markup = renderToStaticMarkup(
       createElement(ClassSummaryStepScreen, {
         controller: {} as never,
@@ -111,7 +118,7 @@ describe("ClassSummaryStepScreen", () => {
             hitDie: "d8",
             featureCount: 0,
             chosenSkills: ["Stealth", "Sleight of Hand"],
-            chosenWeaponMasteries: [],
+            chosenWeaponMasteries: ["Dagger (Vex)"],
             savingThrows: ["DEX", "INT"],
             armorProficiencies: [],
             weaponProficiencies: [],
@@ -119,7 +126,7 @@ describe("ClassSummaryStepScreen", () => {
             selectedGrantGroups: [],
             features: [],
             hasChosenSkills: true,
-            hasChosenWeaponMasteries: false,
+            hasChosenWeaponMasteries: true,
             hasSavingThrows: true,
             hasArmorProficiencies: false,
             hasWeaponProficiencies: false,
@@ -133,6 +140,9 @@ describe("ClassSummaryStepScreen", () => {
     );
 
     expect(markup).toContain("Skills Chosen");
-    expect(markup).toContain("md:col-span-2");
+    expect(markup).toContain("Weapon Masteries");
+    expect(markup).toContain("cc-class-summary__sigils");
+    expect(markup).not.toContain("md:grid-cols-2");
+    expect(markup.indexOf("Skills Chosen")).toBeLessThan(markup.indexOf("Weapon Masteries"));
   });
 });
