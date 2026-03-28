@@ -96,6 +96,11 @@ function isCombatStarted(combat: CombatLike | null | undefined): boolean {
   return (round ?? 0) > 0 || turn !== null;
 }
 
+function isActiveCombatStarted(combat: CombatLike | null | undefined): boolean {
+  if (!combat || combat.active === false) return false;
+  return isCombatStarted(combat);
+}
+
 function resolveTimeOfDayFromCalendaria(api: CalendariaApiLike | null): SoundscapeTimeOfDay | null {
   if (!api) return null;
   if (api.isDaytime?.() === true) return "day";
@@ -223,11 +228,11 @@ export class SoundscapeTriggerService {
   private readCombatPatch(): ProviderPatch {
     const game = getGame();
     const activeCombat = game?.combat;
-    if (isCombatStarted(activeCombat)) {
+    if (isActiveCombatStarted(activeCombat)) {
       return { inCombat: true };
     }
     const combats = game?.combats;
-    const inCombat = combats?.find((combat: CombatLike) => isCombatStarted(combat)) !== undefined;
+    const inCombat = combats?.find((combat: CombatLike) => isActiveCombatStarted(combat)) !== undefined;
     return { inCombat };
   }
 
@@ -315,6 +320,7 @@ export const __soundscapeTriggerServiceInternals = {
   singletonService,
   buildContextKey,
   getCalendariaApi,
+  isActiveCombatStarted,
   isCombatStarted,
   normalizeWeatherKey,
   normalizeWeatherPayload,
