@@ -221,6 +221,25 @@ describe("soundscape trigger service", () => {
     }));
   });
 
+  it("ignores inactive stale combats with leftover round or turn data", async () => {
+    setWorld({
+      combatActive: false,
+      combatStarted: false,
+      combatRound: 3,
+      combatTurn: 1,
+    });
+    const mod = await loadService();
+
+    await mod.startSoundscapeTriggerService();
+
+    expect(resolveStoredSoundscapeStateMock).toHaveBeenCalledWith("scene-1", expect.objectContaining({
+      inCombat: false,
+    }));
+    expect(mod.getSoundscapeTriggerContext()).toEqual(expect.objectContaining({
+      inCombat: false,
+    }));
+  });
+
   it("prefers Calendaria hooks and API data over core scene darkness", async () => {
     setWorld({
       sceneDarkness: 0.9,
