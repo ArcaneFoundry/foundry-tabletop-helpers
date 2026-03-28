@@ -51,44 +51,6 @@ function cloneProfile(profile: SoundscapeProfile): SoundscapeProfile {
   return JSON.parse(JSON.stringify(profile)) as SoundscapeProfile;
 }
 
-function joinUuidList(values: string[]): string {
-  return values.join("\n");
-}
-
-function splitUuidList(value: string): string[] {
-  return value
-    .split(/\r?\n|,/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-}
-
-export function getKnownPlaylistUuidSet(): Set<string> {
-  const playlists = getGame()?.playlists;
-  if (!playlists) return new Set<string>();
-
-  const uuids = new Set<string>();
-  for (const playlist of playlists) {
-    if (typeof playlist?.uuid === "string" && playlist.uuid.trim().length > 0) {
-      uuids.add(playlist.uuid.trim());
-    }
-  }
-  return uuids;
-}
-
-export function listKnownPlaylists(): Array<{ id: string; name: string; uuid: string }> {
-  const playlists = getGame()?.playlists;
-  if (!playlists) return [];
-
-  return [...playlists]
-    .map((playlist) => ({
-      id: playlist.id,
-      name: playlist.name?.trim() || "Untitled Playlist",
-      uuid: typeof playlist.uuid === "string" ? playlist.uuid.trim() : "",
-    }))
-    .filter((playlist) => playlist.uuid.length > 0)
-    .sort((left, right) => left.name.localeCompare(right.name));
-}
-
 export function listSoundscapeProfiles(snapshot: PersistentSoundscapeLibrarySnapshot): SoundscapeProfile[] {
   return Object.values(snapshot.profiles).sort((left, right) => left.name.localeCompare(right.name));
 }
@@ -220,14 +182,6 @@ export function updateStudioSceneAssignmentProfile(
     : null;
 }
 
-export function parseUuidText(value: string): string[] {
-  return splitUuidList(value);
-}
-
-export function stringifyUuidText(values: string[]): string {
-  return joinUuidList(values);
-}
-
 export function resolveSoundscapeStudioPreview(input: {
   library: PersistentSoundscapeLibrarySnapshot;
   selectedProfileId: string | null;
@@ -282,6 +236,36 @@ export async function validateSoundscapeStudioData(
     const paths = uniqueAudioPaths.get(audioPath) ?? [];
     paths.push(path);
     uniqueAudioPaths.set(audioPath, paths);
+  };
+  const validateAudioPaths = (input: {
+    profileId: string;
+    parentPath: string;
+    label: string;
+    audioPaths: string[];
+    emptyCollectionMessage: string;
+  }): void => {
+    if (input.audioPaths.length === 0) {
+      messages.push({
+        profileId: input.profileId,
+        path: `${input.parentPath}.audioPaths`,
+        message: input.emptyCollectionMessage,
+      });
+      return;
+    }
+
+    for (const [index, audioPath] of input.audioPaths.entries()) {
+      const trimmedPath = audioPath.trim();
+      const path = `${input.parentPath}.audioPaths.${index}`;
+      if (trimmedPath.length === 0) {
+        messages.push({
+          profileId: input.profileId,
+          path,
+          message: `${input.label} audio paths cannot be blank.`,
+        });
+        continue;
+      }
+      queueAssetCheck(trimmedPath, path);
+    }
   };
 
   for (const profile of profiles) {
@@ -380,16 +364,13 @@ export async function validateSoundscapeStudioData(
           message: "Music delay cannot be negative.",
         });
       }
-      if (program.audioPaths.length === 0) {
-        messages.push({
-          profileId: profile.id,
-          path: `${prefix}.audioPaths`,
-          message: "Music programs need at least one audio path.",
-        });
-      }
-      for (const audioPath of program.audioPaths) {
-        queueAssetCheck(audioPath, `${prefix}.audioPaths`);
-      }
+      validateAudioPaths({
+        profileId: profile.id,
+        parentPath: prefix,
+        label: "Music program",
+        audioPaths: program.audioPaths,
+        emptyCollectionMessage: "Music programs need at least one audio path.",
+      });
     }
 
     for (const layer of Object.values(profile.ambienceLayers)) {
@@ -415,16 +396,13 @@ export async function validateSoundscapeStudioData(
           message: "Ambience max delay must be greater than or equal to min delay.",
         });
       }
-      if (layer.audioPaths.length === 0) {
-        messages.push({
-          profileId: profile.id,
-          path: `${prefix}.audioPaths`,
-          message: "Ambience layers need at least one audio path.",
-        });
-      }
-      for (const audioPath of layer.audioPaths) {
-        queueAssetCheck(audioPath, `${prefix}.audioPaths`);
-      }
+      validateAudioPaths({
+        profileId: profile.id,
+        parentPath: prefix,
+        label: "Ambience layer",
+        audioPaths: layer.audioPaths,
+        emptyCollectionMessage: "Ambience layers need at least one audio path.",
+      });
     }
 
     for (const moment of Object.values(profile.soundMoments)) {
@@ -436,16 +414,13 @@ export async function validateSoundscapeStudioData(
           message: "Sound moments need a name.",
         });
       }
-      if (moment.audioPaths.length === 0) {
-        messages.push({
-          profileId: profile.id,
-          path: `${prefix}.audioPaths`,
-          message: "Sound moments need at least one audio path.",
-        });
-      }
-      for (const audioPath of moment.audioPaths) {
-        queueAssetCheck(audioPath, `${prefix}.audioPaths`);
-      }
+      validateAudioPaths({
+        profileId: profile.id,
+        parentPath: prefix,
+        label: "Sound moment",
+        audioPaths: moment.audioPaths,
+        emptyCollectionMessage: "Sound moments need at least one audio path.",
+      });
     }
   }
 
@@ -456,7 +431,7 @@ export async function validateSoundscapeStudioData(
     for (const path of paths) {
       messages.push({
         path,
-        message: `Referenced audio path "${audioPath}" could not be resolved.`,
+        message: `Selected audio path "${audioPath}" could not be loaded by Foundry.`,
       });
     }
   }

@@ -143,6 +143,63 @@ describe("soundscape studio helpers", () => {
     });
   });
 
+  it("validates audio paths by indexed path and only resolves each unique path once", async () => {
+    const profile = createSoundscapeProfile([]);
+    profile.musicPrograms.score = {
+      id: "score",
+      name: "Town Music",
+      audioPaths: ["  ", "shared/audio.ogg", "music/missing.ogg"],
+      selectionMode: "sequential",
+      delaySeconds: 0,
+    };
+    profile.ambienceLayers.wind = {
+      id: "wind",
+      name: "Cold Wind",
+      mode: "loop",
+      audioPaths: ["shared/audio.ogg", "ambience/missing.ogg"],
+      minDelaySeconds: 0,
+      maxDelaySeconds: 0,
+    };
+    profile.soundMoments.stinger = {
+      id: "stinger",
+      name: "Door Slam",
+      audioPaths: ["shared/audio.ogg", " "],
+      selectionMode: "single",
+    };
+    profile.rules = [
+      { id: "base", trigger: { type: "base" }, musicProgramId: "score", ambienceLayerIds: ["wind"] },
+    ];
+
+    const snapshot = replaceProfileInLibrary(makeSnapshot(), profile);
+    isAudioPathResolvableMock.mockImplementation(async (audioPath: string) => audioPath === "shared/audio.ogg");
+
+    const result = await validateSoundscapeStudioData(snapshot, null, {});
+
+    expect(result.isValid).toBe(false);
+    expect(result.messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        path: "profiles.new-soundscape.musicPrograms.score.audioPaths.0",
+        message: "Music program audio paths cannot be blank.",
+      }),
+      expect.objectContaining({
+        path: "profiles.new-soundscape.musicPrograms.score.audioPaths.2",
+        message: 'Selected audio path "music/missing.ogg" could not be loaded by Foundry.',
+      }),
+      expect.objectContaining({
+        path: "profiles.new-soundscape.ambienceLayers.wind.audioPaths.1",
+        message: 'Selected audio path "ambience/missing.ogg" could not be loaded by Foundry.',
+      }),
+      expect.objectContaining({
+        path: "profiles.new-soundscape.soundMoments.stinger.audioPaths.1",
+        message: "Sound moment audio paths cannot be blank.",
+      }),
+    ]));
+    expect(isAudioPathResolvableMock).toHaveBeenCalledTimes(3);
+    expect(isAudioPathResolvableMock).toHaveBeenNthCalledWith(1, "shared/audio.ogg");
+    expect(isAudioPathResolvableMock).toHaveBeenNthCalledWith(2, "music/missing.ogg");
+    expect(isAudioPathResolvableMock).toHaveBeenNthCalledWith(3, "ambience/missing.ogg");
+  });
+
   it("resolves preview from scene assignments and world default fallback", () => {
     const directProfile = createSoundscapeProfile([], "Direct Score");
     directProfile.musicPrograms["direct-score"] = {
@@ -235,7 +292,10 @@ describe("soundscape studio helpers", () => {
       expect.objectContaining({ path: "worldDefaultProfileId" }),
       expect.objectContaining({ path: "sceneAssignments.sceneA.profileId" }),
       expect.objectContaining({ path: "profiles.new-soundscape.rules.0.musicProgramId" }),
-      expect.objectContaining({ path: "profiles.new-soundscape.musicPrograms.score.audioPaths" }),
+      expect.objectContaining({
+        path: "profiles.new-soundscape.musicPrograms.score.audioPaths.0",
+        message: 'Selected audio path "music/missing.ogg" could not be loaded by Foundry.',
+      }),
       expect.objectContaining({ path: "profiles.new-soundscape.soundMoments.stinger.audioPaths" }),
     ]));
   });

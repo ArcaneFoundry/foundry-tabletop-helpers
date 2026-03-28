@@ -117,10 +117,14 @@ describe("soundscape ambience runtime", () => {
 
     expect(wind.play).toHaveBeenCalledTimes(1);
     expect(birds.play).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
+    expect(runtime.getSnapshot()).toEqual({
+      activeAmbienceKey: "forest:forest-loop|mist-loop",
       activeLayerIds: ["forest-loop", "mist-loop"],
       loopAudioPaths: ["ambience/birds.ogg", "ambience/wind.ogg"],
       randomLayerIds: [],
+      activeRandomAudioPaths: [],
+      pendingRandomLayerIds: [],
+      lastError: null,
     });
   });
 
