@@ -17,7 +17,9 @@ const {
   resolveStoredSoundscapeStateMock,
   getSoundscapeAmbienceRuntimeSnapshotMock,
   playStoredSoundscapeMomentMock,
+  syncStoredSoundscapeAmbienceMock,
   getSoundscapeMusicRuntimeSnapshotMock,
+  syncStoredSoundscapeMusicMock,
   openSoundscapeStudioMock,
   listSoundscapeScenesMock,
   getSoundscapeTriggerContextMock,
@@ -42,6 +44,13 @@ const {
     pendingRandomLayerIds: [],
     lastError: null,
   })),
+  syncStoredSoundscapeAmbienceMock: vi.fn(async () => ({
+    activeLayerIds: [],
+    loopAudioPaths: [],
+    activeRandomAudioPaths: [],
+    pendingRandomLayerIds: [],
+    lastError: null,
+  })),
   playStoredSoundscapeMomentMock: vi.fn(async () => ({
     played: true,
     error: null,
@@ -49,6 +58,12 @@ const {
     momentId: "sting",
   })),
   getSoundscapeMusicRuntimeSnapshotMock: vi.fn(() => ({
+    activeProgramId: null,
+    activeAudioPath: null,
+    pendingDelayMs: null,
+    lastError: null,
+  })),
+  syncStoredSoundscapeMusicMock: vi.fn(async () => ({
     activeProgramId: null,
     activeAudioPath: null,
     pendingDelayMs: null,
@@ -103,10 +118,12 @@ vi.mock("./soundscape-accessors", () => ({
 vi.mock("./soundscape-ambience-controller", () => ({
   getSoundscapeAmbienceRuntimeSnapshot: getSoundscapeAmbienceRuntimeSnapshotMock,
   playStoredSoundscapeMoment: playStoredSoundscapeMomentMock,
+  syncStoredSoundscapeAmbience: syncStoredSoundscapeAmbienceMock,
 }));
 
 vi.mock("./soundscape-music-controller", () => ({
   getSoundscapeMusicRuntimeSnapshot: getSoundscapeMusicRuntimeSnapshotMock,
+  syncStoredSoundscapeMusic: syncStoredSoundscapeMusicMock,
 }));
 
 vi.mock("./soundscape-studio-app", () => ({
@@ -182,6 +199,7 @@ beforeEach(() => {
   getFoundryReactMountMock.mockImplementation((root: FakeElement | null | undefined) => {
     return root?.querySelector("[data-fth-react-root]") as HTMLElement | null;
   });
+  resolveStoredSoundscapeStateMock.mockReturnValue(null);
 });
 
 describe("SoundscapeLiveControlsApp", () => {
@@ -337,6 +355,83 @@ describe("SoundscapeLiveControlsApp", () => {
 
     expect(markup).toContain("Audio Path");
     expect(markup).toContain("music/live.ogg");
+    expect(markup).toContain("Begin Scene");
     expect(markup).toContain("sting · 2 sounds");
+  });
+
+  it("starts the current resolved scene soundscape through the live-controls helper", async () => {
+    const mod = await modPromise;
+    resolveStoredSoundscapeStateMock.mockReturnValue({
+      profileId: "new-soundscape",
+      assignmentSource: "scene",
+      sceneId: "scene-1",
+      context: {
+        manualPreview: false,
+        inCombat: false,
+        weather: null,
+        timeOfDay: "day",
+      },
+      musicProgramId: "new-music-program",
+      musicProgram: {
+        id: "new-music-program",
+        name: "New Music Program",
+        audioPaths: ["assets/shared/audio/test-track.ogg"],
+        selectionMode: "sequential",
+        delaySeconds: 0,
+      },
+      musicRuleId: "base",
+      ambienceLayerIds: ["new-ambience-layer"],
+      ambienceLayers: [{
+        id: "new-ambience-layer",
+        name: "New Ambience Layer",
+        audioPaths: ["assets/shared/audio/test-ambience.ogg"],
+        mode: "loop",
+        minDelaySeconds: 0,
+        maxDelaySeconds: 0,
+      }],
+      ambienceRuleId: "base",
+      soundMoments: [],
+    } as never);
+    syncStoredSoundscapeMusicMock.mockResolvedValue({
+      activeProgramId: "new-music-program",
+      activeAudioPath: "assets/shared/audio/test-track.ogg",
+      pendingDelayMs: null,
+      lastError: null,
+    } as never);
+    syncStoredSoundscapeAmbienceMock.mockResolvedValue({
+      activeLayerIds: ["new-ambience-layer"],
+      loopAudioPaths: ["assets/shared/audio/test-ambience.ogg"],
+      activeRandomAudioPaths: [],
+      pendingRandomLayerIds: [],
+      lastError: null,
+    } as never);
+
+    const result = await mod.__soundscapeLiveControlsAppInternals.startCurrentSceneSoundscape();
+
+    expect(syncStoredSoundscapeMusicMock).toHaveBeenCalledWith("scene-1", {
+      manualPreview: false,
+      inCombat: false,
+      weather: null,
+      timeOfDay: "day",
+    });
+    expect(syncStoredSoundscapeAmbienceMock).toHaveBeenCalledWith("scene-1", {
+      manualPreview: false,
+      inCombat: false,
+      weather: null,
+      timeOfDay: "day",
+    });
+    expect(result.status).toBe("Started new-soundscape for Active Scene.");
+    expect(result.musicSnapshot.activeAudioPath).toBe("assets/shared/audio/test-track.ogg");
+    expect(result.ambienceSnapshot.loopAudioPaths).toEqual(["assets/shared/audio/test-ambience.ogg"]);
+  });
+
+  it("reports when no current scene soundscape is assigned", async () => {
+    const mod = await modPromise;
+
+    const result = await mod.__soundscapeLiveControlsAppInternals.startCurrentSceneSoundscape();
+
+    expect(syncStoredSoundscapeMusicMock).not.toHaveBeenCalled();
+    expect(syncStoredSoundscapeAmbienceMock).not.toHaveBeenCalled();
+    expect(result.status).toBe("No active soundscape assignment is resolving for this scene.");
   });
 });

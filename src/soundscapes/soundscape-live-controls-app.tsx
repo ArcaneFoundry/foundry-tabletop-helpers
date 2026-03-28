@@ -14,9 +14,13 @@ import { getSoundscapeSceneById, resolveStoredSoundscapeState } from "./soundsca
 import {
   getSoundscapeAmbienceRuntimeSnapshot,
   playStoredSoundscapeMoment,
+  syncStoredSoundscapeAmbience,
 } from "./soundscape-ambience-controller";
 import type { SoundscapeMomentPlaybackResult } from "./soundscape-ambience-runtime";
-import { getSoundscapeMusicRuntimeSnapshot } from "./soundscape-music-controller";
+import {
+  getSoundscapeMusicRuntimeSnapshot,
+  syncStoredSoundscapeMusic,
+} from "./soundscape-music-controller";
 import { openSoundscapeStudio } from "./soundscape-studio-app";
 import { listSoundscapeScenes } from "./soundscape-studio-helpers";
 import { getSoundscapeTriggerContext } from "./soundscape-trigger-service";
@@ -63,6 +67,15 @@ interface SceneControls {
   };
 }
 
+interface SoundscapeSceneStartResult {
+  sceneId: string | null;
+  context: SoundscapeTriggerContext;
+  resolvedState: ResolvedSoundscapeState | null;
+  musicSnapshot: ReturnType<typeof getSoundscapeMusicRuntimeSnapshot>;
+  ambienceSnapshot: ReturnType<typeof getSoundscapeAmbienceRuntimeSnapshot>;
+  status: string;
+}
+
 const SOUNDSCAPE_LIVE_CONTROLS_WINDOW_CONSTRAINTS = {
   minWidth: 520,
   maxWidth: 860,
@@ -106,6 +119,37 @@ function normalizeSceneLabel(sceneId: string | null): string {
   return listSoundscapeScenes().find((scene) => scene.id === sceneId)?.name ?? "Unknown Scene";
 }
 
+async function startCurrentSceneSoundscape(): Promise<SoundscapeSceneStartResult> {
+  const context = getSoundscapeTriggerContext();
+  const sceneId = getSoundscapeSceneById()?.id ?? null;
+  const resolvedState = resolveStoredSoundscapeState(sceneId ?? undefined, context);
+
+  if (!resolvedState) {
+    return {
+      sceneId,
+      context,
+      resolvedState,
+      musicSnapshot: getSoundscapeMusicRuntimeSnapshot(),
+      ambienceSnapshot: getSoundscapeAmbienceRuntimeSnapshot(),
+      status: "No active soundscape assignment is resolving for this scene.",
+    };
+  }
+
+  const [musicSnapshot, ambienceSnapshot] = await Promise.all([
+    syncStoredSoundscapeMusic(sceneId ?? undefined, context),
+    syncStoredSoundscapeAmbience(sceneId ?? undefined, context),
+  ]);
+
+  return {
+    sceneId,
+    context,
+    resolvedState,
+    musicSnapshot,
+    ambienceSnapshot,
+    status: `Started ${resolvedState.profileId} for ${normalizeSceneLabel(sceneId)}.`,
+  };
+}
+
 function SoundscapeLiveControlsView(): JSX.Element {
   const [context, setContext] = useState<SoundscapeTriggerContext>(() => getSoundscapeTriggerContext());
   const [resolvedState, setResolvedState] = useState<ResolvedSoundscapeState | null>(() => resolveStoredSoundscapeState(undefined, getSoundscapeTriggerContext()));
@@ -113,6 +157,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
   const [ambienceSnapshot, setAmbienceSnapshot] = useState(() => getSoundscapeAmbienceRuntimeSnapshot());
   const [status, setStatus] = useState("Reading live soundscape state...");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isStartingScene, setIsStartingScene] = useState(false);
   const [playingMomentId, setPlayingMomentId] = useState<string | null>(null);
 
   async function refreshState(reason = "Live soundscape state refreshed."): Promise<void> {
@@ -125,6 +170,25 @@ function SoundscapeLiveControlsView(): JSX.Element {
     setAmbienceSnapshot(getSoundscapeAmbienceRuntimeSnapshot());
     setStatus(reason);
     setIsRefreshing(false);
+  }
+
+  async function beginScene(): Promise<void> {
+    setIsStartingScene(true);
+
+    try {
+      const result = await startCurrentSceneSoundscape();
+      setContext(result.context);
+      setResolvedState(result.resolvedState);
+      setMusicSnapshot(result.musicSnapshot);
+      setAmbienceSnapshot(result.ambienceSnapshot);
+      setStatus(result.status);
+    } catch {
+      setMusicSnapshot(getSoundscapeMusicRuntimeSnapshot());
+      setAmbienceSnapshot(getSoundscapeAmbienceRuntimeSnapshot());
+      setStatus("Unable to start the current soundscape.");
+    } finally {
+      setIsStartingScene(false);
+    }
   }
 
   useEffect(() => {
@@ -182,6 +246,12 @@ function SoundscapeLiveControlsView(): JSX.Element {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <LiveControlsButton
+              disabled={isRefreshing || isStartingScene}
+              label={isStartingScene ? "Starting..." : "Begin Scene"}
+              onClick={() => void beginScene()}
+              tone="gold"
+            />
             <LiveControlsButton disabled={isRefreshing} label={isRefreshing ? "Refreshing..." : "Refresh"} onClick={() => void refreshState()} tone="gold" />
             <LiveControlsButton label="Open Studio" onClick={() => openSoundscapeStudio()} />
           </div>
@@ -462,4 +532,5 @@ function onGetSceneControlButtonsSoundscapeLiveControls(controls: SceneControls)
 
 export const __soundscapeLiveControlsAppInternals = {
   onGetSceneControlButtonsSoundscapeLiveControls,
+  startCurrentSceneSoundscape,
 };
