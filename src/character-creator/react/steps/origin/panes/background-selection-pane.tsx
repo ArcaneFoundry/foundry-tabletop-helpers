@@ -17,8 +17,8 @@ type BackgroundSelectionPaneProps = OriginPaneProps & {
 };
 
 export function getBackgroundArtTreatment(imageSrc: string | null | undefined): "cover" | "icon-bleed" {
-  void imageSrc;
-  return "cover";
+  if (!imageSrc) return "cover";
+  return imageSrc.includes("/assets/icons/backgrounds/") ? "icon-bleed" : "cover";
 }
 
 export function BackgroundSelectionPane({ shellContext, state, controller, prefersReducedMotion }: BackgroundSelectionPaneProps) {
@@ -80,15 +80,28 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
                 data-background-art-treatment={artTreatment}
               >
                 {entry.img ? (
-                  <img
-                    alt={entry.name}
-                    className={cn(
-                      "relative h-full w-full object-cover transition duration-300",
-                      "group-hover:scale-[1.03]",
-                    )}
-                    loading="lazy"
-                    src={entry.img}
-                  />
+                  <>
+                    {artTreatment === "icon-bleed" ? (
+                      <img
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 h-full w-full scale-[1.45] object-cover opacity-70 blur-xl saturate-[0.92]"
+                        loading="lazy"
+                        src={entry.img}
+                      />
+                    ) : null}
+                    <img
+                      alt={entry.name}
+                      className={cn(
+                        "relative h-full w-full object-cover transition duration-300",
+                        artTreatment === "icon-bleed"
+                          ? "scale-[1.14] group-hover:scale-[1.18]"
+                          : "group-hover:scale-[1.03]",
+                      )}
+                      loading="lazy"
+                      src={entry.img}
+                    />
+                  </>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[#f0d2a6]">
                     <i className="fa-solid fa-scroll text-2xl" aria-hidden="true" />

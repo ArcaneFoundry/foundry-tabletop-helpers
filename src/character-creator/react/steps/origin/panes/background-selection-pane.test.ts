@@ -26,8 +26,9 @@ vi.mock("motion/react", async () => {
 import { BackgroundSelectionPane, getBackgroundArtTreatment } from "./background-selection-pane";
 
 describe("BackgroundSelectionPane", () => {
-  it("normalizes mixed background art sources to the same treatment", () => {
-    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("cover");
+  it("classifies PHB icon backgrounds separately from journal-art backgrounds", () => {
+    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("icon-bleed");
+    expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/wayfarer.webp")).toBe("icon-bleed");
     expect(getBackgroundArtTreatment("modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp")).toBe("cover");
     expect(getBackgroundArtTreatment("")).toBe("cover");
   });
@@ -81,8 +82,9 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("flex h-full min-h-0 flex-1 flex-col");
     expect(markup).toContain("min-h-[20rem] flex-1 overflow-hidden");
     expect(markup).toContain("data-background-art-treatment=\"cover\"");
-    expect(markup).not.toContain("data-background-art-treatment=\"icon-bleed\"");
-    expect(markup).not.toContain("scale-[1.45] object-cover opacity-70 blur-xl");
+    expect(markup).toContain("data-background-art-treatment=\"icon-bleed\"");
+    expect(markup).toContain("scale-[1.45] object-cover opacity-70 blur-xl");
+    expect(markup).toContain("scale-[1.14] group-hover:scale-[1.18]");
     expect(markup).not.toContain("cc-origin-selection-pane__intro");
     expect(markup).not.toContain("Select a Background");
   });
