@@ -108,7 +108,7 @@ describe("BackgroundAsiPane", () => {
     expect(markup).toContain("Not enough points left");
   });
 
-  it("keeps the aptitude content inside a dedicated internal scroll owner", () => {
+  it("keeps the aptitude content inside a dedicated scroll owner on the pane itself", () => {
     const markup = renderToStaticMarkup(createElement(BackgroundAsiPane, {
       controller: {
         refresh: vi.fn(),
@@ -154,7 +154,9 @@ describe("BackgroundAsiPane", () => {
     } as never));
 
     expect(markup).toContain("data-origins-background-asi-scroll=\"true\"");
-    expect(markup).toContain("flex min-h-0 flex-1 flex-col overflow-hidden");
-    expect(markup).toContain("fth-react-scrollbar relative min-h-0 flex-1 overflow-y-auto p-4");
+    expect(markup).toContain("fth-react-scrollbar relative isolate min-h-0 flex-1 overflow-y-auto");
+    expect(markup).toContain("pointer-events-none absolute inset-x-0 top-0 z-20 h-14");
+    expect(markup).toContain("relative z-10 p-4");
+    expect(markup).not.toContain("fth-react-scrollbar relative min-h-0 flex-1 overflow-y-auto p-4");
   });
 });
