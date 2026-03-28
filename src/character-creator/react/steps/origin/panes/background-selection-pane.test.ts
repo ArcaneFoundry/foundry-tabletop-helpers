@@ -72,10 +72,8 @@ describe("BackgroundSelectionPane", () => {
     } as never));
 
     expect(markup).toContain("cc-origin-selection-pane");
-    expect(markup).toContain("cc-origin-selection-pane__intro");
     expect(markup).toContain("cc-origin-selection-pane__gallery-scroll");
     expect(markup).toContain("data-origins-selection-scroll=\"true\"");
-    expect(markup).toContain("Select a Background");
     expect(markup).toContain("data-selected=\"true\"");
     expect(markup).toContain("Selected Background");
     expect(markup).toContain("Choose Background");
@@ -85,6 +83,7 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).toContain("data-background-art-treatment=\"icon-bleed\"");
     expect(markup).toContain("data-background-art-treatment=\"cover\"");
     expect(markup).toContain("scale-[1.45] object-cover opacity-70 blur-xl");
-    expect(markup.indexOf("cc-origin-selection-pane__intro")).toBeLessThan(markup.indexOf("cc-origin-selection-pane__gallery-scroll"));
+    expect(markup).not.toContain("cc-origin-selection-pane__intro");
+    expect(markup).not.toContain("Select a Background");
   });
 });

@@ -37,6 +37,7 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
       entries={entries}
       eyebrow="Origins"
       getEntryKey={(entry) => entry.uuid}
+      introMode="hidden"
       prefersReducedMotion={prefersReducedMotion}
       renderEntry={(entry) => {
         const selected = selectedUuid === entry.uuid;
