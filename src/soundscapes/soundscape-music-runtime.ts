@@ -1,8 +1,5 @@
-import { fromUuid, getGame } from "../types";
-import type {
-  ResolvedSoundscapeState,
-  SoundscapeMusicProgram,
-} from "./soundscape-types";
+import { formatAudioPathLabel, resolveAudioPathPlayback, type SoundscapeAudioHandle } from "./soundscape-audio-playback";
+import type { ResolvedSoundscapeState, SoundscapeMusicProgram } from "./soundscape-types";
 
 interface TimerApi {
   setTimeout(callback: () => void, delay: number): unknown;
@@ -10,60 +7,25 @@ interface TimerApi {
 }
 
 interface RuntimeDeps {
-  getPlaylistByUuid?: (uuid: string) => Promise<RuntimePlaylistLike | null>;
+  resolveAudioPath?: (path: string) => Promise<SoundscapeAudioHandle | null>;
   timers?: TimerApi;
   random?: () => number;
-  now?: () => number;
-}
-
-interface RuntimePlaylistLike {
-  id: string;
-  uuid?: string;
-  name?: string;
-  sounds?: Iterable<RuntimePlaylistSoundLike>;
-  playSound?: (sound: RuntimePlaylistSoundLike) => Promise<unknown>;
-  stopSound?: (sound: RuntimePlaylistSoundLike) => Promise<unknown>;
-  stopAll?: () => Promise<unknown>;
-}
-
-interface RuntimePlaylistSoundLike {
-  id: string;
-  uuid?: string;
-  name?: string;
-  path?: string;
-  sort?: number;
-  playing?: boolean;
-  repeat?: boolean;
-  load?: () => Promise<void>;
-  sync?: () => void;
 }
 
 export interface SoundscapeMusicTrackCandidate {
-  playlistId: string;
-  playlistUuid: string;
-  playlistName: string;
-  soundId: string;
-  soundUuid: string | null;
-  soundName: string;
-  sort: number;
-  playlist: RuntimePlaylistLike;
-  sound: RuntimePlaylistSoundLike;
+  path: string;
+  label: string;
+  durationSeconds: number;
+  handle: SoundscapeAudioHandle;
 }
 
 export interface SoundscapeMusicRuntimeSnapshot {
   activeProgramKey: string | null;
   activeProgramId: string | null;
-  activePlaylistUuid: string | null;
-  activeSoundId: string | null;
+  activeAudioPath: string | null;
   pendingProgramKey: string | null;
   pendingDelayMs: number | null;
   lastError: string | null;
-}
-
-export interface SoundscapeEndedTrackRef {
-  playlistUuid?: string | null;
-  playlistId?: string | null;
-  soundId: string;
 }
 
 interface ActiveProgramContext {
@@ -72,77 +34,37 @@ interface ActiveProgramContext {
   profileId: string;
 }
 
-interface CandidateIdentity {
-  playlistId: string;
-  playlistUuid: string;
-  soundId: string;
+interface ActiveTrackContext {
+  path: string;
+  label: string;
+  handle: SoundscapeAudioHandle;
 }
-
-interface IgnoredEndedTrack {
-  key: string;
-  ignoreUntil: number;
-}
-
-const PROGRAM_SWITCH_STALE_END_GRACE_MS = 1_000;
 
 const DEFAULT_TIMERS: TimerApi = {
   setTimeout: (callback, delay) => globalThis.setTimeout(callback, delay),
   clearTimeout: (handle) => globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>),
 };
 
-function sortPlaylistSounds(sounds: RuntimePlaylistSoundLike[]): RuntimePlaylistSoundLike[] {
-  return [...sounds].sort((left, right) => {
-    const sortDelta = (left.sort ?? 0) - (right.sort ?? 0);
-    if (sortDelta !== 0) return sortDelta;
-    const nameDelta = (left.name ?? "").localeCompare(right.name ?? "");
-    if (nameDelta !== 0) return nameDelta;
-    return left.id.localeCompare(right.id);
-  });
-}
-
 function createProgramKey(profileId: string, musicProgramId: string): string {
   return `${profileId}:${musicProgramId}`;
 }
 
-async function defaultGetPlaylistByUuid(uuid: string): Promise<RuntimePlaylistLike | null> {
-  const playlists = getGame()?.playlists;
-  if (playlists) {
-    for (const playlist of playlists) {
-      if (playlist.uuid === uuid) return playlist as RuntimePlaylistLike;
-    }
-  }
-
-  const resolved = await fromUuid(uuid);
-  if (!resolved) return null;
-  return resolved as RuntimePlaylistLike;
-}
-
 export async function resolveMusicTrackCandidates(
   program: SoundscapeMusicProgram,
-  getPlaylistByUuid: (uuid: string) => Promise<RuntimePlaylistLike | null> = defaultGetPlaylistByUuid,
+  resolveAudioPath: (path: string) => Promise<SoundscapeAudioHandle | null> = resolveAudioPathPlayback,
 ): Promise<SoundscapeMusicTrackCandidate[]> {
   const candidates: SoundscapeMusicTrackCandidate[] = [];
 
-  for (const playlistUuid of program.playlistUuids) {
-    const playlist = await getPlaylistByUuid(playlistUuid);
-    if (!playlist) continue;
-
-    const sounds = sortPlaylistSounds([...(playlist.sounds ?? [])])
-      .filter((sound) => typeof sound.path === "string" && sound.path.trim().length > 0);
-
-    for (const sound of sounds) {
-      candidates.push({
-        playlistId: playlist.id,
-        playlistUuid: playlist.uuid ?? playlistUuid,
-        playlistName: playlist.name?.trim() || "Untitled Playlist",
-        soundId: sound.id,
-        soundUuid: sound.uuid ?? null,
-        soundName: sound.name?.trim() || "Untitled Track",
-        sort: sound.sort ?? 0,
-        playlist,
-        sound,
-      });
-    }
+  for (const path of program.audioPaths) {
+    const handle = await resolveAudioPath(path);
+    if (!handle) continue;
+    await handle.load();
+    candidates.push({
+      path: handle.path,
+      label: formatAudioPathLabel(handle.path),
+      durationSeconds: handle.durationSeconds,
+      handle,
+    });
   }
 
   return candidates;
@@ -153,18 +75,18 @@ export class SoundscapeMusicRuntime {
   private readonly nextSequentialIndexByProgram = new Map<string, number>();
   private readonly lastRandomIndexByProgram = new Map<string, number>();
   private activeProgram: ActiveProgramContext | null = null;
-  private activeCandidate: SoundscapeMusicTrackCandidate | null = null;
+  private activeTrack: ActiveTrackContext | null = null;
   private pendingTimer: unknown = null;
+  private trackCompletionTimer: unknown = null;
   private pendingProgramKey: string | null = null;
   private pendingDelayMs: number | null = null;
   private lastError: string | null = null;
 
   constructor(deps: RuntimeDeps = {}) {
     this.deps = {
-      getPlaylistByUuid: deps.getPlaylistByUuid ?? defaultGetPlaylistByUuid,
+      resolveAudioPath: deps.resolveAudioPath ?? resolveAudioPathPlayback,
       timers: deps.timers ?? DEFAULT_TIMERS,
       random: deps.random ?? Math.random,
-      now: deps.now ?? Date.now,
     };
   }
 
@@ -172,8 +94,7 @@ export class SoundscapeMusicRuntime {
     return {
       activeProgramKey: this.activeProgram?.key ?? null,
       activeProgramId: this.activeProgram?.program.id ?? null,
-      activePlaylistUuid: this.activeCandidate?.playlistUuid ?? null,
-      activeSoundId: this.activeCandidate?.soundId ?? null,
+      activeAudioPath: this.activeTrack?.path ?? null,
       pendingProgramKey: this.pendingProgramKey,
       pendingDelayMs: this.pendingDelayMs,
       lastError: this.lastError,
@@ -189,86 +110,70 @@ export class SoundscapeMusicRuntime {
 
     const nextKey = createProgramKey(state.profileId, state.musicProgramId);
     if (this.activeProgram?.key !== nextKey) {
-      const stoppedCandidate = await this.stopActivePlayback();
+      await this.stopActivePlayback();
       this.clearPendingTimer();
+      this.clearTrackCompletionTimer();
       this.activeProgram = {
         key: nextKey,
         program: nextProgram,
         profileId: state.profileId,
       };
       await this.playNextCandidate(nextProgram, nextKey);
-      this.primeIgnoredStaleEndEvent(stoppedCandidate);
       return this.getSnapshot();
     }
 
-    if (!this.activeCandidate && !this.pendingTimer) {
+    if (!this.activeTrack && !this.pendingTimer) {
       await this.playNextCandidate(nextProgram, nextKey);
     }
 
     return this.getSnapshot();
   }
 
-  handleTrackEnded(ref: SoundscapeEndedTrackRef): void {
-    if (!this.activeProgram || !this.activeCandidate) return;
-    if (ref.soundId !== this.activeCandidate.soundId) return;
-    if (ref.playlistUuid && ref.playlistUuid !== this.activeCandidate.playlistUuid) return;
-    if (ref.playlistId && ref.playlistId !== this.activeCandidate.playlistId) return;
-    if (this.shouldIgnoreEndedTrack(ref)) return;
+  handleTrackEnded(): void {
+    if (!this.activeProgram || !this.activeTrack) return;
+
+    this.activeTrack = null;
+    this.clearTrackCompletionTimer();
 
     const completedProgram = this.activeProgram;
-    const programDelayMs = Math.max(0, completedProgram.program.delaySeconds * 1000);
-
-    this.activeCandidate = null;
-    this.clearPendingTimer();
-
+    const delayMs = Math.max(0, completedProgram.program.delaySeconds * 1000);
     const scheduleNext = () => {
       void this.playNextCandidate(completedProgram.program, completedProgram.key);
     };
 
-    if (programDelayMs <= 0) {
+    if (delayMs <= 0) {
       scheduleNext();
       return;
     }
 
     this.pendingProgramKey = completedProgram.key;
-    this.pendingDelayMs = programDelayMs;
+    this.pendingDelayMs = delayMs;
     this.pendingTimer = this.deps.timers.setTimeout(() => {
       this.pendingTimer = null;
       this.pendingProgramKey = null;
       this.pendingDelayMs = null;
       scheduleNext();
-    }, programDelayMs);
+    }, delayMs);
   }
 
   async stop(): Promise<void> {
     await this.stopActivePlayback();
     this.clearPendingTimer();
+    this.clearTrackCompletionTimer();
     this.activeProgram = null;
-    this.ignoredEndedTrack = null;
     this.lastError = null;
   }
 
-  private ignoredEndedTrack: IgnoredEndedTrack | null = null;
+  private async stopActivePlayback(): Promise<void> {
+    const activeTrack = this.activeTrack;
+    this.activeTrack = null;
 
-  private async stopActivePlayback(): Promise<CandidateIdentity | null> {
-    const activeCandidate = this.activeCandidate;
-    this.activeCandidate = null;
-
-    if (!activeCandidate) return null;
+    if (!activeTrack) return;
     try {
-      if (activeCandidate.playlist.stopSound) {
-        await activeCandidate.playlist.stopSound(activeCandidate.sound);
-      } else {
-        await activeCandidate.playlist.stopAll?.();
-      }
+      await activeTrack.handle.stop();
     } catch {
       this.lastError = "Failed to stop active music track cleanly.";
     }
-    return {
-      playlistId: activeCandidate.playlistId,
-      playlistUuid: activeCandidate.playlistUuid,
-      soundId: activeCandidate.soundId,
-    };
   }
 
   private clearPendingTimer(): void {
@@ -280,44 +185,11 @@ export class SoundscapeMusicRuntime {
     this.pendingDelayMs = null;
   }
 
-  private shouldIgnoreEndedTrack(ref: SoundscapeEndedTrackRef): boolean {
-    if (!this.ignoredEndedTrack) return false;
-
-    const activeCandidateKey = this.activeCandidate ? createCandidateKey(this.activeCandidate) : null;
-    if (activeCandidateKey !== this.ignoredEndedTrack.key) {
-      this.ignoredEndedTrack = null;
-      return false;
+  private clearTrackCompletionTimer(): void {
+    if (this.trackCompletionTimer !== null) {
+      this.deps.timers.clearTimeout(this.trackCompletionTimer);
     }
-
-    const refKey = createEndedTrackKey(ref);
-    if (refKey !== this.ignoredEndedTrack.key) return false;
-    if (this.deps.now() > this.ignoredEndedTrack.ignoreUntil) {
-      this.ignoredEndedTrack = null;
-      return false;
-    }
-
-    this.ignoredEndedTrack = null;
-    return true;
-  }
-
-  private primeIgnoredStaleEndEvent(stoppedCandidate: CandidateIdentity | null): void {
-    if (!stoppedCandidate || !this.activeCandidate) {
-      this.ignoredEndedTrack = null;
-      return;
-    }
-
-    const stoppedKey = createCandidateKey(stoppedCandidate);
-    const activeKey = createCandidateKey(this.activeCandidate);
-    if (stoppedKey !== activeKey) {
-      this.ignoredEndedTrack = null;
-      return;
-    }
-
-    // Ignore one immediate stop echo when a program switch restarts the same track.
-    this.ignoredEndedTrack = {
-      key: activeKey,
-      ignoreUntil: this.deps.now() + PROGRAM_SWITCH_STALE_END_GRACE_MS,
-    };
+    this.trackCompletionTimer = null;
   }
 
   private pickCandidate(
@@ -344,47 +216,44 @@ export class SoundscapeMusicRuntime {
   private async playNextCandidate(program: SoundscapeMusicProgram, programKey: string): Promise<void> {
     if (this.activeProgram?.key !== programKey) return;
 
-    const candidates = await resolveMusicTrackCandidates(program, this.deps.getPlaylistByUuid);
+    const candidates = await resolveMusicTrackCandidates(program, this.deps.resolveAudioPath);
     if (candidates.length === 0) {
-      this.lastError = `No valid playlist tracks could be resolved for music program "${program.name}".`;
-      this.activeCandidate = null;
+      this.lastError = `No valid audio files could be resolved for music program "${program.name}".`;
+      this.activeTrack = null;
       return;
     }
 
     const candidate = this.pickCandidate(programKey, program, candidates);
-    this.lastError = null;
 
     try {
-      await candidate.sound.load?.();
-      if (!candidate.playlist.playSound) {
-        this.lastError = `Playlist "${candidate.playlistName}" cannot start playback on this client.`;
-        this.activeCandidate = null;
+      const started = await candidate.handle.play({ loop: false });
+      if (!started) {
+        this.lastError = `Audio file "${candidate.label}" cannot start playback on this client.`;
+        this.activeTrack = null;
         return;
       }
-      await candidate.playlist.playSound(candidate.sound);
-      candidate.sound.sync?.();
-      this.activeCandidate = candidate;
+
+      this.activeTrack = {
+        path: candidate.path,
+        label: candidate.label,
+        handle: candidate.handle,
+      };
+      this.lastError = null;
+
+      const durationMs = Math.max(0, Math.round(candidate.durationSeconds * 1000));
+      if (durationMs > 0) {
+        this.trackCompletionTimer = this.deps.timers.setTimeout(() => {
+          this.trackCompletionTimer = null;
+          this.handleTrackEnded();
+        }, durationMs);
+      }
     } catch {
-      this.lastError = `Failed to start track "${candidate.soundName}".`;
-      this.activeCandidate = null;
+      this.lastError = `Failed to start track "${candidate.label}".`;
+      this.activeTrack = null;
     }
   }
 }
 
 export const __soundscapeMusicRuntimeInternals = {
-  PROGRAM_SWITCH_STALE_END_GRACE_MS,
   createProgramKey,
-  createCandidateKey,
-  createEndedTrackKey,
-  defaultGetPlaylistByUuid,
-  sortPlaylistSounds,
 };
-
-function createCandidateKey(candidate: CandidateIdentity): string {
-  return `${candidate.playlistUuid}:${candidate.playlistId}:${candidate.soundId}`;
-}
-
-function createEndedTrackKey(ref: SoundscapeEndedTrackRef): string | null {
-  if (!ref.playlistUuid || !ref.playlistId) return null;
-  return `${ref.playlistUuid}:${ref.playlistId}:${ref.soundId}`;
-}

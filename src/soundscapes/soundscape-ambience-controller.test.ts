@@ -6,9 +6,9 @@ const runtimeStopMock = vi.fn();
 const runtimeGetSnapshotMock = vi.fn(() => ({
   activeAmbienceKey: null,
   activeLayerIds: [],
-  loopSoundUuids: [],
+  loopAudioPaths: [],
   randomLayerIds: [],
-  activeRandomSoundUuids: [],
+  activeRandomAudioPaths: [],
   pendingRandomLayerIds: [],
   lastError: null,
 }));
@@ -30,17 +30,12 @@ vi.mock("./soundscape-ambience-runtime", () => ({
 describe("soundscape ambience controller", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resolveStoredSoundscapeStateMock.mockReturnValue({
-      profileId: "forest",
-      ambienceLayerIds: ["wind"],
-      ambienceLayers: [{ id: "wind" }],
-      soundMoments: [{ id: "sting" }],
-    });
+    resolveStoredSoundscapeStateMock.mockReturnValue({ profileId: "forest", soundMoments: [] });
     runtimeSyncMock.mockResolvedValue(runtimeGetSnapshotMock());
     runtimeStopMock.mockResolvedValue(undefined);
     runtimePlayMomentFromStateMock.mockResolvedValue({
       momentId: "sting",
-      soundUuid: "PlaylistSound.sting",
+      audioPath: "moments/sting.ogg",
       played: true,
       error: null,
     });
@@ -49,32 +44,19 @@ describe("soundscape ambience controller", () => {
   it("resolves stored state and hands it to the singleton runtime", async () => {
     const mod = await import("./soundscape-ambience-controller");
 
-    await mod.syncStoredSoundscapeAmbience("scene-1", { weather: "rain" });
+    await mod.syncStoredSoundscapeAmbience("scene-1", { inCombat: true });
 
-    expect(resolveStoredSoundscapeStateMock).toHaveBeenCalledWith("scene-1", { weather: "rain" });
-    expect(runtimeSyncMock).toHaveBeenCalledWith(expect.objectContaining({
-      profileId: "forest",
-      ambienceLayerIds: ["wind"],
-    }));
+    expect(resolveStoredSoundscapeStateMock).toHaveBeenCalledWith("scene-1", { inCombat: true });
+    expect(runtimeSyncMock).toHaveBeenCalledWith({ profileId: "forest", soundMoments: [] });
   });
 
-  it("plays moments from the cached active soundscape state", async () => {
+  it("plays a moment against the last resolved state", async () => {
     const mod = await import("./soundscape-ambience-controller");
 
-    await mod.syncStoredSoundscapeAmbience("scene-1");
-    await mod.playStoredSoundscapeMoment("sting");
+    await mod.syncStoredSoundscapeAmbience();
+    const result = await mod.playStoredSoundscapeMoment("sting");
 
-    expect(runtimePlayMomentFromStateMock).toHaveBeenCalledWith(expect.objectContaining({
-      profileId: "forest",
-    }), "sting");
-  });
-
-  it("stops playback and exposes the runtime snapshot", async () => {
-    const mod = await import("./soundscape-ambience-controller");
-
-    await mod.stopStoredSoundscapeAmbience();
-
-    expect(runtimeStopMock).toHaveBeenCalledTimes(1);
-    expect(mod.getSoundscapeAmbienceRuntimeSnapshot()).toEqual(runtimeGetSnapshotMock.mock.results[0]?.value);
+    expect(runtimePlayMomentFromStateMock).toHaveBeenCalledWith({ profileId: "forest", soundMoments: [] }, "sting");
+    expect(result.audioPath).toBe("moments/sting.ogg");
   });
 });

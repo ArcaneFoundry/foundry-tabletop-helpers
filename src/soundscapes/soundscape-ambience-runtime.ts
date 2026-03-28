@@ -1,4 +1,4 @@
-import { fromUuid } from "../types";
+import { resolveAudioPathPlayback, type SoundscapeAudioHandle } from "./soundscape-audio-playback";
 import type {
   ResolvedSoundscapeState,
   SoundscapeAmbienceLayer,
@@ -11,36 +11,19 @@ interface TimerApi {
 }
 
 interface RuntimeDeps {
-  resolveSoundByUuid?: (uuid: string) => Promise<RuntimeSoundDocumentLike | null>;
+  resolveAudioPath?: (path: string) => Promise<SoundscapeAudioHandle | null>;
   timers?: TimerApi;
   random?: () => number;
 }
 
-interface RuntimeSoundLike {
-  duration?: number;
-  playing?: boolean;
-  play?: (options?: Record<string, unknown>) => Promise<unknown>;
-  stop?: () => Promise<unknown> | void;
-}
-
-interface RuntimeSoundDocumentLike {
-  id: string;
-  uuid?: string;
-  name?: string;
-  path?: string;
-  sound?: RuntimeSoundLike | null;
-  load?: () => Promise<void>;
-  sync?: () => void;
-}
-
 interface ActiveLoopSound {
-  soundUuid: string;
-  doc: RuntimeSoundDocumentLike;
+  audioPath: string;
+  handle: SoundscapeAudioHandle;
 }
 
 interface ActiveRandomSound {
-  soundUuid: string;
-  doc: RuntimeSoundDocumentLike;
+  audioPath: string;
+  handle: SoundscapeAudioHandle;
   cleanupTimer: unknown | null;
 }
 
@@ -50,7 +33,7 @@ interface LoopLayerRuntimeState {
   fingerprint: string;
   generation: number;
   loopSounds: Map<string, ActiveLoopSound>;
-  pendingSoundUuids: Set<string>;
+  pendingAudioPaths: Set<string>;
 }
 
 interface RandomLayerRuntimeState {
@@ -59,8 +42,8 @@ interface RandomLayerRuntimeState {
   fingerprint: string;
   scheduleTimer: unknown | null;
   activeSound: ActiveRandomSound | null;
-  lastPlayedSoundUuid: string | null;
-  pendingStartSoundUuid: string | null;
+  lastPlayedAudioPath: string | null;
+  pendingStartAudioPath: string | null;
   generation: number;
 }
 
@@ -74,16 +57,16 @@ const DEFAULT_TIMERS: TimerApi = {
 export interface SoundscapeAmbienceRuntimeSnapshot {
   activeAmbienceKey: string | null;
   activeLayerIds: string[];
-  loopSoundUuids: string[];
+  loopAudioPaths: string[];
   randomLayerIds: string[];
-  activeRandomSoundUuids: string[];
+  activeRandomAudioPaths: string[];
   pendingRandomLayerIds: string[];
   lastError: string | null;
 }
 
 export interface SoundscapeMomentPlaybackResult {
   momentId: string;
-  soundUuid: string | null;
+  audioPath: string | null;
   played: boolean;
   error: string | null;
 }
@@ -97,7 +80,7 @@ function createLayerFingerprint(layer: SoundscapeAmbienceLayer): string {
     layer.mode,
     layer.minDelaySeconds,
     layer.maxDelaySeconds,
-    ...layer.soundUuids,
+    ...layer.audioPaths,
   ].join("|");
 }
 
@@ -106,12 +89,6 @@ function randomDelayMs(layer: SoundscapeAmbienceLayer, random: () => number): nu
   const maxMs = Math.max(minMs, layer.maxDelaySeconds * 1000);
   if (maxMs <= minMs) return minMs;
   return Math.round(minMs + ((maxMs - minMs) * random()));
-}
-
-async function defaultResolveSoundByUuid(uuid: string): Promise<RuntimeSoundDocumentLike | null> {
-  const resolved = await fromUuid(uuid);
-  if (!resolved || typeof resolved.id !== "string") return null;
-  return resolved as RuntimeSoundDocumentLike;
 }
 
 function pickRandomIndex(random: () => number, length: number, lastIndex: number): number {
@@ -130,7 +107,7 @@ export class SoundscapeAmbienceRuntime {
 
   constructor(deps: RuntimeDeps = {}) {
     this.deps = {
-      resolveSoundByUuid: deps.resolveSoundByUuid ?? defaultResolveSoundByUuid,
+      resolveAudioPath: deps.resolveAudioPath ?? resolveAudioPathPlayback,
       timers: deps.timers ?? DEFAULT_TIMERS,
       random: deps.random ?? Math.random,
     };
@@ -138,21 +115,21 @@ export class SoundscapeAmbienceRuntime {
 
   getSnapshot(): SoundscapeAmbienceRuntimeSnapshot {
     const activeLayerIds = [...this.activeLayers.keys()].sort();
-    const loopSoundUuids = [...this.activeAmbienceOwners.entries()]
-      .filter(([soundUuid, layerId]) => {
-        void soundUuid;
+    const loopAudioPaths = [...this.activeAmbienceOwners.entries()]
+      .filter(([audioPath, layerId]) => {
+        void audioPath;
         const state = this.activeLayers.get(layerId);
         return state?.type === "loop";
       })
-      .map(([soundUuid]) => soundUuid)
+      .map(([audioPath]) => audioPath)
       .sort();
     const randomLayerIds = [...this.activeLayers.values()]
       .filter((state): state is RandomLayerRuntimeState => state.type === "random")
       .map((state) => state.layer.id)
       .sort();
-    const activeRandomSoundUuids = [...this.activeLayers.values()]
+    const activeRandomAudioPaths = [...this.activeLayers.values()]
       .filter((state): state is RandomLayerRuntimeState => state.type === "random")
-      .flatMap((state) => state.activeSound ? [state.activeSound.soundUuid] : [])
+      .flatMap((state) => state.activeSound ? [state.activeSound.audioPath] : [])
       .sort();
     const pendingRandomLayerIds = [...this.activeLayers.values()]
       .filter((state): state is RandomLayerRuntimeState => state.type === "random")
@@ -162,9 +139,9 @@ export class SoundscapeAmbienceRuntime {
     return {
       activeAmbienceKey: this.activeAmbienceKey,
       activeLayerIds,
-      loopSoundUuids,
+      loopAudioPaths,
       randomLayerIds,
-      activeRandomSoundUuids,
+      activeRandomAudioPaths,
       pendingRandomLayerIds,
       lastError: this.lastError,
     };
@@ -194,7 +171,7 @@ export class SoundscapeAmbienceRuntime {
           fingerprint: createLayerFingerprint(layer),
           generation: 0,
           loopSounds: new Map(),
-          pendingSoundUuids: new Set(),
+          pendingAudioPaths: new Set(),
         };
         this.activeLayers.set(layer.id, loopState);
       } else if (!activeState) {
@@ -204,8 +181,8 @@ export class SoundscapeAmbienceRuntime {
           fingerprint: createLayerFingerprint(layer),
           scheduleTimer: null,
           activeSound: null,
-          lastPlayedSoundUuid: null,
-          pendingStartSoundUuid: null,
+          lastPlayedAudioPath: null,
+          pendingStartAudioPath: null,
           generation: 0,
         };
         this.activeLayers.set(layer.id, randomState);
@@ -245,37 +222,37 @@ export class SoundscapeAmbienceRuntime {
     if (!moment) {
       return {
         momentId: "",
-        soundUuid: null,
+        audioPath: null,
         played: false,
         error: "No sound moment is available to play.",
       };
     }
 
-    const selected = this.selectMomentSoundUuid(moment);
+    const selected = this.selectMomentAudioPath(moment);
     if (!selected) {
       return {
         momentId: moment.id,
-        soundUuid: null,
+        audioPath: null,
         played: false,
         error: `Sound moment "${moment.name}" has no playable sounds.`,
       };
     }
 
-    const doc = await this.deps.resolveSoundByUuid(selected);
-    if (!doc) {
+    const handle = await this.deps.resolveAudioPath(selected);
+    if (!handle) {
       return {
         momentId: moment.id,
-        soundUuid: selected,
+        audioPath: selected,
         played: false,
-        error: `Sound moment "${moment.name}" could not resolve audio document "${selected}".`,
+        error: `Sound moment "${moment.name}" could not resolve audio path "${selected}".`,
       };
     }
 
-    const started = await this.startSoundPlayback(doc, false);
+    const started = await this.startSoundPlayback(handle, false);
     if (!started) {
       return {
         momentId: moment.id,
-        soundUuid: selected,
+        audioPath: selected,
         played: false,
         error: `Sound moment "${moment.name}" could not start playback.`,
       };
@@ -283,7 +260,7 @@ export class SoundscapeAmbienceRuntime {
 
     return {
       momentId: moment.id,
-      soundUuid: selected,
+      audioPath: selected,
       played: true,
       error: null,
     };
@@ -296,7 +273,7 @@ export class SoundscapeAmbienceRuntime {
     if (!state) {
       return {
         momentId,
-        soundUuid: null,
+        audioPath: null,
         played: false,
         error: "No active soundscape state is available.",
       };
@@ -306,7 +283,7 @@ export class SoundscapeAmbienceRuntime {
     if (!moment) {
       return {
         momentId,
-        soundUuid: null,
+        audioPath: null,
         played: false,
         error: `Sound moment "${momentId}" is not available in the active soundscape.`,
       };
@@ -317,53 +294,53 @@ export class SoundscapeAmbienceRuntime {
 
   private async startLoopLayer(state: LoopLayerRuntimeState): Promise<void> {
     const generation = state.generation;
-    for (const soundUuid of state.layer.soundUuids) {
-      if (state.loopSounds.has(soundUuid) || state.pendingSoundUuids.has(soundUuid)) continue;
+    for (const audioPath of state.layer.audioPaths) {
+      if (state.loopSounds.has(audioPath) || state.pendingAudioPaths.has(audioPath)) continue;
 
-      state.pendingSoundUuids.add(soundUuid);
-      if (!this.claimAmbienceOwner(soundUuid, state.layer.id)) {
-        state.pendingSoundUuids.delete(soundUuid);
+      state.pendingAudioPaths.add(audioPath);
+      if (!this.claimAmbienceOwner(audioPath, state.layer.id)) {
+        state.pendingAudioPaths.delete(audioPath);
         continue;
       }
 
-      const doc = await this.deps.resolveSoundByUuid(soundUuid);
-      if (!doc) {
-        this.releaseAmbienceOwner(soundUuid, state.layer.id);
-        state.pendingSoundUuids.delete(soundUuid);
-        this.lastError = `Ambience layer "${state.layer.name}" could not resolve audio document "${soundUuid}".`;
+      const handle = await this.deps.resolveAudioPath(audioPath);
+      if (!handle) {
+        this.releaseAmbienceOwner(audioPath, state.layer.id);
+        state.pendingAudioPaths.delete(audioPath);
+        this.lastError = `Ambience layer "${state.layer.name}" could not resolve audio path "${audioPath}".`;
         continue;
       }
 
-      if (!this.isCurrentLoopLayer(state.layer.id, generation) || this.activeAmbienceOwners.get(soundUuid) !== state.layer.id) {
-        this.releaseAmbienceOwner(soundUuid, state.layer.id);
-        state.pendingSoundUuids.delete(soundUuid);
+      if (!this.isCurrentLoopLayer(state.layer.id, generation) || this.activeAmbienceOwners.get(audioPath) !== state.layer.id) {
+        this.releaseAmbienceOwner(audioPath, state.layer.id);
+        state.pendingAudioPaths.delete(audioPath);
         continue;
       }
 
-      const started = await this.startSoundPlayback(doc, true);
-      if (!started || !this.isCurrentLoopLayer(state.layer.id, generation) || this.activeAmbienceOwners.get(soundUuid) !== state.layer.id) {
-        this.releaseAmbienceOwner(soundUuid, state.layer.id);
-        state.pendingSoundUuids.delete(soundUuid);
-        if (started) await this.stopSoundPlayback(doc);
-        this.lastError = `Ambience layer "${state.layer.name}" could not start loop "${soundUuid}".`;
+      const started = await this.startSoundPlayback(handle, true);
+      if (!started || !this.isCurrentLoopLayer(state.layer.id, generation) || this.activeAmbienceOwners.get(audioPath) !== state.layer.id) {
+        this.releaseAmbienceOwner(audioPath, state.layer.id);
+        state.pendingAudioPaths.delete(audioPath);
+        if (started) await this.stopSoundPlayback(handle);
+        this.lastError = `Ambience layer "${state.layer.name}" could not start loop "${audioPath}".`;
         continue;
       }
 
       const currentState = this.activeLayers.get(state.layer.id);
       if (!currentState || currentState.type !== "loop" || currentState.generation !== generation) {
-        this.releaseAmbienceOwner(soundUuid, state.layer.id);
-        state.pendingSoundUuids.delete(soundUuid);
-        await this.stopSoundPlayback(doc);
+        this.releaseAmbienceOwner(audioPath, state.layer.id);
+        state.pendingAudioPaths.delete(audioPath);
+        await this.stopSoundPlayback(handle);
         continue;
       }
 
-      currentState.loopSounds.set(soundUuid, { soundUuid, doc });
-      currentState.pendingSoundUuids.delete(soundUuid);
+      currentState.loopSounds.set(audioPath, { audioPath, handle });
+      currentState.pendingAudioPaths.delete(audioPath);
     }
   }
 
   private scheduleRandomLayer(state: RandomLayerRuntimeState, explicitDelayMs?: number): void {
-    if (state.scheduleTimer || state.activeSound || state.pendingStartSoundUuid || !this.activeLayers.has(state.layer.id)) return;
+    if (state.scheduleTimer || state.activeSound || state.pendingStartAudioPath || !this.activeLayers.has(state.layer.id)) return;
 
     const delayMs = explicitDelayMs ?? randomDelayMs(state.layer, this.deps.random);
     const generation = state.generation;
@@ -377,38 +354,38 @@ export class SoundscapeAmbienceRuntime {
     const state = this.activeLayers.get(layerId);
     if (!state || state.type !== "random" || state.generation !== generation || state.activeSound) return;
 
-    const selectedSoundUuid = this.selectRandomLayerSoundUuid(state);
-    if (!selectedSoundUuid) {
+    const selectedAudioPath = this.selectRandomLayerAudioPath(state);
+    if (!selectedAudioPath) {
       this.scheduleRandomLayer(state, Math.max(0, state.layer.minDelaySeconds * 1000));
       return;
     }
-    if (!this.claimAmbienceOwner(selectedSoundUuid, state.layer.id)) {
+    if (!this.claimAmbienceOwner(selectedAudioPath, state.layer.id)) {
       this.scheduleRandomLayer(state, Math.max(0, state.layer.minDelaySeconds * 1000));
       return;
     }
-    state.pendingStartSoundUuid = selectedSoundUuid;
+    state.pendingStartAudioPath = selectedAudioPath;
 
-    const doc = await this.deps.resolveSoundByUuid(selectedSoundUuid);
-    if (!doc) {
-      this.releaseAmbienceOwner(selectedSoundUuid, state.layer.id);
-      state.pendingStartSoundUuid = null;
-      this.lastError = `Ambience layer "${state.layer.name}" could not resolve audio document "${selectedSoundUuid}".`;
+    const handle = await this.deps.resolveAudioPath(selectedAudioPath);
+    if (!handle) {
+      this.releaseAmbienceOwner(selectedAudioPath, state.layer.id);
+      state.pendingStartAudioPath = null;
+      this.lastError = `Ambience layer "${state.layer.name}" could not resolve audio path "${selectedAudioPath}".`;
       this.scheduleRandomLayer(state);
       return;
     }
 
-    if (!this.isCurrentRandomLayer(layerId, generation) || this.activeAmbienceOwners.get(selectedSoundUuid) !== state.layer.id) {
-      this.releaseAmbienceOwner(selectedSoundUuid, state.layer.id);
-      state.pendingStartSoundUuid = null;
+    if (!this.isCurrentRandomLayer(layerId, generation) || this.activeAmbienceOwners.get(selectedAudioPath) !== state.layer.id) {
+      this.releaseAmbienceOwner(selectedAudioPath, state.layer.id);
+      state.pendingStartAudioPath = null;
       return;
     }
 
-    const started = await this.startSoundPlayback(doc, false);
-    if (!started || !this.isCurrentRandomLayer(layerId, generation) || this.activeAmbienceOwners.get(selectedSoundUuid) !== state.layer.id) {
-      this.releaseAmbienceOwner(selectedSoundUuid, state.layer.id);
-      state.pendingStartSoundUuid = null;
-      if (started) await this.stopSoundPlayback(doc);
-      this.lastError = `Ambience layer "${state.layer.name}" could not start "${selectedSoundUuid}".`;
+    const started = await this.startSoundPlayback(handle, false);
+    if (!started || !this.isCurrentRandomLayer(layerId, generation) || this.activeAmbienceOwners.get(selectedAudioPath) !== state.layer.id) {
+      this.releaseAmbienceOwner(selectedAudioPath, state.layer.id);
+      state.pendingStartAudioPath = null;
+      if (started) await this.stopSoundPlayback(handle);
+      this.lastError = `Ambience layer "${state.layer.name}" could not start "${selectedAudioPath}".`;
       const currentState = this.activeLayers.get(layerId);
       if (currentState && currentState.type === "random" && currentState.generation === generation) {
         this.scheduleRandomLayer(currentState);
@@ -418,75 +395,72 @@ export class SoundscapeAmbienceRuntime {
 
     const currentState = this.activeLayers.get(layerId);
     if (!currentState || currentState.type !== "random" || currentState.generation !== generation) {
-      this.releaseAmbienceOwner(selectedSoundUuid, state.layer.id);
-      state.pendingStartSoundUuid = null;
-      await this.stopSoundPlayback(doc);
+      this.releaseAmbienceOwner(selectedAudioPath, state.layer.id);
+      state.pendingStartAudioPath = null;
+      await this.stopSoundPlayback(handle);
       return;
     }
 
-    currentState.lastPlayedSoundUuid = selectedSoundUuid;
-    currentState.pendingStartSoundUuid = null;
+    currentState.lastPlayedAudioPath = selectedAudioPath;
+    currentState.pendingStartAudioPath = null;
 
-    const durationMs = Math.max(0, Math.round((doc.sound?.duration ?? 0) * 1000));
+    const durationMs = Math.max(0, Math.round(handle.durationSeconds * 1000));
     const cleanupTimer = this.deps.timers.setTimeout(() => {
-      void this.finishRandomLayerSound(layerId, generation, selectedSoundUuid);
+      void this.finishRandomLayerSound(layerId, generation, selectedAudioPath);
     }, durationMs);
 
     currentState.activeSound = {
-      soundUuid: selectedSoundUuid,
-      doc,
+      audioPath: selectedAudioPath,
+      handle,
       cleanupTimer,
     };
   }
 
-  private async finishRandomLayerSound(layerId: string, generation: number, soundUuid: string): Promise<void> {
+  private async finishRandomLayerSound(layerId: string, generation: number, audioPath: string): Promise<void> {
     const state = this.activeLayers.get(layerId);
     if (!state || state.type !== "random" || state.generation !== generation) return;
-    if (!state.activeSound || state.activeSound.soundUuid !== soundUuid) return;
+    if (!state.activeSound || state.activeSound.audioPath !== audioPath) return;
 
     if (state.activeSound.cleanupTimer !== null) {
       this.deps.timers.clearTimeout(state.activeSound.cleanupTimer);
     }
 
-    this.activeAmbienceOwners.delete(soundUuid);
+    this.activeAmbienceOwners.delete(audioPath);
     state.activeSound = null;
     this.scheduleRandomLayer(state);
   }
 
-  private selectRandomLayerSoundUuid(state: RandomLayerRuntimeState): string | null {
-    const candidates = state.layer.soundUuids.filter((soundUuid) => !this.activeAmbienceOwners.has(soundUuid));
+  private selectRandomLayerAudioPath(state: RandomLayerRuntimeState): string | null {
+    const candidates = state.layer.audioPaths.filter((audioPath) => !this.activeAmbienceOwners.has(audioPath));
     if (candidates.length === 0) return null;
 
-    const lastIndex = state.lastPlayedSoundUuid ? candidates.indexOf(state.lastPlayedSoundUuid) : -1;
+    const lastIndex = state.lastPlayedAudioPath ? candidates.indexOf(state.lastPlayedAudioPath) : -1;
     return candidates[pickRandomIndex(this.deps.random, candidates.length, lastIndex)] ?? null;
   }
 
-  private selectMomentSoundUuid(moment: SoundscapeSoundMoment): string | null {
-    if (moment.soundUuids.length === 0) return null;
-    if (moment.selectionMode === "single") return moment.soundUuids[0] ?? null;
+  private selectMomentAudioPath(moment: SoundscapeSoundMoment): string | null {
+    if (moment.audioPaths.length === 0) return null;
+    if (moment.selectionMode === "single") return moment.audioPaths[0] ?? null;
 
     const lastIndex = this.lastRandomMomentIndexByMoment.get(moment.id) ?? -1;
-    const nextIndex = pickRandomIndex(this.deps.random, moment.soundUuids.length, lastIndex);
+    const nextIndex = pickRandomIndex(this.deps.random, moment.audioPaths.length, lastIndex);
     this.lastRandomMomentIndexByMoment.set(moment.id, nextIndex);
-    return moment.soundUuids[nextIndex] ?? null;
+    return moment.audioPaths[nextIndex] ?? null;
   }
 
-  private async startSoundPlayback(doc: RuntimeSoundDocumentLike, loop: boolean): Promise<boolean> {
+  private async startSoundPlayback(handle: SoundscapeAudioHandle, loop: boolean): Promise<boolean> {
     try {
-      await doc.load?.();
-      if (!doc.sound?.play) return false;
-      await doc.sound.play({ loop });
-      doc.sync?.();
-      return true;
+      await handle.load();
+      return await handle.play({ loop });
     } catch {
       return false;
     }
   }
 
-  private async stopSoundPlayback(doc: RuntimeSoundDocumentLike | null | undefined): Promise<void> {
-    if (!doc?.sound?.stop) return;
+  private async stopSoundPlayback(handle: SoundscapeAudioHandle | null | undefined): Promise<void> {
+    if (!handle) return;
     try {
-      await doc.sound.stop();
+      await handle.stop();
     } catch {
       this.lastError = "Failed to stop ambience playback cleanly.";
     }
@@ -496,15 +470,15 @@ export class SoundscapeAmbienceRuntime {
     if (state.type === "loop") {
       state.generation += 1;
       this.releaseAmbienceOwnersForLayer(layerId);
-      state.pendingSoundUuids.clear();
+      state.pendingAudioPaths.clear();
       for (const [, activeSound] of state.loopSounds.entries()) {
-        await this.stopSoundPlayback(activeSound.doc);
+        await this.stopSoundPlayback(activeSound.handle);
       }
       state.loopSounds.clear();
     } else {
       state.generation += 1;
       this.releaseAmbienceOwnersForLayer(layerId);
-      state.pendingStartSoundUuid = null;
+      state.pendingStartAudioPath = null;
       if (state.scheduleTimer !== null) {
         this.deps.timers.clearTimeout(state.scheduleTimer);
         state.scheduleTimer = null;
@@ -513,7 +487,7 @@ export class SoundscapeAmbienceRuntime {
         if (state.activeSound.cleanupTimer !== null) {
           this.deps.timers.clearTimeout(state.activeSound.cleanupTimer);
         }
-        await this.stopSoundPlayback(state.activeSound.doc);
+        await this.stopSoundPlayback(state.activeSound.handle);
       }
       state.activeSound = null;
     }
@@ -524,23 +498,23 @@ export class SoundscapeAmbienceRuntime {
     }
   }
 
-  private claimAmbienceOwner(soundUuid: string, layerId: string): boolean {
-    const currentOwner = this.activeAmbienceOwners.get(soundUuid);
+  private claimAmbienceOwner(audioPath: string, layerId: string): boolean {
+    const currentOwner = this.activeAmbienceOwners.get(audioPath);
     if (currentOwner && currentOwner !== layerId) return false;
-    this.activeAmbienceOwners.set(soundUuid, layerId);
+    this.activeAmbienceOwners.set(audioPath, layerId);
     return true;
   }
 
-  private releaseAmbienceOwner(soundUuid: string, layerId: string): void {
-    if (this.activeAmbienceOwners.get(soundUuid) === layerId) {
-      this.activeAmbienceOwners.delete(soundUuid);
+  private releaseAmbienceOwner(audioPath: string, layerId: string): void {
+    if (this.activeAmbienceOwners.get(audioPath) === layerId) {
+      this.activeAmbienceOwners.delete(audioPath);
     }
   }
 
   private releaseAmbienceOwnersForLayer(layerId: string): void {
-    for (const [soundUuid, ownerLayerId] of [...this.activeAmbienceOwners.entries()]) {
+    for (const [audioPath, ownerLayerId] of [...this.activeAmbienceOwners.entries()]) {
       if (ownerLayerId === layerId) {
-        this.activeAmbienceOwners.delete(soundUuid);
+        this.activeAmbienceOwners.delete(audioPath);
       }
     }
   }
@@ -559,6 +533,5 @@ export class SoundscapeAmbienceRuntime {
 export const __soundscapeAmbienceRuntimeInternals = {
   createAmbienceKey,
   createLayerFingerprint,
-  defaultResolveSoundByUuid,
   randomDelayMs,
 };

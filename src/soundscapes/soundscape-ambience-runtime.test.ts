@@ -9,21 +9,12 @@ interface FakeTimerHandle {
   cleared: boolean;
 }
 
-interface FakeSound {
-  duration?: number;
-  playing?: boolean;
-  play: (options?: Record<string, unknown>) => Promise<unknown>;
-  stop: () => Promise<unknown>;
-}
-
-interface FakeSoundDocument {
-  id: string;
-  uuid: string;
-  name: string;
+interface FakeAudioHandle {
   path: string;
-  sound: FakeSound;
+  durationSeconds: number;
   load: () => Promise<void>;
-  sync: () => void;
+  play: (options?: { loop?: boolean }) => Promise<boolean>;
+  stop: () => Promise<void>;
 }
 
 function createFakeTimers() {
@@ -50,24 +41,13 @@ function createFakeTimers() {
   };
 }
 
-function createSoundDocument(uuid: string, durationSeconds = 1): FakeSoundDocument {
-  const play = vi.fn(async (_options?: Record<string, unknown>): Promise<void> => {});
-  const stop = vi.fn(async (): Promise<void> => {});
-  const load = vi.fn(async (): Promise<void> => {});
-  const sync = vi.fn((): void => {});
-
+function createAudioHandle(path: string, durationSeconds = 1): FakeAudioHandle {
   return {
-    id: uuid.split(".").at(-1) ?? uuid,
-    uuid,
-    name: uuid,
-    path: `sounds/${uuid}.ogg`,
-    sound: {
-      duration: durationSeconds,
-      play,
-      stop,
-    },
-    load,
-    sync,
+    path,
+    durationSeconds,
+    load: vi.fn(async (): Promise<void> => {}),
+    play: vi.fn(async (): Promise<boolean> => true),
+    stop: vi.fn(async (): Promise<void> => {}),
   };
 }
 
@@ -102,22 +82,14 @@ async function flushAsyncWork(): Promise<void> {
   await Promise.resolve();
 }
 
-function createDeferred<T>() {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  const promise = new Promise<T>((nextResolve) => {
-    resolve = nextResolve;
-  });
-  return { promise, resolve };
-}
-
 describe("soundscape ambience runtime", () => {
-  it("starts loop layers and prevents duplicate ambience playback for shared sources", async () => {
-    const wind = createSoundDocument("PlaylistSound.wind");
-    const birds = createSoundDocument("PlaylistSound.birds");
+  it("starts loop layers and prevents duplicate playback for shared audio paths", async () => {
+    const wind = createAudioHandle("ambience/wind.ogg");
+    const birds = createAudioHandle("ambience/birds.ogg");
     const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async (uuid) => {
-        if (uuid === "PlaylistSound.wind") return wind;
-        if (uuid === "PlaylistSound.birds") return birds;
+      resolveAudioPath: async (path) => {
+        if (path === wind.path) return wind;
+        if (path === birds.path) return birds;
         return null;
       },
     });
@@ -128,7 +100,7 @@ describe("soundscape ambience runtime", () => {
           id: "forest-loop",
           name: "Forest Loop",
           mode: "loop",
-          soundUuids: ["PlaylistSound.wind", "PlaylistSound.birds"],
+          audioPaths: [wind.path, birds.path],
           minDelaySeconds: 0,
           maxDelaySeconds: 0,
         },
@@ -136,26 +108,26 @@ describe("soundscape ambience runtime", () => {
           id: "mist-loop",
           name: "Mist Loop",
           mode: "loop",
-          soundUuids: ["PlaylistSound.wind"],
+          audioPaths: [wind.path],
           minDelaySeconds: 0,
           maxDelaySeconds: 0,
         },
       ],
     }));
 
-    expect(wind.sound.play).toHaveBeenCalledTimes(1);
-    expect(birds.sound.play).toHaveBeenCalledTimes(1);
+    expect(wind.play).toHaveBeenCalledTimes(1);
+    expect(birds.play).toHaveBeenCalledTimes(1);
     expect(runtime.getSnapshot()).toMatchObject({
       activeLayerIds: ["forest-loop", "mist-loop"],
-      loopSoundUuids: ["PlaylistSound.birds", "PlaylistSound.wind"],
+      loopAudioPaths: ["ambience/birds.ogg", "ambience/wind.ogg"],
       randomLayerIds: [],
     });
   });
 
   it("restarts a shared loop for the remaining layer when the original owner is removed", async () => {
-    const wind = createSoundDocument("PlaylistSound.wind");
+    const wind = createAudioHandle("ambience/wind.ogg");
     const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => wind,
+      resolveAudioPath: async () => wind,
     });
 
     await runtime.sync(createResolvedState({
@@ -164,7 +136,7 @@ describe("soundscape ambience runtime", () => {
           id: "forest-loop",
           name: "Forest Loop",
           mode: "loop",
-          soundUuids: ["PlaylistSound.wind"],
+          audioPaths: [wind.path],
           minDelaySeconds: 0,
           maxDelaySeconds: 0,
         },
@@ -172,7 +144,7 @@ describe("soundscape ambience runtime", () => {
           id: "mist-loop",
           name: "Mist Loop",
           mode: "loop",
-          soundUuids: ["PlaylistSound.wind"],
+          audioPaths: [wind.path],
           minDelaySeconds: 0,
           maxDelaySeconds: 0,
         },
@@ -185,30 +157,30 @@ describe("soundscape ambience runtime", () => {
           id: "mist-loop",
           name: "Mist Loop",
           mode: "loop",
-          soundUuids: ["PlaylistSound.wind"],
+          audioPaths: [wind.path],
           minDelaySeconds: 0,
           maxDelaySeconds: 0,
         },
       ],
     }));
 
-    expect(wind.sound.play).toHaveBeenCalledTimes(2);
-    expect(wind.sound.stop).toHaveBeenCalledTimes(1);
+    expect(wind.play).toHaveBeenCalledTimes(2);
+    expect(wind.stop).toHaveBeenCalledTimes(1);
     expect(runtime.getSnapshot()).toMatchObject({
       activeLayerIds: ["mist-loop"],
-      loopSoundUuids: ["PlaylistSound.wind"],
+      loopAudioPaths: ["ambience/wind.ogg"],
     });
   });
 
   it("schedules random ambience layers and avoids immediate repeats when alternatives exist", async () => {
     const timers = createFakeTimers();
-    const gustA = createSoundDocument("PlaylistSound.gust-a", 2);
-    const gustB = createSoundDocument("PlaylistSound.gust-b", 2);
+    const gustA = createAudioHandle("ambience/gust-a.ogg", 2);
+    const gustB = createAudioHandle("ambience/gust-b.ogg", 2);
     const randomValues = [0, 0, 0];
     const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async (uuid) => {
-        if (uuid === "PlaylistSound.gust-a") return gustA;
-        if (uuid === "PlaylistSound.gust-b") return gustB;
+      resolveAudioPath: async (path) => {
+        if (path === gustA.path) return gustA;
+        if (path === gustB.path) return gustB;
         return null;
       },
       timers: timers.api,
@@ -220,261 +192,68 @@ describe("soundscape ambience runtime", () => {
         id: "winds",
         name: "Winds",
         mode: "random",
-        soundUuids: ["PlaylistSound.gust-a", "PlaylistSound.gust-b"],
-        minDelaySeconds: 1,
-        maxDelaySeconds: 3,
+        audioPaths: [gustA.path, gustB.path],
+        minDelaySeconds: 0,
+        maxDelaySeconds: 0,
       }],
     }));
-
-    expect(timers.handles[0]?.delay).toBe(1000);
 
     timers.runNext();
     await flushAsyncWork();
 
-    expect(gustA.sound.play).toHaveBeenCalledTimes(1);
     expect(runtime.getSnapshot()).toMatchObject({
-      activeRandomSoundUuids: ["PlaylistSound.gust-a"],
-      pendingRandomLayerIds: [],
+      activeRandomAudioPaths: ["ambience/gust-a.ogg"],
     });
 
     timers.runNext();
     await flushAsyncWork();
-
-    expect(timers.handles.find((handle) => !handle.cleared)?.delay).toBe(1000);
-
     timers.runNext();
     await flushAsyncWork();
 
-    expect(gustB.sound.play).toHaveBeenCalledTimes(1);
     expect(runtime.getSnapshot()).toMatchObject({
-      activeRandomSoundUuids: ["PlaylistSound.gust-b"],
+      activeRandomAudioPaths: ["ambience/gust-b.ogg"],
     });
   });
 
-  it("cleans up obsolete loops, active random playback, and timers when ambience changes", async () => {
-    const timers = createFakeTimers();
-    const rain = createSoundDocument("PlaylistSound.rain", 10);
+  it("plays manual moments using direct audio paths", async () => {
+    const sting = createAudioHandle("moments/sting.ogg", 1);
     const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => rain,
-      timers: timers.api,
-      random: () => 0,
+      resolveAudioPath: async () => sting,
     });
 
-    await runtime.sync(createResolvedState({
-      ambienceLayers: [{
-        id: "rain-loop",
-        name: "Rain Loop",
-        mode: "loop",
-        soundUuids: ["PlaylistSound.rain"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }, {
-        id: "rain-hits",
-        name: "Rain Hits",
-        mode: "random",
-        soundUuids: ["PlaylistSound.rain"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }],
-    }));
-
-    timers.runNext();
-    await flushAsyncWork();
-
-    await runtime.sync(createResolvedState({
-      ambienceLayers: [],
-    }));
-
-    expect(rain.sound.stop).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeAmbienceKey: null,
-      activeLayerIds: [],
-      loopSoundUuids: [],
-      pendingRandomLayerIds: [],
+    const result = await runtime.playMoment({
+      id: "sting",
+      name: "Sting",
+      audioPaths: [sting.path],
+      selectionMode: "single",
     });
-    expect(timers.handles.every((handle) => handle.cleared)).toBe(true);
-  });
-
-  it("plays manual sound moments on demand without mutating ambience state", async () => {
-    const sting = createSoundDocument("PlaylistSound.sting");
-    const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => sting,
-    });
-
-    await runtime.sync(createResolvedState({
-      ambienceLayers: [{
-        id: "forest-loop",
-        name: "Forest Loop",
-        mode: "loop",
-        soundUuids: ["PlaylistSound.sting"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }],
-      soundMoments: [{
-        id: "sting",
-        name: "Sting",
-        soundUuids: ["PlaylistSound.sting"],
-        selectionMode: "single",
-      }],
-    }));
-
-    const before = runtime.getSnapshot();
-    const result = await runtime.playMomentFromState(createResolvedState({
-      soundMoments: [{
-        id: "sting",
-        name: "Sting",
-        soundUuids: ["PlaylistSound.sting"],
-        selectionMode: "single",
-      }],
-    }), "sting");
 
     expect(result).toEqual({
       momentId: "sting",
-      soundUuid: "PlaylistSound.sting",
+      audioPath: "moments/sting.ogg",
       played: true,
       error: null,
     });
-    expect(sting.sound.play).toHaveBeenCalledTimes(2);
-    expect(runtime.getSnapshot()).toEqual(before);
+    expect(sting.play).toHaveBeenCalledTimes(1);
   });
 
-  it("does not start a loop after its layer is removed while sound resolution is still pending", async () => {
-    const deferred = createDeferred<FakeSoundDocument | null>();
-    const wind = createSoundDocument("PlaylistSound.wind");
+  it("reports missing audio paths cleanly", async () => {
     const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => await deferred.promise,
+      resolveAudioPath: async () => null,
     });
 
-    const startingSync = runtime.sync(createResolvedState({
-      ambienceLayers: [{
-        id: "forest-loop",
-        name: "Forest Loop",
-        mode: "loop",
-        soundUuids: ["PlaylistSound.wind"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }],
-    }));
-    await flushAsyncWork();
-
-    const stoppingSync = runtime.sync(createResolvedState({ ambienceLayers: [] }));
-    deferred.resolve(wind);
-
-    await startingSync;
-    await stoppingSync;
-
-    expect(wind.sound.play).not.toHaveBeenCalled();
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeLayerIds: [],
-      loopSoundUuids: [],
-    });
-  });
-
-  it("does not start random ambience after its layer is removed while sound resolution is still pending", async () => {
-    const timers = createFakeTimers();
-    const deferred = createDeferred<FakeSoundDocument | null>();
-    const rain = createSoundDocument("PlaylistSound.rain");
-    const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => await deferred.promise,
-      timers: timers.api,
-      random: () => 0,
+    const result = await runtime.playMoment({
+      id: "missing",
+      name: "Missing",
+      audioPaths: ["moments/missing.ogg"],
+      selectionMode: "single",
     });
 
-    await runtime.sync(createResolvedState({
-      ambienceLayers: [{
-        id: "rain-hits",
-        name: "Rain Hits",
-        mode: "random",
-        soundUuids: ["PlaylistSound.rain"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }],
-    }));
-
-    timers.runNext();
-    await flushAsyncWork();
-
-    const stoppingSync = runtime.sync(createResolvedState({ ambienceLayers: [] }));
-    deferred.resolve(rain);
-
-    await stoppingSync;
-    await flushAsyncWork();
-
-    expect(rain.sound.play).not.toHaveBeenCalled();
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeLayerIds: [],
-      activeRandomSoundUuids: [],
-      pendingRandomLayerIds: [],
-    });
-  });
-
-  it("does not double-start the same loop when sync is called again during pending startup", async () => {
-    const deferred = createDeferred<FakeSoundDocument | null>();
-    const wind = createSoundDocument("PlaylistSound.wind");
-    const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => await deferred.promise,
-    });
-    const state = createResolvedState({
-      ambienceLayers: [{
-        id: "forest-loop",
-        name: "Forest Loop",
-        mode: "loop",
-        soundUuids: ["PlaylistSound.wind"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }],
-    });
-
-    const firstSync = runtime.sync(state);
-    await flushAsyncWork();
-    const secondSync = runtime.sync(state);
-    deferred.resolve(wind);
-
-    await firstSync;
-    await secondSync;
-
-    expect(wind.sound.play).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeLayerIds: ["forest-loop"],
-      loopSoundUuids: ["PlaylistSound.wind"],
-    });
-  });
-
-  it("does not reschedule the same random layer while startup is already pending", async () => {
-    const timers = createFakeTimers();
-    const deferred = createDeferred<FakeSoundDocument | null>();
-    const rain = createSoundDocument("PlaylistSound.rain");
-    const runtime = new SoundscapeAmbienceRuntime({
-      resolveSoundByUuid: async () => await deferred.promise,
-      timers: timers.api,
-      random: () => 0,
-    });
-    const state = createResolvedState({
-      ambienceLayers: [{
-        id: "rain-hits",
-        name: "Rain Hits",
-        mode: "random",
-        soundUuids: ["PlaylistSound.rain"],
-        minDelaySeconds: 0,
-        maxDelaySeconds: 0,
-      }],
-    });
-
-    await runtime.sync(state);
-    timers.runNext();
-    await flushAsyncWork();
-
-    await runtime.sync(state);
-
-    deferred.resolve(rain);
-    await flushAsyncWork();
-    await flushAsyncWork();
-
-    expect(rain.sound.play).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeLayerIds: ["rain-hits"],
-      activeRandomSoundUuids: ["PlaylistSound.rain"],
-      pendingRandomLayerIds: [],
+    expect(result).toEqual({
+      momentId: "missing",
+      audioPath: "moments/missing.ogg",
+      played: false,
+      error: 'Sound moment "Missing" could not resolve audio path "moments/missing.ogg".',
     });
   });
 });

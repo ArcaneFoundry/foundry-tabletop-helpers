@@ -5,7 +5,7 @@ import type { PersistentSoundscapeLibrarySnapshot } from "./soundscape-types";
 
 function makeLibrary(): PersistentSoundscapeLibrarySnapshot {
   return {
-    formatVersion: 1,
+    formatVersion: 2,
     savedAt: "2026-03-27T00:00:00.000Z",
     profiles: {
       forest: {
@@ -15,14 +15,14 @@ function makeLibrary(): PersistentSoundscapeLibrarySnapshot {
           calm: {
             id: "calm",
             name: "Calm",
-            playlistUuids: ["Playlist.calm"],
+            audioPaths: ["music/calm.ogg"],
             selectionMode: "sequential",
             delaySeconds: 0,
           },
           battle: {
             id: "battle",
             name: "Battle",
-            playlistUuids: ["Playlist.battle"],
+            audioPaths: ["music/battle.ogg"],
             selectionMode: "random",
             delaySeconds: 5,
           },
@@ -32,7 +32,7 @@ function makeLibrary(): PersistentSoundscapeLibrarySnapshot {
             id: "birds",
             name: "Birds",
             mode: "loop",
-            soundUuids: ["PlaylistSound.birds"],
+            audioPaths: ["ambience/birds.ogg"],
             minDelaySeconds: 0,
             maxDelaySeconds: 0,
           },
@@ -40,7 +40,7 @@ function makeLibrary(): PersistentSoundscapeLibrarySnapshot {
             id: "rain",
             name: "Rain",
             mode: "loop",
-            soundUuids: ["PlaylistSound.rain"],
+            audioPaths: ["ambience/rain.ogg"],
             minDelaySeconds: 0,
             maxDelaySeconds: 0,
           },
@@ -49,7 +49,7 @@ function makeLibrary(): PersistentSoundscapeLibrarySnapshot {
           sting: {
             id: "sting",
             name: "Sting",
-            soundUuids: ["PlaylistSound.sting"],
+            audioPaths: ["moments/sting.ogg"],
             selectionMode: "single",
           },
         },

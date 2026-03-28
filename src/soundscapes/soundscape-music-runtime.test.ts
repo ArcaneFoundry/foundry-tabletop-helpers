@@ -9,26 +9,12 @@ interface FakeTimerHandle {
   cleared: boolean;
 }
 
-interface FakePlaylistSound {
-  id: string;
-  uuid?: string;
-  name?: string;
-  path?: string;
-  sort?: number;
-  playing?: boolean;
-  repeat?: boolean;
-  load?: () => Promise<void>;
-  sync?: () => void;
-}
-
-interface FakePlaylist {
-  id: string;
-  uuid: string;
-  name: string;
-  sounds: FakePlaylistSound[];
-  playSound: (sound: FakePlaylistSound) => Promise<unknown>;
-  stopSound?: (sound: FakePlaylistSound) => Promise<unknown>;
-  stopAll?: () => Promise<unknown>;
+interface FakeAudioHandle {
+  path: string;
+  durationSeconds: number;
+  load: () => Promise<void>;
+  play: (options?: { loop?: boolean }) => Promise<boolean>;
+  stop: () => Promise<void>;
 }
 
 function createFakeTimers() {
@@ -55,36 +41,13 @@ function createFakeTimers() {
   };
 }
 
-function createPlaylist(
-  uuid: string,
-  name: string,
-  soundIds: string[],
-): FakePlaylist {
-  const sounds = soundIds.map((soundId, index) => {
-    const load = vi.fn(async (): Promise<void> => {});
-    const sync = vi.fn((): void => {});
-
-    return {
-      id: soundId,
-      uuid: `${uuid}.${soundId}`,
-      name: soundId,
-      path: `sounds/${soundId}.ogg`,
-      sort: index,
-      load,
-      sync,
-    };
-  });
-
-  const playSound = vi.fn(async (_sound: FakePlaylistSound): Promise<void> => {});
-  const stopSound = vi.fn(async (_sound: FakePlaylistSound): Promise<void> => {});
-
+function createAudioHandle(path: string, durationSeconds = 1): FakeAudioHandle {
   return {
-    id: uuid.split(".").at(-1) ?? uuid,
-    uuid,
-    name,
-    sounds,
-    playSound,
-    stopSound,
+    path,
+    durationSeconds,
+    load: vi.fn(async (): Promise<void> => {}),
+    play: vi.fn(async (): Promise<boolean> => true),
+    stop: vi.fn(async (): Promise<void> => {}),
   };
 }
 
@@ -113,177 +76,120 @@ async function flushAsyncWork(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 describe("soundscape music runtime", () => {
-  it("flattens authored playlists into deterministic track candidates", async () => {
-    const town = createPlaylist("Playlist.town", "Town", ["a", "b"]);
-    const battle = createPlaylist("Playlist.battle", "Battle", ["c"]);
+  it("resolves authored audio paths into ordered track candidates", async () => {
+    const calm = createAudioHandle("music/calm.ogg", 12);
+    const battle = createAudioHandle("music/battle.ogg", 15);
 
     const candidates = await resolveMusicTrackCandidates({
       id: "program",
       name: "Program",
-      playlistUuids: ["Playlist.town", "Playlist.battle"],
+      audioPaths: ["music/calm.ogg", "music/battle.ogg"],
       selectionMode: "sequential",
       delaySeconds: 0,
-    }, async (uuid) => {
-      if (uuid === "Playlist.town") return town;
-      if (uuid === "Playlist.battle") return battle;
+    }, async (path) => {
+      if (path === "music/calm.ogg") return calm;
+      if (path === "music/battle.ogg") return battle;
       return null;
     });
 
-    expect(candidates.map((candidate) => `${candidate.playlistUuid}:${candidate.soundId}`)).toEqual([
-      "Playlist.town:a",
-      "Playlist.town:b",
-      "Playlist.battle:c",
+    expect(candidates.map((candidate) => candidate.path)).toEqual([
+      "music/calm.ogg",
+      "music/battle.ogg",
     ]);
   });
 
-  it("plays sequential tracks and respects cooldown before the next track", async () => {
+  it("plays sequential tracks and respects delay before the next track", async () => {
     const timers = createFakeTimers();
-    const playlist = createPlaylist("Playlist.town", "Town", ["a", "b"]);
+    const first = createAudioHandle("music/town-a.ogg", 1);
+    const second = createAudioHandle("music/town-b.ogg", 1);
     const program: SoundscapeMusicProgram = {
       id: "calm",
       name: "Calm",
-      playlistUuids: ["Playlist.town"],
+      audioPaths: ["music/town-a.ogg", "music/town-b.ogg"],
       selectionMode: "sequential",
       delaySeconds: 5,
     };
     const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async () => playlist,
+      resolveAudioPath: async (path) => path === first.path ? first : second,
       timers: timers.api,
     });
 
     await runtime.sync(createResolvedState(program));
 
-    expect(playlist.playSound).toHaveBeenCalledTimes(1);
-    expect(playlist.playSound).toHaveBeenLastCalledWith(playlist.sounds[0]);
+    expect(first.play).toHaveBeenCalledTimes(1);
     expect(runtime.getSnapshot()).toMatchObject({
       activeProgramId: "calm",
-      activeSoundId: "a",
+      activeAudioPath: "music/town-a.ogg",
       pendingDelayMs: null,
     });
 
-    runtime.handleTrackEnded({ playlistUuid: "Playlist.town", playlistId: playlist.id, soundId: "a" });
+    timers.runNext();
+    await flushAsyncWork();
+
     expect(runtime.getSnapshot()).toMatchObject({
-      activeSoundId: null,
+      activeAudioPath: null,
       pendingDelayMs: 5000,
     });
 
     timers.runNext();
     await flushAsyncWork();
 
-    expect(playlist.playSound).toHaveBeenCalledTimes(2);
-    expect(playlist.playSound).toHaveBeenLastCalledWith(playlist.sounds[1]);
+    expect(second.play).toHaveBeenCalledTimes(1);
+    expect(runtime.getSnapshot()).toMatchObject({
+      activeAudioPath: "music/town-b.ogg",
+      pendingDelayMs: null,
+    });
   });
 
   it("uses deterministic random selection without repeating immediately when alternatives exist", async () => {
-    const playlist = createPlaylist("Playlist.town", "Town", ["a", "b", "c"]);
+    const timers = createFakeTimers();
+    const handles = [
+      createAudioHandle("music/a.ogg", 1),
+      createAudioHandle("music/b.ogg", 1),
+      createAudioHandle("music/c.ogg", 1),
+    ];
     const rngValues = [0, 0];
     const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async () => playlist,
+      resolveAudioPath: async (path) => handles.find((entry) => entry.path === path) ?? null,
       random: () => rngValues.shift() ?? 0,
+      timers: timers.api,
     });
     const program: SoundscapeMusicProgram = {
       id: "wild",
       name: "Wild",
-      playlistUuids: ["Playlist.town"],
+      audioPaths: handles.map((handle) => handle.path),
       selectionMode: "random",
       delaySeconds: 0,
     };
 
     await runtime.sync(createResolvedState(program));
-    runtime.handleTrackEnded({ playlistUuid: "Playlist.town", playlistId: playlist.id, soundId: "a" });
-    await flushAsyncWork();
-
-  const playedIds = ((playlist.playSound as unknown as { mock: { calls: unknown[][] } }).mock.calls)
-    .map((call) => (call[0] as { id: string }).id);
-    expect(playedIds).toEqual(["a", "b"]);
-  });
-
-  it("ignores track-ended updates from a different playlist with the same local sound id", async () => {
-    const firstPlaylist = createPlaylist("Playlist.one", "One", ["shared"]);
-    const secondPlaylist = createPlaylist("Playlist.two", "Two", ["shared"]);
-    const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async (uuid) => uuid === "Playlist.one" ? firstPlaylist : secondPlaylist,
-    });
-
-    await runtime.sync(createResolvedState({
-      id: "calm",
-      name: "Calm",
-      playlistUuids: ["Playlist.one"],
-      selectionMode: "sequential",
-      delaySeconds: 0,
-    }));
-
-    runtime.handleTrackEnded({
-      playlistUuid: "Playlist.two",
-      playlistId: secondPlaylist.id,
-      soundId: "shared",
-    });
-    await flushAsyncWork();
-
-    expect(firstPlaylist.playSound).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
-      activePlaylistUuid: "Playlist.one",
-      activeSoundId: "shared",
-      pendingDelayMs: null,
-    });
-  });
-
-  it("clears pending timers and stops old playback when switching programs", async () => {
-    const timers = createFakeTimers();
-    const calmPlaylist = createPlaylist("Playlist.calm", "Calm", ["calm-a"]);
-    const battlePlaylist = createPlaylist("Playlist.battle", "Battle", ["battle-a"]);
-
-    const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async (uuid) => {
-        if (uuid === "Playlist.calm") return calmPlaylist;
-        if (uuid === "Playlist.battle") return battlePlaylist;
-        return null;
-      },
-      timers: timers.api,
-    });
-
-    await runtime.sync(createResolvedState({
-      id: "calm",
-      name: "Calm",
-      playlistUuids: ["Playlist.calm"],
-      selectionMode: "sequential",
-      delaySeconds: 10,
-    }));
-
-    await runtime.sync(createResolvedState({
-      id: "battle",
-      name: "Battle",
-      playlistUuids: ["Playlist.battle"],
-      selectionMode: "sequential",
-      delaySeconds: 0,
-    }));
-
-    expect(calmPlaylist.stopSound).toHaveBeenCalledTimes(1);
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeProgramId: "battle",
-      pendingDelayMs: null,
-      activeSoundId: "battle-a",
-    });
-
     timers.runNext();
-    expect(battlePlaylist.playSound).toHaveBeenCalledTimes(1);
+    await flushAsyncWork();
+
+    const playedPaths = handles
+      .filter((handle) => (handle.play as unknown as { mock: { calls: unknown[][] } }).mock.calls.length > 0)
+      .map((handle) => handle.path);
+    expect(playedPaths).toEqual(["music/a.ogg", "music/b.ogg"]);
   });
 
-  it("ignores one stale end event when a program switch restarts the same track", async () => {
-    let now = 0;
-    const playlist = createPlaylist("Playlist.shared", "Shared", ["shared"]);
+  it("stops the previous track when switching programs", async () => {
+    const calm = createAudioHandle("music/calm.ogg", 10);
+    const battle = createAudioHandle("music/battle.ogg", 10);
+
     const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async () => playlist,
-      now: () => now,
+      resolveAudioPath: async (path) => path === calm.path ? calm : battle,
     });
 
     await runtime.sync(createResolvedState({
       id: "calm",
       name: "Calm",
-      playlistUuids: ["Playlist.shared"],
+      audioPaths: [calm.path],
       selectionMode: "sequential",
       delaySeconds: 0,
     }));
@@ -291,82 +197,35 @@ describe("soundscape music runtime", () => {
     await runtime.sync(createResolvedState({
       id: "battle",
       name: "Battle",
-      playlistUuids: ["Playlist.shared"],
+      audioPaths: [battle.path],
       selectionMode: "sequential",
       delaySeconds: 0,
     }));
 
-    runtime.handleTrackEnded({
-      playlistUuid: "Playlist.shared",
-      playlistId: playlist.id,
-      soundId: "shared",
-    });
-    await flushAsyncWork();
-
-    expect((playlist.playSound as unknown as { mock: { calls: unknown[][] } }).mock.calls).toHaveLength(2);
+    expect(calm.stop).toHaveBeenCalledTimes(1);
+    expect(battle.play).toHaveBeenCalledTimes(1);
     expect(runtime.getSnapshot()).toMatchObject({
       activeProgramId: "battle",
-      activePlaylistUuid: "Playlist.shared",
-      activeSoundId: "shared",
-      pendingDelayMs: null,
-    });
-
-    now = 2_000;
-    runtime.handleTrackEnded({
-      playlistUuid: "Playlist.shared",
-      playlistId: playlist.id,
-      soundId: "shared",
-    });
-    await flushAsyncWork();
-
-    expect((playlist.playSound as unknown as { mock: { calls: unknown[][] } }).mock.calls).toHaveLength(3);
-    expect(runtime.getSnapshot()).toMatchObject({
-      activeProgramId: "battle",
-      activePlaylistUuid: "Playlist.shared",
-      activeSoundId: "shared",
-      pendingDelayMs: null,
+      activeAudioPath: "music/battle.ogg",
     });
   });
 
-  it("falls back to stopAll when a playlist cannot stop an individual sound", async () => {
-    const playlist = createPlaylist("Playlist.calm", "Calm", ["calm-a"]);
-    const stopAll = vi.fn(async () => {});
-    playlist.stopSound = undefined;
-    playlist.stopAll = stopAll;
-
+  it("reports a runtime error when no playable audio files can be resolved", async () => {
     const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async () => playlist,
-    });
-
-    await runtime.sync(createResolvedState({
-      id: "calm",
-      name: "Calm",
-      playlistUuids: ["Playlist.calm"],
-      selectionMode: "sequential",
-      delaySeconds: 0,
-    }));
-    await runtime.stop();
-
-    expect(stopAll).toHaveBeenCalledTimes(1);
-  });
-
-  it("fails gracefully when music program playlists cannot be resolved", async () => {
-    const runtime = new SoundscapeMusicRuntime({
-      getPlaylistByUuid: async () => null,
+      resolveAudioPath: async () => null,
     });
 
     await runtime.sync(createResolvedState({
       id: "missing",
       name: "Missing",
-      playlistUuids: ["Playlist.missing"],
+      audioPaths: ["music/missing.ogg"],
       selectionMode: "sequential",
       delaySeconds: 0,
     }));
 
     expect(runtime.getSnapshot()).toMatchObject({
-      activeProgramId: "missing",
-      activeSoundId: null,
-      lastError: 'No valid playlist tracks could be resolved for music program "Missing".',
+      activeAudioPath: null,
+      lastError: 'No valid audio files could be resolved for music program "Missing".',
     });
   });
 });

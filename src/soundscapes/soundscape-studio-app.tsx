@@ -208,9 +208,7 @@ function SoundscapeStudioView(): JSX.Element {
     setStatus("Saving soundscape studio changes...");
 
     try {
-      const validation = await validateSoundscapeStudioData(library, worldDefaultProfileId, sceneAssignments, {
-        knownPlaylistUuids: playlists.map((playlist) => playlist.uuid),
-      });
+      const validation = await validateSoundscapeStudioData(library, worldDefaultProfileId, sceneAssignments);
 
       setMessages(validation.messages);
       if (!validation.isValid) {
@@ -416,11 +414,11 @@ function SoundscapeStudioView(): JSX.Element {
                             ...selectedProfile,
                             musicPrograms: {
                               ...selectedProfile.musicPrograms,
-                              [program.id]: { ...program, playlistUuids: parseUuidText(event.target.value) },
+                              [program.id]: { ...program, audioPaths: parseUuidText(event.target.value) },
                             },
                           })}
                           rows={4}
-                          value={stringifyUuidText(program.playlistUuids)}
+                          value={stringifyUuidText(program.audioPaths)}
                         />
                       </LabeledField>
                     </EntityCard>
@@ -545,11 +543,11 @@ function SoundscapeStudioView(): JSX.Element {
                             ...selectedProfile,
                             ambienceLayers: {
                               ...selectedProfile.ambienceLayers,
-                              [layer.id]: { ...layer, soundUuids: parseUuidText(event.target.value) },
+                              [layer.id]: { ...layer, audioPaths: parseUuidText(event.target.value) },
                             },
                           })}
                           rows={4}
-                          value={stringifyUuidText(layer.soundUuids)}
+                          value={stringifyUuidText(layer.audioPaths)}
                         />
                       </LabeledField>
                     </EntityCard>
@@ -630,11 +628,11 @@ function SoundscapeStudioView(): JSX.Element {
                             ...selectedProfile,
                             soundMoments: {
                               ...selectedProfile.soundMoments,
-                              [moment.id]: { ...moment, soundUuids: parseUuidText(event.target.value) },
+                              [moment.id]: { ...moment, audioPaths: parseUuidText(event.target.value) },
                             },
                           })}
                           rows={4}
-                          value={stringifyUuidText(moment.soundUuids)}
+                          value={stringifyUuidText(moment.audioPaths)}
                         />
                       </LabeledField>
                     </EntityCard>

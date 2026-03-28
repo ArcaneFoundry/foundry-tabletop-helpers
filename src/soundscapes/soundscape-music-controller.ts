@@ -1,4 +1,3 @@
-import { getHooks } from "../types";
 import { resolveStoredSoundscapeState } from "./soundscape-accessors";
 import {
   SoundscapeMusicRuntime,
@@ -6,25 +5,14 @@ import {
 } from "./soundscape-music-runtime";
 import type { ResolvedSoundscapeState, SoundscapeTriggerContext } from "./soundscape-types";
 
-interface PlaylistSoundUpdateLike {
-  id: string;
-  playing?: boolean;
-  parent?: {
-    id?: string;
-    uuid?: string;
-  } | null;
-}
-
 class SoundscapeMusicController {
   private readonly runtime: SoundscapeMusicRuntime;
-  private hooksRegistered = false;
 
   constructor(runtime = new SoundscapeMusicRuntime()) {
     this.runtime = runtime;
   }
 
   async syncResolvedState(state: ResolvedSoundscapeState | null): Promise<SoundscapeMusicRuntimeSnapshot> {
-    this.ensureHooksRegistered();
     return await this.runtime.sync(state);
   }
 
@@ -41,25 +29,6 @@ class SoundscapeMusicController {
 
   getSnapshot(): SoundscapeMusicRuntimeSnapshot {
     return this.runtime.getSnapshot();
-  }
-
-  handlePlaylistSoundUpdate(sound: PlaylistSoundUpdateLike, changed: Record<string, unknown> | null | undefined): void {
-    const playingChanged = typeof changed?.playing === "boolean" ? changed.playing : undefined;
-    const isNowStopped = playingChanged === false || (playingChanged === undefined && sound.playing === false);
-    if (!isNowStopped) return;
-    this.runtime.handleTrackEnded({
-      playlistUuid: sound.parent?.uuid ?? null,
-      playlistId: sound.parent?.id ?? null,
-      soundId: sound.id,
-    });
-  }
-
-  private ensureHooksRegistered(): void {
-    if (this.hooksRegistered) return;
-    getHooks()?.on?.("updatePlaylistSound", (sound: PlaylistSoundUpdateLike, changed: Record<string, unknown>) => {
-      this.handlePlaylistSoundUpdate(sound, changed);
-    });
-    this.hooksRegistered = true;
   }
 }
 
