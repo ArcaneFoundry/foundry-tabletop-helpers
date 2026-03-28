@@ -442,19 +442,14 @@
 /* ── Step Content ────────────────────────────────────────── */
 
 .cc-step-content {
-  overflow-y: auto;
   padding: var(--cc-space-lg);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
   animation: cc-step-fade-in var(--cc-duration-slow) var(--cc-ease-out) both;
 }
 
 .cc-step-content--class-select {
   display: flex;
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
-  overflow: hidden;
   padding: 14px 16px 12px;
   background:
     radial-gradient(circle at 12% 0%, rgba(126, 91, 188, 0.18), transparent 34%),
@@ -472,9 +467,7 @@
 .cc-step-content--origin-flow {
   display: flex;
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
-  overflow: hidden;
 }
 
 .cc-step-content--class-select::before,
@@ -495,15 +488,6 @@
 
 .cc-step-content--class-select::after {
   background: linear-gradient(180deg, rgba(10, 10, 14, 0.22), rgba(10, 10, 14, 0) 28%, rgba(10, 10, 14, 0.18) 100%);
-}
-
-.cc-step-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.cc-step-content::-webkit-scrollbar-thumb {
-  background: rgba(200, 167, 93, 0.2);
-  border-radius: 3px;
 }
 
 /* ── Navigation Bar ──────────────────────────────────────── */

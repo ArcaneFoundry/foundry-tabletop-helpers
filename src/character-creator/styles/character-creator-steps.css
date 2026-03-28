@@ -993,15 +993,6 @@
 
 /* ── Card Select Container ───────────────────────────────── */
 
-/* Fill the step content area — the two-column layout handles its own scrolling */
-.cc-step-content:has(.cc-card-select__layout) {
-  overflow-y: hidden;
-}
-
-.cc-step-content:has(.cc-origin-choices__feat-picker) {
-  overflow-y: auto;
-}
-
 .cc-card-select {
   height: 100%;
   display: flex;
