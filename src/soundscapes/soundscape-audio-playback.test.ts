@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { resolveAudioPathPlayback } from "./soundscape-audio-playback";
+import { __soundscapeAudioPlaybackInternals, resolveAudioPathPlayback } from "./soundscape-audio-playback";
 
 describe("soundscape audio playback", () => {
   afterEach(() => {
@@ -37,5 +37,70 @@ describe("soundscape audio playback", () => {
     await handle?.load();
 
     expect(handle?.durationSeconds).toBe(13.25);
+  });
+
+  it("uses the Foundry v13 constructor fallback with the raw string path", async () => {
+    const constructorCalls: Array<{ src: string; options: Record<string, unknown> | undefined }> = [];
+
+    class SoundConstructorFallback {
+      duration = 4;
+
+      constructor(src: string, options?: Record<string, unknown>) {
+        constructorCalls.push({ src, options });
+      }
+
+      async load(): Promise<void> {}
+
+      async play(): Promise<void> {}
+
+      async stop(): Promise<void> {}
+    }
+
+    vi.stubGlobal("foundry", {
+      audio: {
+        Sound: SoundConstructorFallback,
+      },
+    });
+
+    const sound = await __soundscapeAudioPlaybackInternals.createRuntimeSound("music/v13-track.ogg");
+    const handle = await resolveAudioPathPlayback("music/v13-track.ogg");
+
+    expect(sound).toBeInstanceOf(SoundConstructorFallback);
+    expect(constructorCalls).toEqual([
+      { src: "music/v13-track.ogg", options: undefined },
+      { src: "music/v13-track.ogg", options: undefined },
+    ]);
+    expect(handle).not.toBeNull();
+    expect(handle?.path).toBe("music/v13-track.ogg");
+    expect(handle?.durationSeconds).toBe(4);
+  });
+
+  it("does not pass an object-shaped source through the constructor fallback", async () => {
+    class GuardedSoundConstructor {
+      duration = 2;
+
+      constructor(src: string) {
+        if (typeof src !== "string") {
+          throw new Error(`Expected string source, received ${String(src)}`);
+        }
+      }
+
+      async load(): Promise<void> {}
+
+      async play(): Promise<void> {}
+
+      async stop(): Promise<void> {}
+    }
+
+    vi.stubGlobal("foundry", {
+      audio: {
+        Sound: GuardedSoundConstructor,
+      },
+    });
+
+    await expect(resolveAudioPathPlayback("moments/sting.ogg")).resolves.toMatchObject({
+      path: "moments/sting.ogg",
+      durationSeconds: 2,
+    });
   });
 });

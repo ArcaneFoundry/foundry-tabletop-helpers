@@ -64,10 +64,25 @@ A FilePicker replacement for GMs with a companion server for heavier media workf
 GM-authored scene soundscapes with live trigger support and in-play manual controls.
 
 - Soundscape Studio for authoring music programs, ambience layers, manual moments, and trigger rules
+- Foundry-native audio picker workflow for adding music, ambience, and moment sounds one file at a time without copying UUIDs
 - Dedicated `Soundscape Live Controls` window for firing authored manual moments during play
 - V1 trigger support for combat, day/night, and Calendaria weather changes
 - Scene-specific soundscape assignments with world-default fallback
 - Small `window.fth.soundscapes` API for opening tools and firing moments from macros
+
+Authoring flow:
+
+1. Open `Token Controls -> Soundscape Studio`.
+2. Add a music program, ambience layer, or moment.
+3. Use `Add Track` or `Add Sound` to open Foundry's audio `FilePicker` and choose one saved audio file at a time.
+4. Use `Move Up`, `Move Down`, and `Remove` to keep the authored list in the order you want.
+5. Save the studio, then assign the profile to a scene or set it as the world default.
+
+Notes:
+
+- Music programs now store ordered audio paths directly. In `Sequential` mode, playback follows the authored track order shown in the studio.
+- `Random` music, ambience, and moment selections still resolve from the same authored list, but the GM no longer needs to paste playlist IDs or raw sound UUIDs.
+- Ambience layers and manual moments use the same picker/list workflow as music, so the saved path shown in the card is the exact asset the runtime will attempt to play.
 
 ### Character Creator And Level-Up Manager
 
