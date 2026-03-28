@@ -110,7 +110,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
           <AnimatePresence initial={false} mode="wait">
             <motion.div
               animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-              className="flex min-h-0 flex-1 overflow-hidden"
+              className="flex min-h-full flex-col"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 10, scale: 0.992 }}
               key={isClassFlowStep(snapshot.shellContext.currentStepId) || isOriginFlowStep(snapshot.shellContext.currentStepId) || isBuildFlowStep(snapshot.shellContext.currentStepId)
                 ? "creator-flow"
@@ -121,7 +121,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
               {isBuildFlowStep(snapshot.shellContext.currentStepId) ? (
                 <div
                   className={[
-                    "cc-step-content flex-1 overflow-hidden",
+                    "cc-step-content flex min-h-full flex-col",
                     snapshot.shellContext.shellContentClass,
                   ].filter(Boolean).join(" ")}
                 >
@@ -135,7 +135,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
               ) : snapshot.currentStepDef?.renderMode === "react" && isClassFlowStep(snapshot.shellContext.currentStepId) ? (
                 <div
                   className={[
-                    "cc-step-content flex-1 overflow-hidden",
+                    "cc-step-content flex min-h-full flex-col",
                     snapshot.shellContext.shellContentClass,
                   ].filter(Boolean).join(" ")}
                 >
@@ -150,7 +150,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
               ) : snapshot.currentStepDef?.renderMode === "react" && isOriginFlowStep(snapshot.shellContext.currentStepId) ? (
                 <div
                   className={[
-                    "cc-step-content flex-1 overflow-hidden",
+                    "cc-step-content flex min-h-full flex-col",
                     snapshot.shellContext.shellContentClass,
                   ].filter(Boolean).join(" ")}
                 >
@@ -164,7 +164,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
               ) : snapshot.currentStepDef?.renderMode === "react" && snapshot.currentStepDef.reactComponent ? (
                 <div
                   className={[
-                    "cc-step-content flex-1 overflow-hidden",
+                    "cc-step-content flex min-h-full flex-col",
                     snapshot.shellContext.shellContentClass,
                   ].filter(Boolean).join(" ")}
                 >
@@ -180,7 +180,7 @@ function CharacterCreatorReactView({ controller }: { controller: CharacterCreato
                   className={[
                     "cc-step-content",
                     snapshot.shellContext.shellContentClass,
-                    "fth-react-scrollbar flex-1 overflow-y-auto",
+                    "flex min-h-full flex-col",
                   ].filter(Boolean).join(" ")}
                   controller={controller}
                   stepContentHtml={snapshot.shellContext.stepContentHtml}

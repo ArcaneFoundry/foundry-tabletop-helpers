@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { motion } from "motion/react";
 
 import type { CreatorIndexEntry, ReactWizardStepProps } from "../../../../character-creator-types";
@@ -20,10 +20,6 @@ type SelectionPaneProps<TEntry> = {
   introMode?: "full" | "hidden";
 };
 
-export function shouldShowOriginSelectionScrollShadow(scrollTop: number): boolean {
-  return scrollTop > 0;
-}
-
 export function SelectionPane<TEntry>({
   entries,
   emptyState,
@@ -36,21 +32,10 @@ export function SelectionPane<TEntry>({
   eyebrow,
   introMode = "full",
 }: SelectionPaneProps<TEntry>) {
-  const galleryScrollRef = useRef<HTMLDivElement | null>(null);
-  const [hasScrollShadow, setHasScrollShadow] = useState(false);
-
-  useEffect(() => {
-    setHasScrollShadow(shouldShowOriginSelectionScrollShadow(galleryScrollRef.current?.scrollTop ?? 0));
-  }, [entries.length]);
-
-  const handleGalleryScroll = () => {
-    setHasScrollShadow(shouldShowOriginSelectionScrollShadow(galleryScrollRef.current?.scrollTop ?? 0));
-  };
-
   if (entries.length === 0) return <>{emptyState}</>;
 
   return (
-    <section className="cc-origin-selection-pane relative isolate flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-[1.5rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(24,22,28,0.96),rgba(14,14,18,0.99))] pb-2 pt-2 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
+    <section className="cc-origin-selection-pane relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(24,22,28,0.96),rgba(14,14,18,0.99))] pb-2 pt-2 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
       {introMode === "full" ? (
         <div className="cc-origin-selection-pane__intro relative z-[1] mb-5 flex items-end justify-between gap-4 px-2">
           <div className="min-w-0 max-w-[34rem] flex-1" data-origins-selection-copy="true">
@@ -70,43 +55,28 @@ export function SelectionPane<TEntry>({
         </div>
       ) : null}
 
-      <div className="cc-origin-selection-pane__gallery-shell relative z-[1] flex min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-[1.25rem] border border-[#e9c176]/[0.13] shadow-[inset_0_1px_0_rgba(255,243,219,0.03),0_18px_34px_rgba(0,0,0,0.24)]">
-        <div
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 z-20 h-14 bg-[linear-gradient(180deg,rgba(7,7,10,0.72),rgba(7,7,10,0.28),rgba(7,7,10,0))] transition-opacity duration-200",
-            hasScrollShadow ? "opacity-100" : "opacity-0",
-          )}
-        />
-        <div
-          ref={galleryScrollRef}
-          className="cc-origin-selection-pane__gallery-scroll fth-react-scrollbar relative min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-0 pb-1"
-          data-origins-selection-scroll="true"
-          data-scroll-shadow={hasScrollShadow ? "true" : "false"}
-          onScroll={handleGalleryScroll}
-        >
-          <div className="cc-origin-selection-pane__gallery-inner w-full min-w-0 px-2">
-            <motion.div
-              animate={prefersReducedMotion ? undefined : "show"}
-              className="cc-origin-selection-grid grid w-full justify-center gap-4"
-              initial={prefersReducedMotion ? false : "hidden"}
-              variants={{
-                hidden: {},
-                show: {
-                  transition: {
-                    staggerChildren: 0.045,
-                    delayChildren: 0.08,
-                  },
+      <div className="cc-origin-selection-pane__gallery-shell relative z-[1] w-full min-w-0 rounded-[1.25rem] border border-[#e9c176]/[0.13] shadow-[inset_0_1px_0_rgba(255,243,219,0.03),0_18px_34px_rgba(0,0,0,0.24)]">
+        <div className="cc-origin-selection-pane__gallery-inner w-full min-w-0 px-2">
+          <motion.div
+            animate={prefersReducedMotion ? undefined : "show"}
+            className="cc-origin-selection-grid grid w-full justify-center gap-4"
+            initial={prefersReducedMotion ? false : "hidden"}
+            variants={{
+              hidden: {},
+              show: {
+                transition: {
+                  staggerChildren: 0.045,
+                  delayChildren: 0.08,
                 },
-              }}
-            >
-              {entries.map((entry) => (
-                <Fragment key={getEntryKey(entry)}>
-                  {renderEntry(entry)}
-                </Fragment>
-              ))}
-            </motion.div>
-          </div>
+              },
+            }}
+          >
+            {entries.map((entry) => (
+              <Fragment key={getEntryKey(entry)}>
+                {renderEntry(entry)}
+              </Fragment>
+            ))}
+          </motion.div>
         </div>
       </div>
     </section>

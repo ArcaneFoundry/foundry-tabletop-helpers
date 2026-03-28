@@ -73,7 +73,7 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
       />
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(21rem,0.88fr)]">
-        <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
+        <ArcaneScrollPanel className="min-h-0">
           <ModeRail
             activeChoice={viewModel.choice}
             onChooseAsi={() => updateSelection({
@@ -411,9 +411,9 @@ function ArcaneStepFrame({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]", `cc-cinematic-step cc-cinematic-step--${scene}`)}>
+    <section className={cn("relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]", `cc-cinematic-step cc-cinematic-step--${scene}`)}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(198,157,86,0.18),transparent_55%),radial-gradient(circle_at_20%_85%,rgba(91,55,114,0.16),transparent_45%)]" />
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-5 p-5 xl:p-6">
+      <div className="relative z-10 flex flex-col gap-5 p-5 xl:p-6">
         {children}
       </div>
     </section>

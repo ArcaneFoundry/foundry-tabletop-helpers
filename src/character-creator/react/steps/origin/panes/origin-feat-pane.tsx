@@ -61,7 +61,7 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
-      <section className="fth-react-scrollbar min-h-0 overflow-y-auto rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(22,20,27,0.98),rgba(11,11,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
+      <section className="rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(22,20,27,0.98),rgba(11,11,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
         <SectionHeading
           eyebrow={viewModel.backgroundName}
           title="Origin Feat"

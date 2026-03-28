@@ -74,7 +74,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
   ];
 
   return (
-    <section className="cc-class-summary fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
+    <section className="cc-class-summary flex flex-col px-1 pb-2 pt-2">
       <div className="cc-class-summary__stack grid gap-4">
         <div className="cc-class-summary__intro grid gap-4">
           <section className="cc-class-summary__hero-shell overflow-hidden rounded-[1.6rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(37,34,42,0.98),rgba(14,15,20,0.99))] p-[0.32rem] shadow-[0_26px_48px_rgba(0,0,0,0.28)] md:p-[0.36rem]">

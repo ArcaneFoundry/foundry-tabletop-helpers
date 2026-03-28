@@ -21,7 +21,7 @@ vi.mock("motion/react", async () => {
   };
 });
 
-import { ClassSelectionGalleryPane, shouldShowClassSelectionGalleryScrollShadow } from "./class-selection-gallery-pane";
+import { ClassSelectionGalleryPane } from "./class-selection-gallery-pane";
 
 type TestEntry = {
   uuid: string;
@@ -29,12 +29,7 @@ type TestEntry = {
 };
 
 describe("ClassSelectionGalleryPane", () => {
-  it("toggles the scroll shadow from the scroll position helper", () => {
-    expect(shouldShowClassSelectionGalleryScrollShadow(0)).toBe(false);
-    expect(shouldShowClassSelectionGalleryScrollShadow(1)).toBe(true);
-  });
-
-  it("renders the gallery without the redundant intro chrome and keeps a single scroll owner", () => {
+  it("renders the gallery without the redundant intro chrome or a nested scroll owner", () => {
     const markup = renderToStaticMarkup(createElement(ClassSelectionGalleryPane<TestEntry>, {
       emptyState: createElement("div", null, "Empty"),
       entries: [
@@ -49,14 +44,12 @@ describe("ClassSelectionGalleryPane", () => {
     expect(markup).not.toContain("cc-class-selection-pane__intro");
     expect(markup).not.toContain('data-class-selection-eyebrow="true"');
     expect(markup).not.toContain('data-class-selection-badge="true"');
-    expect(markup).toContain("cc-class-selection-pane__gallery-scroll");
-    expect(markup).toContain("cc-class-selection-pane__gallery-shadow");
     expect(markup).toContain("cc-class-selection-pane__gallery-inner");
-    expect(markup).toContain('data-scroll-region="class-gallery"');
-    expect(markup).toContain('data-scroll-shadow="false"');
-    expect(markup.match(/overflow-y-auto/g)).toHaveLength(1);
+    expect(markup).not.toContain("cc-class-selection-pane__gallery-scroll");
+    expect(markup).not.toContain("cc-class-selection-pane__gallery-shadow");
+    expect(markup).not.toContain("overflow-y-auto");
     expect(markup).toContain("cc-class-chooser-grid");
     expect(markup).toContain("cc-class-selection-pane__gallery-shell");
-    expect(markup.indexOf("cc-class-selection-pane__gallery-shell")).toBeLessThan(markup.indexOf("cc-class-selection-pane__gallery-scroll"));
+    expect(markup.indexOf("cc-class-selection-pane__gallery-shell")).toBeLessThan(markup.indexOf("cc-class-selection-pane__gallery-inner"));
   });
 });

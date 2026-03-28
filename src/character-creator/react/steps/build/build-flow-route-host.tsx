@@ -61,7 +61,7 @@ export function BuildFlowRouteHost(props: ReactWizardStepProps) {
 
   return (
     <LegacyStepHost
-      className="fth-react-scrollbar flex-1 overflow-y-auto"
+      className="flex min-h-full flex-col"
       controller={props.controller}
       stepContentHtml={props.shellContext.stepContentHtml}
       stepDef={props.step}
@@ -79,7 +79,7 @@ function BuildFlowFallbackScreen({ shellContext }: ReactWizardStepProps) {
   const showGold = baseGoldCp > 0 || remainingGoldCp > 0;
 
   return (
-    <section className="fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 md:px-6 md:py-6">
+    <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(28,28,34,0.96),rgba(17,17,22,0.98))] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.34)]">
         <div className="space-y-2">
           <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#e9c176]/74">

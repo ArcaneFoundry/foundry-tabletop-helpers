@@ -36,15 +36,8 @@ export function SpeciesItemChoicesPane({ shellContext, state, controller }: Orig
 
   return (
     <div className="cc-origin-species-item-choices-pane grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(19rem,0.82fr)]">
-      <section className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-14 bg-[linear-gradient(180deg,rgba(7,7,10,0.76),rgba(7,7,10,0.28),rgba(7,7,10,0))]"
-        />
-        <div
-          className="cc-origin-species-item-choices-pane__scroll fth-react-scrollbar relative min-h-0 flex-1 overflow-y-auto px-4 py-4"
-          data-origins-species-item-scroll="true"
-        >
+      <section className="relative isolate flex flex-col rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
+        <div className="px-4 py-4">
           <SectionHeading
             eyebrow={speciesName}
             title={viewModel?.title ?? "Choose Species Gifts"}

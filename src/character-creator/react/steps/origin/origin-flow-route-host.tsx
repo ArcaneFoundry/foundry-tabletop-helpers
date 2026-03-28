@@ -88,16 +88,16 @@ export function OriginFlowRouteHost(
   }, [controller, shellModel.currentPane, state]);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
+    <section className="flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
+        className="relative flex flex-col rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
         initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        <div className="relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
@@ -138,7 +138,7 @@ export function OriginFlowRouteHost(
             </div>
           </motion.header>
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
+          <div className="relative flex flex-col px-3 pb-4 pt-3 md:px-6">
             <img
               alt=""
               aria-hidden="true"
@@ -159,7 +159,7 @@ export function OriginFlowRouteHost(
                 <motion.div
                   key={shellModel.currentPane}
                   animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-                  className="flex h-full min-h-0 w-full flex-1 flex-col"
+                  className="flex w-full flex-col"
                   exit={prefersReducedMotion ? undefined : { opacity: 0, x: -14 }}
                   initial={prefersReducedMotion ? false : { opacity: 0, x: 14 }}
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}

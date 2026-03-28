@@ -65,9 +65,8 @@ export function OriginSummaryPane({ shellContext }: OriginSummaryPaneProps) {
   ].filter(Boolean);
 
   return (
-    <section className="flex min-h-0 h-full flex-1 flex-col overflow-hidden px-1 pb-2 pt-2">
-      <div className="fth-react-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <div className="grid gap-4 pr-1">
+    <section className="flex flex-col px-1 pb-2 pt-2">
+      <div className="grid gap-4 pr-1">
           <motion.section
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[1.55rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(23,22,28,0.98),rgba(10,10,14,0.995))] p-4 shadow-[inset_0_1px_0_rgba(255,243,219,0.05),0_28px_60px_rgba(0,0,0,0.3)] md:p-5"
@@ -207,7 +206,6 @@ export function OriginSummaryPane({ shellContext }: OriginSummaryPaneProps) {
               for equipment, spells, and the rest of the build choices that follow.
             </p>
           </motion.section>
-        </div>
       </div>
     </section>
   );

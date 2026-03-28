@@ -126,7 +126,7 @@ export function SubclassStepScreen({ shellContext, state, controller }: ReactWiz
       />
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(19rem,0.88fr)]">
-        <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
+        <ArcaneScrollPanel className="min-h-0">
           <div className="grid gap-4 md:grid-cols-2">
             {entries.map((entry, index) => (
               <motion.button
@@ -274,7 +274,7 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
       />
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.14fr)_minmax(21rem,0.86fr)]">
-        <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
+        <ArcaneScrollPanel className="min-h-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <MicroLabel>Selection State</MicroLabel>
             <ValueBadge>{viewModel.selectionSummary}</ValueBadge>
@@ -428,7 +428,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
       />
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]">
-        <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
+        <ArcaneScrollPanel className="min-h-0">
           <div className="space-y-5">
             <section className="rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,34,38,0.95),rgba(19,19,23,0.98))] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.18)]">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -586,7 +586,7 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
       </ArcaneHero>
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.16fr)_minmax(20rem,0.84fr)]">
-        <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
+        <ArcaneScrollPanel className="min-h-0">
           <div className="overflow-hidden rounded-[1.6rem] border border-[#e9c176]/20 bg-[linear-gradient(180deg,rgba(35,35,39,0.95),rgba(19,19,24,0.98))] shadow-[0_28px_60px_rgba(0,0,0,0.28)]">
             <div className="grid gap-0 xl:grid-cols-[minmax(20rem,0.78fr)_minmax(0,1fr)]">
               <div className="relative min-h-[20rem] overflow-hidden">
@@ -816,7 +816,7 @@ function ArcaneStepFrame({
 }) {
   return (
     <section
-      className="arcane-step-frame flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-3 md:px-6 md:pb-6"
+      className="arcane-step-frame flex flex-col px-4 pb-4 pt-3 md:px-6 md:pb-6"
       data-scene={scene}
     >
       {children}

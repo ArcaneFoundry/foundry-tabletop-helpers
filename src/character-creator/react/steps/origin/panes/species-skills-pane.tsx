@@ -78,9 +78,8 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-      <section className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-14 bg-[linear-gradient(180deg,rgba(7,7,10,0.72),rgba(7,7,10,0.28),rgba(7,7,10,0))]" />
-        <div className="fth-react-scrollbar relative min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <section className="relative isolate flex flex-col rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
+        <div className="px-4 py-4">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e9c176]/[0.16] pb-4">
             <div className="min-w-0 max-w-3xl">
               <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">

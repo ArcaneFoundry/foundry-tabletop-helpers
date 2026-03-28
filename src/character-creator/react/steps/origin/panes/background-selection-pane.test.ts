@@ -23,7 +23,6 @@ vi.mock("motion/react", async () => {
   };
 });
 
-import { shouldShowOriginSelectionScrollShadow } from "../components/origin-pane-primitives";
 import { BackgroundSelectionPane, getBackgroundArtTreatment } from "./background-selection-pane";
 
 describe("BackgroundSelectionPane", () => {
@@ -31,11 +30,6 @@ describe("BackgroundSelectionPane", () => {
     expect(getBackgroundArtTreatment("modules/dnd-players-handbook/assets/icons/backgrounds/scribe.webp")).toBe("cover");
     expect(getBackgroundArtTreatment("modules/dnd-heroes-faerun/assets/journal-art/dead-magic-dweller-background.webp")).toBe("cover");
     expect(getBackgroundArtTreatment("")).toBe("cover");
-  });
-
-  it("toggles the origin selection scroll shadow from the scroll position helper", () => {
-    expect(shouldShowOriginSelectionScrollShadow(0)).toBe(false);
-    expect(shouldShowOriginSelectionScrollShadow(4)).toBe(true);
   });
 
   it("renders the extracted background selection shell with selected-state confidence", () => {
@@ -78,8 +72,8 @@ describe("BackgroundSelectionPane", () => {
     } as never));
 
     expect(markup).toContain("cc-origin-selection-pane");
-    expect(markup).toContain("cc-origin-selection-pane__gallery-scroll");
-    expect(markup).toContain("data-origins-selection-scroll=\"true\"");
+    expect(markup).not.toContain("cc-origin-selection-pane__gallery-scroll");
+    expect(markup).not.toContain("data-origins-selection-scroll");
     expect(markup).toContain("data-selected=\"true\"");
     expect(markup).toContain("Selected Background");
     expect(markup).toContain("Choose Background");

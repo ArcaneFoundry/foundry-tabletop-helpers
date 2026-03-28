@@ -211,16 +211,16 @@ export function ClassFlowRouteHost(
   }, [shellModel.currentPane, state.config.packSources, state.selections.class?.hasWeaponMastery, state.selections.class?.weaponMasteryCount]);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
+    <section className="flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
+        className="relative flex flex-col rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
         initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        <div className="relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
@@ -265,7 +265,7 @@ export function ClassFlowRouteHost(
           </motion.header>
 
           <div className="cc-class-flow-chapter relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
+            <div className="relative flex flex-col px-3 pb-4 pt-3 md:px-6">
               <img
                 alt=""
                 aria-hidden="true"
@@ -587,7 +587,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
         </div>
 
         {viewModel.skillSection.hasChoices ? (
-          <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
+          <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
             <div className="grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
                 <section className="grid gap-2.5" data-class-skill-group={group.abilityAbbrev} key={group.abilityAbbrev}>
@@ -763,7 +763,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
     <div className="cc-class-choice-layout">
       <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         {viewModel.weaponMasterySection.hasChoices ? (
-          <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
+          <div className="cc-class-choice-layout__content-scroll flex flex-col px-1 pb-3 pt-2 pr-2">
             <div className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
               <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
                 <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-3">
@@ -945,7 +945,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
             </div>
           </div>
         </div>
-        <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
+        <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-2.5">
             {options.map((option, optionIndex) => (
               <ClassAdvancementOptionRow
@@ -1048,7 +1048,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
             {viewModel.description}
           </p>
         </div>
-        <div className="cc-class-choice-layout__content-scroll fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col px-1 pb-3 pt-2 pr-2">
+        <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
           <div className="rounded-[1.1rem] border border-[#e9c176]/[0.14] bg-[rgba(255,255,255,0.03)] px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">

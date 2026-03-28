@@ -176,8 +176,8 @@ export function AbilityScoresStepScreen({
   };
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-5 md:px-6 md:py-6">
-      <div className="cc-abilities mx-auto flex w-full max-w-5xl min-h-0 flex-1 flex-col gap-4">
+    <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
+      <div className="cc-abilities mx-auto flex w-full max-w-5xl flex-col gap-4">
         <header className="rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(30,24,28,0.96),rgba(16,15,19,0.98))] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.24)] md:px-6 md:py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-2">
@@ -230,7 +230,7 @@ export function AbilityScoresStepScreen({
           ))}
         </div>
 
-        <div className="fth-react-scrollbar flex min-h-0 flex-1 overflow-y-auto">
+        <div className="flex flex-col">
           <section className="cc-method-panel w-full">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-2xl space-y-2">

@@ -177,7 +177,7 @@ export function WizardShell({
         </header>
       ) : null}
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden">{stepContent}</div>
+      <div className="fth-react-scrollbar relative z-10 flex-1 overflow-y-auto overscroll-contain">{stepContent}</div>
 
       <motion.footer
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}

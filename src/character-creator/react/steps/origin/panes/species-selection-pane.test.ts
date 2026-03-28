@@ -63,7 +63,7 @@ describe("SpeciesSelectionPane", () => {
 
     expect(markup).toContain("cc-origin-selection-pane");
     expect(markup).toContain("cc-origin-selection-pane__intro");
-    expect(markup).toContain("cc-origin-selection-pane__gallery-scroll");
+    expect(markup).not.toContain("cc-origin-selection-pane__gallery-scroll");
     expect(markup).toContain("Select a Species");
     expect(markup).toContain("Selected Species");
     expect(markup).toContain("Choose Species");
@@ -72,6 +72,6 @@ describe("SpeciesSelectionPane", () => {
     expect(markup).toContain("Mythic lineage");
     expect(markup).toContain("data-selected=\"true\"");
     expect(markup).toContain("Selected Species");
-    expect(markup.indexOf("cc-origin-selection-pane__intro")).toBeLessThan(markup.indexOf("cc-origin-selection-pane__gallery-scroll"));
+    expect(markup.indexOf("cc-origin-selection-pane__intro")).toBeLessThan(markup.indexOf("cc-origin-selection-pane__gallery-inner"));
   });
 });

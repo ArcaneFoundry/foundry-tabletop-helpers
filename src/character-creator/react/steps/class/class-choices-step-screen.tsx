@@ -113,16 +113,16 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
   };
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
+    <section className="flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-fth-cc-gold/45 bg-[linear-gradient(180deg,rgba(249,237,216,0.98),rgba(236,219,191,0.98))] p-[0.35rem] shadow-[0_24px_60px_rgba(0,0,0,0.34)]"
+        className="relative flex flex-col rounded-[1.75rem] border border-fth-cc-gold/45 bg-[linear-gradient(180deg,rgba(249,237,216,0.98),rgba(236,219,191,0.98))] p-[0.35rem] shadow-[0_24px_60px_rgba(0,0,0,0.34)]"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.985 }}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),transparent_28%),linear-gradient(180deg,rgba(255,248,236,0.98),rgba(232,214,187,0.98))]" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-[#b78d56]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.92),rgba(236,220,197,0.96))] shadow-[inset_0_0_0_1px_rgba(255,245,226,0.72)]">
+        <div className="relative flex flex-col rounded-[1.45rem] border border-[#b78d56]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.92),rgba(236,220,197,0.96))] shadow-[inset_0_0_0_1px_rgba(255,245,226,0.72)]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
@@ -153,7 +153,7 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
             </div>
           </motion.header>
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
+          <div className="relative flex flex-col px-3 pb-4 pt-3 md:px-6">
             <img
               alt=""
               aria-hidden="true"
@@ -181,7 +181,7 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
                 </div>
 
                 {viewModel.skillSection.hasChoices ? (
-                  <div className="fth-react-scrollbar mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-3 pt-2 pr-2">
+                  <div className="mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
                     <div className="grid gap-4">
                       {groupedOptions.map((group, groupIndex) => (
                         <section className="grid gap-2.5" key={group.abilityAbbrev}>

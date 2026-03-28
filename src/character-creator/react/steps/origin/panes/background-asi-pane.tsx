@@ -58,11 +58,7 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
-      <section
-        className="fth-react-scrollbar relative isolate min-h-0 flex-1 overflow-y-auto rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(22,19,25,0.98),rgba(12,12,15,0.99))] shadow-[0_18px_34px_rgba(47,29,18,0.12)]"
-        data-origins-background-asi-scroll="true"
-      >
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-14 bg-[linear-gradient(180deg,rgba(7,7,10,0.72),rgba(7,7,10,0.28),rgba(7,7,10,0))]" />
+      <section className="relative isolate rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(22,19,25,0.98),rgba(12,12,15,0.99))] shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
         <div className="relative z-10 p-4">
           <SectionHeading
             eyebrow={viewModel.backgroundName}

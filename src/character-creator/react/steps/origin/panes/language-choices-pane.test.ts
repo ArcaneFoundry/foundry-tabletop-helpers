@@ -44,7 +44,7 @@ describe("LanguageChoicesPane", () => {
       title: "Choose Languages",
     } as never));
 
-    expect(markup).toContain("data-origins-language-scroll=\"true\"");
+    expect(markup).not.toContain("data-origins-language-scroll");
     expect(markup).toContain("Select Languages");
     expect(markup).toContain("Choose Languages");
     expect(markup).toContain("Acolyte");
@@ -52,6 +52,7 @@ describe("LanguageChoicesPane", () => {
     expect(markup).toContain("Chosen Languages");
     expect(markup).toContain("Elvish");
     expect(markup).toContain("story and background");
+    expect(markup).not.toContain("overflow-y-auto");
   });
 
   it("shows the empty selected summary when no languages are chosen yet", () => {

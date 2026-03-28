@@ -94,8 +94,8 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
   };
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-5 md:px-6 md:py-6">
-      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-4">
+    <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <header className="rounded-[1.65rem] border border-white/10 bg-[linear-gradient(180deg,rgba(31,25,29,0.96),rgba(15,15,19,0.98))] px-5 py-5 shadow-[0_26px_60px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)] md:px-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl space-y-2">
@@ -120,7 +120,7 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
         </header>
 
         <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)]">
-          <div className="fth-react-scrollbar min-h-0 overflow-y-auto pr-1">
+          <div className="pr-1">
             <section className="rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,30,39,0.94),rgba(18,18,22,0.98))] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-2xl">
