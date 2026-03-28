@@ -21,7 +21,8 @@ vi.mock("motion/react", async () => {
   };
 });
 
-import { SpellsStepScreen, SubclassStepScreen } from "./creator-cinematic-step-screens";
+import { PortraitStepScreen, SpellsStepScreen, SubclassStepScreen } from "./creator-cinematic-step-screens";
+import { ReviewStepScreen } from "./creator-cinematic-step-screens";
 
 describe("SubclassStepScreen", () => {
   it("renders the cinematic subclass gallery with a selected inspector state", () => {
@@ -301,5 +302,158 @@ describe("SpellsStepScreen", () => {
     expect(markup).toContain("Leveled Spells");
     expect(markup).toContain("No valid entries");
     expect(markup).toContain("No leveled spells are available for Paladin from the enabled spell data right now.");
+  });
+});
+
+describe("PortraitStepScreen", () => {
+  it("renders the portrait atelier with prompt, action, and generated-results sections", () => {
+    const markup = renderToStaticMarkup(
+      createElement(PortraitStepScreen, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "portrait",
+          stepViewModel: {
+            serverAvailable: true,
+            autoPrompt: "Arcane portrait prompt",
+            hasPortrait: false,
+            portraitDataUrl: "",
+            tokenDataUrl: "",
+            source: "none",
+            raceName: "Elf",
+            className: "Wizard",
+          },
+          steps: [],
+        },
+        state: {
+          selections: {},
+        } as never,
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain("Choose the Visage");
+    expect(markup).toContain("Portrait Atelier");
+    expect(markup).toContain("Shape the Likeness");
+    expect(markup).toContain("Arcane portrait prompt");
+    expect(markup).toContain("Generate Portraits");
+    expect(markup).toContain("Upload Portrait");
+    expect(markup).toContain("Generated Portraits");
+    expect(markup).toContain("No portraits have been summoned yet.");
+    expect(markup).toContain("Awaiting Likeness");
+    expect(markup).toContain("Portrait optional");
+  });
+
+  it("renders a bound portrait preview and clear action when a portrait is already selected", () => {
+    const markup = renderToStaticMarkup(
+      createElement(PortraitStepScreen, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "portrait",
+          stepViewModel: {
+            serverAvailable: true,
+            autoPrompt: "Arcane portrait prompt",
+            hasPortrait: true,
+            portraitDataUrl: "portrait.webp",
+            tokenDataUrl: "portrait.webp",
+            source: "uploaded",
+            raceName: "Elf",
+            className: "Wizard",
+          },
+          steps: [],
+        },
+        state: {
+          selections: {
+            portrait: {
+              portraitDataUrl: "portrait.webp",
+              tokenDataUrl: "portrait.webp",
+              source: "uploaded",
+            },
+          },
+        } as never,
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain("Bound Likeness");
+    expect(markup).toContain("Selected portrait");
+    expect(markup).toContain("Clear");
+    expect(markup).toContain("Uploaded likeness");
+    expect(markup).toContain("Ready for final review");
+  });
+});
+
+describe("ReviewStepScreen", () => {
+  it("renders the finalized review composition with edit-back affordances and name guidance", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ReviewStepScreen, {
+        controller: {
+          jumpToStep: vi.fn(),
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "review",
+          stepViewModel: {
+            characterName: "Arannis Vale",
+            allComplete: false,
+            incompleteSectionLabels: ["Equipment", "Spells"],
+            startingLevel: 5,
+            sections: [
+              { id: "class", label: "Class", summary: "Wizard", complete: true, img: "wizard.webp", icon: "", isSimple: true },
+              { id: "background", label: "Background", summary: "Sage", complete: true, img: "sage.webp", icon: "", isBackground: true },
+              { id: "species", label: "Species", summary: "Human", complete: true, img: "human.webp", icon: "", isSimple: true },
+              {
+                id: "abilities",
+                label: "Ability Scores",
+                summary: [
+                  { key: "str", score: 8, modifier: "-1" },
+                  { key: "dex", score: 14, modifier: "+2" },
+                ],
+                complete: true,
+                icon: "",
+                isAbilities: true,
+              },
+              {
+                id: "originSummary",
+                label: "Origin Summary",
+                complete: true,
+                icon: "",
+                isSkills: true,
+                selectedGrantGroups: [
+                  { id: "skills", title: "Skills", iconClass: "fa-solid fa-list-check", entries: ["Arcana", "History"] },
+                ],
+              },
+              { id: "feats", label: "Feats & ASI", summary: "Ability Score Improvement: Intelligence, Wisdom", complete: true, icon: "", isSimple: true },
+              { id: "equipment", label: "Equipment", summary: "Scholar's Pack • Sage Supplies", detail: "Funds: 100 gp", complete: false, icon: "", isSimple: true },
+              { id: "spells", label: "Spells", summary: "4 cantrips, 14 spells, 9 prepared", detail: "Choose which 9 leveled spells start prepared for this Wizard.", complete: false, icon: "", isSimple: true },
+            ],
+          },
+          steps: [],
+        },
+        state: {
+          selections: {
+            review: { characterName: "Arannis Vale" },
+            class: { name: "Wizard", img: "wizard.webp" },
+            background: { name: "Sage", img: "sage.webp" },
+            species: { name: "Human", img: "human.webp" },
+          },
+        } as never,
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain("The Ritual Is Complete");
+    expect(markup).toContain("2 unresolved");
+    expect(markup).toContain("Jump back to revise any card");
+    expect(markup).toContain("Character Name");
+    expect(markup).toContain("The final binding uses this name exactly as shown here.");
+    expect(markup).toContain("Bound Identity");
+    expect(markup).toContain("Edit");
+    expect(markup).toContain("Jump back");
+    expect(markup).toContain("Readiness");
+    expect(markup).toContain("Needs attention");
   });
 });

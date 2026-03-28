@@ -369,6 +369,12 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
   if (!viewModel) return null;
 
   const currentPortrait = state.selections.portrait?.portraitDataUrl ?? viewModel.portraitDataUrl;
+  const portraitSource = state.selections.portrait?.source ?? viewModel.source;
+  const portraitSourceLabel = portraitSource === "generated"
+    ? "Generated likeness"
+    : portraitSource === "uploaded"
+      ? "Uploaded likeness"
+      : "Portrait optional";
 
   const selectPortrait = (dataUrl: string) => {
     const selection: PortraitSelection = {
@@ -423,84 +429,119 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]">
         <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
-          <div className="rounded-[1.3rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,34,38,0.95),rgba(19,19,23,0.98))] p-4">
-            <MicroLabel>Portrait Prompt</MicroLabel>
-            <textarea
-              className="mt-3 min-h-32 w-full rounded-[1rem] border border-white/10 bg-black/25 px-4 py-3 font-fth-cc-body text-[1rem] leading-7 text-[#f1ece8] outline-none transition focus:border-[#e9c176]/55"
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder={viewModel.autoPrompt}
-              value={description}
-            />
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(["fantasy", "realistic", "painterly"] as const).map((option) => (
-                <ModeToggleButton
-                  active={style === option}
-                  key={option}
-                  label={option}
-                  onClick={() => setStyle(option)}
-                />
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {viewModel.serverAvailable ? (
-                <button
-                  className="rounded-[1rem] border border-[#e9c176]/70 bg-[linear-gradient(180deg,#f2cb84,#d6a447)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#3b280f] shadow-[0_12px_26px_rgba(0,0,0,0.16)]"
-                  disabled={generating}
-                  onClick={() => void runGeneration()}
-                  type="button"
-                >
-                  {generating ? "Summoning Portraits..." : "Generate Portraits"}
-                </button>
-              ) : null}
-              <button
-                className="rounded-[1rem] border border-white/12 bg-[rgba(255,255,255,0.04)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#efe7df]"
-                onClick={openUploadPicker}
-                type="button"
-              >
-                Upload Portrait
-              </button>
-              {currentPortrait ? (
-                <button
-                  className="rounded-[1rem] border border-[#d07364]/40 bg-[rgba(117,42,42,0.18)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#f4d3cd]"
-                  onClick={clearPortrait}
-                  type="button"
-                >
-                  Clear
-                </button>
-              ) : null}
-            </div>
-          </div>
+          <div className="space-y-5">
+            <section className="rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,34,38,0.95),rgba(19,19,23,0.98))] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.18)]">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-3">
+                  <MicroLabel>Portrait Atelier</MicroLabel>
+                  <div className="font-fth-cc-display text-[1.6rem] leading-tight text-[#f4e7ce]">Shape the Likeness</div>
+                  <p className="max-w-2xl font-fth-cc-body text-[0.98rem] leading-7 text-[#d1c9c2]">
+                    Describe the face you want, choose a tonal style, and summon candidate portraits before you bind one.
+                  </p>
+                </div>
+                <ValueBadge>{portraitSourceLabel}</ValueBadge>
+              </div>
 
-          {generated.length > 0 ? (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {generated.map((image, index) => (
-                <motion.button
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "overflow-hidden rounded-[1.3rem] border transition",
-                    currentPortrait === image.dataUrl
-                      ? "border-[#e9c176] shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_16px_30px_rgba(0,0,0,0.22)]"
-                      : "border-white/10 hover:border-[#e9c176]/45",
-                  )}
-                  initial={{ opacity: 0, y: 8 }}
-                  key={`${image.dataUrl}-${index}`}
-                  onClick={() => selectPortrait(image.dataUrl)}
-                  transition={{ duration: 0.24, delay: index * 0.03, ease: [0.22, 1, 0.36, 1] }}
+              <textarea
+                className="mt-5 min-h-32 w-full rounded-[1rem] border border-white/10 bg-black/25 px-4 py-3 font-fth-cc-body text-[1rem] leading-7 text-[#f1ece8] outline-none transition placeholder:text-[#928881] focus:border-[#e9c176]/55"
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder={viewModel.autoPrompt}
+                value={description}
+              />
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(["fantasy", "realistic", "painterly"] as const).map((option) => (
+                  <ModeToggleButton
+                    active={style === option}
+                    key={option}
+                    label={option}
+                    onClick={() => setStyle(option)}
+                  />
+                ))}
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {viewModel.serverAvailable ? (
+                  <button
+                    className="rounded-[1rem] border border-[#e9c176]/70 bg-[linear-gradient(180deg,#f2cb84,#d6a447)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#3b280f] shadow-[0_12px_26px_rgba(0,0,0,0.16)] transition hover:translate-y-[-1px] hover:shadow-[0_16px_34px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-70"
+                    disabled={generating}
+                    onClick={() => void runGeneration()}
+                    type="button"
+                  >
+                    {generating ? "Summoning Portraits..." : "Generate Portraits"}
+                  </button>
+                ) : null}
+                <button
+                  className="rounded-[1rem] border border-white/12 bg-[rgba(255,255,255,0.04)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#efe7df] transition hover:border-[#e9c176]/45 hover:bg-[rgba(255,255,255,0.06)]"
+                  onClick={openUploadPicker}
                   type="button"
                 >
-                  <img alt="Generated portrait option" className="h-full w-full object-cover" src={image.dataUrl} />
-                </motion.button>
-              ))}
-            </div>
-          ) : null}
+                  Upload Portrait
+                </button>
+                {currentPortrait ? (
+                  <button
+                    className="rounded-[1rem] border border-[#d07364]/40 bg-[rgba(117,42,42,0.18)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#f4d3cd] transition hover:border-[#d07364]/70 hover:bg-[rgba(117,42,42,0.26)]"
+                    onClick={clearPortrait}
+                    type="button"
+                  >
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(28,28,33,0.92),rgba(15,15,19,0.97))] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <MicroLabel>Generated Portraits</MicroLabel>
+                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
+                  {generated.length > 0 ? `${generated.length} summoned` : "Awaiting invocation"}
+                </div>
+              </div>
+              {generated.length > 0 ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {generated.map((image, index) => (
+                    <motion.button
+                      animate={{ opacity: 1, y: 0 }}
+                      className={cn(
+                        "overflow-hidden rounded-[1.3rem] border transition",
+                        currentPortrait === image.dataUrl
+                          ? "border-[#e9c176] shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_16px_30px_rgba(0,0,0,0.22)]"
+                          : "border-white/10 hover:border-[#e9c176]/45",
+                      )}
+                      initial={{ opacity: 0, y: 8 }}
+                      key={`${image.dataUrl}-${index}`}
+                      onClick={() => selectPortrait(image.dataUrl)}
+                      transition={{ duration: 0.24, delay: index * 0.03, ease: [0.22, 1, 0.36, 1] }}
+                      type="button"
+                    >
+                      <img alt="Generated portrait option" className="h-full w-full object-cover" src={image.dataUrl} />
+                    </motion.button>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <ArcaneEmptyState
+                    compact
+                    message="No portraits have been summoned yet. Generate a few options or upload a finished portrait to begin."
+                  />
+                </div>
+              )}
+            </section>
+          </div>
         </ArcaneScrollPanel>
 
         <ArcaneInspectorPanel title={currentPortrait ? "Bound Likeness" : "Awaiting Likeness"} eyebrow="Portrait">
-          {currentPortrait ? (
-            <img alt="Selected portrait" className="h-[28rem] w-full rounded-[1.35rem] object-cover" src={currentPortrait} />
-          ) : (
-            <ArcaneEmptyState message="No portrait is required. You can proceed without binding a likeness, or generate one here before the ritual closes." compact />
-          )}
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <ValueBadge>{portraitSourceLabel}</ValueBadge>
+              {currentPortrait ? <TokenPill muted>Ready for final review</TokenPill> : null}
+            </div>
+            {currentPortrait ? (
+              <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-3">
+                <img alt="Selected portrait" className="aspect-[4/5] w-full rounded-[1rem] object-cover" src={currentPortrait} />
+              </div>
+            ) : (
+              <ArcaneEmptyState message="No portrait is required. You can proceed without binding a likeness, or generate one here before the ritual closes." compact />
+            )}
+          </div>
         </ArcaneInspectorPanel>
       </div>
     </ArcaneStepFrame>
@@ -510,6 +551,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
 export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as ReviewStepViewModel | undefined;
   const [characterName, setCharacterName] = useState(viewModel?.characterName ?? "");
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
     setCharacterName(viewModel?.characterName ?? "");
@@ -522,7 +564,10 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
   const speciesSection = viewModel.sections.find((section) => section.id === "species");
   const abilitiesSection = viewModel.sections.find((section) => section.id === "abilities");
   const originSummarySection = viewModel.sections.find((section) => section.id === "originSummary");
+  const recapSections = viewModel.sections.filter((section) => !["class", "background", "species", "abilities", "originSummary", "portrait"].includes(section.id));
   const buildSections = viewModel.sections.filter((section) => ["feats", "equipment", "spells", "portrait"].includes(section.id));
+  const completeSections = viewModel.sections.filter((section) => section.complete).length;
+  const unresolvedCount = viewModel.incompleteSectionLabels.length;
 
   return (
     <ArcaneStepFrame scene="binding">
@@ -530,7 +575,15 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
         eyebrow={`Level ${viewModel.startingLevel}`}
         title="The Ritual Is Complete"
         description="Review the bound artifact of your creation before calling it fully into the world."
-      />
+      >
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <ValueBadge>{viewModel.allComplete ? "All rites complete" : `${unresolvedCount} unresolved`}</ValueBadge>
+          <TokenPill muted>
+            {completeSections}/{viewModel.sections.length} reviewed
+          </TokenPill>
+          <TokenPill muted>Jump back to revise any card</TokenPill>
+        </div>
+      </ArcaneHero>
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.16fr)_minmax(20rem,0.84fr)]">
         <ArcaneScrollPanel className="min-h-0 overflow-y-auto">
@@ -553,14 +606,23 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                       <TokenPill key={String(entry)}>{String(entry)}</TokenPill>
                     ))}
                   </div>
+                  <p className="mt-4 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#d6cdc8]">
+                    This is the name that will appear on the character sheet and in the world. Keep it clear, bold, and easy to
+                    recognize when the ritual closes.
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-5 p-6">
-                <div>
+                <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.16)]">
                   <MicroLabel>Character Name</MicroLabel>
+                  <p id="review-character-name-guidance" className="mt-3 max-w-xl font-fth-cc-body text-[0.94rem] leading-6 text-[#cec5be]">
+                    The final binding uses this name exactly as shown here. Review it now so the finished character arrives
+                    with the right identity.
+                  </p>
                   <input
-                    className="mt-3 w-full rounded-[1rem] border border-white/12 bg-black/20 px-4 py-3 font-fth-cc-display text-[1.35rem] text-[#f5e8cf] outline-none transition focus:border-[#e9c176]/55"
+                    aria-describedby="review-character-name-guidance"
+                    className="mt-4 w-full rounded-[1rem] border border-white/12 bg-black/20 px-4 py-3 font-fth-cc-display text-[1.35rem] text-[#f5e8cf] outline-none transition focus:border-[#e9c176]/55"
                     onChange={(event) => {
                       const value = event.target.value;
                       setCharacterName(value);
@@ -569,10 +631,10 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                     placeholder="Name the artifact"
                     value={characterName}
                   />
-                </div>
+                </section>
 
                 {Array.isArray(abilitiesSection?.summary) ? (
-                  <div>
+                  <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.16)]">
                     <MicroLabel>Core Attributes</MicroLabel>
                     <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                       {(abilitiesSection.summary as Array<{ key: string; score: number; modifier: string }>).map((ability) => (
@@ -586,11 +648,11 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 ) : null}
 
                 {originSummarySection?.selectedGrantGroups?.length ? (
-                  <div>
+                  <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.16)]">
                     <MicroLabel>Origins</MicroLabel>
                     <div className="mt-3 grid gap-3">
                       {originSummarySection.selectedGrantGroups.map((group) => (
@@ -602,38 +664,21 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 ) : null}
               </div>
             </div>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {viewModel.sections.filter((section) => !["class", "background", "species", "abilities", "originSummary", "portrait"].includes(section.id)).map((section) => (
-              <button
-                className={cn(
-                  "rounded-[1.35rem] border p-4 text-left transition",
-                  section.complete
-                    ? "border-white/12 bg-[linear-gradient(180deg,rgba(31,31,35,0.92),rgba(18,18,23,0.96))]"
-                    : "border-[#d07364]/35 bg-[linear-gradient(180deg,rgba(58,30,30,0.82),rgba(29,17,20,0.94))]",
-                )}
+            {recapSections.map((section, index) => (
+              <ReviewRecapCard
+                controller={controller}
+                prefersReducedMotion={prefersReducedMotion}
+                section={section}
                 key={section.id}
-                onClick={() => controller.jumpToStep(section.id)}
-                type="button"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-fth-cc-display text-[1.2rem] text-[#f4e7cf]">{section.label}</div>
-                    {typeof section.summary === "string" && section.summary ? (
-                      <p className="mt-3 font-fth-cc-body text-[0.96rem] leading-6 text-[#d3cbc4]">{section.summary}</p>
-                    ) : null}
-                    {section.detail ? (
-                      <p className="mt-2 font-fth-cc-body text-[0.9rem] leading-6 text-[#9d94ad]">{section.detail}</p>
-                    ) : null}
-                  </div>
-                  <SelectionSigil checked={section.complete} />
-                </div>
-              </button>
+                staggerIndex={index}
+              />
             ))}
           </div>
         </ArcaneScrollPanel>
@@ -783,10 +828,12 @@ function ArcaneHero({
   eyebrow,
   title,
   description,
+  children,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
+  children?: ReactNode;
 }) {
   return (
     <header className="mx-auto mb-5 flex w-full max-w-5xl flex-col items-center text-center">
@@ -800,6 +847,7 @@ function ArcaneHero({
           {description}
         </p>
       ) : null}
+      {children ? <div className="w-full">{children}</div> : null}
     </header>
   );
 }
@@ -911,6 +959,56 @@ function TokenPill({
     >
       {children}
     </span>
+  );
+}
+
+function ReviewRecapCard({
+  controller,
+  prefersReducedMotion,
+  section,
+  staggerIndex,
+}: {
+  controller: ReactWizardStepProps["controller"];
+  prefersReducedMotion: boolean;
+  section: ReviewSection;
+  staggerIndex: number;
+}) {
+  return (
+    <motion.button
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+      className={cn(
+        "rounded-[1.35rem] border p-4 text-left transition",
+        section.complete
+          ? "border-white/12 bg-[linear-gradient(180deg,rgba(31,31,35,0.92),rgba(18,18,23,0.96))] hover:border-[#e9c176]/35"
+          : "border-[#d07364]/35 bg-[linear-gradient(180deg,rgba(58,30,30,0.82),rgba(29,17,20,0.94))] hover:border-[#e9c176]/35",
+      )}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+      onClick={() => controller.jumpToStep(section.id)}
+      transition={{ duration: 0.22, delay: staggerIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
+      type="button"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="font-fth-cc-display text-[1.2rem] text-[#f4e7cf]">{section.label}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <TokenPill muted>{section.complete ? "Complete" : "Needs attention"}</TokenPill>
+            <TokenPill muted>Jump back</TokenPill>
+          </div>
+          {typeof section.summary === "string" && section.summary ? (
+            <p className="mt-3 font-fth-cc-body text-[0.96rem] leading-6 text-[#d3cbc4]">{section.summary}</p>
+          ) : null}
+          {section.detail ? (
+            <p className="mt-2 font-fth-cc-body text-[0.9rem] leading-6 text-[#9d94ad]">{section.detail}</p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <SelectionSigil checked={section.complete} />
+          <span className="rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#d8d0c7]">
+            Edit
+          </span>
+        </div>
+      </div>
+    </motion.button>
   );
 }
 
