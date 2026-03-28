@@ -65,6 +65,11 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
     { key: "skills", title: "Skills Chosen", iconClass: "fa-solid fa-list-check", entries: viewModel.chosenSkills },
     { key: "masteries", title: "Weapon Masteries", iconClass: "fa-solid fa-swords", entries: viewModel.chosenWeaponMasteries, accent: true },
   ].filter((group) => group.entries.length > 0);
+  const openingKitMetrics = [
+    { label: "Hit Die", value: viewModel.hitDie },
+    { label: "Saving Throws", value: viewModel.savingThrows.join(" / ") },
+    ...(viewModel.primaryAbilitySummary ? [{ label: "Prime Attribute", value: viewModel.primaryAbilitySummary }] : []),
+  ];
 
   return (
     <section className="cc-class-summary fth-react-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-2 pt-2">
@@ -108,14 +113,6 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                   </div>
                 </div>
               </div>
-
-                <div className="cc-class-summary__metrics grid gap-3">
-                  <SummaryMetric label="Hit Die" value={viewModel.hitDie} />
-                  <SummaryMetric label="Saving Throws" value={viewModel.savingThrows.join(" / ")} />
-                  {viewModel.primaryAbilitySummary ? (
-                    <SummaryMetric label="Prime Attribute" value={viewModel.primaryAbilitySummary} />
-                  ) : null}
-                </div>
               </div>
             </div>
           </section>
@@ -143,6 +140,12 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                       No class selections are locked in yet.
                     </div>
                   )}
+                </div>
+
+                <div className="cc-class-summary__kit-metrics mt-4 grid gap-3 border-t border-white/10 pt-4">
+                  {openingKitMetrics.map((metric) => (
+                    <SummaryMetric key={metric.label} label={metric.label} value={metric.value} />
+                  ))}
                 </div>
               </div>
             </section>
@@ -208,7 +211,7 @@ export function ClassSummaryStepScreen({ shellContext }: ReactWizardStepProps) {
                       key={featureKey}
                     >
                       <button
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left"
+                        className="flex w-full items-start gap-3 px-5 py-4 text-left"
                         onClick={() => setExpandedFeature(isExpanded ? null : featureKey)}
                         type="button"
                       >
