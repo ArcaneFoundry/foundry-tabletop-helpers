@@ -37,26 +37,6 @@ export function ClassSelectionGalleryPane<TEntry>({
 
   return (
     <div className="cc-class-selection-pane relative isolate flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-[1.5rem] border border-[#e9c176]/[0.14] pb-2 pt-2 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
-      <div
-        className="cc-class-selection-pane__intro cc-class-flow-vocations relative z-[1] mb-4 flex items-center justify-between gap-4 px-2"
-        data-class-selection-intro="true"
-      >
-        <div className="min-w-0 flex-1" data-class-selection-copy="true">
-          <div
-            className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[#e9c176]/78"
-            data-class-selection-eyebrow="true"
-          >
-            Classes
-          </div>
-        </div>
-        <div
-          className="inline-flex shrink-0 self-end whitespace-nowrap rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb]"
-          data-class-selection-badge="true"
-        >
-          Select a Class
-        </div>
-      </div>
-
       <div className="cc-class-selection-pane__gallery-shell relative z-[1] flex min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-[1.25rem] border border-[#e9c176]/[0.13] shadow-[inset_0_1px_0_rgba(255,243,219,0.03),0_18px_34px_rgba(0,0,0,0.24)]">
         <div
           aria-hidden="true"
