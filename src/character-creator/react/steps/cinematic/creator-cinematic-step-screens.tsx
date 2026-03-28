@@ -286,6 +286,7 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
           ) : null}
 
           <SpellGroupSection
+            emptyMessage={`No cantrips are available for ${viewModel.className} from the enabled spell data right now.`}
             entries={viewModel.cantrips}
             onToggle={toggleCantrip}
             prefersReducedMotion={prefersReducedMotion}
@@ -295,7 +296,7 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
           />
 
           <div className="mt-6 space-y-5">
-            {viewModel.spellsByLevel.map((group) => (
+            {viewModel.spellsByLevel.length > 0 ? viewModel.spellsByLevel.map((group) => (
               <SpellGroupSection
                 entries={group.spells}
                 key={group.level}
@@ -309,7 +310,22 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
                   : `${group.spells.filter((spell) => selection.spells.includes(spell.uuid)).length} selected`}
                 title={group.label}
               />
-            ))}
+            )) : (
+              <section>
+                <div className="flex items-center justify-between gap-3">
+                  <MicroLabel>Leveled Spells</MicroLabel>
+                  <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
+                    No valid entries
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <ArcaneEmptyState
+                    compact
+                    message={`No leveled spells are available for ${viewModel.className} from the enabled spell data right now.`}
+                  />
+                </div>
+              </section>
+            )}
           </div>
         </ArcaneScrollPanel>
 
@@ -662,6 +678,7 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
 function SpellGroupSection({
   title,
   subtitle,
+  emptyMessage,
   entries,
   selectedIds,
   preparedIds,
@@ -671,6 +688,7 @@ function SpellGroupSection({
 }: {
   title: string;
   subtitle: string;
+  emptyMessage?: string;
   entries: Array<CinematicSelectionEntry & { schoolLabel?: string; prepared?: boolean }>;
   selectedIds: Set<string>;
   preparedIds?: Set<string>;
@@ -684,56 +702,62 @@ function SpellGroupSection({
         <MicroLabel>{title}</MicroLabel>
         <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">{subtitle}</div>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        {entries.map((entry, index) => {
-          const checked = selectedIds.has(entry.uuid);
-          const prepared = preparedIds?.has(entry.uuid) ?? false;
-          return (
-            <motion.button
-              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              className={cn(
-                "rounded-[1.25rem] border p-4 text-left transition",
-                checked
-                  ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(62,36,67,0.82),rgba(24,20,31,0.96))] shadow-[0_0_0_1px_rgba(233,193,118,0.18),0_18px_36px_rgba(0,0,0,0.2)]"
-                  : "border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] hover:border-[#e9c176]/35",
-              )}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-              key={entry.uuid}
-              onClick={() => onToggle(entry.uuid)}
-              transition={{ duration: 0.22, delay: index * 0.02, ease: [0.22, 1, 0.36, 1] }}
-              type="button"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{entry.name}</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {entry.schoolLabel ? <TokenPill muted>{entry.schoolLabel}</TokenPill> : null}
-                    {prepared ? <TokenPill>Prepared</TokenPill> : null}
+      {entries.length > 0 ? (
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {entries.map((entry, index) => {
+            const checked = selectedIds.has(entry.uuid);
+            const prepared = preparedIds?.has(entry.uuid) ?? false;
+            return (
+              <motion.button
+                animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                className={cn(
+                  "rounded-[1.25rem] border p-4 text-left transition",
+                  checked
+                    ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(62,36,67,0.82),rgba(24,20,31,0.96))] shadow-[0_0_0_1px_rgba(233,193,118,0.18),0_18px_36px_rgba(0,0,0,0.2)]"
+                    : "border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.95),rgba(20,20,24,0.98))] hover:border-[#e9c176]/35",
+                )}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+                key={entry.uuid}
+                onClick={() => onToggle(entry.uuid)}
+                transition={{ duration: 0.22, delay: index * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                type="button"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{entry.name}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {entry.schoolLabel ? <TokenPill muted>{entry.schoolLabel}</TokenPill> : null}
+                      {prepared ? <TokenPill>Prepared</TokenPill> : null}
+                    </div>
                   </div>
+                  <SelectionSigil checked={checked} />
                 </div>
-                <SelectionSigil checked={checked} />
-              </div>
-              {onTogglePrepared && checked ? (
-                <button
-                  className={cn(
-                    "mt-4 rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em]",
-                    prepared
-                      ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d5a84d)] text-[#38260f]"
-                      : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#efe7df]",
-                  )}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onTogglePrepared(entry.uuid);
-                  }}
-                  type="button"
-                >
-                  {prepared ? "Prepared" : "Mark Prepared"}
-                </button>
-              ) : null}
-            </motion.button>
-          );
-        })}
-      </div>
+                {onTogglePrepared && checked ? (
+                  <button
+                    className={cn(
+                      "mt-4 rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em]",
+                      prepared
+                        ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d5a84d)] text-[#38260f]"
+                        : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#efe7df]",
+                    )}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onTogglePrepared(entry.uuid);
+                    }}
+                    type="button"
+                  >
+                    {prepared ? "Prepared" : "Mark Prepared"}
+                  </button>
+                ) : null}
+              </motion.button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-4">
+          <ArcaneEmptyState compact message={emptyMessage ?? "No selections are available here yet."} />
+        </div>
+      )}
     </section>
   );
 }
