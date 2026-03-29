@@ -329,14 +329,30 @@ describe("ClassFlowRouteHost", () => {
 
     const simpleIndex = markup.indexOf('data-weapon-mastery-group="Simple Weapons"');
     const martialIndex = markup.indexOf('data-weapon-mastery-group="Martial Weapons"');
+    const optionsPanelIndex = markup.indexOf('data-weapon-mastery-options-panel="true"');
+    const railIndex = markup.indexOf('data-weapon-mastery-rail="true"');
+    const chosenWeaponsIndex = markup.indexOf("Chosen Weapons");
+    const masteryTechniquesIndex = markup.indexOf("Mastery Techniques");
 
     expect(markup).toContain("Weapon Masteries");
     expect(markup).toContain("Simple first, Martial second");
+    expect(markup).toContain('data-weapon-mastery-progress="true"');
+    expect(markup).toContain("Progress");
+    expect(markup).toContain("1 / 2");
     expect(markup).toContain('data-weapon-mastery-row="true"');
+    expect(markup).not.toContain("Fighter weaponry");
+    expect(markup).not.toContain("Choose from Simple and Martial weapons in a locked order");
+    expect(markup).not.toContain("Masteries Summary");
+    expect(markup).not.toContain("1/2 chosen");
     expect(markup).toContain("Chosen Weapons");
     expect(markup).toContain("Mastery Techniques");
+    expect(markup).toContain("cc-class-choice-layout--weapon-masteries");
+    expect(optionsPanelIndex).toBeGreaterThanOrEqual(0);
+    expect(railIndex).toBeGreaterThan(optionsPanelIndex);
     expect(simpleIndex).toBeGreaterThanOrEqual(0);
     expect(martialIndex).toBeGreaterThanOrEqual(0);
+    expect(chosenWeaponsIndex).toBeGreaterThan(simpleIndex);
+    expect(masteryTechniquesIndex).toBeGreaterThan(chosenWeaponsIndex);
     expect(simpleIndex).toBeLessThan(martialIndex);
     expect(markup).toContain("md:px-4");
   });

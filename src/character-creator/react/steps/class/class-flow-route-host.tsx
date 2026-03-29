@@ -650,7 +650,6 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
     setSelectedIds(viewModel.weaponMasterySection.options.filter((option) => option.checked).map((option) => option.id));
   }, [viewModel]);
 
-  const theme = getClassTheme(viewModel.classIdentifier);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const maxCount = viewModel.weaponMasterySection.maxCount;
   const options = useMemo(
@@ -759,54 +758,25 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   };
 
   return (
-    <div className="cc-class-choice-layout">
-      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+    <div className="cc-class-choice-layout cc-class-choice-layout--weapon-masteries">
+      <section
+        className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]"
+        data-weapon-mastery-options-panel="true"
+      >
         {viewModel.weaponMasterySection.hasChoices ? (
           <div className="cc-class-choice-layout__content-scroll flex flex-col px-1 pb-3 pt-2 pr-2">
-            <div className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-              <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
-                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-3">
-                  <div className="min-w-0">
-                    <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">
-                      Weapon Masteries
-                    </div>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-[0.9rem] border border-[#e9c176]/24 bg-[linear-gradient(180deg,rgba(233,193,118,0.16),rgba(70,48,22,0.42))] text-[#f3dfb5] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                        <i className="fa-solid fa-swords" aria-hidden="true" />
-                      </span>
-                      <div className="min-w-0">
-                        <h2 className="font-fth-cc-display text-[1.18rem] uppercase tracking-[0.08em] text-[#f6ebcf]">
-                          {viewModel.className} weaponry
-                        </h2>
-                        <p className="mt-1 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#c9c1cc]">
-                          Choose from Simple and Martial weapons in a locked order, then read the selected masteries and reference notes on the right.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid min-w-[11rem] gap-2 text-right">
-                    <span className="inline-flex items-center justify-center rounded-full border border-[#e9c176]/20 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.18em] text-[#f1d9b3]">
-                      {selectedEntries.length}/{maxCount} chosen
-                    </span>
-                    <span className="inline-flex items-center justify-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.18em] text-[#bcc1cc]">
-                      Simple first, Martial second
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {masteryGroupStyles.map((pill) => (
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.16em] shadow-[0_10px_18px_rgba(47,29,18,0.14)]",
-                        pill.pillClass,
-                      )}
-                      key={pill.label}
-                    >
-                      {pill.label}
-                    </span>
-                  ))}
-                </div>
+            <div
+              className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1"
+              data-weapon-mastery-progress="true"
+            >
+              <div className="inline-flex items-center rounded-full border border-[#8c6a47]/55 bg-[linear-gradient(180deg,rgba(91,61,43,0.38),rgba(48,33,24,0.24))] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#e7c990] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
+                Simple first, Martial second
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#e9c176]/20 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 text-[#f1d9b3] shadow-[0_10px_18px_rgba(0,0,0,0.14)]">
+                <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#d7bb8a]">Progress</span>
+                <span className="font-fth-cc-display text-[1rem] uppercase tracking-[0.08em] text-[#f6e3be]">
+                  {selectedEntries.length} / {maxCount}
+                </span>
               </div>
             </div>
 
@@ -853,13 +823,10 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
         )}
       </section>
 
-      <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
-        <SelectionSummaryCard
-          glow={theme.glow}
-          maxCount={maxCount}
-          selectedCount={selectedIds.length}
-          title="Masteries Summary"
-        />
+      <aside
+        className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4"
+        data-weapon-mastery-rail="true"
+      >
         <SelectedMasteriesCard selectedEntries={selectedEntries} />
         <MasteryReferenceCard entries={masteryReference} />
       </aside>

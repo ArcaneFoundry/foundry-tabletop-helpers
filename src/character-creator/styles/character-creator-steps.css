@@ -126,6 +126,14 @@
   min-height: auto;
 }
 
+.cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__content-panel {
+  order: 1;
+}
+
+.cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__rail {
+  order: 2;
+}
+
 @container cc-class-chapter (min-width: 700px) {
   .cc-class-chooser-grid {
     grid-template-columns: repeat(2, minmax(0, 20.9375rem));
@@ -138,6 +146,11 @@
 
   .cc-class-choice-layout__content-panel,
   .cc-class-choice-layout__rail {
+    order: 0;
+  }
+
+  .cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__content-panel,
+  .cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__rail {
     order: 0;
   }
 
@@ -199,6 +212,14 @@
   .cc-class-choice-layout__content-scroll {
     overflow: visible;
     padding-right: 0;
+  }
+
+  .cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__content-panel {
+    order: 1;
+  }
+
+  .cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__rail {
+    order: 2;
   }
 }
 
