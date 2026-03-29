@@ -767,7 +767,10 @@
 
 .am-server-dot {
   font-size: 0.45rem;
-  transition: color 0.3s ease;
+  transition:
+    color 0.3s ease,
+    filter 0.3s ease,
+    text-shadow 0.3s ease;
 }
 
 .am-server-label {
@@ -775,9 +778,21 @@
   color: var(--am-text-muted);
 }
 
-.am-server-dot.am-server-checking { color: rgba(200, 167, 93, 0.4); }
-.am-server-dot.am-server-online   { color: #43b581; }
-.am-server-dot.am-server-offline  { color: rgba(200, 167, 93, 0.15); }
+.am-server-dot.am-server-checking {
+  color: color-mix(in srgb, var(--am-accent) 40%, transparent);
+}
+
+.am-server-dot.am-server-online {
+  color: color-mix(in srgb, var(--am-warning) 82%, #8a4b00);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--am-warning) 42%, transparent);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--am-warning) 24%, transparent));
+}
+
+.am-server-dot.am-server-offline {
+  color: color-mix(in srgb, var(--am-danger) 92%, #ff3b30);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--am-danger) 44%, transparent);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--am-danger) 28%, transparent));
+}
 
 /* ── Thumbnail cache info ────────────────────────────────── */
 .am-thumb-info {
