@@ -6,12 +6,7 @@
   flex-direction: row;
   align-items: stretch;
   flex-shrink: 0;
-  background: linear-gradient(
-    to right,
-    rgba(200, 167, 93, 0.09) 0%,
-    rgba(15, 17, 21, 0.5)   50%,
-    rgba(139, 30, 45, 0.08) 100%
-  );
+  background: var(--lpcs-bg-ribbon);
   border-bottom: 1px solid var(--lpcs-border);
 }
 
@@ -72,7 +67,7 @@
   justify-content: center;
   width: 36px;
   height: 40px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--lpcs-text-contrast-soft);
   pointer-events: none;
 }
 
@@ -89,7 +84,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--lpcs-text-contrast-soft);
   margin-top: 1px;
 }
 
@@ -100,12 +95,12 @@
   font-weight: 700;
   font-family: var(--lpcs-font-mono, monospace);
   line-height: 1;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--lpcs-text-contrast-soft);
 }
 
 /* Proficient: radiant gold */
 .lpcs-sheet .lpcs-abar-save--prof {
-  color: var(--lpcs-accent-gold, #c8a75d);
+  color: var(--lpcs-accent-gold);
 }
 
 .lpcs-sheet .lpcs-abar-save--prof .fas.fa-shield {
@@ -113,11 +108,11 @@
 }
 
 .lpcs-sheet .lpcs-abar-save--prof .lpcs-abar-save-label {
-  color: var(--lpcs-bg-surface, #0f1115);
+  color: var(--lpcs-bg-base);
 }
 
 .lpcs-sheet .lpcs-abar-save--prof .lpcs-abar-save-mod {
-  color: var(--lpcs-bg-surface, #0f1115);
+  color: var(--lpcs-bg-base);
 }
 
 /* ── Stats Bar ───────────────────────────────────────────────── */
@@ -142,7 +137,7 @@
 
 /* Outer wrapper: carries the drop-shadow around the clip-path inner shape */
 .lpcs-sheet .lpcs-hp-widget-wrap {
-  filter: drop-shadow(0 0 2.5px rgba(200, 167, 93, 0.55));
+  filter: drop-shadow(0 0 2.5px color-mix(in srgb, var(--lpcs-accent-gold) 55%, transparent));
   margin-top: var(--lpcs-space-xl);
 }
 
@@ -173,7 +168,7 @@
 /* Heart icon with gradient red — sits next to "HP" text */
 .lpcs-sheet .lpcs-hp-heart {
   font-size: var(--lpcs-text-xs);
-  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  background: linear-gradient(135deg, var(--lpcs-hp-heart-start), var(--lpcs-hp-heart-end));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -194,7 +189,7 @@
 .lpcs-sheet .lpcs-hp-bar-widget {
   position: relative;
   height: 28px;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--lpcs-bg-hp-bar);
   clip-path: polygon(
     16px 0%,
     calc(100% - 16px) 0%,
@@ -211,7 +206,12 @@
 .lpcs-sheet .lpcs-hp-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
-  background: linear-gradient(to right, #3d0e0e, #7a1515, #a82020);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--lpcs-hp-critical) 32%, #220708 68%),
+    color-mix(in srgb, var(--lpcs-hp-critical) 62%, #3a0d0f 38%),
+    color-mix(in srgb, var(--lpcs-hp-critical) 82%, #521114 18%)
+  );
   /* width animates via element.animate() in _onRender (Web Animations API) */
   z-index: 0;
 }
@@ -237,8 +237,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;                               /* clips ::before sweep to zone bounds */
-  background: rgba(0, 0, 0, 0.75);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--lpcs-bg-temp-zone);
+  border-left: 1px solid var(--lpcs-border);
   transition: border-left-color 0.3s ease;
   z-index: 1;
 }
@@ -248,7 +248,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to left, rgba(74, 122, 181, 0.55), rgba(74, 122, 181, 0.25));
+  background: var(--lpcs-bg-temp-fill);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
@@ -260,7 +260,7 @@
 
 /* Border accent when temp HP is active */
 .lpcs-sheet .lpcs-hp-temp-zone.has-temp {
-  border-left-color: rgba(74, 122, 181, 0.5);
+  border-left-color: var(--lpcs-tag-focus-border);
 }
 
 /* HP fill flash + width animations are driven by element.animate() in _onRender
@@ -270,30 +270,30 @@
   font-family: var(--lpcs-font-display);
   font-size: var(--lpcs-text-xl);
   font-weight: 700;
-  color: #ffffff;
+  color: var(--lpcs-text-contrast);
   line-height: 1;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  text-shadow: var(--lpcs-shadow-text);
 }
 
 .lpcs-sheet .lpcs-hp-sep {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.55);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  color: color-mix(in srgb, var(--lpcs-text-contrast) 55%, transparent);
+  text-shadow: var(--lpcs-shadow-text);
 }
 
 .lpcs-sheet .lpcs-hp-max-val {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.75);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  color: var(--lpcs-text-contrast-soft);
+  text-shadow: var(--lpcs-shadow-text);
 }
 
 .lpcs-sheet .lpcs-hp-tmp-val {
   font-family: var(--lpcs-font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--lpcs-text-contrast) 85%, var(--lpcs-hp-temp) 15%);
   line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  text-shadow: var(--lpcs-shadow-text);
 }
 
 /* ── Vitals Container (HP ↔ Death Saves cross-fade) ─────────── */
@@ -322,9 +322,9 @@
 }
 
 @keyframes lpcs-healing-surge {
-  0%   { box-shadow: 0 0 0 rgba(46, 204, 113, 0); background-color: transparent; }
-  50%  { box-shadow: 0 0 20px rgba(46, 204, 113, 0.8); background-color: rgba(46, 204, 113, 0.12); }
-  100% { box-shadow: 0 0 0 rgba(46, 204, 113, 0); background-color: transparent; }
+  0%   { box-shadow: 0 0 0 color-mix(in srgb, var(--lpcs-hp-healthy) 0%, transparent); background-color: transparent; }
+  50%  { box-shadow: 0 0 20px color-mix(in srgb, var(--lpcs-hp-healthy) 80%, transparent); background-color: var(--lpcs-success-soft); }
+  100% { box-shadow: 0 0 0 color-mix(in srgb, var(--lpcs-hp-healthy) 0%, transparent); background-color: transparent; }
 }
 
 .lpcs-sheet .lpcs-vitals-state.healed-animation {
@@ -336,7 +336,7 @@
 .lpcs-sheet .lpcs-bar {
   position: relative;
   height: 5px;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--lpcs-bg-track);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -398,7 +398,7 @@
   justify-content: center;
   gap: 6px;
   padding: 6px 3px;
-  background: rgba(26, 29, 36, 0.7);
+  background: var(--lpcs-bg-qstat);
   border: 1px solid var(--lpcs-border);
   border-top: 2px solid var(--lpcs-border-accent);
   border-radius: 6px;
@@ -418,7 +418,7 @@
 }
 
 .lpcs-sheet .lpcs-qstat-card--btn:hover {
-  background: rgba(200, 167, 93, 0.12);
+  background: var(--lpcs-bg-press-subtle);
   border-top-color: var(--lpcs-accent-bronze);
 }
 

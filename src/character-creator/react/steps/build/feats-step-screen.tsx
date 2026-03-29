@@ -117,13 +117,13 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
                   <TokenPill key={ability}>{ABILITY_LABELS[ability]}</TokenPill>
                 )) : <TokenPill muted>Choose one or two abilities</TokenPill>}
               </div>
-              <p className="font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
+              <p className="cc-theme-copy font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
                 Ability attunement keeps the build grounded in your core scores. Choose one ability twice or two different abilities once each, following the existing feat/ASI rules already enforced by the creator.
               </p>
             </div>
           ) : selectedFeat ? (
             <div className="space-y-4">
-              <div className="overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,28,39,0.96),rgba(15,15,19,0.98))] shadow-[0_18px_36px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+              <div className="cc-theme-panel overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,28,39,0.96),rgba(15,15,19,0.98))] shadow-[0_18px_36px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
                 <div className="relative">
                   <img alt={selectedFeat.name} className="h-56 w-full object-cover" src={selectedFeat.img} />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,9,0.08),rgba(5,5,9,0.58))]" />
@@ -131,30 +131,30 @@ export function FeatsStepScreen({ shellContext, state, controller }: ReactWizard
                     <TokenPill>Selected Feat</TokenPill>
                   </div>
                   <div className="absolute inset-x-0 bottom-0 p-4">
-                    <div className="font-fth-cc-display text-[1.4rem] leading-none text-[#f9efd8] drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
+                    <div className="cc-theme-title font-fth-cc-display text-[1.4rem] leading-none text-[#f9efd8] drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
                       {selectedFeat.name}
                     </div>
-                    <div className="mt-2 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#f0d8a6]">
+                    <div className="cc-theme-kicker mt-2 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#f0d8a6]">
                       {selectedFeat.packLabel}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[1.15rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-3">
+                <div className="cc-theme-card rounded-[1.15rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-3">
                   <MicroLabel>Selection State</MicroLabel>
-                  <p className="m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#d8d0ca]">
+                  <p className="cc-theme-body-muted m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#d8d0ca]">
                     Bound into the build and ready to advance.
                   </p>
                 </div>
-                <div className="rounded-[1.15rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-3">
+                <div className="cc-theme-card rounded-[1.15rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-3">
                   <MicroLabel>Source</MicroLabel>
-                  <p className="m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#d8d0ca]">
+                  <p className="cc-theme-body-muted m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#d8d0ca]">
                     {selectedFeat.packLabel}
                   </p>
                 </div>
               </div>
-              <p className="font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
+              <p className="cc-theme-copy font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
                 The inspector keeps the selected feat visible as an artifact of the build. Use it to confirm the feat source and the card you are binding before advancing.
               </p>
             </div>
@@ -181,11 +181,11 @@ function ModeRail({
   onChooseFeat: () => void;
 }) {
   return (
-    <section className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(42,36,47,0.82),rgba(19,19,24,0.95))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+    <section className="cc-theme-panel rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(42,36,47,0.82),rgba(19,19,24,0.95))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <MicroLabel>Choose your rite</MicroLabel>
-          <p className="mt-2 font-fth-cc-body text-[0.92rem] leading-6 text-[#cdc4bf]">
+          <p className="cc-theme-body-muted mt-2 font-fth-cc-body text-[0.92rem] leading-6 text-[#cdc4bf]">
             Decide whether this level sharpens your core or binds a feat into your story.
           </p>
         </div>
@@ -228,26 +228,26 @@ function AsiAttunementPanel({
 
   return (
     <div className="mt-5 space-y-4">
-      <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.96),rgba(20,20,24,0.98))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <div className="cc-theme-panel rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,33,38,0.96),rgba(20,20,24,0.98))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <MicroLabel>Attunement field</MicroLabel>
-            <h4 className="mt-2 font-fth-cc-display text-[1.38rem] leading-none text-[#f4e7cf]">
+            <h4 className="cc-theme-title mt-2 font-fth-cc-display text-[1.38rem] leading-none text-[#f4e7cf]">
               Bind up to two abilities to the build
             </h4>
-            <p className="mt-2 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#cdc4bf]">
+            <p className="cc-theme-body-muted mt-2 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#cdc4bf]">
               Choose one ability twice or two different abilities once each. The ritual stays grounded in the same feat and ASI rules the creator already enforces.
             </p>
           </div>
-          <div className="min-w-[9rem] rounded-[1rem] border border-[#e2c48a]/18 bg-[rgba(246,228,193,0.08)] px-4 py-3 text-right">
+          <div className="cc-theme-panel cc-theme-panel--accent min-w-[9rem] rounded-[1rem] border border-[#e2c48a]/18 bg-[rgba(246,228,193,0.08)] px-4 py-3 text-right">
             <ValueBadge>{asiCount} / {maxAsiPicks}</ValueBadge>
-            <div className="mt-3 h-2 rounded-full bg-[rgba(255,255,255,0.07)]">
+            <div className="cc-theme-progress-track mt-3 h-2 rounded-full bg-[rgba(255,255,255,0.07)]">
               <div
-                className="h-full rounded-full bg-[linear-gradient(90deg,#f3d28e,#d5a84d)] transition-[width] duration-300"
+                className="cc-theme-progress-fill h-full rounded-full bg-[linear-gradient(90deg,#f3d28e,#d5a84d)] transition-[width] duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="mt-2 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.22em] text-[#d9cda7]">
+            <div className="cc-theme-kicker mt-2 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.22em] text-[#d9cda7]">
               {remaining > 0 ? `${remaining} choice${remaining === 1 ? "" : "s"} remain` : "Attunement complete"}
             </div>
           </div>
@@ -267,15 +267,15 @@ function AsiAttunementPanel({
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{ability.label}</div>
+                <div className="cc-theme-title font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{ability.label}</div>
                 <TokenPill muted={!ability.selected && !ability.atMax}>
                   {ability.selected ? "Attuned" : ability.atMax ? "At max" : "Available"}
                 </TokenPill>
               </div>
-              <div className="mt-2 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">
+              <div className="cc-theme-kicker mt-2 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#a89fbe]">
                 Current score {ability.score} • modifier {ability.modifier}
               </div>
-              <p className="mt-3 max-w-2xl font-fth-cc-body text-[0.94rem] leading-6 text-[#d5cec8]">
+              <p className="cc-theme-body-muted mt-3 max-w-2xl font-fth-cc-body text-[0.94rem] leading-6 text-[#d5cec8]">
                 {ability.selected
                   ? "This ability is already carrying part of your attunement."
                   : ability.atMax
@@ -322,14 +322,14 @@ function FeatCatalogPanel({
 }) {
   return (
     <div className="mt-5 space-y-4">
-      <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(31,25,36,0.95),rgba(17,17,22,0.98))] px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <div className="cc-theme-panel rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(31,25,36,0.95),rgba(17,17,22,0.98))] px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="max-w-2xl space-y-2">
             <MicroLabel>Feat Catalog</MicroLabel>
-            <h3 className="font-fth-cc-display text-[1.35rem] leading-none text-[#f7e8c9]">
+            <h3 className="cc-theme-title font-fth-cc-display text-[1.35rem] leading-none text-[#f7e8c9]">
               Choose a feat artifact to bind into the build
             </h3>
-            <p className="font-fth-cc-body text-[0.95rem] leading-6 text-[#d5cdc7]">
+            <p className="cc-theme-body-muted font-fth-cc-body text-[0.95rem] leading-6 text-[#d5cdc7]">
               Scan the catalog, compare the source labels, and pick the feat whose identity best fits the build you are shaping.
             </p>
           </div>
@@ -411,7 +411,7 @@ function ArcaneStepFrame({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]", `cc-cinematic-step cc-cinematic-step--${scene}`)}>
+    <section className={cn("cc-theme-shell-inner relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]", `cc-cinematic-step cc-cinematic-step--${scene}`)}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(198,157,86,0.18),transparent_55%),radial-gradient(circle_at_20%_85%,rgba(91,55,114,0.16),transparent_45%)]" />
       <div className="relative z-10 flex flex-col gap-5 p-5 xl:p-6">
         {children}
@@ -430,11 +430,11 @@ function ArcaneHero({
   description: string;
 }) {
   return (
-    <header className="space-y-3 rounded-[1.35rem] border border-white/8 bg-[linear-gradient(180deg,rgba(48,41,52,0.78),rgba(18,18,24,0.94))] px-5 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+    <header className="cc-theme-header space-y-3 rounded-[1.35rem] border border-white/8 bg-[linear-gradient(180deg,rgba(48,41,52,0.78),rgba(18,18,24,0.94))] px-5 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
       {eyebrow ? <MicroLabel>{eyebrow}</MicroLabel> : null}
       <div className="max-w-3xl">
-        <h2 className="font-fth-cc-display text-[2rem] leading-none text-[#f8edd7]">{title}</h2>
-        <p className="mt-3 font-fth-cc-body text-[1rem] leading-7 text-[#d9d2cd]">{description}</p>
+        <h2 className="cc-theme-title font-fth-cc-display text-[2rem] leading-none text-[#f8edd7]">{title}</h2>
+        <p className="cc-theme-copy mt-3 font-fth-cc-body text-[1rem] leading-7 text-[#d9d2cd]">{description}</p>
       </div>
     </header>
   );
@@ -448,7 +448,7 @@ function ArcaneScrollPanel({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("rounded-[1.4rem] border border-white/10 bg-[rgba(17,17,22,0.7)] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]", className)}>
+    <div className={cn("cc-theme-panel rounded-[1.4rem] border border-white/10 bg-[rgba(17,17,22,0.7)] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]", className)}>
       {children}
     </div>
   );
@@ -464,9 +464,9 @@ function ArcaneInspectorPanel({
   children: ReactNode;
 }) {
   return (
-    <aside className="flex min-h-[18rem] flex-col rounded-[1.4rem] border border-[#e2c48a]/18 bg-[linear-gradient(180deg,rgba(37,30,42,0.96),rgba(16,16,22,0.98))] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+    <aside className="cc-theme-panel cc-theme-panel--accent flex min-h-[18rem] flex-col rounded-[1.4rem] border border-[#e2c48a]/18 bg-[linear-gradient(180deg,rgba(37,30,42,0.96),rgba(16,16,22,0.98))] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
       {eyebrow ? <MicroLabel>{eyebrow}</MicroLabel> : null}
-      <h3 className="mt-3 font-fth-cc-display text-[1.55rem] leading-none text-[#f5e7cb]">{title}</h3>
+      <h3 className="cc-theme-title mt-3 font-fth-cc-display text-[1.55rem] leading-none text-[#f5e7cb]">{title}</h3>
       <div className="mt-5 flex min-h-0 flex-1 flex-col">{children}</div>
     </aside>
   );
@@ -482,9 +482,9 @@ function ArcaneEmptyState({
   title?: string;
 }) {
   return (
-    <div className={cn("rounded-[1.2rem] border border-dashed border-white/12 bg-[rgba(255,255,255,0.03)] px-4 py-5 text-center", compact ? "py-4" : "py-8")}>
-      {title ? <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em] text-[#b7ab9d]">{title}</div> : null}
-      <p className={cn("font-fth-cc-body text-[0.98rem] leading-7 text-[#d0c8c3]", title ? "mt-2" : "mt-0")}>{message}</p>
+    <div className={cn("cc-theme-empty rounded-[1.2rem] border border-dashed border-white/12 bg-[rgba(255,255,255,0.03)] px-4 py-5 text-center", compact ? "py-4" : "py-8")}>
+      {title ? <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em] text-[#b7ab9d]">{title}</div> : null}
+      <p className={cn("cc-theme-body-muted font-fth-cc-body text-[0.98rem] leading-7 text-[#d0c8c3]", title ? "mt-2" : "mt-0")}>{message}</p>
     </div>
   );
 }
@@ -509,16 +509,18 @@ function ModeToggleButton({
         active
           ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(243,210,142,0.94),rgba(217,171,84,0.9))] text-[#39260d] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
           : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#eadfda] hover:border-[#e9c176]/45 hover:bg-[rgba(246,228,193,0.06)]",
+        "cc-theme-toggle",
+        active && "cc-theme-toggle--active",
       )}
       onClick={onClick}
       type="button"
     >
-      <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full border transition", active ? "border-[#533c18]/30 bg-[rgba(56,38,15,0.18)]" : "border-white/12 bg-[rgba(255,255,255,0.04)]")}>
+      <div className={cn("cc-theme-icon-chip grid h-10 w-10 shrink-0 place-items-center rounded-full border transition", active ? "border-[#533c18]/30 bg-[rgba(56,38,15,0.18)] cc-theme-icon-chip--active" : "border-white/12 bg-[rgba(255,255,255,0.04)]")}>
         <i className={cn("fa-solid text-[0.95rem] transition", active ? "text-[#5a3f17]" : "text-[#d8cfc9]", icon)} />
       </div>
       <div className="min-w-0">
         <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]">{label}</div>
-        <div className="mt-1 max-w-[18rem] font-fth-cc-body text-[0.82rem] leading-5 text-[#d8cfc9]/72">
+        <div className="cc-theme-body-muted mt-1 max-w-[18rem] font-fth-cc-body text-[0.82rem] leading-5 text-[#d8cfc9]/72">
           {subtitle}
         </div>
       </div>
@@ -527,11 +529,11 @@ function ModeToggleButton({
 }
 
 function MicroLabel({ children }: { children: ReactNode }) {
-  return <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.26em] text-[#b7ab9d]">{children}</div>;
+  return <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.26em] text-[#b7ab9d]">{children}</div>;
 }
 
 function ValueBadge({ children }: { children: ReactNode }) {
-  return <span className="inline-flex items-center rounded-full border border-[#e2c48a]/22 bg-[rgba(246,228,193,0.08)] px-3 py-1 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.2em] text-[#f3ddae]">{children}</span>;
+  return <span className="cc-theme-badge inline-flex items-center rounded-full border border-[#e2c48a]/22 bg-[rgba(246,228,193,0.08)] px-3 py-1 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.2em] text-[#f3ddae]">{children}</span>;
 }
 
 function TokenPill({
@@ -548,6 +550,7 @@ function TokenPill({
         muted
           ? "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#c8beb7]"
           : "border-[#e2c48a]/20 bg-[rgba(241,207,140,0.09)] text-[#f1d8a4]",
+        muted ? "cc-theme-pill--muted" : "cc-theme-pill",
       )}
     >
       {children}
@@ -557,7 +560,7 @@ function TokenPill({
 
 function SelectionSigil({ checked }: { checked: boolean }) {
   return (
-    <div className={cn("grid h-10 w-10 place-items-center rounded-full border text-sm transition", checked ? "border-[#e9c176] bg-[rgba(233,193,118,0.16)] text-[#f4ddb0]" : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#d2cac4]")}>
+    <div className={cn("cc-theme-sigil grid h-10 w-10 place-items-center rounded-full border text-sm transition", checked ? "border-[#e9c176] bg-[rgba(233,193,118,0.16)] text-[#f4ddb0] cc-theme-sigil--selected" : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#d2cac4]")}>
       <i className={cn("fa-solid", checked ? "fa-check" : "fa-plus")} />
     </div>
   );

@@ -178,28 +178,28 @@ export function AbilityScoresStepScreen({
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="cc-abilities mx-auto flex w-full max-w-5xl flex-col gap-4">
-        <header className="rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(30,24,28,0.96),rgba(16,15,19,0.98))] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.24)] md:px-6 md:py-5">
+        <header className="cc-theme-header rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(30,24,28,0.96),rgba(16,15,19,0.98))] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.24)] md:px-6 md:py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-2">
-              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-[#e9c176]/72">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-[#e9c176]/72">
                 Ability Scores
               </div>
-              <h2 className="m-0 font-fth-cc-display text-[1.65rem] leading-[1.05] text-[#f7e7c6] md:text-[1.9rem]">
+              <h2 className="cc-theme-title m-0 font-fth-cc-display text-[1.65rem] leading-[1.05] text-[#f7e7c6] md:text-[1.9rem]">
                 Choose the ritual that forges your six abilities
               </h2>
-              <p className="m-0 text-[0.98rem] leading-7 text-[#d7d0cb] md:text-[1.03rem]">
+              <p className="cc-theme-copy m-0 text-[0.98rem] leading-7 text-[#d7d0cb] md:text-[1.03rem]">
                 {selectedMethod.detail}
               </p>
             </div>
 
-            <div className="min-w-[14rem] rounded-[1.1rem] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-              <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/70">
+            <div className="cc-theme-card min-w-[14rem] rounded-[1.1rem] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/70">
                 Active Method
               </div>
-              <div className="mt-2 font-fth-cc-display text-[1.25rem] leading-none text-[#f7e7c6]">
+              <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.25rem] leading-none text-[#f7e7c6]">
                 {selectedMethod.title}
               </div>
-              <p className="m-0 mt-2 text-[0.86rem] leading-6 text-[#cfc5bd]">
+              <p className="cc-theme-body-muted m-0 mt-2 text-[0.86rem] leading-6 text-[#cfc5bd]">
                 {selectedMethod.summary}
               </p>
             </div>

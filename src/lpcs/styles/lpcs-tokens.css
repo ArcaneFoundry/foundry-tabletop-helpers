@@ -24,7 +24,39 @@
   --lpcs-bg-item-close-hover: color-mix(in srgb, var(--lpcs-overlay-ink) 66%, transparent);
   --lpcs-bg-item-attuned:   color-mix(in srgb, var(--fth-color-accent) 28%, transparent);
   --lpcs-bg-track:          color-mix(in srgb, var(--fth-color-text) 10%, transparent);
+  --lpcs-bg-ribbon:         linear-gradient(
+                              to right,
+                              color-mix(in srgb, var(--fth-color-accent) 9%, transparent) 0%,
+                              color-mix(in srgb, var(--lpcs-overlay-ink) 48%, transparent) 50%,
+                              color-mix(in srgb, var(--fth-color-danger) 8%, transparent) 100%
+                            );
+  --lpcs-bg-hp-bar:         color-mix(in srgb, var(--lpcs-overlay-ink) 72%, transparent);
+  --lpcs-bg-temp-zone:      color-mix(in srgb, var(--lpcs-overlay-ink) 82%, transparent);
+  --lpcs-bg-temp-fill:      linear-gradient(
+                              to left,
+                              color-mix(in srgb, var(--fth-color-frost) 56%, transparent),
+                              color-mix(in srgb, var(--fth-color-frost) 24%, transparent)
+                            );
+  --lpcs-bg-qstat:          color-mix(in srgb, var(--fth-color-surface-elevated) 74%, transparent);
+  --lpcs-bg-rest-hold:      color-mix(in srgb, var(--fth-color-surface-elevated) 92%, var(--fth-color-canvas) 8%);
+  --lpcs-bg-rest-progress:  linear-gradient(
+                              to right,
+                              color-mix(in srgb, var(--fth-color-success) 24%, transparent),
+                              color-mix(in srgb, var(--fth-color-success) 56%, transparent)
+                            );
+  --lpcs-bg-rest-progress-confirmed: linear-gradient(
+                                      to right,
+                                      color-mix(in srgb, var(--fth-color-success) 42%, transparent),
+                                      color-mix(in srgb, var(--fth-color-success) 72%, transparent)
+                                    );
+  --lpcs-bg-passive-badge:  color-mix(in srgb, var(--fth-color-accent) 14%, transparent);
+  --lpcs-bg-exhaustion-dialog: color-mix(in srgb, var(--lpcs-overlay-ink) 88%, transparent);
+  --lpcs-bg-exhaustion-soft: color-mix(in srgb, var(--fth-color-warning) 16%, transparent);
+  --lpcs-bg-exhaustion-mid:  color-mix(in srgb, var(--fth-color-danger) 22%, transparent);
+  --lpcs-bg-exhaustion-strong: color-mix(in srgb, var(--fth-color-danger) 34%, transparent);
+  --lpcs-bg-exhaustion-fatal: color-mix(in srgb, var(--fth-color-danger) 62%, transparent);
   --lpcs-shadow-hover:      0 4px 16px color-mix(in srgb, var(--lpcs-overlay-ink) 42%, transparent);
+  --lpcs-shadow-text:       0 1px 4px color-mix(in srgb, var(--lpcs-overlay-ink) 84%, transparent);
   --lpcs-header-image:
     linear-gradient(135deg, color-mix(in srgb, var(--fth-color-accent) 12%, transparent) 0%, transparent 50%),
     linear-gradient(to bottom, color-mix(in srgb, var(--fth-color-danger) 9%, transparent) 0%, transparent 40%),
@@ -41,23 +73,29 @@
   --lpcs-accent-soft-bg:    color-mix(in srgb, var(--fth-color-accent) 12%, transparent);
   --lpcs-accent-strong-bg:  color-mix(in srgb, var(--fth-color-accent) 18%, transparent);
   --lpcs-accent-ring:       color-mix(in srgb, var(--fth-color-accent) 24%, transparent);
+  --lpcs-accent-warning:    var(--fth-color-warning);
 
   --lpcs-text-primary:      var(--fth-color-text);
   --lpcs-text-secondary:    var(--fth-color-text-muted);
   --lpcs-text-muted:        var(--fth-color-text-subtle);
   --lpcs-text-positive:     color-mix(in srgb, var(--fth-color-success) 76%, var(--fth-color-text) 24%);
   --lpcs-text-negative:     color-mix(in srgb, var(--fth-color-danger) 76%, var(--fth-color-text) 24%);
+  --lpcs-text-contrast:     color-mix(in srgb, white 92%, var(--fth-color-text) 8%);
+  --lpcs-text-contrast-soft: color-mix(in srgb, white 76%, var(--fth-color-text) 24%);
 
   --lpcs-border:            var(--fth-color-border);
   --lpcs-border-accent:     var(--fth-color-border-strong);
   --lpcs-border-positive:   color-mix(in srgb, var(--fth-color-success) 48%, transparent);
   --lpcs-border-negative:   color-mix(in srgb, var(--fth-color-danger) 48%, transparent);
+  --lpcs-border-warning:    color-mix(in srgb, var(--fth-color-warning) 48%, transparent);
 
   /* HP Colors */
   --lpcs-hp-healthy:        var(--fth-color-success);
   --lpcs-hp-wounded:        var(--fth-color-warning);
   --lpcs-hp-critical:       var(--fth-color-danger);
   --lpcs-hp-temp:           var(--fth-color-frost);
+  --lpcs-hp-heart-start:    color-mix(in srgb, var(--fth-color-danger) 82%, #7a1212 18%);
+  --lpcs-hp-heart-end:      color-mix(in srgb, var(--fth-color-danger) 92%, #f0b4a7 8%);
   --lpcs-success-soft:      color-mix(in srgb, var(--fth-color-success) 18%, transparent);
   --lpcs-danger-soft:       color-mix(in srgb, var(--fth-color-danger) 18%, transparent);
   --lpcs-frost-soft:        color-mix(in srgb, var(--fth-color-frost) 18%, transparent);
@@ -81,6 +119,9 @@
   --lpcs-tag-effect-border:   color-mix(in srgb, var(--fth-color-frost) 34%, transparent);
   --lpcs-tag-effect-border-hover: color-mix(in srgb, var(--fth-color-frost) 56%, transparent);
   --lpcs-tag-effect-text:     color-mix(in srgb, var(--fth-color-frost) 72%, var(--fth-color-text) 28%);
+  --lpcs-tag-ritual-bg:       color-mix(in srgb, var(--fth-color-accent) 18%, transparent);
+  --lpcs-tag-ritual-border:   color-mix(in srgb, var(--fth-color-accent) 42%, transparent);
+  --lpcs-tag-ritual-text:     color-mix(in srgb, var(--fth-color-accent) 76%, var(--fth-color-text) 24%);
   --lpcs-hex-fill:            color-mix(in srgb, var(--fth-color-canvas) 84%, var(--fth-color-danger) 16%);
   --lpcs-coin-platinum:     #b0c4de;
   --lpcs-coin-electrum:     #a9b8a0;

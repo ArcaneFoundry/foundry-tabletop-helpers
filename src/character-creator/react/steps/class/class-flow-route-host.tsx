@@ -214,13 +214,13 @@ export function ClassFlowRouteHost(
     <section className="flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="relative flex flex-col rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
+        className="cc-theme-shell relative flex flex-col rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
         initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
 
-        <div className="relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        <div className="cc-theme-shell-inner relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
@@ -228,7 +228,7 @@ export function ClassFlowRouteHost(
             transition={{ delay: 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
             <div
-              className="relative overflow-hidden rounded-[1.15rem] border border-fth-cc-gold/50"
+              className="cc-theme-header relative overflow-hidden rounded-[1.15rem] border border-fth-cc-gold/50"
               style={headerFrameStyle}
             >
               <img
@@ -576,7 +576,7 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
 
   return (
     <div className="cc-class-choice-layout">
-      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="border-b border-white/10 pb-4">
           {viewModel.primaryAbilityHint ? (
             <div className="inline-flex items-center gap-2 rounded-full border border-[#e9c176]/22 bg-[rgba(233,193,118,0.08)] px-3 py-1.5 font-fth-cc-body text-sm text-[#ddd5ce]">
@@ -760,7 +760,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   return (
     <div className="cc-class-choice-layout cc-class-choice-layout--weapon-masteries">
       <section
-        className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]"
+        className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]"
         data-weapon-mastery-options-panel="true"
       >
         {viewModel.weaponMasterySection.hasChoices ? (
@@ -877,7 +877,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
 
   return (
     <div className="cc-class-choice-layout">
-      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="border-b border-white/10 pb-4">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f1d9b3] shadow-[0_10px_18px_rgba(47,29,18,0.14)]">
@@ -1002,7 +1002,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
 
   return (
     <div className="cc-class-choice-layout">
-      <section className="cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
         <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-4">
             {viewModel.requirements.map((requirement, groupIndex) => {
@@ -1147,6 +1147,8 @@ function SkillOptionRow({
         option.checked
           ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
+        "cc-theme-card cc-theme-card--interactive",
+        option.checked && "cc-theme-card--selected",
         option.disabled && !option.checked && "opacity-60",
       )}
       data-class-skill-row="true"
@@ -1168,13 +1170,15 @@ function SkillOptionRow({
           option.checked
             ? "border-[#e9c176]/52 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]"
             : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e9c176]",
+          "cc-theme-icon-chip",
+          option.checked && "cc-theme-icon-chip--active",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
         <i className={cn("fa-solid", option.iconClass)} aria-hidden="true" />
       </span>
         <span className="min-w-0">
-        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
+        <span className="cc-theme-body block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
           {option.label}
         </span>
       </span>
@@ -1184,6 +1188,8 @@ function SkillOptionRow({
           option.checked
             ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
             : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
+          "cc-theme-sigil",
+          option.checked && "cc-theme-sigil--selected",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
@@ -1210,33 +1216,33 @@ function AdvancementSummaryCard({
 }) {
   return (
     <section
-      className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
+      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
       style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
     >
-      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+      <div className="cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
-            <div className="mt-2 font-fth-cc-display text-[1.65rem] leading-none text-[#fff4df]">
+            <div className="cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+            <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.65rem] leading-none text-[#fff4df]">
               {selectedCount}
               <span className="ml-1 text-[1rem] opacity-75">/ {maxCount}</span>
             </div>
-            <div className="mt-2 font-fth-cc-body text-[1rem] text-[#d9d0c5]">{label}</div>
+            <div className="cc-theme-body mt-2 font-fth-cc-body text-[1rem] text-[#d9d0c5]">{label}</div>
           </div>
-          <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#fff7e5]">
+          <div className="cc-theme-badge cc-theme-badge--muted inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#fff7e5]">
             {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
           </div>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+        <div className="cc-theme-progress-track mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
           <div
-            className="h-full rounded-full"
+            className="cc-theme-progress-fill h-full rounded-full"
             style={{
               width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
               background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
             }}
           />
         </div>
-        <div className="mt-3 font-fth-cc-body text-[0.88rem] leading-6 text-[#bfb5c2]">{guidance}</div>
+        <div className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.88rem] leading-6 text-[#bfb5c2]">{guidance}</div>
       </div>
     </section>
   );
@@ -1258,24 +1264,24 @@ function SelectionSummaryCard({
   if (compact) {
     return (
       <section
-        className="overflow-hidden rounded-[1.3rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
+        className="cc-theme-panel overflow-hidden rounded-[1.3rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
         style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
       >
-        <div className="rounded-[1.02rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-3 text-[#f1ddbc]">
+        <div className="cc-theme-shell-inner rounded-[1.02rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-3 text-[#f1ddbc]">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
-              <div className="mt-1 font-fth-cc-body text-[0.92rem] leading-6 text-[#d9d0c5]">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+              <div className="cc-theme-body mt-1 font-fth-cc-body text-[0.92rem] leading-6 text-[#d9d0c5]">
                 {selectedCount} of {maxCount} selected
               </div>
             </div>
-            <div className="font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em] text-[#c7bdca]">
+            <div className="cc-theme-kicker font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em] text-[#c7bdca]">
               {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
             </div>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+          <div className="cc-theme-progress-track mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
             <div
-              className="h-full rounded-full"
+              className="cc-theme-progress-fill h-full rounded-full"
               style={{
                 width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
                 background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
@@ -1289,25 +1295,25 @@ function SelectionSummaryCard({
 
   return (
     <section
-      className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
+      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
       style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
     >
-      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+      <div className="cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
-            <div className="mt-2 font-fth-cc-display text-[1.65rem] leading-none text-[#fff4df]">
+            <div className="cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+            <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.65rem] leading-none text-[#fff4df]">
               {selectedCount}
               <span className="ml-1 text-[1rem] opacity-75">/ {maxCount}</span>
             </div>
           </div>
-          <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#fff7e5]">
+          <div className="cc-theme-badge cc-theme-badge--muted inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#fff7e5]">
             {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
           </div>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+        <div className="cc-theme-progress-track mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
           <div
-            className="h-full rounded-full"
+            className="cc-theme-progress-fill h-full rounded-full"
             style={{
               width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
               background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
@@ -1339,6 +1345,8 @@ function ClassAdvancementOptionRow({
         option.checked
           ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
+        "cc-theme-card cc-theme-card--interactive",
+        option.checked && "cc-theme-card--selected",
         option.disabled && !option.checked && "opacity-60",
       )}
       disabled={option.disabled && !option.checked}
@@ -1358,17 +1366,19 @@ function ClassAdvancementOptionRow({
         className={cn(
           "relative flex h-11 w-11 items-center justify-center rounded-[0.85rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
           option.checked ? "border-[#e9c176]/52 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]" : "border-white/12 bg-[rgba(255,255,255,0.04)] text-[#e9c176]",
+          "cc-theme-icon-chip",
+          option.checked && "cc-theme-icon-chip--active",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.7rem] border border-white/20" />
         <i className={cn(option.iconClass ?? "fa-solid fa-sparkles", "relative z-10 text-base")} aria-hidden="true" />
       </span>
       <span className="min-w-0">
-        <span className="block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
+        <span className="cc-theme-body block font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
           {option.label}
         </span>
         {option.description ? (
-          <span className="mt-0.5 block font-fth-cc-body text-[0.92rem] leading-6 text-[#bcb4bf]">
+          <span className="cc-theme-body-muted mt-0.5 block font-fth-cc-body text-[0.92rem] leading-6 text-[#bcb4bf]">
             {option.description}
           </span>
         ) : null}
@@ -1379,6 +1389,8 @@ function ClassAdvancementOptionRow({
           option.checked
             ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
             : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
+          "cc-theme-sigil",
+          option.checked && "cc-theme-sigil--selected",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
@@ -1402,29 +1414,29 @@ function ClassAdvancementSelectedCard({
   emptyMessage: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-white/10 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">{title}</div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {entries.length > 0 ? entries.map((entry) => (
             <div
-              className="flex flex-wrap items-center gap-2 rounded-[0.95rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-3"
+              className="cc-theme-card flex flex-wrap items-center gap-2 rounded-[0.95rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-3"
               key={entry.id ?? entry.key ?? entry.label}
             >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]">
+              <span className="cc-theme-icon-chip cc-theme-icon-chip--active inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] text-[#36240d]">
                 <i className={cn(entry.iconClass ?? "fa-solid fa-sparkles", "text-sm")} aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.label}</span>
+                <span className="cc-theme-body block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.label}</span>
                 {entry.description ? (
-                  <span className="block font-fth-cc-body text-[0.86rem] leading-5 text-[#d7bb8a]">{entry.description}</span>
+                  <span className="cc-theme-body-muted block font-fth-cc-body text-[0.86rem] leading-5 text-[#d7bb8a]">{entry.description}</span>
                 ) : null}
               </span>
             </div>
           )) : (
-            <div className="rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
+            <div className="cc-theme-empty rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
               {emptyMessage}
             </div>
           )}
@@ -1486,6 +1498,8 @@ function WeaponMasteryRow({
         option.checked
           ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.72),rgba(36,31,24,0.98))] shadow-[0_16px_28px_rgba(0,0,0,0.24)]"
           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))]",
+        "cc-theme-card cc-theme-card--interactive",
+        option.checked && "cc-theme-card--selected",
         option.disabled && !option.checked && "opacity-60",
       )}
       data-weapon-mastery-row="true"
@@ -1512,14 +1526,14 @@ function WeaponMasteryRow({
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
       </span>
       <span className="min-w-0">
-        <span className="block truncate font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
+        <span className="cc-theme-body block truncate font-fth-cc-body text-[1.02rem] font-semibold leading-6 text-[#f3e7d3]">
           {option.name}
         </span>
         <span className="mt-0.5 flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#c7bdca]">
+          <span className="cc-theme-pill--muted inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#c7bdca]">
             {formatWeaponTypeBadge(option.weaponType)}
           </span>
-          <span className="inline-flex items-center rounded-full border border-[#e9c176]/20 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#e3c88c]">
+          <span className="cc-theme-pill inline-flex items-center rounded-full border border-[#e9c176]/20 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#e3c88c]">
             {option.mastery}
           </span>
         </span>
@@ -1530,6 +1544,8 @@ function WeaponMasteryRow({
           option.checked
             ? "border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]"
             : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#857d89]",
+          "cc-theme-sigil",
+          option.checked && "cc-theme-sigil--selected",
         )}
       >
         <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
@@ -1541,33 +1557,33 @@ function WeaponMasteryRow({
 
 function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMasteryChoiceOption[] }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-white/10 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Chosen Weapons</div>
-          <div className="mt-2 font-fth-cc-body text-[0.82rem] leading-5 text-[#cfc6d0]">
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Chosen Weapons</div>
+          <div className="cc-theme-body-muted mt-2 font-fth-cc-body text-[0.82rem] leading-5 text-[#cfc6d0]">
             Weapons you have already mastered in this class path.
           </div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {selectedEntries.length > 0 ? selectedEntries.map((entry) => (
             <div
-              className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] px-2.5 py-2.5 shadow-[0_10px_18px_rgba(0,0,0,0.1)]"
+              className="cc-theme-card grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] px-2.5 py-2.5 shadow-[0_10px_18px_rgba(0,0,0,0.1)]"
               key={entry.id}
             >
               <span className="overflow-hidden rounded-[0.8rem] border border-[#e9c176]/20">
                 <img alt="" aria-hidden="true" className="h-10 w-10 object-cover" loading="lazy" src={entry.img} />
               </span>
               <span className="min-w-0">
-                <span className="block truncate font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.name}</span>
-                <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] text-[#d7bb8a]">{entry.mastery}</span>
+                <span className="cc-theme-body block truncate font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.name}</span>
+                <span className="cc-theme-kicker font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em] text-[#d7bb8a]">{entry.mastery}</span>
               </span>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]">
+              <span className="cc-theme-sigil cc-theme-sigil--selected inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] text-[#f4e6c4]">
                 <i className="fa-solid fa-check" aria-hidden="true" />
               </span>
             </div>
           )) : (
-            <div className="rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
+            <div className="cc-theme-empty rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm text-[#d8c2a0]">
               No weapon masteries chosen yet.
             </div>
           )}
@@ -1579,11 +1595,11 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
 
 function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-white/10 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Mastery Techniques</div>
-          <div className="mt-2 font-fth-cc-body text-[0.82rem] leading-5 text-[#cfc6d0]">
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Mastery Techniques</div>
+          <div className="cc-theme-body-muted mt-2 font-fth-cc-body text-[0.82rem] leading-5 text-[#cfc6d0]">
             Reference the technique each selected weapon unlocks.
           </div>
         </div>
@@ -1595,17 +1611,18 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
                 entry.sourceWeapons.length > 0
                   ? "border-[#e9c176]/22 bg-[rgba(233,193,118,0.07)]"
                   : "border-transparent bg-transparent",
+                entry.sourceWeapons.length > 0 && "cc-theme-card",
               )}
               key={entry.mastery}
             >
-              <span className="inline-flex h-8 w-8 items-center justify-center self-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] text-[#f2deb6]">
+              <span className="cc-theme-icon-chip inline-flex h-8 w-8 items-center justify-center self-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] text-[#f2deb6]">
                 <i className={entry.iconClass} aria-hidden="true" />
               </span>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.mastery}</span>
+                  <span className="cc-theme-body block font-fth-cc-body text-[1rem] font-semibold text-[#fff0d6]">{entry.mastery}</span>
                   {entry.sourceWeapons.length > 0 ? (
-                    <span className="inline-flex items-center rounded-full border border-[#e9c176]/28 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em] text-[#f3ddb0]">
+                    <span className="cc-theme-pill inline-flex items-center rounded-full border border-[#e9c176]/28 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em] text-[#f3ddb0]">
                       Known via weapon mastery
                     </span>
                   ) : null}
@@ -1613,11 +1630,11 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
               </div>
               <div className="col-span-2 min-w-0">
                 {entry.sourceWeapons.length > 0 ? (
-                  <div className="mb-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#d9bc8f]">
+                  <div className="cc-theme-kicker mb-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#d9bc8f]">
                     From {entry.sourceWeapons.join(", ")}
                   </div>
                 ) : null}
-                <span className="block font-fth-cc-body text-[0.84rem] leading-5 text-[#c7c0cb]">{entry.masteryDescription}</span>
+                <span className="cc-theme-body-muted block font-fth-cc-body text-[0.84rem] leading-5 text-[#c7c0cb]">{entry.masteryDescription}</span>
               </div>
             </div>
           ))}
@@ -1629,16 +1646,16 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
 
 function ClassProficienciesCard({ savingThrows }: { savingThrows: string[] }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
+      <div className="cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4 text-[#f1ddbc]">
         <div className="border-b border-white/10 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Saving Throw Proficiencies</div>
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Saving Throw Proficiencies</div>
         </div>
         <div className="mt-4">
           <div className="flex flex-wrap gap-2">
             {savingThrows.map((value) => (
               <span
-                className="inline-flex items-center rounded-full border border-[#e9c176]/24 bg-[rgba(255,255,255,0.04)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] text-[#f2deb6]"
+                className="cc-theme-pill inline-flex items-center rounded-full border border-[#e9c176]/24 bg-[rgba(255,255,255,0.04)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] text-[#f2deb6]"
                 key={value}
               >
                 {value}

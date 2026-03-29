@@ -73,7 +73,7 @@
 }
 
 .lpcs-sheet .lpcs-spell-row:hover { background: var(--lpcs-bg-glass-hover); border-color: var(--lpcs-border); }
-.lpcs-sheet .lpcs-spell-row.conc { border-left: 2px solid #4a7ab5; }
+.lpcs-sheet .lpcs-spell-row.conc { border-left: 2px solid var(--lpcs-tag-focus-border); }
 .lpcs-sheet .lpcs-spell-row.ritual { border-left: 2px solid var(--lpcs-accent-bronze); }
 
 .lpcs-sheet .lpcs-spell-use {
@@ -107,8 +107,8 @@
   border-radius: 3px;
 }
 
-.lpcs-sheet .lpcs-tag--conc { background: rgba(74,122,181,0.25); color: #7ab0e0; }
-.lpcs-sheet .lpcs-tag--ritual { background: rgba(200,167,93,0.2); color: var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-tag--conc { background: var(--lpcs-tag-focus-bg); color: var(--lpcs-tag-focus-text); }
+.lpcs-sheet .lpcs-tag--ritual { background: var(--lpcs-tag-ritual-bg); color: var(--lpcs-tag-ritual-text); }
 
 /* ── Spellcasting Header Stats ─────────────────────────────── */
 .lpcs-sheet .lpcs-stat-value {
@@ -148,4 +148,3 @@
   font-family: var(--lpcs-font-mono);
   white-space: nowrap;
 }
-

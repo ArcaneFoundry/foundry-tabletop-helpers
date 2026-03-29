@@ -85,13 +85,13 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
+        className="cc-theme-shell relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.985 }}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        <div className="cc-theme-shell-inner relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
@@ -100,7 +100,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
           >
             <motion.div
               animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              className="relative overflow-hidden rounded-[1.15rem] border border-fth-cc-gold/50 shadow-[inset_0_1px_0_rgba(255,236,206,0.22),0_10px_22px_rgba(0,0,0,0.18),0_18px_34px_rgba(77,46,18,0.2)]"
+              className="cc-theme-header relative overflow-hidden rounded-[1.15rem] border border-fth-cc-gold/50 shadow-[inset_0_1px_0_rgba(255,236,206,0.22),0_10px_22px_rgba(0,0,0,0.18),0_18px_34px_rgba(77,46,18,0.2)]"
               initial={prefersReducedMotion ? false : { opacity: 0, y: -12, scale: 0.988 }}
               transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
@@ -122,7 +122,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
               <div className="relative z-10 flex items-center justify-center px-4 py-3">
                 <HeaderFlourish prefersReducedMotion={prefersReducedMotion} side="left" />
                 <h2
-                  className="m-0 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.12em] text-fth-cc-gold-bright md:text-[2.15rem]"
+                  className="cc-theme-title m-0 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.12em] text-fth-cc-gold-bright md:text-[2.15rem]"
                   style={{
                     textShadow:
                       "0 0 8px rgba(255,225,164,0.4), 0 0 18px rgba(255,211,130,0.2), 0 2px 10px rgba(16, 9, 6, 0.72)",
@@ -641,17 +641,17 @@ function EmptyState({ message, prefersReducedMotion }: { message: string; prefer
     <div className="flex flex-1 items-center justify-center">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="max-w-2xl rounded-[1.2rem] border border-[#c0a27b]/65 bg-[linear-gradient(180deg,rgba(249,240,224,0.98),rgba(233,215,190,0.98))] px-8 py-10 text-center shadow-[0_14px_30px_rgba(108,72,38,0.12)]"
+        className="cc-theme-empty max-w-2xl rounded-[1.2rem] border border-[#c0a27b]/65 bg-[linear-gradient(180deg,rgba(249,240,224,0.98),rgba(233,215,190,0.98))] px-8 py-10 text-center shadow-[0_14px_30px_rgba(108,72,38,0.12)]"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }}
         transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#ba8e5d]/65 bg-[radial-gradient(circle_at_35%_35%,#f7d691,#b67826)] text-white shadow-lg">
           <i className="fa-solid fa-triangle-exclamation text-xl" aria-hidden="true" />
         </div>
-        <p className="font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em] text-[#4c3524]">
+        <p className="cc-theme-title font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em] text-[#4c3524]">
           No Classes Available
         </p>
-        <p className="mt-3 font-fth-cc-body text-[1.1rem] leading-7 text-[#5f4738]">{message}</p>
+        <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[1.1rem] leading-7 text-[#5f4738]">{message}</p>
       </motion.div>
     </div>
   );

@@ -29,7 +29,7 @@
 .lpcs-sheet .lpcs-rest-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.80);
+  background: var(--lpcs-bg-overlay-strong);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
@@ -46,7 +46,7 @@
   background: var(--lpcs-bg-panel);
   border: 1px solid var(--lpcs-border-accent);
   border-radius: var(--lpcs-radius-lg);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  box-shadow: var(--lpcs-shadow-modal);
   display: flex;
   flex-direction: column;
   gap: var(--lpcs-space-lg);
@@ -86,13 +86,13 @@
   transition: background 0.15s, color 0.15s;
 }
 .lpcs-sheet .lpcs-rest-close-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--lpcs-bg-glass-hover);
   color: var(--lpcs-text-primary);
 }
 
 .lpcs-sheet .lpcs-rest-close-btn:active {
   transform: scale(0.9);
-  background: rgba(200, 167, 93, 0.15);
+  background: var(--lpcs-bg-press);
   transition-duration: 0.05s;
 }
 
@@ -149,16 +149,16 @@
   min-height: var(--lpcs-touch-min);
   border-radius: var(--lpcs-radius-sm);
   border: 1px solid var(--lpcs-border-accent);
-  background: rgba(200, 167, 93, 0.06);
+  background: var(--lpcs-accent-soft-bg);
   color: var(--lpcs-text-primary);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 .lpcs-sheet .lpcs-rest-hd-btn:hover:not(:disabled) {
-  background: rgba(200, 167, 93, 0.14);
+  background: var(--lpcs-bg-press);
   border-color: var(--lpcs-accent-gold);
 }
-.lpcs-sheet .lpcs-rest-hd-btn:active:not(:disabled) { transform: scale(0.95); background: rgba(200, 167, 93, 0.2); transition-duration: 0.05s; }
+.lpcs-sheet .lpcs-rest-hd-btn:active:not(:disabled) { transform: scale(0.95); background: var(--lpcs-bg-press-strong); transition-duration: 0.05s; }
 .lpcs-sheet .lpcs-rest-hd-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
@@ -199,8 +199,8 @@
   justify-content: center;
   padding: 14px 20px;
   border-radius: var(--lpcs-radius-md);
-  border: 2px solid rgba(200, 167, 93, 0.35);
-  background: rgba(26, 29, 36, 0.9);
+  border: 2px solid var(--lpcs-border-accent);
+  background: var(--lpcs-bg-rest-hold);
   color: var(--lpcs-text-primary);
   cursor: pointer;
   overflow: hidden;             /* clips progress bar to button's rounded corners */
@@ -209,7 +209,7 @@
   transition: border-color 0.15s;
 }
 .lpcs-sheet .lpcs-rest-long-btn:hover {
-  border-color: rgba(200, 167, 93, 0.6);
+  border-color: var(--lpcs-accent-gold);
 }
 
 /* Progress fill — width 0s transition = instant snap-back on release */
@@ -218,7 +218,7 @@
   top: 0; left: 0;
   height: 100%;
   width: 0%;
-  background: linear-gradient(to right, rgba(46, 204, 113, 0.25), rgba(46, 204, 113, 0.55));
+  background: var(--lpcs-bg-rest-progress);
   z-index: 0;
   transition: width 0s linear;
 }
@@ -243,10 +243,10 @@
 
 /* Confirmed: brief green flash shown before modal closes */
 .lpcs-sheet .lpcs-rest-long-btn.confirmed {
-  border-color: rgba(46, 204, 113, 0.8);
+  border-color: var(--lpcs-border-positive);
 }
 .lpcs-sheet .lpcs-rest-long-btn.confirmed .lpcs-rest-long-bar {
   width: 100%;
-  background: linear-gradient(to right, rgba(46, 204, 113, 0.4), rgba(46, 204, 113, 0.7));
+  background: var(--lpcs-bg-rest-progress-confirmed);
   transition: none;
 }

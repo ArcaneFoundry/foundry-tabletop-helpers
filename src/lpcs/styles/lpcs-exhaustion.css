@@ -13,40 +13,40 @@
 /* Level 1–6: orange → deep crimson */
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="1"] {
   opacity: 1;
-  background: rgba(255, 140, 0, 0.15);
-  border-top-color: #ff8c00;
-  box-shadow: inset 0 0 6px rgba(255, 140, 0, 0.3);
+  background: var(--lpcs-bg-exhaustion-soft);
+  border-top-color: var(--lpcs-accent-warning);
+  box-shadow: inset 0 0 6px color-mix(in srgb, var(--lpcs-accent-warning) 32%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="2"] {
   opacity: 1;
-  background: rgba(255, 100, 0, 0.2);
-  border-top-color: #ff6400;
-  box-shadow: inset 0 0 8px rgba(255, 100, 0, 0.4);
+  background: color-mix(in srgb, var(--lpcs-accent-warning) 22%, transparent);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-warning) 82%, var(--lpcs-accent-crimson) 18%);
+  box-shadow: inset 0 0 8px color-mix(in srgb, var(--lpcs-accent-warning) 40%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="3"] {
   opacity: 1;
-  background: rgba(220, 40, 40, 0.28);
-  border-top-color: #dc2828;
-  box-shadow: inset 0 0 10px rgba(220, 40, 40, 0.5);
+  background: var(--lpcs-bg-exhaustion-mid);
+  border-top-color: var(--lpcs-accent-crimson);
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--lpcs-accent-crimson) 48%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="4"] {
   opacity: 1;
-  background: rgba(180, 20, 20, 0.38);
-  border-top-color: #b41414;
-  box-shadow: inset 0 0 14px rgba(180, 20, 20, 0.65);
+  background: color-mix(in srgb, var(--lpcs-accent-crimson) 32%, transparent);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 88%, #70151a 12%);
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--lpcs-accent-crimson) 60%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="5"] {
   opacity: 1;
-  background: rgba(140, 10, 10, 0.52);
-  border-top-color: #8c0a0a;
-  box-shadow: inset 0 0 18px rgba(140, 10, 10, 0.8);
+  background: var(--lpcs-bg-exhaustion-strong);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 92%, #4d070c 8%);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--lpcs-accent-crimson) 72%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="6"] {
   opacity: 1;
-  background: rgba(100, 0, 0, 0.75);
-  border-top-color: #640000;
-  box-shadow: inset 0 0 22px rgba(100, 0, 0, 1);
-  color: #fff;
+  background: var(--lpcs-bg-exhaustion-fatal);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 94%, #260204 6%);
+  box-shadow: inset 0 0 22px color-mix(in srgb, var(--lpcs-accent-crimson) 88%, transparent);
+  color: var(--lpcs-text-contrast);
 }
 
 /* ── Exhaustion slide-down dialog ─────────────────────────────── */
@@ -69,7 +69,7 @@
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  background: rgba(12, 14, 18, 0.97);
+  background: var(--lpcs-bg-exhaustion-dialog);
   border: 1px solid var(--lpcs-border-accent);
   border-radius: 0 0 8px 8px;
 }
@@ -105,17 +105,17 @@
   display: flex; align-items: center; justify-content: center;
   border-radius: 8px;
   border: 1px solid var(--lpcs-border-accent);
-  background: rgba(200, 167, 93, 0.08);
+  background: var(--lpcs-accent-soft-bg);
   color: var(--lpcs-text-primary);
   font-size: 1.3rem; line-height: 1;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 .lpcs-sheet .lpcs-exh-step-btn:hover:not(:disabled) {
-  background: rgba(200, 167, 93, 0.18);
+  background: var(--lpcs-bg-press);
   border-color: var(--lpcs-accent-gold);
 }
-.lpcs-sheet .lpcs-exh-step-btn:active:not(:disabled) { transform: scale(0.92); background: rgba(200, 167, 93, 0.22); transition-duration: 0.05s; }
+.lpcs-sheet .lpcs-exh-step-btn:active:not(:disabled) { transform: scale(0.92); background: var(--lpcs-bg-press-strong); transition-duration: 0.05s; }
 .lpcs-sheet .lpcs-exh-step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .lpcs-sheet .lpcs-exh-level-display {
@@ -140,8 +140,8 @@
   box-sizing: border-box;
   padding: 6px 20px;
   border-radius: 6px;
-  border: 1px solid rgba(200, 167, 93, 0.3);
-  background: rgba(200, 167, 93, 0.1);
+  border: 1px solid var(--lpcs-border-accent);
+  background: var(--lpcs-accent-soft-bg);
   color: var(--lpcs-text-primary);
   font-family: var(--lpcs-font-display);
   font-size: var(--lpcs-text-sm); font-weight: 700;
@@ -151,7 +151,7 @@
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 .lpcs-sheet .lpcs-exh-apply-btn:hover {
-  background: rgba(200, 167, 93, 0.2);
-  border-color: rgba(200, 167, 93, 0.55);
+  background: var(--lpcs-bg-press);
+  border-color: var(--lpcs-accent-gold);
 }
-.lpcs-sheet .lpcs-exh-apply-btn:active { transform: scale(0.96); background: rgba(200, 167, 93, 0.25); transition-duration: 0.05s; }
+.lpcs-sheet .lpcs-exh-apply-btn:active { transform: scale(0.96); background: var(--lpcs-bg-press-strong); transition-duration: 0.05s; }

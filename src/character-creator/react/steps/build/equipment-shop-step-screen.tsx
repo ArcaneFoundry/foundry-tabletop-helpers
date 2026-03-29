@@ -96,14 +96,14 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-        <header className="rounded-[1.65rem] border border-white/10 bg-[linear-gradient(180deg,rgba(31,25,29,0.96),rgba(15,15,19,0.98))] px-5 py-5 shadow-[0_26px_60px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)] md:px-6">
+        <header className="cc-theme-header rounded-[1.65rem] border border-white/10 bg-[linear-gradient(180deg,rgba(31,25,29,0.96),rgba(15,15,19,0.98))] px-5 py-5 shadow-[0_26px_60px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)] md:px-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl space-y-2">
               <MicroLabel>Build / Shop</MicroLabel>
-              <h2 className="m-0 font-fth-cc-display text-[1.7rem] leading-[1.02] text-[#f7e7c6] md:text-[1.95rem]">
+              <h2 className="cc-theme-title m-0 font-fth-cc-display text-[1.7rem] leading-[1.02] text-[#f7e7c6] md:text-[1.95rem]">
                 Spend the coin your loadout leaves behind
               </h2>
-              <p className="m-0 font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
+              <p className="cc-theme-copy m-0 font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
                 Use the resolved mundane shop inventory to buy essentials or sell surplus gear. All changes write back through the existing equipment selection ledger.
               </p>
             </div>
@@ -121,14 +121,14 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
 
         <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)]">
           <div className="pr-1">
-            <section className="rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,30,39,0.94),rgba(18,18,22,0.98))] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:p-5">
+            <section className="cc-theme-panel rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,30,39,0.94),rgba(18,18,22,0.98))] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.24),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-2xl">
                   <MicroLabel>Trade mode</MicroLabel>
-                  <h3 className="m-0 mt-2 font-fth-cc-display text-[1.45rem] leading-none text-[#f7e7c6]">
+                  <h3 className="cc-theme-title m-0 mt-2 font-fth-cc-display text-[1.45rem] leading-none text-[#f7e7c6]">
                     {shopMode === "buy" ? "Provision the expedition" : "Sell down the loadout"}
                   </h3>
-                  <p className="m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#cdc4be]">
+                  <p className="cc-theme-body-muted m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#cdc4be]">
                     Buying spends from the current purse. Selling returns item value from the inventory you currently own, including anything already marked for purchase.
                   </p>
                 </div>
@@ -171,14 +171,14 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
             </section>
           </div>
 
-          <aside className="rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,29,40,0.94),rgba(16,16,20,0.98))] p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(255,255,255,0.04)] md:p-5">
+          <aside className="cc-theme-panel rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,29,40,0.94),rgba(16,16,20,0.98))] p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(255,255,255,0.04)] md:p-5">
             <div className="space-y-4">
               <div>
                 <MicroLabel>Trade summary</MicroLabel>
-                <h3 className="m-0 mt-2 font-fth-cc-display text-[1.35rem] leading-none text-[#f7e7c6]">
+                <h3 className="cc-theme-title m-0 mt-2 font-fth-cc-display text-[1.35rem] leading-none text-[#f7e7c6]">
                   {liveDerived.remainingGoldCp > 0 ? "Funds still in purse" : "All coin committed"}
                 </h3>
-                <p className="m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#cec5bf]">
+                <p className="cc-theme-body-muted m-0 mt-2 font-fth-cc-body text-[0.94rem] leading-6 text-[#cec5bf]">
                   The summary rail reflects the live derived equipment state after purchases and sales. Review and actor creation will consume the same ledger.
                 </p>
               </div>
@@ -196,11 +196,11 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
                 />
               </div>
 
-              <div className="rounded-[1.2rem] border border-[#e9c176]/18 bg-[rgba(233,193,118,0.08)] px-4 py-3">
+              <div className="cc-theme-panel cc-theme-panel--accent rounded-[1.2rem] border border-[#e9c176]/18 bg-[rgba(233,193,118,0.08)] px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <MicroLabel>Remaining gold</MicroLabel>
-                    <div className="mt-2 font-fth-cc-display text-[1.15rem] leading-none text-[#f7e7c6]">
+                    <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.15rem] leading-none text-[#f7e7c6]">
                       {formatCurrencyCp(liveDerived.remainingGoldCp)}
                     </div>
                   </div>
@@ -379,11 +379,11 @@ function TradeRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="rounded-[1.15rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">
+    <div className="cc-theme-card rounded-[1.15rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="font-fth-cc-display text-[1.08rem] leading-none text-[#f7e7c6]">
+            <div className="cc-theme-title font-fth-cc-display text-[1.08rem] leading-none text-[#f7e7c6]">
               {entry.name}
             </div>
             {entry.itemType ? <TokenPill muted>{entry.itemType}</TokenPill> : null}
@@ -398,7 +398,7 @@ function TradeRow({
         <div className="flex items-center gap-3">
           <div className="min-w-[5.5rem] text-right">
             <MicroLabel>{actionLabel}</MicroLabel>
-            <div className="mt-2 font-fth-cc-display text-[1.08rem] leading-none text-[#f7e7c6]">{quantity}</div>
+            <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.08rem] leading-none text-[#f7e7c6]">{quantity}</div>
           </div>
           <div className="flex items-center gap-2">
             <QuantityButton disabled={!quantityCanDecrease} label={`Decrease ${entry.name}`} onClick={onDecrease}>-</QuantityButton>
@@ -412,12 +412,12 @@ function TradeRow({
 
 function InventorySummaryRow({ item }: { item: DerivedEquipmentItem }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[1rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-3 py-3">
+    <div className="cc-theme-card flex items-center justify-between gap-3 rounded-[1rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-3 py-3">
       <div className="min-w-0">
-        <div className="truncate font-fth-cc-body text-[0.95rem] leading-6 text-[#f2ebe2]">
+        <div className="cc-theme-body truncate font-fth-cc-body text-[0.95rem] leading-6 text-[#f2ebe2]">
           {item.name}
         </div>
-        <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#b9b0a7]">
+        <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#b9b0a7]">
           {item.itemType ?? "Gear"}
         </div>
       </div>
@@ -446,17 +446,19 @@ function ModeToggleButton({
         active
           ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(73,60,55,0.34),rgba(32,27,29,0.92))] shadow-[0_0_0_1px_rgba(233,193,118,0.25),0_18px_32px_rgba(0,0,0,0.24)]"
           : "border-white/8 bg-[rgba(255,255,255,0.03)] hover:border-[#e9c176]/45 hover:bg-[rgba(255,255,255,0.045)]",
+        "cc-theme-toggle",
+        active && "cc-theme-toggle--active",
       )}
       onClick={onClick}
       type="button"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/24 bg-[rgba(233,193,118,0.12)] text-[#f0d7a1]">
+        <div className={cn("cc-theme-icon-chip flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/24 bg-[rgba(233,193,118,0.12)] text-[#f0d7a1]", active && "cc-theme-icon-chip--active")}>
           <i className={`${icon} text-sm`} />
         </div>
         <div>
-          <div className="font-fth-cc-display text-[1rem] leading-none text-[#f7e7c6]">{label}</div>
-          <p className="m-0 mt-2 font-fth-cc-body text-[0.88rem] leading-6 text-[#d5cbc3]">{description}</p>
+          <div className="cc-theme-title font-fth-cc-display text-[1rem] leading-none text-[#f7e7c6]">{label}</div>
+          <p className="cc-theme-body-muted m-0 mt-2 font-fth-cc-body text-[0.88rem] leading-6 text-[#d5cbc3]">{description}</p>
         </div>
       </div>
     </button>
@@ -482,6 +484,8 @@ function QuantityButton({
         disabled
           ? "cursor-not-allowed border-white/8 bg-[rgba(255,255,255,0.02)] text-[#72685f]"
           : "border-[#e9c176]/28 bg-[rgba(233,193,118,0.1)] text-[#f7e7c6] hover:border-[#e9c176]/48 hover:bg-[rgba(233,193,118,0.16)]",
+        "cc-theme-sigil",
+        !disabled && "cc-theme-sigil--selected",
       )}
       disabled={disabled}
       onClick={onClick}
@@ -494,9 +498,9 @@ function QuantityButton({
 
 function SummaryBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-[11rem] rounded-[1.1rem] border border-white/10 bg-black/20 px-4 py-3">
+    <div className="cc-theme-card min-w-[11rem] rounded-[1.1rem] border border-white/10 bg-black/20 px-4 py-3">
       <MicroLabel>{label}</MicroLabel>
-      <div className="mt-2 font-fth-cc-body text-[0.96rem] leading-6 text-[#f2ebe2]">{value}</div>
+      <div className="cc-theme-body mt-2 font-fth-cc-body text-[0.96rem] leading-6 text-[#f2ebe2]">{value}</div>
     </div>
   );
 }
@@ -511,25 +515,25 @@ function SelectionLedger({
   description: string;
 }) {
   return (
-    <div className="rounded-[1.1rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-3">
+    <div className="cc-theme-card rounded-[1.1rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-3">
       <MicroLabel>{label}</MicroLabel>
-      <div className="mt-2 font-fth-cc-display text-[1.08rem] leading-none text-[#f7e7c6]">{value}</div>
-      <p className="m-0 mt-2 font-fth-cc-body text-[0.88rem] leading-6 text-[#cfc5bd]">{description}</p>
+      <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.08rem] leading-none text-[#f7e7c6]">{value}</div>
+      <p className="cc-theme-body-muted m-0 mt-2 font-fth-cc-body text-[0.88rem] leading-6 text-[#cfc5bd]">{description}</p>
     </div>
   );
 }
 
 function MicroLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.22em] text-[#e9c176]/72">
-      {children}
-    </div>
+      <div className="cc-theme-kicker font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.22em] text-[#e9c176]/72">
+        {children}
+      </div>
   );
 }
 
 function ValueBadge({ children }: { children: ReactNode }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-[#e9c176]/24 bg-[rgba(233,193,118,0.12)] px-3 py-1 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.18em] text-[#f0d7a1]">
+    <div className="cc-theme-badge inline-flex items-center rounded-full border border-[#e9c176]/24 bg-[rgba(233,193,118,0.12)] px-3 py-1 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.18em] text-[#f0d7a1]">
       {children}
     </div>
   );
@@ -543,6 +547,7 @@ function TokenPill({ children, muted = false }: { children: ReactNode; muted?: b
         muted
           ? "border-white/10 bg-[rgba(255,255,255,0.035)] text-[#c8bfb7]"
           : "border-[#e9c176]/24 bg-[rgba(233,193,118,0.12)] text-[#f0d7a1]",
+        muted ? "cc-theme-pill--muted" : "cc-theme-pill",
       )}
     >
       {children}
@@ -552,7 +557,7 @@ function TokenPill({ children, muted = false }: { children: ReactNode; muted?: b
 
 function EmptyPanelCopy({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-[1.05rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.02)] px-4 py-4 font-fth-cc-body text-[0.92rem] leading-7 text-[#cfc5be]">
+    <div className="cc-theme-empty rounded-[1.05rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.02)] px-4 py-4 font-fth-cc-body text-[0.92rem] leading-7 text-[#cfc5be]">
       {children}
     </div>
   );

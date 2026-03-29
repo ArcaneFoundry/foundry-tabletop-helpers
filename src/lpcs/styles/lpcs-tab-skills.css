@@ -96,7 +96,7 @@
   font-size: var(--lpcs-text-2xs);
   font-weight: 600;
   color: var(--lpcs-accent-bronze);
-  background: rgba(200, 167, 93, 0.1);
+  background: var(--lpcs-bg-passive-badge);
   padding: 1px 6px;
   border-radius: 8px;
   white-space: nowrap;
@@ -140,7 +140,7 @@
 
 .lpcs-sheet .lpcs-skills-sort-btn:active {
   transform: scale(0.92);
-  background: rgba(200, 167, 93, 0.15);
+  background: var(--lpcs-bg-press);
   transition-duration: 0.05s;
 }
 
@@ -180,7 +180,7 @@
 .lpcs-sheet .lpcs-skill-info-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.80);
+  background: var(--lpcs-bg-overlay-strong);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
@@ -195,7 +195,7 @@
   background: var(--lpcs-bg-panel);
   border: 1px solid var(--lpcs-border-accent);
   border-radius: var(--lpcs-radius-lg);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  box-shadow: var(--lpcs-shadow-modal);
   display: flex;
   flex-direction: column;
   gap: var(--lpcs-space-md);
@@ -234,13 +234,13 @@
 }
 
 .lpcs-sheet .lpcs-skill-info-close-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--lpcs-bg-glass-hover);
   color: var(--lpcs-text-primary);
 }
 
 .lpcs-sheet .lpcs-skill-info-close-btn:active {
   transform: scale(0.9);
-  background: rgba(200, 167, 93, 0.15);
+  background: var(--lpcs-bg-press);
   transition-duration: 0.05s;
 }
 
