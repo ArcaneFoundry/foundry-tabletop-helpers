@@ -234,13 +234,13 @@ export function AbilityScoresStepScreen({
           <section className="cc-method-panel w-full">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-2xl space-y-2">
-                <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/70">
+                <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                   {selectedMethod.eyebrow}
                 </div>
-                <h3 className="m-0 font-fth-cc-display text-[1.2rem] leading-none text-[#f7e7c6]">
+                <h3 className="cc-theme-title m-0 font-fth-cc-display text-[1.2rem] leading-none">
                   {selectedMethod.title}
                 </h3>
-                <p className="m-0 text-[0.92rem] leading-6 text-[#d6cec6]">
+                <p className="cc-theme-body-muted m-0 text-[0.92rem] leading-6">
                   {selectedMethod.detail}
                 </p>
               </div>
@@ -257,10 +257,10 @@ export function AbilityScoresStepScreen({
             {viewModel.isRoll ? (
               <div className="cc-roll-controls">
                 <div className="cc-roll-controls__copy">
-                  <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/70">
+                  <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                     Dice Ritual
                   </div>
-                  <p className="m-0 text-[0.92rem] leading-6 text-[#d6cec6]">
+                  <p className="cc-theme-body-muted m-0 text-[0.92rem] leading-6">
                     {viewModel.hasRolled
                       ? "The array is ready. Re-roll if you want a different fate, then assign the results below."
                       : "Roll the full array to reveal the six values before you assign them."}
@@ -294,10 +294,10 @@ export function AbilityScoresStepScreen({
             {viewModel.isStandardArray ? (
               <div className="cc-roll-controls">
                 <div className="cc-roll-controls__copy">
-                  <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/70">
+                  <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                     Fixed Allocation
                   </div>
-                  <p className="m-0 text-[0.92rem] leading-6 text-[#d6cec6]">
+                  <p className="cc-theme-body-muted m-0 text-[0.92rem] leading-6">
                     Assign the full array of 15, 14, 13, 12, 10, and 8 to keep the build disciplined and predictable.
                   </p>
                 </div>

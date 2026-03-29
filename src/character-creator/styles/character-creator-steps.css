@@ -421,10 +421,10 @@
   min-height: 100%;
   padding: var(--cc-space-md);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--cc-border-subtle) 96%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 24%),
-    linear-gradient(160deg, rgba(28, 23, 27, 0.98), rgba(17, 15, 18, 0.98));
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-glass) 88%, transparent), transparent 24%),
+    linear-gradient(160deg, color-mix(in srgb, var(--cc-bg-surface) 92%, var(--cc-bg-base) 8%), color-mix(in srgb, var(--cc-bg-elevated) 88%, var(--cc-bg-base) 12%));
   color: var(--cc-text-secondary);
   text-align: left;
   font-size: var(--cc-text-sm);
@@ -437,9 +437,9 @@
     box-shadow var(--cc-duration-fast) var(--cc-ease-out),
     transform var(--cc-duration-fast) var(--cc-ease-out);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.32),
-    0 10px 20px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 72%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--cc-bg-base) 38%, transparent),
+    var(--cc-shadow-panel);
 }
 
 .cc-method-tab__badge {
@@ -450,12 +450,12 @@
   height: 2.7rem;
   min-width: 2.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(233, 193, 118, 0.28);
-  background: radial-gradient(circle at 35% 30%, rgba(255, 244, 214, 0.95), rgba(200, 167, 93, 0.72));
-  color: var(--cc-bg-base);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 42%, transparent);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cc-action-primary-contrast) 94%, white 6%), color-mix(in srgb, var(--cc-accent-gold) 72%, var(--cc-action-primary) 28%));
+  color: color-mix(in srgb, var(--cc-bg-base) 82%, var(--cc-bg-surface) 18%);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 8px 18px rgba(0, 0, 0, 0.22);
+    0 0 0 1px color-mix(in srgb, var(--cc-bg-glass) 76%, transparent),
+    0 8px 18px color-mix(in srgb, var(--cc-bg-base) 22%, transparent);
 }
 
 .cc-method-tab__badge i {
@@ -475,7 +475,7 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(233, 193, 118, 0.72);
+  color: var(--cc-text-kicker);
 }
 
 .cc-method-tab__label {
@@ -497,9 +497,9 @@
   margin-left: auto;
   padding: 0.35rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid rgba(233, 193, 118, 0.18);
-  background: rgba(233, 193, 118, 0.08);
-  color: rgba(247, 231, 198, 0.9);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 24%, transparent);
+  background: color-mix(in srgb, var(--cc-surface-accent-soft) 68%, transparent);
+  color: var(--cc-text-kicker);
   font-size: var(--cc-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -507,24 +507,24 @@
 }
 
 .cc-method-tab--active {
-  border-color: rgba(233, 193, 118, 0.48);
+  border-color: color-mix(in srgb, var(--cc-border-accent) 52%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 244, 214, 0.06), transparent 22%),
-    linear-gradient(160deg, rgba(38, 29, 33, 0.98), rgba(18, 16, 19, 0.98));
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-surface-accent-soft) 54%, transparent), transparent 22%),
+    linear-gradient(160deg, color-mix(in srgb, var(--cc-bg-surface) 92%, var(--cc-surface-accent-soft) 8%), color-mix(in srgb, var(--cc-bg-elevated) 86%, var(--cc-bg-base) 14%));
   color: var(--cc-text-primary);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-    0 14px 28px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(233, 193, 118, 0.06);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 76%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--cc-bg-base) 32%, transparent),
+    0 14px 28px color-mix(in srgb, var(--cc-bg-base) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 12%, transparent);
 }
 
 .cc-method-tab--active .cc-method-tab__badge {
-  border-color: rgba(247, 231, 198, 0.42);
-  background: radial-gradient(circle at 35% 30%, rgba(255, 247, 226, 0.98), rgba(233, 193, 118, 0.78));
+  border-color: color-mix(in srgb, var(--cc-action-primary-contrast) 42%, transparent);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cc-action-primary-contrast) 98%, white 2%), color-mix(in srgb, var(--cc-accent-gold) 84%, var(--cc-action-primary) 16%));
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 8px 20px rgba(0, 0, 0, 0.24);
+    0 0 0 1px color-mix(in srgb, var(--cc-bg-glass) 86%, transparent),
+    0 8px 20px color-mix(in srgb, var(--cc-bg-base) 24%, transparent);
 }
 
 .cc-method-tab:active:not(.cc-method-tab--active) {
@@ -533,10 +533,10 @@
 
 @media (hover: hover) and (pointer: fine) {
   .cc-method-tab:not(.cc-method-tab--active):hover {
-    border-color: rgba(233, 193, 118, 0.28);
+    border-color: color-mix(in srgb, var(--cc-border-accent) 34%, transparent);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 22%),
-      linear-gradient(160deg, rgba(32, 26, 30, 0.98), rgba(19, 16, 19, 0.98));
+      linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-glass) 92%, transparent), transparent 22%),
+      linear-gradient(160deg, color-mix(in srgb, var(--cc-bg-surface) 94%, var(--cc-surface-accent-soft) 6%), color-mix(in srgb, var(--cc-bg-elevated) 88%, var(--cc-bg-base) 12%));
     color: var(--cc-text-primary);
     transform: translateY(-1px);
   }
@@ -550,14 +550,14 @@
   gap: var(--cc-space-md);
   padding: var(--cc-space-lg);
   margin-bottom: var(--cc-space-lg);
-  border: 1px solid var(--cc-border-subtle);
+  border: 1px solid color-mix(in srgb, var(--cc-border-subtle) 96%, transparent);
   border-radius: 1.35rem;
   background:
-    linear-gradient(180deg, rgba(29, 23, 27, 0.96), rgba(16, 15, 18, 0.98));
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-surface) 94%, var(--cc-bg-elevated) 6%), color-mix(in srgb, var(--cc-bg-elevated) 88%, var(--cc-bg-base) 12%));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-    0 14px 32px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 76%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--cc-bg-base) 32%, transparent),
+    var(--cc-shadow-panel);
 }
 
 .cc-point-budget,
@@ -571,18 +571,18 @@
   gap: var(--cc-space-sm);
   padding: var(--cc-space-md) var(--cc-space-lg);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%),
-    linear-gradient(160deg, rgba(29, 23, 27, 0.95), rgba(16, 15, 18, 0.98));
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-glass) 92%, transparent), transparent 24%),
+    linear-gradient(160deg, color-mix(in srgb, var(--cc-bg-surface) 92%, var(--cc-bg-elevated) 8%), color-mix(in srgb, var(--cc-bg-elevated) 88%, var(--cc-bg-base) 12%));
   border-radius: 1rem;
-  border: 1px solid rgba(233, 193, 118, 0.16);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 24%, transparent);
   font-size: var(--cc-text-sm);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 8px 18px rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 72%, transparent),
+    0 8px 18px color-mix(in srgb, var(--cc-bg-base) 20%, transparent);
 }
 
 .cc-point-budget__label {
-  color: rgba(233, 193, 118, 0.72);
+  color: var(--cc-text-kicker);
   font-size: var(--cc-text-2xs);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -622,13 +622,13 @@
   gap: var(--cc-space-md);
   padding: var(--cc-space-md);
   border-radius: 1rem;
-  border: 1px solid rgba(233, 193, 118, 0.12);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 18%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 26%),
-    linear-gradient(160deg, rgba(25, 21, 25, 0.96), rgba(14, 14, 17, 0.98));
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-glass) 88%, transparent), transparent 26%),
+    linear-gradient(160deg, color-mix(in srgb, var(--cc-bg-surface) 94%, var(--cc-bg-elevated) 6%), color-mix(in srgb, var(--cc-bg-elevated) 88%, var(--cc-bg-base) 12%));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 8px 20px rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 72%, transparent),
+    0 8px 20px color-mix(in srgb, var(--cc-bg-base) 20%, transparent);
 }
 
 .cc-roll-btn {
@@ -638,9 +638,9 @@
   min-height: var(--cc-touch-min);
   padding: var(--cc-space-sm) var(--cc-space-lg);
   border-radius: 6px;
-  border: 1px solid rgba(233, 193, 118, 0.22);
-  background: linear-gradient(135deg, rgba(200, 167, 93, 0.18) 0%, rgba(200, 167, 93, 0.06) 100%);
-  color: var(--cc-accent-gold);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 28%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cc-surface-accent-soft) 82%, transparent) 0%, color-mix(in srgb, var(--cc-surface-accent-soft) 36%, transparent) 100%);
+  color: var(--cc-text-kicker);
   font-size: var(--cc-text-base);
   font-weight: 700;
   cursor: pointer;
@@ -650,8 +650,8 @@
     box-shadow var(--cc-duration-fast) var(--cc-ease-out),
     transform var(--cc-duration-fast) var(--cc-ease-out);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 18px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 84%, transparent),
+    0 8px 18px color-mix(in srgb, var(--cc-bg-base) 22%, transparent);
 }
 
 .cc-roll-btn:active {
@@ -660,8 +660,8 @@
 
 @media (hover: hover) and (pointer: fine) {
   .cc-roll-btn:hover {
-    border-color: rgba(233, 193, 118, 0.38);
-    background: linear-gradient(135deg, rgba(200, 167, 93, 0.24) 0%, rgba(200, 167, 93, 0.09) 100%);
+    border-color: color-mix(in srgb, var(--cc-border-accent) 42%, transparent);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--cc-surface-accent-soft) 90%, transparent) 0%, color-mix(in srgb, var(--cc-surface-accent-soft) 48%, transparent) 100%);
   }
 }
 
@@ -690,9 +690,9 @@
   min-height: var(--cc-touch-min);
   padding: 0 var(--cc-space-md);
   border-radius: 999px;
-  border: 1px solid rgba(233, 193, 118, 0.16);
-  background: rgba(233, 193, 118, 0.08);
-  color: rgba(247, 231, 198, 0.92);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 22%, transparent);
+  background: color-mix(in srgb, var(--cc-surface-accent-soft) 70%, transparent);
+  color: var(--cc-text-kicker);
   font-size: var(--cc-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -714,16 +714,16 @@
   height: 40px;
   border-radius: 8px;
   background: linear-gradient(145deg, var(--cc-bg-elevated), var(--cc-bg-surface));
-  border: 1px solid var(--cc-border-accent);
+  border: 1px solid color-mix(in srgb, var(--cc-border-accent) 44%, transparent);
   font-size: var(--cc-text-md);
   font-weight: 700;
   color: var(--cc-accent-gold);
   user-select: none;
   pointer-events: none;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 2px 6px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 76%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--cc-bg-base) 34%, transparent),
+    0 2px 6px color-mix(in srgb, var(--cc-bg-base) 26%, transparent);
   animation: cc-dice-land var(--cc-duration-normal) var(--cc-ease-out) both;
 }
 
@@ -764,9 +764,9 @@
   border-radius: 12px;
   position: relative;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 76%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--cc-bg-base) 34%, transparent),
+    0 4px 12px color-mix(in srgb, var(--cc-bg-base) 26%, transparent);
   transition:
     border-color var(--cc-duration-fast) var(--cc-ease-out),
     box-shadow var(--cc-duration-fast) var(--cc-ease-out);
@@ -778,23 +778,23 @@
   position: absolute;
   top: 0; left: 10%; right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(200, 167, 93, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--cc-border-accent) 34%, transparent), transparent);
 }
 
 .cc-ability-card--assignment {
   background:
-    radial-gradient(circle at top, rgba(211, 190, 235, 0.07), transparent 28%),
-    linear-gradient(160deg, var(--cc-bg-surface) 0%, rgba(24, 23, 28, 0.98) 100%);
+    radial-gradient(circle at top, color-mix(in srgb, var(--cc-surface-arcane-soft) 66%, transparent), transparent 28%),
+    linear-gradient(160deg, var(--cc-bg-surface) 0%, color-mix(in srgb, var(--cc-bg-elevated) 92%, var(--cc-bg-base) 8%) 100%);
 }
 
 .cc-ability-card--selected {
-  border-color: rgba(233, 193, 118, 0.4);
+  border-color: color-mix(in srgb, var(--cc-border-accent) 44%, transparent);
   box-shadow:
-    0 0 0 1px rgba(233, 193, 118, 0.18),
-    0 0 16px rgba(233, 193, 118, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 20%, transparent),
+    0 0 16px color-mix(in srgb, var(--cc-border-accent) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--cc-bg-glass) 76%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--cc-bg-base) 34%, transparent),
+    0 4px 12px color-mix(in srgb, var(--cc-bg-base) 26%, transparent);
 }
 
 .cc-ability-card__header {
@@ -843,13 +843,13 @@
 
 .cc-ability-card__state--assigned {
   color: var(--cc-accent-gold);
-  background: rgba(233, 193, 118, 0.08);
-  border-color: rgba(233, 193, 118, 0.22);
+  background: color-mix(in srgb, var(--cc-surface-accent-soft) 72%, transparent);
+  border-color: color-mix(in srgb, var(--cc-border-accent) 28%, transparent);
 }
 
 .cc-ability-card__state--open {
   color: var(--cc-text-secondary);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--cc-bg-glass) 58%, transparent);
 }
 
 .cc-ability-card__scoreline {
@@ -864,7 +864,7 @@
   font-weight: 800;
   line-height: 1;
   color: var(--cc-text-primary);
-  text-shadow: 0 0 20px rgba(232, 226, 214, 0.15);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--cc-text-primary) 18%, transparent);
   letter-spacing: -0.02em;
 }
 
@@ -903,8 +903,8 @@
   min-width: 2.3rem;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--cc-bg-glass) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cc-border-subtle) 22%, transparent);
   color: var(--cc-text-primary);
   font-weight: 700;
 }
