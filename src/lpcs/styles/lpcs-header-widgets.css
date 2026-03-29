@@ -208,9 +208,9 @@
   left: 0; top: 0; bottom: 0;
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--lpcs-hp-critical) 32%, #220708 68%),
-    color-mix(in srgb, var(--lpcs-hp-critical) 62%, #3a0d0f 38%),
-    color-mix(in srgb, var(--lpcs-hp-critical) 82%, #521114 18%)
+    color-mix(in srgb, var(--lpcs-hp-critical) 32%, var(--fth-color-canvas) 68%),
+    color-mix(in srgb, var(--lpcs-hp-critical) 62%, var(--fth-color-canvas) 38%),
+    color-mix(in srgb, var(--lpcs-hp-critical) 82%, var(--fth-color-canvas) 18%)
   );
   /* width animates via element.animate() in _onRender (Web Animations API) */
   z-index: 0;

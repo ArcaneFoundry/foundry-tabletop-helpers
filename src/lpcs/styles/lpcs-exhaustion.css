@@ -20,7 +20,7 @@
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="2"] {
   opacity: 1;
   background: color-mix(in srgb, var(--lpcs-accent-warning) 22%, transparent);
-  border-top-color: color-mix(in srgb, var(--lpcs-accent-warning) 82%, var(--lpcs-accent-crimson) 18%);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-warning) 82%, var(--fth-color-canvas) 18%);
   box-shadow: inset 0 0 8px color-mix(in srgb, var(--lpcs-accent-warning) 40%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="3"] {
@@ -32,19 +32,19 @@
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="4"] {
   opacity: 1;
   background: color-mix(in srgb, var(--lpcs-accent-crimson) 32%, transparent);
-  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 88%, #70151a 12%);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 88%, var(--fth-color-canvas) 12%);
   box-shadow: inset 0 0 14px color-mix(in srgb, var(--lpcs-accent-crimson) 60%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="5"] {
   opacity: 1;
   background: var(--lpcs-bg-exhaustion-strong);
-  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 92%, #4d070c 8%);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 92%, var(--fth-color-canvas) 8%);
   box-shadow: inset 0 0 18px color-mix(in srgb, var(--lpcs-accent-crimson) 72%, transparent);
 }
 .lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="6"] {
   opacity: 1;
   background: var(--lpcs-bg-exhaustion-fatal);
-  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 94%, #260204 6%);
+  border-top-color: color-mix(in srgb, var(--lpcs-accent-crimson) 94%, var(--fth-color-canvas) 6%);
   box-shadow: inset 0 0 22px color-mix(in srgb, var(--lpcs-accent-crimson) 88%, transparent);
   color: var(--lpcs-text-contrast);
 }
