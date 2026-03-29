@@ -45,11 +45,11 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
   };
 
   return (
-    <section className="relative isolate rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(22,19,25,0.98),rgba(12,12,15,0.99))] shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
+    <section className="cc-theme-shell-inner relative isolate rounded-[1.45rem] border shadow-[0_18px_34px_color-mix(in_srgb,var(--cc-bg-base)_12%,transparent)]">
       <div className="relative z-10 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.08rem] border border-[#e9c176]/[0.12] bg-[rgba(255,255,255,0.025)] px-3 py-2">
+        <div className="cc-theme-card flex flex-wrap items-center justify-between gap-3 rounded-[1.08rem] border px-3 py-2">
           <div className="min-w-0">
-            <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/72">
+            <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
               Background Ability Scores
             </div>
           </div>
@@ -70,20 +70,20 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
             return (
               <article
                 className={cn(
-                  "flex h-full flex-col rounded-[1.32rem] border p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]",
+                  "flex h-full flex-col rounded-[1.32rem] border p-4 shadow-[0_16px_28px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]",
                   tone
-                    ? "border-[#e9c176]/[0.18] bg-[linear-gradient(180deg,rgba(40,31,24,0.98),rgba(20,16,13,0.99))]"
-                    : "border-white/10 bg-[linear-gradient(180deg,rgba(32,27,24,0.94),rgba(18,15,15,0.99))]",
+                    ? "cc-theme-panel cc-theme-panel--accent"
+                    : "cc-theme-panel",
                 )}
                 key={ability.key}
               >
                 <div className="flex min-w-0 items-start gap-3">
-                  <div className="inline-flex h-12 min-w-12 shrink-0 items-center justify-center rounded-[0.9rem] border border-[#e9c176]/32 bg-[rgba(233,193,118,0.08)] px-3 font-fth-cc-display text-[1.1rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+                  <div className="inline-flex h-12 min-w-12 shrink-0 items-center justify-center rounded-[0.9rem] border border-[color:color-mix(in_srgb,var(--cc-border-accent)_32%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-surface-accent-soft)_66%,transparent)] px-3 font-fth-cc-display text-[1.1rem] uppercase tracking-[0.08em] text-[color:var(--cc-text-primary)]">
                     {ability.label.slice(0, 3)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f5ead5]">{ability.label}</div>
-                    <div className="mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em] text-[#d5b98a]">
+                    <div className="cc-theme-body font-fth-cc-body text-[1rem] font-semibold">{ability.label}</div>
+                    <div className="cc-theme-kicker mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em]">
                       Current value {currentValue > 0 ? `+${currentValue}` : "unassigned"}
                     </div>
                     <CompactMetaChips
@@ -111,10 +111,10 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
                           className={cn(
                             "flex min-h-[7rem] flex-col justify-between rounded-[0.95rem] border px-3 py-3 text-left shadow-[0_12px_22px_rgba(0,0,0,0.1)] transition duration-200",
                             selected
-                              ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(250,232,186,0.96),rgba(228,202,135,0.92))] text-[#4c3524]"
+                              ? "cc-theme-card cc-theme-card--interactive cc-theme-card--selected text-[color:var(--cc-text-primary)]"
                               : disabled
-                                ? "cursor-not-allowed border-[#6b5b49] bg-[rgba(60,48,39,0.7)] text-[#b9b0ab] opacity-70"
-                                : "border-[#8f7256] bg-[linear-gradient(180deg,rgba(64,47,34,0.96),rgba(32,23,18,0.99))] text-[#f3e3c7] hover:border-[#e9c176]/80 hover:brightness-[1.03]",
+                                ? "cc-theme-card cursor-not-allowed text-[color:var(--cc-text-secondary)] opacity-70"
+                                : "cc-theme-card cc-theme-card--interactive text-[color:var(--cc-text-primary)]",
                           )}
                           data-blocked={disabled ? "true" : "false"}
                           data-selected={selected ? "true" : "false"}

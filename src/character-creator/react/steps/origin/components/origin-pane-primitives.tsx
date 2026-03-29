@@ -98,17 +98,17 @@ export function SelectionPane<TEntry>({
 
 export function SectionHeading({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col items-center border-b border-[#cfb58f]/55 pb-4 text-center">
+    <div className="mx-auto flex max-w-3xl flex-col items-center border-b border-[color:color-mix(in_srgb,var(--cc-border-accent)_34%,transparent)] pb-4 text-center">
       {eyebrow ? (
-        <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#876145]">
+        <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em]">
           {eyebrow}
         </div>
       ) : null}
-      <div className="mt-1 text-center font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#4c3524]">
+      <div className="cc-theme-body mt-1 text-center font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em]">
         {title}
       </div>
       {description ? (
-        <p className="mx-auto mt-2 max-w-2xl text-center font-fth-cc-body text-[0.97rem] leading-6 text-[#5f4636]">
+        <p className="cc-theme-body-muted mx-auto mt-2 max-w-2xl text-center font-fth-cc-body text-[0.97rem] leading-6">
           {description}
         </p>
       ) : null}
@@ -126,27 +126,27 @@ export function DetailCard({
   hideEmptyDescription?: boolean;
 }) {
   return (
-    <section className="rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
+    <section className="cc-theme-panel cc-theme-panel--accent rounded-[1.45rem] border p-4">
       {entry ? (
         <>
-          <div className="overflow-hidden rounded-[1rem] border border-[#d4bb96] bg-[#20130e]">
+          <div className="overflow-hidden rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-border-accent)_50%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-bg-base)_84%,var(--cc-bg-surface)_16%)]">
             {entry.img ? (
               <img alt={entry.name} className="aspect-[1.15] w-full object-cover" loading="lazy" src={entry.img} />
             ) : (
-              <div className="flex aspect-[1.15] w-full items-center justify-center text-[#f0d2a6]">
+              <div className="cc-theme-kicker flex aspect-[1.15] w-full items-center justify-center">
                 <i className={cn(fallbackIcon, "text-3xl")} aria-hidden="true" />
               </div>
             )}
           </div>
-          <div className="mt-4 font-fth-cc-body text-[1.1rem] font-semibold text-[#4c3524]">{entry.name}</div>
-          <div className="mt-1 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#876145]">{entry.packLabel}</div>
+          <div className="cc-theme-body mt-4 font-fth-cc-body text-[1.1rem] font-semibold">{entry.name}</div>
+          <div className="cc-theme-kicker mt-1 font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em]">{entry.packLabel}</div>
           {entry.description ? (
             <div
-              className="prose prose-sm mt-4 max-w-none font-fth-cc-body text-[#5f4636]"
+              className="prose prose-sm cc-theme-body mt-4 max-w-none font-fth-cc-body"
               dangerouslySetInnerHTML={{ __html: entry.description }}
             />
           ) : hideEmptyDescription ? null : (
-            <p className="mt-4 font-fth-cc-body text-[0.95rem] leading-6 text-[#6b5040]">
+            <p className="cc-theme-body-muted mt-4 font-fth-cc-body text-[0.95rem] leading-6">
               No description is available in the current compendium data.
             </p>
           )}
@@ -171,36 +171,36 @@ function CompactDetailCard({
 }) {
   return (
     <section
-      className="rounded-[1.2rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-3 shadow-[0_18px_34px_rgba(47,29,18,0.12)]"
+      className="cc-theme-panel cc-theme-panel--accent rounded-[1.2rem] border p-3"
       data-origin-detail-card="true"
     >
       {entry ? (
         <div className="grid gap-3 lg:grid-cols-[5.75rem_minmax(0,1fr)] lg:items-start">
           <div
-            className="overflow-hidden rounded-[0.9rem] border border-[#d4bb96] bg-[#20130e] shadow-[0_8px_16px_rgba(47,29,18,0.1)]"
+            className="overflow-hidden rounded-[0.9rem] border border-[color:color-mix(in_srgb,var(--cc-border-accent)_50%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-bg-base)_84%,var(--cc-bg-surface)_16%)] shadow-[0_8px_16px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
             data-origin-detail-thumbnail="true"
           >
             {entry.img ? (
               <img alt={entry.name} className="aspect-square w-full object-cover" loading="lazy" src={entry.img} />
             ) : (
-              <div className="flex aspect-square w-full items-center justify-center text-[#f0d2a6]">
+              <div className="cc-theme-kicker flex aspect-square w-full items-center justify-center">
                 <i className={cn(fallbackIcon, "text-2xl")} aria-hidden="true" />
               </div>
             )}
           </div>
 
           <div className="min-w-0">
-            <div className="font-fth-cc-body text-[1.02rem] font-semibold text-[#4c3524]">{entry.name}</div>
-            <div className="mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#876145]">
+            <div className="cc-theme-body font-fth-cc-body text-[1.02rem] font-semibold">{entry.name}</div>
+            <div className="cc-theme-kicker mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]">
               {entry.packLabel}
             </div>
             {entry.description ? (
               <div
-                className="prose prose-sm mt-3 max-w-none font-fth-cc-body text-[#5f4636]"
+                className="prose prose-sm cc-theme-body mt-3 max-w-none font-fth-cc-body"
                 dangerouslySetInnerHTML={{ __html: entry.description }}
               />
             ) : hideEmptyDescription ? null : (
-              <p className="mt-3 font-fth-cc-body text-[0.92rem] leading-6 text-[#6b5040]">
+              <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.92rem] leading-6">
                 No description is available in the current compendium data.
               </p>
             )}
@@ -505,7 +505,7 @@ export function SummaryListCard({
 
 export function EmptySelectionState({ message }: { message: string }) {
   return (
-    <div className="rounded-[1.1rem] border border-dashed border-[#c7aa80]/65 bg-[rgba(255,250,241,0.7)] px-4 py-5 font-fth-cc-body text-[#6b5040]">
+    <div className="cc-theme-empty rounded-[1.1rem] border border-dashed px-4 py-5 font-fth-cc-body">
       {message}
     </div>
   );
@@ -521,8 +521,8 @@ export function CompactMetaChips({ chips, tone = "light" }: { chips: string[]; t
           className={cn(
             "rounded-full border px-2.5 py-1 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.16em]",
             tone === "dark"
-              ? "border-[#efd29a]/55 bg-[linear-gradient(180deg,rgba(35,22,15,0.55),rgba(22,14,10,0.86))] text-[#f6deb0]"
-              : "border-[#d4bb96] bg-[rgba(255,252,246,0.82)] text-[#7a5a41]",
+              ? "cc-theme-pill"
+              : "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_96%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-bg-elevated)_84%,white_16%)] text-[color:var(--cc-text-ink-700)]",
           )}
           key={chip}
         >
@@ -585,9 +585,9 @@ export function FlourishGem() {
 
 export function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.2rem] border border-[#d4bb96]/55 bg-[linear-gradient(180deg,rgba(255,251,244,0.95),rgba(242,228,203,0.92))] px-4 py-4 shadow-[0_10px_20px_rgba(69,45,24,0.08)]">
-      <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#876145]">{label}</div>
-      <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#4c3524]">{value}</div>
+    <div className="cc-theme-panel cc-theme-panel--accent rounded-[1.2rem] border px-4 py-4">
+      <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em]">{label}</div>
+      <div className="cc-theme-body mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em]">{value}</div>
     </div>
   );
 }
@@ -598,8 +598,8 @@ export function SelectionPip({ checked }: { checked: boolean }) {
       className={cn(
         "flex h-9 w-9 items-center justify-center rounded-full border transition",
         checked
-          ? "border-[#87a36a] bg-[#e2eab7] text-[#42511e]"
-          : "border-[#d4bb96] bg-[rgba(255,252,246,0.82)] text-[#7a5a41]",
+          ? "border-[color:color-mix(in_srgb,var(--cc-border-accent)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-surface-accent-soft)_68%,var(--cc-bg-elevated)_32%)] text-[color:var(--cc-text-kicker)]"
+          : "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_96%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-bg-elevated)_82%,white_18%)] text-[color:var(--cc-text-ink-700)]",
       )}
     >
       <i className={cn(checked ? "fa-solid fa-check" : "fa-solid fa-plus")} aria-hidden="true" />
