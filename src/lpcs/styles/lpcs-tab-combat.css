@@ -16,7 +16,7 @@
 }
 
 .lpcs-sheet .lpcs-weapon-row {
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--lpcs-border);
   transition: background 0.1s;
 }
 
@@ -45,7 +45,7 @@
 .lpcs-sheet .lpcs-mastery-badge {
   font-size: var(--lpcs-text-2xs);
   padding: 1px 5px;
-  background: rgba(200,167,93,0.15);
+  background: var(--lpcs-accent-soft-bg);
   border: 1px solid var(--lpcs-border-accent);
   border-radius: 4px;
   color: var(--lpcs-accent-bronze);
@@ -155,7 +155,7 @@
   font-size: var(--lpcs-text-base);
   color: var(--lpcs-accent-bronze);
   text-decoration: underline;
-  text-decoration-color: rgba(200, 167, 93, 0.4);
+  text-decoration-color: var(--lpcs-border-accent);
   text-underline-offset: 2px;
   cursor: pointer;
   border-radius: var(--lpcs-radius-sm);
@@ -163,7 +163,7 @@
 }
 
 .lpcs-sheet .lpcs-standard-action-link:hover {
-  background: rgba(200, 167, 93, 0.1);
+  background: var(--lpcs-accent-soft-bg);
   color: var(--lpcs-accent-gold);
   text-decoration-color: var(--lpcs-accent-gold);
 }
@@ -175,10 +175,10 @@
   padding: 1px 6px;
   min-width: 18px;
   text-align: center;
-  background: rgba(60, 120, 200, 0.2);
-  border: 1px solid rgba(60, 120, 200, 0.4);
+  background: var(--lpcs-tag-focus-bg);
+  border: 1px solid var(--lpcs-tag-focus-border);
   border-radius: 10px;
-  color: #6ea8e8;
+  color: var(--lpcs-tag-focus-text);
   flex-shrink: 0;
 }
 
@@ -186,10 +186,10 @@
   font-size: 0.55rem;
   font-weight: 700;
   padding: 1px 5px;
-  background: rgba(220, 160, 50, 0.2);
-  border: 1px solid rgba(220, 160, 50, 0.4);
+  background: var(--lpcs-tag-warning-bg);
+  border: 1px solid var(--lpcs-tag-warning-border);
   border-radius: 10px;
-  color: #dca032;
+  color: var(--lpcs-tag-warning-text);
   flex-shrink: 0;
 }
 
@@ -225,7 +225,7 @@
 
 .lpcs-sheet .lpcs-spell-row {
   position: relative;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--lpcs-border);
   transition: background 0.1s;
 }
 
@@ -260,7 +260,7 @@
 
 /* Left-edge highlight on concentration rows (matches spells tab) */
 .lpcs-sheet .lpcs-spell-row--conc {
-  box-shadow: inset 3px 0 0 #4a7ab5;
+  box-shadow: inset 3px 0 0 var(--lpcs-tag-focus-border);
 }
 
 /* Concentration "C" tag in notes (matches spells tab styling) */
@@ -274,12 +274,12 @@
 }
 
 .lpcs-sheet .lpcs-spells-table .lpcs-tag--conc {
-  background: rgba(74,122,181,0.25);
-  color: #7ab0e0;
+  background: var(--lpcs-tag-focus-bg);
+  color: var(--lpcs-tag-focus-text);
 }
 
 /* Healing color */
-.lpcs-sheet .lpcs-dmg--healing { color: #e74c6f; }
+.lpcs-sheet .lpcs-dmg--healing { color: var(--lpcs-dmg-healing); }
 
 /* AoE icon in notes column */
 .lpcs-sheet .lpcs-aoe-icon {
@@ -379,8 +379,8 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 2px 10px;
-  background: rgba(200, 167, 93, 0.12);
-  border: 1px solid rgba(200, 167, 93, 0.3);
+  background: var(--lpcs-accent-soft-bg);
+  border: 1px solid var(--lpcs-border-accent);
   border-bottom: none;
   border-radius: 6px 6px 0 0;
   color: var(--lpcs-accent-bronze);
@@ -406,19 +406,19 @@
   margin-left: 2px;
 }
 
-.lpcs-sheet .lpcs-dmg--bludgeoning { color: #a0a0a0; }
-.lpcs-sheet .lpcs-dmg--piercing    { color: #b0b0b0; }
-.lpcs-sheet .lpcs-dmg--slashing    { color: #c0c0c0; }
-.lpcs-sheet .lpcs-dmg--fire        { color: #e74c3c; }
-.lpcs-sheet .lpcs-dmg--cold        { color: #3498db; }
-.lpcs-sheet .lpcs-dmg--lightning   { color: #f1c40f; }
-.lpcs-sheet .lpcs-dmg--thunder     { color: #9b59b6; }
-.lpcs-sheet .lpcs-dmg--acid        { color: #2ecc71; }
-.lpcs-sheet .lpcs-dmg--poison      { color: #27ae60; }
-.lpcs-sheet .lpcs-dmg--necrotic    { color: #7f8c8d; }
-.lpcs-sheet .lpcs-dmg--radiant     { color: #f39c12; }
-.lpcs-sheet .lpcs-dmg--psychic     { color: #e91e9c; }
-.lpcs-sheet .lpcs-dmg--force       { color: #8e44ad; }
+.lpcs-sheet .lpcs-dmg--bludgeoning { color: var(--lpcs-dmg-bludgeoning); }
+.lpcs-sheet .lpcs-dmg--piercing    { color: var(--lpcs-dmg-piercing); }
+.lpcs-sheet .lpcs-dmg--slashing    { color: var(--lpcs-dmg-slashing); }
+.lpcs-sheet .lpcs-dmg--fire        { color: var(--lpcs-dmg-fire); }
+.lpcs-sheet .lpcs-dmg--cold        { color: var(--lpcs-dmg-cold); }
+.lpcs-sheet .lpcs-dmg--lightning   { color: var(--lpcs-dmg-lightning); }
+.lpcs-sheet .lpcs-dmg--thunder     { color: var(--lpcs-dmg-thunder); }
+.lpcs-sheet .lpcs-dmg--acid        { color: var(--lpcs-dmg-acid); }
+.lpcs-sheet .lpcs-dmg--poison      { color: var(--lpcs-dmg-poison); }
+.lpcs-sheet .lpcs-dmg--necrotic    { color: var(--lpcs-dmg-necrotic); }
+.lpcs-sheet .lpcs-dmg--radiant     { color: var(--lpcs-dmg-radiant); }
+.lpcs-sheet .lpcs-dmg--psychic     { color: var(--lpcs-dmg-psychic); }
+.lpcs-sheet .lpcs-dmg--force       { color: var(--lpcs-dmg-force); }
 .lpcs-sheet .lpcs-dmg--generic     { color: var(--lpcs-text-muted); }
 
 /* ── Effect Annotation Badges ─────────────────────────────────── */
@@ -429,10 +429,10 @@
   font-size: var(--lpcs-text-2xs);
   font-weight: 600;
   padding: 1px 6px;
-  background: rgba(120, 180, 240, 0.12);
-  border: 1px solid rgba(120, 180, 240, 0.3);
+  background: var(--lpcs-tag-effect-bg);
+  border: 1px solid var(--lpcs-tag-effect-border);
   border-radius: 10px;
-  color: #7ab0e0;
+  color: var(--lpcs-tag-effect-text);
   white-space: nowrap;
   vertical-align: middle;
   margin-left: 4px;
@@ -441,8 +441,8 @@
 }
 
 .lpcs-sheet .lpcs-effect-badge:hover {
-  background: rgba(120, 180, 240, 0.22);
-  border-color: rgba(120, 180, 240, 0.5);
+  background: var(--lpcs-tag-effect-bg-hover);
+  border-color: var(--lpcs-tag-effect-border-hover);
 }
 
 .lpcs-sheet .lpcs-effect-badge-icon {
@@ -463,4 +463,3 @@
   margin-right: 4px;
   opacity: 0.7;
 }
-

@@ -13,10 +13,7 @@
   min-height: 180px;
   overflow: visible;    /* allows the inspiration badge and HP drawer to extend below the header */
   flex-shrink: 0;
-  background:
-    linear-gradient(135deg, rgba(200, 167, 93, 0.12) 0%, transparent 50%),
-    linear-gradient(to bottom, rgba(139, 30, 45, 0.06) 0%, transparent 40%),
-    radial-gradient(ellipse at 80% 20%, rgba(200, 167, 93, 0.08) 0%, transparent 60%);
+  background: var(--lpcs-header-image);
   border-bottom: 1px solid var(--lpcs-border);
 }
 
@@ -51,8 +48,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(200, 167, 93, 0.15);
-  background: rgba(26, 29, 36, 0.6);
+  border: 1px solid var(--lpcs-border);
+  background: var(--lpcs-bg-input-soft);
   color: var(--lpcs-accent-bronze);
   font-size: 1rem;
   cursor: pointer;
@@ -60,27 +57,27 @@
 }
 
 .lpcs-sheet .lpcs-sysbar-btn:hover {
-  background: rgba(200, 167, 93, 0.1);
-  border-color: rgba(200, 167, 93, 0.4);
+  background: var(--lpcs-accent-soft-bg);
+  border-color: var(--lpcs-border-accent);
   color: var(--lpcs-accent-gold);
 }
 
 .lpcs-sheet .lpcs-sysbar-btn:active {
   transform: scale(0.9);
-  background: rgba(200, 167, 93, 0.2);
+  background: var(--lpcs-bg-press);
   transition-duration: 0.05s;
 }
 
 /* ── Inspiration active state (gold glow) ───────────────────── */
 .lpcs-sheet .lpcs-sysbar-btn--inspiration.is-active {
-  background: rgba(212, 175, 55, 0.15);
+  background: var(--lpcs-accent-strong-bg);
   border-color: var(--lpcs-accent-gold);
   color: var(--lpcs-accent-gold);
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5), inset 0 0 6px rgba(212, 175, 55, 0.15);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--lpcs-accent-gold) 42%, transparent), inset 0 0 6px color-mix(in srgb, var(--lpcs-accent-gold) 16%, transparent);
 }
 
 .lpcs-sheet .lpcs-sysbar-btn--inspiration.is-active:hover {
-  box-shadow: 0 0 18px rgba(212, 175, 55, 0.7), inset 0 0 8px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--lpcs-accent-gold) 56%, transparent), inset 0 0 8px color-mix(in srgb, var(--lpcs-accent-gold) 22%, transparent);
 }
 
 /* Identity + HP widget — in flow, sits above the portrait */
@@ -130,7 +127,7 @@
   content: "";
   position: absolute;
   inset: 2.5px;
-  background: #1a0c0c;
+  background: var(--lpcs-hex-fill);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
@@ -220,4 +217,3 @@
   font-size: 4rem;
   color: var(--lpcs-text-muted);
 }
-

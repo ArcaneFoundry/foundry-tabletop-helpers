@@ -6,8 +6,33 @@
   --lpcs-bg-panel-hover:    var(--fth-color-surface-elevated);
   --lpcs-bg-glass:          var(--fth-color-surface-glass);
   --lpcs-bg-glass-hover:    var(--fth-color-surface-glass-strong);
-  --lpcs-bg-overlay:        color-mix(in srgb, var(--fth-color-canvas) 82%, transparent);
-  --lpcs-bg-overlay-strong: color-mix(in srgb, var(--fth-color-canvas) 90%, transparent);
+  --lpcs-overlay-ink:       color-mix(in srgb, var(--fth-color-canvas) 68%, var(--fth-color-text) 32%);
+  --lpcs-bg-overlay:        color-mix(in srgb, var(--lpcs-overlay-ink) 36%, transparent);
+  --lpcs-bg-overlay-strong: color-mix(in srgb, var(--lpcs-overlay-ink) 58%, transparent);
+  --lpcs-bg-input:          var(--fth-color-surface-inset);
+  --lpcs-bg-input-soft:     color-mix(in srgb, var(--fth-color-surface-inset) 76%, transparent);
+  --lpcs-bg-press:          color-mix(in srgb, var(--fth-color-accent) 16%, var(--fth-color-surface-glass) 84%);
+  --lpcs-bg-press-strong:   color-mix(in srgb, var(--fth-color-accent) 24%, var(--fth-color-surface-glass-strong) 76%);
+  --lpcs-bg-press-subtle:   color-mix(in srgb, var(--fth-color-accent) 12%, transparent);
+  --lpcs-bg-item-info:      linear-gradient(
+                              to bottom,
+                              color-mix(in srgb, var(--fth-color-canvas) 82%, transparent),
+                              color-mix(in srgb, var(--fth-color-canvas) 94%, transparent)
+                            );
+  --lpcs-bg-item-qty:       color-mix(in srgb, var(--lpcs-overlay-ink) 76%, transparent);
+  --lpcs-bg-item-close:     color-mix(in srgb, var(--lpcs-overlay-ink) 48%, transparent);
+  --lpcs-bg-item-close-hover: color-mix(in srgb, var(--lpcs-overlay-ink) 66%, transparent);
+  --lpcs-bg-item-attuned:   color-mix(in srgb, var(--fth-color-accent) 28%, transparent);
+  --lpcs-bg-track:          color-mix(in srgb, var(--fth-color-text) 10%, transparent);
+  --lpcs-shadow-hover:      0 4px 16px color-mix(in srgb, var(--lpcs-overlay-ink) 42%, transparent);
+  --lpcs-header-image:
+    linear-gradient(135deg, color-mix(in srgb, var(--fth-color-accent) 12%, transparent) 0%, transparent 50%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--fth-color-danger) 9%, transparent) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--fth-color-accent) 8%, transparent) 0%, transparent 60%);
+  --lpcs-shadow-panel:      var(--fth-theme-shadow-panel);
+  --lpcs-shadow-modal:      var(--fth-theme-shadow-elevated);
+  --lpcs-focus-ring:        0 0 0 2px color-mix(in srgb, var(--fth-color-focus) 18%, transparent),
+                            0 0 10px color-mix(in srgb, var(--fth-color-focus) 24%, transparent);
 
   --lpcs-accent-bronze:     var(--fth-color-accent-soft);
   --lpcs-accent-crimson:    var(--fth-color-danger);
@@ -20,9 +45,13 @@
   --lpcs-text-primary:      var(--fth-color-text);
   --lpcs-text-secondary:    var(--fth-color-text-muted);
   --lpcs-text-muted:        var(--fth-color-text-subtle);
+  --lpcs-text-positive:     color-mix(in srgb, var(--fth-color-success) 76%, var(--fth-color-text) 24%);
+  --lpcs-text-negative:     color-mix(in srgb, var(--fth-color-danger) 76%, var(--fth-color-text) 24%);
 
   --lpcs-border:            var(--fth-color-border);
   --lpcs-border-accent:     var(--fth-color-border-strong);
+  --lpcs-border-positive:   color-mix(in srgb, var(--fth-color-success) 48%, transparent);
+  --lpcs-border-negative:   color-mix(in srgb, var(--fth-color-danger) 48%, transparent);
 
   /* HP Colors */
   --lpcs-hp-healthy:        var(--fth-color-success);
@@ -34,6 +63,53 @@
   --lpcs-frost-soft:        color-mix(in srgb, var(--fth-color-frost) 18%, transparent);
   --lpcs-arcane:            var(--fth-color-arcane);
   --lpcs-arcane-soft:       color-mix(in srgb, var(--fth-color-arcane) 18%, transparent);
+  --lpcs-action-damage-bg:    color-mix(in srgb, var(--fth-color-danger) 34%, transparent);
+  --lpcs-action-damage-hover: color-mix(in srgb, var(--fth-color-danger) 52%, transparent);
+  --lpcs-action-heal-bg:      color-mix(in srgb, var(--fth-color-success) 34%, transparent);
+  --lpcs-action-heal-hover:   color-mix(in srgb, var(--fth-color-success) 52%, transparent);
+  --lpcs-action-temp-bg:      color-mix(in srgb, var(--fth-color-frost) 30%, transparent);
+  --lpcs-action-temp-hover:   color-mix(in srgb, var(--fth-color-frost) 48%, transparent);
+  --lpcs-action-text:         color-mix(in srgb, var(--fth-color-text) 88%, white 12%);
+  --lpcs-tag-focus-bg:        color-mix(in srgb, var(--fth-color-frost) 18%, transparent);
+  --lpcs-tag-focus-border:    color-mix(in srgb, var(--fth-color-frost) 42%, transparent);
+  --lpcs-tag-focus-text:      color-mix(in srgb, var(--fth-color-frost) 72%, var(--fth-color-text) 28%);
+  --lpcs-tag-warning-bg:      color-mix(in srgb, var(--fth-color-warning) 18%, transparent);
+  --lpcs-tag-warning-border:  color-mix(in srgb, var(--fth-color-warning) 42%, transparent);
+  --lpcs-tag-warning-text:    color-mix(in srgb, var(--fth-color-warning) 76%, var(--fth-color-text) 24%);
+  --lpcs-tag-effect-bg:       color-mix(in srgb, var(--fth-color-frost) 14%, transparent);
+  --lpcs-tag-effect-bg-hover: color-mix(in srgb, var(--fth-color-frost) 24%, transparent);
+  --lpcs-tag-effect-border:   color-mix(in srgb, var(--fth-color-frost) 34%, transparent);
+  --lpcs-tag-effect-border-hover: color-mix(in srgb, var(--fth-color-frost) 56%, transparent);
+  --lpcs-tag-effect-text:     color-mix(in srgb, var(--fth-color-frost) 72%, var(--fth-color-text) 28%);
+  --lpcs-hex-fill:            color-mix(in srgb, var(--fth-color-canvas) 84%, var(--fth-color-danger) 16%);
+  --lpcs-coin-platinum:     #b0c4de;
+  --lpcs-coin-electrum:     #a9b8a0;
+  --lpcs-coin-silver:       #aaaaaa;
+  --lpcs-coin-copper:       #c4875a;
+  --lpcs-rarity-uncommon:   color-mix(in srgb, var(--fth-color-success) 78%, var(--fth-color-text) 22%);
+  --lpcs-rarity-uncommon-border: color-mix(in srgb, var(--fth-color-success) 44%, transparent);
+  --lpcs-rarity-rare:       color-mix(in srgb, var(--fth-color-frost) 82%, var(--fth-color-text) 18%);
+  --lpcs-rarity-rare-border: color-mix(in srgb, var(--fth-color-frost) 48%, transparent);
+  --lpcs-rarity-very-rare:  color-mix(in srgb, var(--fth-color-arcane) 82%, var(--fth-color-text) 18%);
+  --lpcs-rarity-very-rare-border: color-mix(in srgb, var(--fth-color-arcane) 48%, transparent);
+  --lpcs-rarity-legendary:  color-mix(in srgb, var(--fth-color-accent-strong) 86%, var(--fth-color-text) 14%);
+  --lpcs-rarity-legendary-border: color-mix(in srgb, var(--fth-color-accent-strong) 54%, transparent);
+  --lpcs-rarity-artifact:   color-mix(in srgb, var(--fth-color-danger) 82%, var(--fth-color-text) 18%);
+  --lpcs-rarity-artifact-border: color-mix(in srgb, var(--fth-color-danger) 54%, transparent);
+  --lpcs-dmg-bludgeoning:   #a0a0a0;
+  --lpcs-dmg-piercing:      #b0b0b0;
+  --lpcs-dmg-slashing:      #c0c0c0;
+  --lpcs-dmg-fire:          #e74c3c;
+  --lpcs-dmg-cold:          #3498db;
+  --lpcs-dmg-lightning:     #f1c40f;
+  --lpcs-dmg-thunder:       #9b59b6;
+  --lpcs-dmg-acid:          #2ecc71;
+  --lpcs-dmg-poison:        #27ae60;
+  --lpcs-dmg-necrotic:      #7f8c8d;
+  --lpcs-dmg-radiant:       #f39c12;
+  --lpcs-dmg-psychic:       #e91e9c;
+  --lpcs-dmg-force:         #8e44ad;
+  --lpcs-dmg-healing:       #e74c6f;
 
   /* Spacing */
   --lpcs-radius-sm:         8px;

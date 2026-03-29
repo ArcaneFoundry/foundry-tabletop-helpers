@@ -25,7 +25,7 @@
   border: 1px solid var(--lpcs-border-accent);
   border-top: none;
   border-radius: 0 0 var(--lpcs-radius-md) var(--lpcs-radius-md);
-  box-shadow: var(--fth-theme-shadow-panel);
+  box-shadow: var(--lpcs-shadow-panel);
   /* Closed state */
   max-height: 0;
   overflow: hidden;
@@ -127,7 +127,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--lpcs-bg-glass);
   border: 1px solid var(--lpcs-border);
   border-radius: var(--lpcs-radius-sm);
   color: var(--lpcs-text-secondary);
@@ -137,12 +137,12 @@
   appearance: none;
   font-family: inherit;
 }
-.lpcs-sheet .lpcs-hpd-clear:hover { background: rgba(255, 255, 255, 0.1); color: var(--lpcs-text-primary); }
+.lpcs-sheet .lpcs-hpd-clear:hover { background: var(--lpcs-bg-glass-hover); color: var(--lpcs-text-primary); }
 
 .lpcs-sheet .lpcs-hpd-amount {
   width: 72px;
   min-height: 38px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--lpcs-bg-input);
   border: 1px solid var(--lpcs-border-accent);
   border-radius: var(--lpcs-radius-sm);
   color: var(--lpcs-text-primary);
@@ -152,7 +152,11 @@
   text-align: center;
   padding: 0 4px;
 }
-.lpcs-sheet .lpcs-hpd-amount:focus { outline: 2px solid var(--lpcs-border-accent); outline-offset: 1px; }
+.lpcs-sheet .lpcs-hpd-amount:focus {
+  outline: none;
+  box-shadow: var(--lpcs-focus-ring);
+  border-color: var(--lpcs-accent-gold);
+}
 .lpcs-sheet .lpcs-hpd-amount::-webkit-inner-spin-button,
 .lpcs-sheet .lpcs-hpd-amount::-webkit-outer-spin-button { -webkit-appearance: none; }
 
@@ -172,10 +176,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(139, 30, 45, 0.35);
+  background: var(--lpcs-action-damage-bg);
   border: 1px solid var(--lpcs-accent-crimson);
   border-radius: var(--lpcs-radius-sm);
-  color: #ffffff;
+  color: var(--lpcs-action-text);
   font-family: var(--lpcs-font-display);
   font-size: 0.9rem;
   font-weight: 700;
@@ -186,10 +190,10 @@
   -webkit-appearance: none;
   appearance: none;
 }
-.lpcs-sheet .lpcs-hpd-apply:hover    { background: rgba(139, 30, 45, 0.58); }
+.lpcs-sheet .lpcs-hpd-apply:hover    { background: var(--lpcs-action-damage-hover); }
 .lpcs-sheet .lpcs-hpd-apply:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply             { background: rgba(45, 138, 78, 0.35);  border-color: var(--lpcs-hp-healthy); }
-.lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply:hover       { background: rgba(45, 138, 78, 0.58); }
-.lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply             { background: rgba(74, 122, 181, 0.35); border-color: var(--lpcs-hp-temp);    }
-.lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply:hover       { background: rgba(74, 122, 181, 0.58); }
+.lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply             { background: var(--lpcs-action-heal-bg);  border-color: var(--lpcs-hp-healthy); }
+.lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply:hover       { background: var(--lpcs-action-heal-hover); }
+.lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply             { background: var(--lpcs-action-temp-bg); border-color: var(--lpcs-hp-temp);    }
+.lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply:hover       { background: var(--lpcs-action-temp-hover); }

@@ -64,7 +64,6 @@
 .lpcs-sheet .lpcs-ability-mod:active,
 .lpcs-sheet .lpcs-standard-action-link:active,
 .lpcs-sheet .lpcs-effect-badge:active {
-  background: rgba(200, 167, 93, 0.18);
+  background: var(--lpcs-bg-press-strong);
   transition-duration: 0.05s;
 }
-

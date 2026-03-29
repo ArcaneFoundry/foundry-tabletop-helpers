@@ -74,6 +74,20 @@
   --cc-shadow-button: 0 4px 10px color-mix(in srgb, var(--fth-color-canvas) 30%, transparent);
   --cc-shadow-inset-pressed: inset 0 2px 6px color-mix(in srgb, var(--fth-color-canvas) 32%, transparent);
   --cc-selected-ring: var(--fth-theme-shadow-selected);
+  --cc-glow-soft: 0 12px 28px color-mix(in srgb, var(--fth-color-canvas) 34%, transparent);
+  --cc-glow-hero: 0 18px 36px color-mix(in srgb, var(--fth-color-canvas) 30%, transparent);
+  --cc-surface-accent-soft: color-mix(in srgb, var(--fth-color-accent) 14%, transparent);
+  --cc-surface-accent-strong: color-mix(in srgb, var(--fth-color-accent) 22%, transparent);
+  --cc-surface-arcane-soft: color-mix(in srgb, var(--fth-color-arcane) 18%, transparent);
+  --cc-surface-arcane-strong: color-mix(in srgb, var(--fth-color-arcane) 28%, transparent);
+  --cc-surface-danger-soft: color-mix(in srgb, var(--fth-color-danger) 14%, transparent);
+  --cc-surface-hero: linear-gradient(145deg, color-mix(in srgb, var(--fth-color-surface-elevated) 90%, var(--fth-color-canvas) 10%), color-mix(in srgb, var(--fth-color-canvas) 88%, var(--fth-color-surface-inset) 12%));
+  --cc-surface-panel: linear-gradient(150deg, color-mix(in srgb, var(--fth-color-surface-elevated) 82%, var(--fth-color-canvas) 18%), color-mix(in srgb, var(--fth-color-canvas) 84%, var(--fth-color-surface-inset) 16%));
+  --cc-surface-panel-sheen: linear-gradient(180deg, color-mix(in srgb, white 6%, transparent), transparent 22%);
+  --cc-surface-hero-sheen: linear-gradient(90deg, color-mix(in srgb, white 7%, transparent), transparent 18%, transparent 82%, color-mix(in srgb, white 4%, transparent));
+  --cc-text-hero: color-mix(in srgb, var(--fth-color-text) 94%, white 6%);
+  --cc-text-hero-muted: color-mix(in srgb, var(--fth-color-text) 78%, transparent);
+  --cc-text-kicker: color-mix(in srgb, var(--fth-color-accent-strong) 68%, var(--fth-color-text) 32%);
 
   /* Spacing */
   --cc-space-2xs: 2px;
