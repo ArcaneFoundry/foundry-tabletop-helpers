@@ -15,6 +15,7 @@
 
 import { Log, MOD } from "../../logger";
 import { getHooks, isGM, isDnd5eWorld, getSetting, getGame } from "../../types";
+import { applyFthThemeToNode } from "../../ui/theme/fth-theme";
 import { COMBAT_SETTINGS } from "../combat-settings";
 import { extractCardData, type PartySummaryCard } from "./party-summary-types";
 import type { SaveAbility } from "../combat-types";
@@ -177,6 +178,7 @@ function showPanel(): void {
     panelEl = document.createElement("div");
     panelEl.id = "fth-party-summary";
     panelEl.className = "fth-party-summary";
+    applyFthThemeToNode(panelEl);
     document.body.appendChild(panelEl);
     restorePosition();
   }

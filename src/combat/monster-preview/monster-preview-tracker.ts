@@ -1,4 +1,5 @@
 import { buildMonsterPreviewInlineHTML, type MonsterPreviewHeaderCue } from "./monster-preview-rendering";
+import { applyFthThemeToNode } from "../../ui/theme/fth-theme";
 
 export function findMonsterPreviewTrackerElement(doc: Document = document): HTMLElement | null {
   return doc.querySelector<HTMLElement>("#combat")
@@ -29,6 +30,7 @@ export function injectMonsterPreviewIntoTracker(
   const inlineEl = document.createElement("div");
   inlineEl.id = "fth-mp-inline";
   inlineEl.className = "fth-monster-preview fth-mp-inline";
+  applyFthThemeToNode(inlineEl);
   inlineEl.innerHTML = buildMonsterPreviewInlineHTML(
     options.cachedContentHTML,
     options.pinned,

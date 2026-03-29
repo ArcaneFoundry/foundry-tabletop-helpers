@@ -19,6 +19,7 @@
 
 import { Log, MOD } from "../../logger";
 import { getGame, getHooks, isGM, isDnd5eWorld, getSetting, isObject } from "../../types";
+import { applyFthThemeToNode } from "../../ui/theme/fth-theme";
 import { COMBAT_SETTINGS } from "../combat-settings";
 import { getExtractor } from "../../print-sheet/extractors/base-extractor";
 import { transformNPCToViewModel } from "../../print-sheet/renderers/viewmodels/npc-transformer";
@@ -366,6 +367,7 @@ function showFloating(): void {
     floatingEl = document.createElement("div");
     floatingEl.id = "fth-monster-preview";
     floatingEl.className = "fth-monster-preview fth-mp-floating";
+    applyFthThemeToNode(floatingEl);
     document.body.appendChild(floatingEl);
     restorePosition();
   }

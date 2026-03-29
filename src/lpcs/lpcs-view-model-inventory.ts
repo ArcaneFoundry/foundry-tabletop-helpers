@@ -202,7 +202,11 @@ function buildOneInventoryItem(item: Record<string, unknown>, options: BuildInve
     contentsWeight: contentsWeightVal,
     capacityMax,
     capacityPct,
-    capacityColor: capacityPct < 60 ? "#2d8a4e" : capacityPct < 85 ? "#c49a2a" : "#8b1e2d",
+    capacityColor: capacityPct < 60
+      ? "var(--lpcs-hp-healthy)"
+      : capacityPct < 85
+        ? "var(--lpcs-hp-wounded)"
+        : "var(--lpcs-hp-critical)",
     containerId: (sys.container as string) ?? null,
     isEquippable: "equipped" in sys,
   };

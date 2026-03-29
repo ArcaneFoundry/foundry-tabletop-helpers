@@ -4,6 +4,7 @@ import type { SheetType } from "./print-sheet/types";
 
 import type { DefaultPrintOptions } from "./settings";
 import { printDefaultsSettingKey } from "./settings-utils";
+import { FTH_THEME_MODE_SETTING_KEY, handleFthThemeModeChange } from "./ui/theme/fth-theme";
 
 export interface SettingsRegistrar {
   register(module: string, key: string, data: Record<string, unknown>): void;
@@ -53,6 +54,21 @@ export function registerCoreSettings(settings: SettingsRegistrar): void {
     config: true,
     type: Boolean,
     default: true,
+  });
+
+  settings.register(MOD, FTH_THEME_MODE_SETTING_KEY, {
+    name: "Theme Mode",
+    hint: "Choose whether Foundry Tabletop Helpers uses the system theme, always light, or always dark.",
+    scope: "client",
+    config: true,
+    type: String,
+    choices: {
+      system: "System",
+      light: "Light",
+      dark: "Dark",
+    },
+    default: "system",
+    onChange: () => handleFthThemeModeChange(),
   });
 }
 

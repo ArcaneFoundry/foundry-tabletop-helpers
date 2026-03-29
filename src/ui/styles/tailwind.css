@@ -41,6 +41,11 @@
     background: none;
     box-shadow: none;
   }
+
+  :where(.fth-theme-root, [data-fth-theme]) {
+    background: var(--fth-color-canvas);
+    color: var(--fth-color-text);
+  }
 }
 
 /* Foundry app-root normalization for React-hosted windows. */
@@ -55,7 +60,7 @@
 
 .fth-react-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgb(203 167 95 / 0.55) rgb(18 13 9 / 0.16);
+  scrollbar-color: color-mix(in srgb, var(--fth-color-accent) 68%, transparent) color-mix(in srgb, var(--fth-color-canvas) 14%, transparent);
 }
 
 .fth-react-scrollbar::-webkit-scrollbar {
@@ -64,12 +69,48 @@
 }
 
 .fth-react-scrollbar::-webkit-scrollbar-track {
-  background: rgb(18 13 9 / 0.14);
+  background: color-mix(in srgb, var(--fth-color-canvas) 14%, transparent);
 }
 
 .fth-react-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgb(239 215 162 / 0.72), rgb(143 99 51 / 0.9));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fth-color-accent-strong) 76%, transparent),
+    color-mix(in srgb, var(--fth-color-accent-soft) 88%, transparent)
+  );
   border: 2px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
+}
+
+@layer components {
+  .fth-theme-shell-backdrop {
+    background-image: var(--fth-theme-backdrop-image);
+  }
+
+  .fth-theme-shell-sheen {
+    background-image: var(--fth-theme-sheen-image);
+    mix-blend-mode: screen;
+  }
+
+  .fth-theme-panel {
+    border: 1px solid var(--fth-color-border);
+    background-image: var(--fth-theme-panel-image);
+    box-shadow: var(--fth-theme-shadow-panel);
+    color: var(--fth-color-text);
+  }
+
+  .fth-theme-panel--alt {
+    background-image: var(--fth-theme-panel-image-alt);
+  }
+
+  .fth-theme-panel-accent-line {
+    background-image: var(--fth-theme-accent-line);
+  }
+
+  .fth-theme-status-pill {
+    border: 1px solid var(--fth-color-border);
+    background-image: var(--fth-theme-status-image);
+    color: var(--fth-color-text-muted);
+  }
 }

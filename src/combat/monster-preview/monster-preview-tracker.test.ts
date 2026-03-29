@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
+const { applyFthThemeToNodeMock } = vi.hoisted(() => ({
+  applyFthThemeToNodeMock: vi.fn(),
+}));
+
+vi.mock("../../ui/theme/fth-theme", () => ({
+  applyFthThemeToNode: applyFthThemeToNodeMock,
+}));
+
 import { findMonsterPreviewTrackerElement, injectMonsterPreviewIntoTracker } from "./monster-preview-tracker";
 
 class FakeElement {
@@ -86,6 +94,7 @@ describe("monster preview tracker", () => {
       const injected = listParent.children[1];
       expect(injected.id).toBe("fth-mp-inline");
       expect(injected.className).toContain("fth-mp-inline");
+      expect(applyFthThemeToNodeMock).toHaveBeenCalledWith(injected);
       expect(injected.innerHTML).toContain("Monster Preview");
       expect(injected.innerHTML).toContain("mp-pin is-active");
       expect(attachInlineListeners).toHaveBeenCalledWith(injected);

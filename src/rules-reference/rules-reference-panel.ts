@@ -12,6 +12,7 @@
 
 import { Log, MOD } from "../logger";
 import { getHooks, isGM, isDnd5eWorld, getSetting } from "../types";
+import { applyFthThemeToNode } from "../ui/theme/fth-theme";
 import { COMBAT_SETTINGS } from "../combat/combat-settings";
 import { TIER_1_RULES, RULE_CATEGORIES } from "./rules-reference-data";
 import { buildSearchIndex, searchRules } from "./rules-reference-search";
@@ -97,6 +98,7 @@ function showPanel(): void {
     panelEl = document.createElement("div");
     panelEl.id = "fth-rules-reference";
     panelEl.className = "fth-rules-reference";
+    applyFthThemeToNode(panelEl);
     document.body.appendChild(panelEl);
     restorePosition();
   }

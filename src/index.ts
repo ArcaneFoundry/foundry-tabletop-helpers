@@ -12,6 +12,7 @@ import "./ui/styles/tailwind.css";
 import { attachFthApi } from "./fth-api";
 import { Log, MOD, type Level } from "./logger";
 import { registerSettings } from "./settings";
+import { initFthTheme, registerFthThemeHooks } from "./ui/theme/fth-theme";
 import { registerPrintSheetHooks } from "./print-sheet/print-sheet";
 import { registerWindowRotationHooks, initWindowRotationReady } from "./window-rotation/index";
 import { getGame, getHooks, getSetting, isGM } from "./types";
@@ -68,6 +69,7 @@ getHooks()?.on?.("ready", () => {
 
 function onInit(): void {
   registerSettings();
+  registerFthThemeHooks();
   registerWindowRotationHooks();
   registerPrintSheetHooks();
 
@@ -136,6 +138,8 @@ function onReady(): void {
 
   // Character Creator — ready-phase initialization
   initCharacterCreatorReady();
+
+  initFthTheme();
 
   if (isGM()) void startSoundscapeTriggerService();
   attachFthApi();

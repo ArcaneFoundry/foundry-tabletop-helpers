@@ -6,15 +6,29 @@
 
 /* ── Panel shell ─────────────────────────────────────────────── */
 .fth-damage-panel {
+  --fth-dwf-surface: var(--fth-color-canvas);
+  --fth-dwf-surface-alt: var(--fth-color-surface);
+  --fth-dwf-glass: var(--fth-color-surface-glass);
+  --fth-dwf-glass-strong: var(--fth-color-surface-glass-strong);
+  --fth-dwf-border: var(--fth-color-border-strong);
+  --fth-dwf-border-soft: var(--fth-color-border);
+  --fth-dwf-text: var(--fth-color-text);
+  --fth-dwf-text-muted: var(--fth-color-text-muted);
+  --fth-dwf-text-subtle: var(--fth-color-text-subtle);
+  --fth-dwf-accent: var(--fth-color-accent);
+  --fth-dwf-accent-strong: var(--fth-color-accent-strong);
+  --fth-dwf-focus: var(--fth-color-focus);
+  --fth-dwf-success: var(--fth-color-success);
+  --fth-dwf-danger: var(--fth-color-danger);
+  --fth-dwf-arcane: var(--fth-color-arcane);
+  --fth-dwf-shadow: var(--fth-theme-shadow-panel);
   position: fixed;
   z-index: 100;
   width: 220px;
-  background: #0f1115;
-  border: 1px solid rgba(200, 167, 93, 0.4);
+  background: var(--fth-dwf-surface);
+  border: 1px solid var(--fth-dwf-border);
   border-radius: 10px;
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(200, 167, 93, 0.06);
+  box-shadow: var(--fth-dwf-shadow);
   overflow: hidden;
   font-family: "Roboto", sans-serif;
   user-select: none;
@@ -26,15 +40,15 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: #1a1d24;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.12);
+  background: var(--fth-dwf-surface-alt);
+  border-bottom: 1px solid var(--fth-dwf-border-soft);
 }
 
 .dwf-title {
   font-family: "Roboto Slab", serif;
   font-size: 0.65rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-dwf-accent);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -50,7 +64,7 @@
   text-align: right;
   font-size: 0.62rem;
   font-weight: 600;
-  color: #9a9590;
+  color: var(--fth-dwf-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   white-space: nowrap;
@@ -59,7 +73,7 @@
 .dwf-close {
   background: transparent;
   border: none;
-  color: #5a5550;
+  color: var(--fth-dwf-text-subtle);
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
@@ -71,8 +85,8 @@
 }
 
 .dwf-close:hover {
-  color: #e8e4dc;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--fth-dwf-text);
+  background: var(--fth-dwf-glass-strong);
 }
 
 /* ── Panel body ──────────────────────────────────────────────── */
@@ -100,10 +114,10 @@
 .dwf-amount-input {
   flex: 1;
   min-width: 0;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(200, 167, 93, 0.2);
+  background: var(--fth-dwf-glass-strong);
+  border: 1px solid var(--fth-dwf-border-soft);
   border-radius: 6px;
-  color: #e8e4dc;
+  color: var(--fth-dwf-text);
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 1.25rem;
   font-weight: 700;
@@ -117,19 +131,19 @@
 
 .dwf-amount-input:focus {
   outline: none;
-  border-color: rgba(200, 167, 93, 0.55);
-  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--fth-dwf-focus);
+  background: color-mix(in srgb, var(--fth-dwf-glass-strong) 82%, white 18%);
 }
 
 .dwf-amount-input::placeholder {
-  color: #4a4540;
+  color: var(--fth-dwf-text-subtle);
   font-weight: 400;
 }
 
 /* Error flash on invalid input */
 .dwf-input-error {
   animation: dwf-shake 0.3s ease-out;
-  border-color: #ef5350 !important;
+  border-color: var(--fth-dwf-danger) !important;
 }
 
 @keyframes dwf-shake {
@@ -170,68 +184,68 @@
 }
 
 .dwf-action-btn:focus-visible {
-  outline: 2px solid rgba(200, 167, 93, 0.7);
+  outline: 2px solid var(--fth-dwf-focus);
   outline-offset: 2px;
 }
 
 /* Success flash after execution */
 .dwf-action-success {
-  background: rgba(76, 175, 80, 0.25) !important;
-  border-color: #4caf50 !important;
-  color: #4caf50 !important;
+  background: color-mix(in srgb, var(--fth-dwf-success) 24%, transparent) !important;
+  border-color: var(--fth-dwf-success) !important;
+  color: var(--fth-dwf-success) !important;
   transition-duration: 0.05s;
 }
 
 /* Damage button */
 .dwf-action-damage {
-  background: rgba(239, 83, 80, 0.12);
-  border-color: rgba(239, 83, 80, 0.35);
-  color: #ef5350;
+  background: color-mix(in srgb, var(--fth-dwf-danger) 14%, transparent);
+  border-color: color-mix(in srgb, var(--fth-dwf-danger) 46%, transparent);
+  color: var(--fth-dwf-danger);
 }
 
 .dwf-action-damage:hover {
-  background: rgba(239, 83, 80, 0.22);
-  border-color: #ef5350;
+  background: color-mix(in srgb, var(--fth-dwf-danger) 24%, transparent);
+  border-color: var(--fth-dwf-danger);
 }
 
 /* Heal button */
 .dwf-action-heal {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: rgba(76, 175, 80, 0.3);
-  color: #4caf50;
+  background: color-mix(in srgb, var(--fth-dwf-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--fth-dwf-success) 40%, transparent);
+  color: var(--fth-dwf-success);
 }
 
 .dwf-action-heal:hover {
-  background: rgba(76, 175, 80, 0.2);
-  border-color: #4caf50;
+  background: color-mix(in srgb, var(--fth-dwf-success) 22%, transparent);
+  border-color: var(--fth-dwf-success);
 }
 
 /* Apply condition button */
 .dwf-action-apply {
   width: 100%;
-  background: rgba(200, 167, 93, 0.12);
-  border-color: rgba(200, 167, 93, 0.35);
-  color: #c8a75d;
+  background: color-mix(in srgb, var(--fth-dwf-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--fth-dwf-accent) 40%, transparent);
+  color: var(--fth-dwf-accent);
 }
 
 .dwf-action-apply:hover {
-  background: rgba(200, 167, 93, 0.22);
-  border-color: #c8a75d;
-  color: #d4af37;
+  background: color-mix(in srgb, var(--fth-dwf-accent) 24%, transparent);
+  border-color: var(--fth-dwf-accent);
+  color: var(--fth-dwf-accent-strong);
 }
 
 /* Remove condition button */
 .dwf-action-remove {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #7a7570;
+  background: var(--fth-dwf-glass);
+  border-color: color-mix(in srgb, var(--fth-dwf-text) 12%, transparent);
+  color: var(--fth-dwf-text-muted);
 }
 
 .dwf-action-remove:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #9a9590;
+  background: var(--fth-dwf-glass-strong);
+  border-color: color-mix(in srgb, var(--fth-dwf-text) 20%, transparent);
+  color: var(--fth-dwf-text-muted);
 }
 
 /* ── Damage type input ───────────────────────────────────────── */
@@ -241,10 +255,10 @@
 
 .dwf-damage-type-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(200, 167, 93, 0.12);
+  background: var(--fth-dwf-glass);
+  border: 1px solid var(--fth-dwf-border-soft);
   border-radius: 5px;
-  color: #9a9590;
+  color: var(--fth-dwf-text-muted);
   font-family: "Roboto", sans-serif;
   font-size: 0.7rem;
   padding: 4px 8px;
@@ -256,13 +270,13 @@
 
 .dwf-damage-type-input:focus {
   outline: none;
-  border-color: rgba(200, 167, 93, 0.4);
-  background: rgba(255, 255, 255, 0.07);
-  color: #e8e4dc;
+  border-color: var(--fth-dwf-border);
+  background: var(--fth-dwf-glass-strong);
+  color: var(--fth-dwf-text);
 }
 
 .dwf-damage-type-input::placeholder {
-  color: #4a4540;
+  color: var(--fth-dwf-text-subtle);
 }
 
 /* ── Mode section: two-row grouped tabs ──────────────────────── */
@@ -281,7 +295,7 @@
 .dwf-mode-label {
   font-size: 0.48rem;
   font-weight: 700;
-  color: #4a4540;
+  color: var(--fth-dwf-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   width: 36px;
@@ -293,7 +307,7 @@
   display: flex;
   flex: 1;
   gap: 2px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fth-dwf-glass);
   border-radius: 6px;
   padding: 2px;
 }
@@ -305,7 +319,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
-  color: #6a6560;
+  color: var(--fth-dwf-text-subtle);
   font-family: "Roboto", sans-serif;
   font-size: 0.55rem;
   font-weight: 700;
@@ -321,14 +335,14 @@
 }
 
 .dwf-mode-tab:hover {
-  color: #9a9590;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--fth-dwf-text-muted);
+  background: var(--fth-dwf-glass);
 }
 
 .dwf-mode-tab.active {
-  background: rgba(200, 167, 93, 0.12);
-  border-color: rgba(200, 167, 93, 0.3);
-  color: #c8a75d;
+  background: color-mix(in srgb, var(--fth-dwf-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--fth-dwf-accent) 40%, transparent);
+  color: var(--fth-dwf-accent);
 }
 
 .dwf-mode-tab:active {
@@ -337,7 +351,7 @@
 }
 
 .dwf-mode-tab:focus-visible {
-  outline: 2px solid rgba(200, 167, 93, 0.7);
+  outline: 2px solid var(--fth-dwf-focus);
   outline-offset: 1px;
 }
 
@@ -357,16 +371,16 @@
 .dwf-save-label {
   font-size: 0.58rem;
   font-weight: 700;
-  color: #7a7570;
+  color: var(--fth-dwf-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .dwf-save-input {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(200, 167, 93, 0.15);
+  background: var(--fth-dwf-glass-strong);
+  border: 1px solid var(--fth-dwf-border-soft);
   border-radius: 5px;
-  color: #e8e4dc;
+  color: var(--fth-dwf-text);
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
@@ -380,8 +394,8 @@
 
 .dwf-save-input:focus {
   outline: none;
-  border-color: rgba(200, 167, 93, 0.5);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--fth-dwf-border);
+  background: color-mix(in srgb, var(--fth-dwf-glass-strong) 88%, white 12%);
 }
 
 /* ── Condition fields ────────────────────────────────────────── */
@@ -404,7 +418,7 @@ select.dwf-save-input {
   cursor: pointer;
   text-align: left;
   padding-right: 20px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9590'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a7864'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
 }
@@ -427,7 +441,7 @@ select.dwf-save-input {
 @media (prefers-reduced-motion: reduce) {
   .dwf-input-error {
     animation: none;
-    border-color: #ef5350 !important;
+    border-color: var(--fth-dwf-danger) !important;
   }
 
   .dwf-action-btn:active,
@@ -443,15 +457,15 @@ select.dwf-save-input {
 .fth-workflow-result {
   font-family: "Roboto", sans-serif;
   font-size: 0.8rem;
-  color: #e8e4dc;
+  color: var(--fth-dwf-text);
 }
 
 .fth-wf-header {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-dwf-accent);
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.2);
+  border-bottom: 1px solid var(--fth-dwf-border-soft);
   margin-bottom: 6px;
 }
 
@@ -467,7 +481,7 @@ select.dwf-save-input {
 }
 
 .fth-wf-table tr + tr {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid color-mix(in srgb, var(--fth-dwf-text) 10%, transparent);
 }
 
 .fth-wf-name {
@@ -495,11 +509,11 @@ select.dwf-save-input {
   margin-left: 3px;
 }
 
-.fth-wf-pass { color: #4caf50; }
-.fth-wf-pass .fth-wf-badge { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+.fth-wf-pass { color: var(--fth-dwf-success); }
+.fth-wf-pass .fth-wf-badge { background: color-mix(in srgb, var(--fth-dwf-success) 18%, transparent); color: var(--fth-dwf-success); }
 
-.fth-wf-fail { color: #b71c1c; }
-.fth-wf-fail .fth-wf-badge { background: rgba(183, 28, 28, 0.15); color: #ef5350; }
+.fth-wf-fail { color: var(--fth-dwf-danger); }
+.fth-wf-fail .fth-wf-badge { background: color-mix(in srgb, var(--fth-dwf-danger) 18%, transparent); color: var(--fth-dwf-danger); }
 
 .fth-wf-effect {
   text-align: right;
@@ -507,47 +521,47 @@ select.dwf-save-input {
   font-weight: 700;
 }
 
-.fth-wf-dmg { color: #ef5350; }
-.fth-wf-heal { color: #4caf50; }
+.fth-wf-dmg { color: var(--fth-dwf-danger); }
+.fth-wf-heal { color: var(--fth-dwf-success); }
 
 .fth-wf-hp {
   text-align: right;
   font-family: "Roboto Condensed", sans-serif;
   font-size: 0.7rem;
-  color: #9a9590;
+  color: var(--fth-dwf-text-muted);
 }
 
 .fth-wf-summary {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #9a9590;
+  color: var(--fth-dwf-text-muted);
   padding-top: 6px;
-  border-top: 1px solid rgba(200, 167, 93, 0.2);
+  border-top: 1px solid var(--fth-dwf-border-soft);
   margin-top: 6px;
   text-align: center;
 }
 
 /* ── Condition chat card badges ──────────────────────────────── */
-.fth-wf-cond-applied { color: #9b59b6; }
+.fth-wf-cond-applied { color: var(--fth-dwf-arcane); }
 .fth-wf-cond-badge {
-  background: rgba(155, 89, 182, 0.2) !important;
-  color: #bb86fc !important;
+  background: color-mix(in srgb, var(--fth-dwf-arcane) 18%, transparent) !important;
+  color: color-mix(in srgb, var(--fth-dwf-arcane) 70%, white 30%) !important;
 }
 
 .fth-wf-cond-resisted {
-  color: #4caf50;
+  color: var(--fth-dwf-success);
   font-size: 0.7rem;
 }
 
 .fth-wf-cond-skipped,
 .fth-wf-cond-absent {
-  color: #5a5550;
+  color: var(--fth-dwf-text-subtle);
   font-size: 0.7rem;
   font-style: italic;
 }
 
 .fth-wf-cond-removed {
-  color: #4caf50;
+  color: var(--fth-dwf-success);
   font-size: 0.7rem;
 }
 
@@ -555,13 +569,13 @@ select.dwf-save-input {
 .fth-wf-conc-section {
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(155, 89, 182, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--fth-dwf-arcane) 24%, transparent);
 }
 
 .fth-wf-conc-header {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #bb86fc;
+  color: color-mix(in srgb, var(--fth-dwf-arcane) 72%, white 28%);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 4px;
@@ -573,7 +587,7 @@ select.dwf-save-input {
 }
 
 .fth-wf-conc-lost {
-  background: rgba(155, 89, 182, 0.25) !important;
-  color: #e1bee7 !important;
+  background: color-mix(in srgb, var(--fth-dwf-arcane) 22%, transparent) !important;
+  color: color-mix(in srgb, var(--fth-dwf-arcane) 36%, white 64%) !important;
   font-weight: 800;
 }

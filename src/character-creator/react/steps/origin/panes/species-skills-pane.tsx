@@ -78,26 +78,26 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-      <section className="relative isolate flex flex-col rounded-[1.45rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
+      <section className="relative isolate flex flex-col rounded-[1.45rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image)] shadow-[var(--fth-theme-shadow-panel),inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_4%,transparent)]">
         <div className="px-4 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e9c176]/[0.16] pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--fth-color-border)] pb-4">
             <div className="min-w-0 max-w-3xl">
-              <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
+              <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_78%,transparent)]">
                 {state.selections.species?.name ?? "Species"}
               </div>
-              <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+              <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[color:var(--fth-color-text)]">
                 {viewModel?.title ?? "Choose Species Skills"}
               </div>
-              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-6 text-[#d0cad0]">
+              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-6 text-[color:var(--fth-color-text-muted)]">
                 {viewModel?.description ?? "Choose the skills granted by this species while keeping earlier background and class choices in mind."}
               </p>
-              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.92rem] leading-6 text-[#bdb6c2]">
+              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.92rem] leading-6 text-[color:var(--fth-color-text-muted)]">
                 Background, class, and fixed species skill grants already remove illegal options from the pool. Only the legal choices remain visible here.
               </p>
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-2">
-              <div className="inline-flex whitespace-nowrap rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[#c6c0cb]">
+              <div className="inline-flex whitespace-nowrap rounded-full border border-[color:color-mix(in_srgb,var(--fth-color-text)_10%,transparent)] bg-[color:var(--fth-color-surface-glass)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[color:var(--fth-color-text-muted)]">
                 {requestedSkillChoiceCount > 0 ? "Select Species Skills" : "No Skill Choice Required"}
               </div>
               <CompactMetaChips
@@ -122,8 +122,8 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
                     className={cn(
                       "group relative flex items-center justify-between gap-3 rounded-[1rem] border px-4 py-3 text-left shadow-[0_14px_28px_rgba(0,0,0,0.22)] transition duration-200",
                       checked
-                        ? "border-[#e9c176]/60 bg-[linear-gradient(180deg,rgba(49,60,35,0.98),rgba(22,27,19,0.99))] text-[#f6e8c7] shadow-[0_0_0_1px_rgba(233,193,118,0.18),0_18px_34px_rgba(0,0,0,0.28)]"
-                        : "border-[#8f7256] bg-[linear-gradient(180deg,rgba(41,32,27,0.98),rgba(20,16,14,0.99))] text-[#f3e3c7] hover:border-[#e9c176]/70 hover:brightness-[1.03]",
+                        ? "border-[color:color-mix(in_srgb,var(--fth-color-accent)_64%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-success)_16%,var(--fth-color-surface)_84%),color-mix(in_srgb,var(--fth-color-success)_12%,var(--fth-color-canvas)_88%))] text-[color:var(--fth-color-text)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--fth-color-accent)_18%,transparent),0_18px_34px_rgb(0_0_0_/_0.24)]"
+                        : "border-[color:color-mix(in_srgb,var(--fth-color-accent)_24%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-text)_6%,var(--fth-color-surface)_94%),color-mix(in_srgb,var(--fth-color-canvas)_92%,transparent))] text-[color:var(--fth-color-text)] hover:border-[color:color-mix(in_srgb,var(--fth-color-accent)_70%,transparent)] hover:brightness-[1.03]",
                       disabled && !checked && "cursor-not-allowed opacity-60",
                     )}
                     aria-pressed={checked}
@@ -194,11 +194,11 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
           iconClass="fa-solid fa-lock"
           title="Already Claimed"
         />
-        <section className="rounded-[1.35rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(24,20,18,0.96),rgba(15,13,12,0.99))] p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]">
-          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[#e9c176]/72">
+        <section className="rounded-[1.35rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image-alt)] p-4 shadow-[var(--fth-theme-shadow-panel)]">
+          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_72%,transparent)]">
             Guidance
           </div>
-          <div className="mt-3 space-y-2 font-fth-cc-body text-[0.96rem] leading-6 text-[#d0cad0]">
+          <div className="mt-3 space-y-2 font-fth-cc-body text-[0.96rem] leading-6 text-[color:var(--fth-color-text-muted)]">
             {hasValidationMessages ? (
               viewModel?.validationMessages?.map((message) => <p key={message}>{message}</p>)
             ) : (

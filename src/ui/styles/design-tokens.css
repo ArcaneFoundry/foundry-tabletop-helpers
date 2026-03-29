@@ -1,18 +1,39 @@
 @theme {
-  --color-fth-cc-parchment: #1c1b1b;
-  --color-fth-cc-parchment-deep: #353534;
-  --color-fth-cc-walnut: #131313;
-  --color-fth-cc-walnut-soft: #1f1f24;
-  --color-fth-cc-bronze: #9f7c42;
-  --color-fth-cc-gold: #e9c176;
-  --color-fth-cc-gold-bright: #f5dfae;
-  --color-fth-cc-crimson: #8b3848;
-  --color-fth-cc-emerald: #4e7d67;
-  --color-fth-cc-arcane: #7f68b9;
-  --color-fth-cc-frost: #c5c5d1;
-  --color-fth-cc-ink: #131313;
-  --color-fth-cc-light: #e5e2e1;
-  --color-fth-cc-muted: #c5c5d1;
+  --color-fth-canvas: var(--fth-color-canvas);
+  --color-fth-surface: var(--fth-color-surface);
+  --color-fth-surface-elevated: var(--fth-color-surface-elevated);
+  --color-fth-surface-inset: var(--fth-color-surface-inset);
+  --color-fth-surface-glass: var(--fth-color-surface-glass);
+  --color-fth-surface-glass-strong: var(--fth-color-surface-glass-strong);
+  --color-fth-surface-inset: var(--fth-color-surface-inset);
+  --color-fth-border: var(--fth-color-border);
+  --color-fth-border-strong: var(--fth-color-border-strong);
+  --color-fth-text: var(--fth-color-text);
+  --color-fth-text-muted: var(--fth-color-text-muted);
+  --color-fth-text-subtle: var(--fth-color-text-subtle);
+  --color-fth-accent: var(--fth-color-accent);
+  --color-fth-accent-strong: var(--fth-color-accent-strong);
+  --color-fth-accent-soft: var(--fth-color-accent-soft);
+  --color-fth-accent-contrast: var(--fth-color-accent-contrast);
+  --color-fth-focus: var(--fth-color-focus);
+  --color-fth-success: var(--fth-color-success);
+  --color-fth-warning: var(--fth-color-warning);
+  --color-fth-danger: var(--fth-color-danger);
+
+  --color-fth-cc-parchment: var(--fth-color-surface);
+  --color-fth-cc-parchment-deep: var(--fth-color-surface-elevated);
+  --color-fth-cc-walnut: var(--fth-color-canvas);
+  --color-fth-cc-walnut-soft: var(--fth-color-surface-inset);
+  --color-fth-cc-bronze: var(--fth-color-accent-soft);
+  --color-fth-cc-gold: var(--fth-color-accent);
+  --color-fth-cc-gold-bright: var(--fth-color-accent-strong);
+  --color-fth-cc-crimson: var(--fth-color-danger);
+  --color-fth-cc-emerald: var(--fth-color-success);
+  --color-fth-cc-arcane: var(--fth-color-arcane);
+  --color-fth-cc-frost: var(--fth-color-frost);
+  --color-fth-cc-ink: var(--fth-color-canvas);
+  --color-fth-cc-light: var(--fth-color-text);
+  --color-fth-cc-muted: var(--fth-color-text-muted);
   --font-fth-cc-display: "Newsreader", "Cinzel", Georgia, serif;
   --font-fth-cc-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-fth-cc-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -31,6 +52,128 @@
   --spacing-fth-cc-xl: 2rem;
   --ease-fth-cc-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-fth-cc-fade-in: fth-cc-fade-in 180ms var(--ease-fth-cc-standard);
+}
+
+:root {
+  --fth-color-arcane: #8873be;
+  --fth-color-frost: #b7c2cf;
+  --fth-theme-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.28);
+  --fth-theme-shadow-elevated: 0 26px 58px rgb(0 0 0 / 0.34);
+  --fth-theme-shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.1);
+  --fth-theme-shadow-selected: 0 0 0 1px rgb(239 215 162 / 0.85), 0 0 0 4px rgb(203 167 95 / 0.24);
+
+  --fth-color-canvas: #0d0b11;
+  --fth-color-surface: #16131b;
+  --fth-color-surface-elevated: #211b2b;
+  --fth-color-surface-glass: rgb(255 255 255 / 0.05);
+  --fth-color-surface-glass-strong: rgb(255 255 255 / 0.1);
+  --fth-color-surface-inset: #1a1525;
+  --fth-color-border: rgb(233 193 118 / 0.16);
+  --fth-color-border-strong: rgb(233 193 118 / 0.34);
+  --fth-color-text: #f2ebdf;
+  --fth-color-text-muted: #d0c6b8;
+  --fth-color-text-subtle: #978a79;
+  --fth-color-accent: #d7aa5b;
+  --fth-color-accent-strong: #efd39b;
+  --fth-color-accent-soft: #a78348;
+  --fth-color-accent-contrast: #2f2110;
+  --fth-color-focus: #f0c679;
+  --fth-color-success: #6f9d74;
+  --fth-color-warning: #b58745;
+  --fth-color-danger: #a95b5b;
+
+  --fth-theme-backdrop-image:
+    radial-gradient(circle at top, rgb(239 211 151 / 0.09), transparent 26%),
+    radial-gradient(circle at bottom left, rgb(136 115 190 / 0.14), transparent 28%),
+    linear-gradient(180deg, rgb(20 16 26 / 0.98), rgb(8 7 11 / 1));
+  --fth-theme-sheen-image:
+    linear-gradient(135deg, rgb(255 255 255 / 0.035), transparent 34%, rgb(255 255 255 / 0.018) 62%, transparent);
+  --fth-theme-panel-image: linear-gradient(180deg, rgb(30 26 36 / 0.92), rgb(16 13 21 / 0.96));
+  --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(28 24 33 / 0.94), rgb(14 13 19 / 0.98));
+  --fth-theme-status-image: linear-gradient(180deg, rgb(215 170 91 / 0.12), rgb(215 170 91 / 0.06));
+  --fth-theme-accent-line: linear-gradient(90deg, rgb(233 193 118 / 0), rgb(233 193 118 / 0.7), rgb(233 193 118 / 0));
+  --fth-theme-icon-surface: rgb(233 193 118 / 0.1);
+  --fth-theme-icon-ring: rgb(233 193 118 / 0.4);
+  --fth-theme-step-active-image: linear-gradient(180deg, rgb(136 115 190 / 0.18), rgb(215 170 91 / 0.08));
+  --fth-theme-step-complete-image: linear-gradient(180deg, rgb(111 157 116 / 0.18), rgb(255 255 255 / 0.02));
+  --fth-theme-step-invalid-image: linear-gradient(180deg, rgb(169 91 91 / 0.16), rgb(255 255 255 / 0.02));
+  --fth-theme-step-icon-image: radial-gradient(circle at 35% 35%, #f3d28e, #d5a84d);
+  --fth-theme-step-icon-complete-image: radial-gradient(circle at 35% 35%, #dbe9bc, #8ca96f);
+  --fth-theme-step-divider-image: linear-gradient(90deg, rgb(233 193 118 / 0), rgb(233 193 118 / 0.38), rgb(233 193 118 / 0));
+  --fth-theme-card-shell-image: linear-gradient(180deg, rgb(46 42 48 / 0.94), rgb(15 15 19 / 0.98));
+  --fth-theme-card-inner-image: linear-gradient(180deg, rgb(251 247 233 / 0.04) 0%, transparent 22%, rgb(8 7 12 / 0.02) 42%, rgb(8 7 12 / 0.82) 100%);
+  --fth-theme-card-top-fade: linear-gradient(180deg, rgb(14 14 18 / 0.74), rgb(14 14 18 / 0));
+  --fth-theme-card-chip-bg: rgb(255 255 255 / 0.05);
+  --fth-theme-card-chip-border: rgb(233 193 118 / 0.22);
+  --fth-theme-card-chip-text: #e9dcc6;
+  --fth-theme-card-chip-icon: #f7d691;
+  --fth-theme-card-selected-bg: rgb(233 193 118 / 0.14);
+  --fth-theme-card-selected-border: rgb(233 193 118 / 0.45);
+  --fth-theme-card-selected-text: #f6e6c4;
+}
+
+.fth-theme-root,
+[data-fth-theme] {
+  color: var(--fth-color-text);
+  color-scheme: dark;
+}
+
+.fth-theme-root[data-fth-theme="light"],
+[data-fth-theme="light"] {
+  color-scheme: light;
+  --fth-theme-shadow-panel: 0 20px 46px rgb(96 71 35 / 0.12);
+  --fth-theme-shadow-elevated: 0 24px 54px rgb(96 71 35 / 0.16);
+  --fth-theme-shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.65);
+  --fth-theme-shadow-selected: 0 0 0 1px rgb(199 155 74 / 0.72), 0 0 0 4px rgb(199 155 74 / 0.16);
+
+  --fth-color-canvas: #fdfbf7;
+  --fth-color-surface: #f6efe4;
+  --fth-color-surface-elevated: #efe4d2;
+  --fth-color-surface-glass: rgb(255 255 255 / 0.68);
+  --fth-color-surface-glass-strong: rgb(255 255 255 / 0.82);
+  --fth-color-surface-inset: #eadbc5;
+  --fth-color-border: rgb(167 131 72 / 0.18);
+  --fth-color-border-strong: rgb(167 131 72 / 0.34);
+  --fth-color-text: #241d16;
+  --fth-color-text-muted: #5e5040;
+  --fth-color-text-subtle: #8a7864;
+  --fth-color-accent: #bb8e45;
+  --fth-color-accent-strong: #d8b16a;
+  --fth-color-accent-soft: #8c6a36;
+  --fth-color-accent-contrast: #fffaf0;
+  --fth-color-focus: #d6a651;
+  --fth-color-success: #5f8663;
+  --fth-color-warning: #a67732;
+  --fth-color-danger: #a06257;
+
+  --fth-theme-backdrop-image:
+    radial-gradient(circle at top, rgb(215 170 91 / 0.1), transparent 26%),
+    radial-gradient(circle at bottom left, rgb(136 115 190 / 0.08), transparent 30%),
+    linear-gradient(180deg, rgb(253 251 247 / 1), rgb(244 236 225 / 1));
+  --fth-theme-sheen-image:
+    linear-gradient(135deg, rgb(255 255 255 / 0.66), transparent 34%, rgb(255 250 241 / 0.3) 62%, transparent);
+  --fth-theme-panel-image: linear-gradient(180deg, rgb(250 246 238 / 0.94), rgb(242 233 220 / 0.98));
+  --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(255 251 244 / 0.92), rgb(243 234 220 / 0.98));
+  --fth-theme-status-image: linear-gradient(180deg, rgb(187 142 69 / 0.16), rgb(187 142 69 / 0.08));
+  --fth-theme-accent-line: linear-gradient(90deg, rgb(187 142 69 / 0), rgb(187 142 69 / 0.62), rgb(187 142 69 / 0));
+  --fth-theme-icon-surface: rgb(187 142 69 / 0.12);
+  --fth-theme-icon-ring: rgb(187 142 69 / 0.28);
+  --fth-theme-step-active-image: linear-gradient(180deg, rgb(187 142 69 / 0.18), rgb(136 115 190 / 0.06));
+  --fth-theme-step-complete-image: linear-gradient(180deg, rgb(95 134 99 / 0.18), rgb(255 255 255 / 0.34));
+  --fth-theme-step-invalid-image: linear-gradient(180deg, rgb(160 98 87 / 0.16), rgb(255 255 255 / 0.34));
+  --fth-theme-step-icon-image: radial-gradient(circle at 35% 35%, #f5dca6, #bf9041);
+  --fth-theme-step-icon-complete-image: radial-gradient(circle at 35% 35%, #e7efd7, #7f9f6a);
+  --fth-theme-step-divider-image: linear-gradient(90deg, rgb(187 142 69 / 0), rgb(187 142 69 / 0.28), rgb(187 142 69 / 0));
+  --fth-theme-card-shell-image: linear-gradient(180deg, rgb(255 251 245 / 0.98), rgb(244 231 209 / 0.94));
+  --fth-theme-card-inner-image: linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, transparent 22%, rgb(168 128 74 / 0.04) 42%, rgb(73 48 25 / 0.18) 100%);
+  --fth-theme-card-top-fade: linear-gradient(180deg, rgb(255 250 244 / 0.8), rgb(255 250 244 / 0));
+  --fth-theme-card-chip-bg: rgb(255 255 255 / 0.62);
+  --fth-theme-card-chip-border: rgb(187 142 69 / 0.24);
+  --fth-theme-card-chip-text: #4b3723;
+  --fth-theme-card-chip-icon: #9b7237;
+  --fth-theme-card-selected-bg: rgb(187 142 69 / 0.14);
+  --fth-theme-card-selected-border: rgb(187 142 69 / 0.38);
+  --fth-theme-card-selected-text: #49321b;
 }
 
 @keyframes fth-cc-fade-in {

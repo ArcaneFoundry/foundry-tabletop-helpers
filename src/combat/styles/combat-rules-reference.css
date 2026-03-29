@@ -7,16 +7,28 @@
 
 /* ── Panel shell ──────────────────────────────────────────── */
 .fth-rules-reference {
+  --fth-rr-surface: var(--fth-color-canvas);
+  --fth-rr-surface-alt: var(--fth-color-surface);
+  --fth-rr-surface-elevated: var(--fth-color-surface-elevated);
+  --fth-rr-glass: var(--fth-color-surface-glass);
+  --fth-rr-glass-strong: var(--fth-color-surface-glass-strong);
+  --fth-rr-border: var(--fth-color-border-strong);
+  --fth-rr-border-soft: var(--fth-color-border);
+  --fth-rr-text: var(--fth-color-text);
+  --fth-rr-text-muted: var(--fth-color-text-muted);
+  --fth-rr-text-subtle: var(--fth-color-text-subtle);
+  --fth-rr-accent: var(--fth-color-accent);
+  --fth-rr-accent-strong: var(--fth-color-accent-strong);
+  --fth-rr-focus: var(--fth-color-focus);
+  --fth-rr-shadow: var(--fth-theme-shadow-panel);
   position: fixed;
   z-index: 100;
   width: 480px;
   max-height: 640px;
-  background: #0f1115;
-  border: 1px solid rgba(200, 167, 93, 0.4);
+  background: var(--fth-rr-surface);
+  border: 1px solid var(--fth-rr-border);
   border-radius: 10px;
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(200, 167, 93, 0.06);
+  box-shadow: var(--fth-rr-shadow);
   font-family: "Roboto", sans-serif;
   user-select: none;
   overflow: hidden;
@@ -30,8 +42,8 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: #1a1d24;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.12);
+  background: var(--fth-rr-surface-alt);
+  border-bottom: 1px solid var(--fth-rr-border-soft);
   flex-shrink: 0;
 }
 
@@ -39,7 +51,7 @@
   font-family: "Roboto Slab", serif;
   font-size: 0.65rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -55,7 +67,7 @@
   text-align: right;
   font-size: 0.55rem;
   font-weight: 600;
-  color: #5a5550;
+  color: var(--fth-rr-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   white-space: nowrap;
@@ -64,7 +76,7 @@
 .rr-close {
   background: transparent;
   border: none;
-  color: #5a5550;
+  color: var(--fth-rr-text-subtle);
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
@@ -77,8 +89,8 @@
 }
 
 .rr-close:hover {
-  color: #e8e4dc;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--fth-rr-text);
+  background: var(--fth-rr-glass-strong);
 }
 
 /* ── Search bar ──────────────────────────────────────────── */
@@ -87,26 +99,26 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: #13161b;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.08);
+  background: var(--fth-rr-surface-elevated);
+  border-bottom: 1px solid var(--fth-rr-border-soft);
   flex-shrink: 0;
 }
 
 .rr-search-icon {
   font-size: 0.6rem;
-  color: #5a5550;
+  color: var(--fth-rr-text-subtle);
   flex-shrink: 0;
 }
 
 .rr-search-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(200, 167, 93, 0.15);
+  background: var(--fth-rr-glass);
+  border: 1px solid var(--fth-rr-border-soft);
   border-radius: 6px;
   padding: 6px 10px;
   font-family: "Roboto", sans-serif;
   font-size: 0.7rem;
-  color: #e8e4dc;
+  color: var(--fth-rr-text);
   outline: none;
   min-height: 32px;
   transition: border-color 0.15s;
@@ -115,11 +127,11 @@
 }
 
 .rr-search-input::placeholder {
-  color: #4a4540;
+  color: var(--fth-rr-text-subtle);
 }
 
 .rr-search-input:focus {
-  border-color: rgba(200, 167, 93, 0.4);
+  border-color: var(--fth-rr-focus);
 }
 
 /* Clear the browser default search cancel button styling */
@@ -140,7 +152,7 @@
 /* ── Zone 1 — At-a-glance strip ──────────────────────────── */
 .rr-zone1 {
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.08);
+  border-bottom: 1px solid var(--fth-rr-border-soft);
 }
 
 .rr-glance-grid {
@@ -160,20 +172,20 @@
 }
 
 .rr-glance-grid::-webkit-scrollbar-thumb {
-  background: rgba(200, 167, 93, 0.2);
+  background: color-mix(in srgb, var(--fth-rr-accent) 22%, transparent);
   border-radius: 3px;
 }
 
 .rr-glance-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 167, 93, 0.35);
+  background: color-mix(in srgb, var(--fth-rr-accent) 36%, transparent);
 }
 
 /* ── At-a-glance card ────────────────────────────────────── */
 .rr-glance-card {
   width: 130px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(200, 167, 93, 0.12);
+  background: var(--fth-rr-glass);
+  border: 1px solid var(--fth-rr-border-soft);
   border-radius: 8px;
   padding: 6px 8px;
   cursor: pointer;
@@ -183,19 +195,19 @@
 }
 
 .rr-glance-card:hover {
-  border-color: rgba(200, 167, 93, 0.3);
-  background: rgba(200, 167, 93, 0.05);
+  border-color: color-mix(in srgb, var(--fth-rr-accent) 32%, transparent);
+  background: color-mix(in srgb, var(--fth-rr-accent) 8%, transparent);
 }
 
 .rr-glance-card:active {
-  background: rgba(200, 167, 93, 0.1);
+  background: color-mix(in srgb, var(--fth-rr-accent) 12%, transparent);
   transition-duration: 0.05s;
 }
 
 .rr-glance-card.rr-expanded {
   width: 280px;
-  border-color: rgba(200, 167, 93, 0.4);
-  background: rgba(200, 167, 93, 0.06);
+  border-color: color-mix(in srgb, var(--fth-rr-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--fth-rr-accent) 10%, transparent);
 }
 
 .rr-glance-header {
@@ -210,7 +222,7 @@
   font-family: "Roboto Slab", serif;
   font-size: 0.65rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -218,7 +230,7 @@
 
 .rr-expand-icon {
   font-size: 0.45rem;
-  color: #5a5550;
+  color: var(--fth-rr-text-subtle);
   transition: transform 0.2s;
   flex-shrink: 0;
 }
@@ -236,7 +248,7 @@
 
 .rr-glance-summary {
   font-size: 0.55rem;
-  color: #7a7570;
+  color: var(--fth-rr-text-muted);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -251,20 +263,20 @@
 .rr-glance-body {
   margin-top: 6px;
   padding-top: 6px;
-  border-top: 1px solid rgba(200, 167, 93, 0.1);
+  border-top: 1px solid var(--fth-rr-border-soft);
   font-size: 0.58rem;
-  color: #b0a898;
+  color: var(--fth-rr-text-muted);
   line-height: 1.5;
   user-select: text;
 }
 
 .rr-glance-body strong {
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
   font-weight: 700;
 }
 
 .rr-glance-body em {
-  color: #d4c4a0;
+  color: var(--fth-rr-accent-strong);
 }
 
 /* ── Stat badges ─────────────────────────────────────────── */
@@ -275,9 +287,9 @@
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 0.55rem;
   font-weight: 700;
-  color: #c8a75d;
-  background: rgba(200, 167, 93, 0.1);
-  border: 1px solid rgba(200, 167, 93, 0.2);
+  color: var(--fth-rr-accent);
+  background: color-mix(in srgb, var(--fth-rr-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fth-rr-accent) 20%, transparent);
   border-radius: 4px;
   padding: 1px 5px;
   white-space: nowrap;
@@ -291,7 +303,7 @@
 .rr-stat-label {
   font-size: 0.45rem;
   font-weight: 600;
-  color: #8a7d60;
+  color: var(--fth-rr-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -312,17 +324,17 @@
 }
 
 .rr-zone2::-webkit-scrollbar-thumb {
-  background: rgba(200, 167, 93, 0.2);
+  background: color-mix(in srgb, var(--fth-rr-accent) 22%, transparent);
   border-radius: 3px;
 }
 
 .rr-zone2::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 167, 93, 0.35);
+  background: color-mix(in srgb, var(--fth-rr-accent) 36%, transparent);
 }
 
 /* ── Category ────────────────────────────────────────────── */
 .rr-category {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid color-mix(in srgb, var(--fth-rr-text) 8%, transparent);
 }
 
 .rr-cat-header {
@@ -338,24 +350,24 @@
 }
 
 .rr-cat-header:hover {
-  background: rgba(200, 167, 93, 0.05);
+  background: color-mix(in srgb, var(--fth-rr-accent) 8%, transparent);
 }
 
 .rr-cat-header:active {
-  background: rgba(200, 167, 93, 0.1);
+  background: color-mix(in srgb, var(--fth-rr-accent) 12%, transparent);
   transition-duration: 0.05s;
 }
 
 .rr-cat-icon {
   font-size: 0.65rem;
-  color: #5a5550;
+  color: var(--fth-rr-text-subtle);
   width: 16px;
   text-align: center;
   flex-shrink: 0;
 }
 
 .rr-cat-expanded .rr-cat-icon {
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
 }
 
 .rr-cat-label {
@@ -363,19 +375,19 @@
   font-family: "Roboto Slab", serif;
   font-size: 0.65rem;
   font-weight: 700;
-  color: #b0a898;
+  color: var(--fth-rr-text-muted);
   white-space: nowrap;
 }
 
 .rr-cat-expanded .rr-cat-label {
-  color: #e8e4dc;
+  color: var(--fth-rr-text);
 }
 
 .rr-cat-count {
   font-size: 0.5rem;
   font-weight: 700;
-  color: #5a5550;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--fth-rr-text-subtle);
+  background: var(--fth-rr-glass);
   border-radius: 8px;
   padding: 1px 6px;
   min-width: 18px;
@@ -384,14 +396,14 @@
 
 .rr-cat-chevron {
   font-size: 0.5rem;
-  color: #4a4540;
+  color: var(--fth-rr-text-subtle);
   transition: transform 0.2s;
   flex-shrink: 0;
 }
 
 .rr-cat-expanded .rr-cat-chevron {
   transform: rotate(90deg);
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
 }
 
 /* ── Category entries ────────────────────────────────────── */
@@ -401,8 +413,8 @@
 
 /* ── Rule row ────────────────────────────────────────────── */
 .rr-rule-row {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--fth-rr-glass);
+  border: 1px solid color-mix(in srgb, var(--fth-rr-text) 8%, transparent);
   border-radius: 6px;
   padding: 6px 8px;
   margin-bottom: 4px;
@@ -413,18 +425,18 @@
 }
 
 .rr-rule-row:hover {
-  border-color: rgba(200, 167, 93, 0.15);
-  background: rgba(200, 167, 93, 0.04);
+  border-color: color-mix(in srgb, var(--fth-rr-accent) 22%, transparent);
+  background: color-mix(in srgb, var(--fth-rr-accent) 7%, transparent);
 }
 
 .rr-rule-row:active {
-  background: rgba(200, 167, 93, 0.08);
+  background: color-mix(in srgb, var(--fth-rr-accent) 11%, transparent);
   transition-duration: 0.05s;
 }
 
 .rr-rule-row.rr-rule-expanded {
-  border-color: rgba(200, 167, 93, 0.25);
-  background: rgba(200, 167, 93, 0.04);
+  border-color: color-mix(in srgb, var(--fth-rr-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--fth-rr-accent) 9%, transparent);
 }
 
 .rr-rule-title-bar {
@@ -437,7 +449,7 @@
   font-family: "Roboto Slab", serif;
   font-size: 0.62rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
   white-space: nowrap;
 }
 
@@ -451,19 +463,19 @@
 
 .rr-rule-chevron {
   font-size: 0.45rem;
-  color: #4a4540;
+  color: var(--fth-rr-text-subtle);
   transition: transform 0.2s;
   flex-shrink: 0;
 }
 
 .rr-rule-expanded .rr-rule-chevron {
   transform: rotate(90deg);
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
 }
 
 .rr-rule-summary {
   font-size: 0.55rem;
-  color: #7a7570;
+  color: var(--fth-rr-text-muted);
   line-height: 1.4;
   margin-top: 2px;
 }
@@ -471,20 +483,20 @@
 .rr-rule-body {
   margin-top: 6px;
   padding-top: 6px;
-  border-top: 1px solid rgba(200, 167, 93, 0.08);
+  border-top: 1px solid var(--fth-rr-border-soft);
   font-size: 0.58rem;
-  color: #b0a898;
+  color: var(--fth-rr-text-muted);
   line-height: 1.5;
   user-select: text;
 }
 
 .rr-rule-body strong {
-  color: #c8a75d;
+  color: var(--fth-rr-accent);
   font-weight: 700;
 }
 
 .rr-rule-body em {
-  color: #d4c4a0;
+  color: var(--fth-rr-accent-strong);
 }
 
 /* ── Search results ──────────────────────────────────────── */
@@ -496,7 +508,7 @@
   padding: 20px 12px;
   text-align: center;
   font-size: 0.65rem;
-  color: #5a5550;
+  color: var(--fth-rr-text-subtle);
   font-style: italic;
 }
 

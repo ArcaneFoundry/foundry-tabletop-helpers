@@ -3,53 +3,53 @@
 
 .fth-character-creator {
   /* Foundation */
-  --cc-bg-base: #0f1115;
-  --cc-bg-surface: #1a1d24;
-  --cc-bg-elevated: #22262f;
+  --cc-bg-base: var(--fth-color-canvas);
+  --cc-bg-surface: var(--fth-color-surface);
+  --cc-bg-elevated: var(--fth-color-surface-elevated);
 
   /* Fantasy surfaces */
-  --cc-surface-parchment-50: #f5ebd8;
-  --cc-surface-parchment-100: #eadcc3;
-  --cc-surface-parchment-200: #dcc9a8;
-  --cc-surface-parchment-300: #c9b089;
-  --cc-surface-walnut-900: #1a1412;
-  --cc-surface-walnut-800: #241b18;
-  --cc-surface-walnut-700: #332620;
-  --cc-surface-walnut-600: #4a382f;
+  --cc-surface-parchment-50: color-mix(in srgb, var(--fth-color-surface-elevated) 64%, white);
+  --cc-surface-parchment-100: color-mix(in srgb, var(--fth-color-surface-elevated) 78%, white);
+  --cc-surface-parchment-200: color-mix(in srgb, var(--fth-color-surface-elevated) 88%, white);
+  --cc-surface-parchment-300: color-mix(in srgb, var(--fth-color-surface-elevated) 94%, var(--fth-color-accent-soft));
+  --cc-surface-walnut-900: var(--fth-color-canvas);
+  --cc-surface-walnut-800: var(--fth-color-surface-inset);
+  --cc-surface-walnut-700: color-mix(in srgb, var(--fth-color-surface-inset) 84%, var(--fth-color-accent-soft));
+  --cc-surface-walnut-600: color-mix(in srgb, var(--fth-color-surface-elevated) 72%, var(--fth-color-accent-soft));
 
   /* Glass */
-  --cc-bg-glass: rgba(255, 255, 255, 0.04);
-  --cc-bg-glass-hover: rgba(255, 255, 255, 0.08);
-  --cc-bg-glass-active: rgba(255, 255, 255, 0.12);
+  --cc-bg-glass: var(--fth-color-surface-glass);
+  --cc-bg-glass-hover: var(--fth-color-surface-glass-strong);
+  --cc-bg-glass-active: color-mix(in srgb, var(--fth-color-surface-glass-strong) 88%, var(--fth-color-accent) 12%);
 
   /* Accents */
-  --cc-accent-bronze: #c8a75d;
-  --cc-accent-gold: #d4af37;
-  --cc-accent-crimson: #8b1e2d;
-  --cc-accent-emerald: #2d6b4f;
-  --cc-accent-arcane: #6b4fa0;
-  --cc-accent-frost: #4a8fa8;
-  --cc-action-primary: #a52a22;
-  --cc-action-primary-bright: #c13a2d;
-  --cc-action-secondary: #3a567a;
-  --cc-action-secondary-bright: #4d6a90;
-  --cc-action-success: #5e9c4d;
-  --cc-action-warning: #a96c1d;
-  --cc-action-danger: #992525;
+  --cc-accent-bronze: var(--fth-color-accent-soft);
+  --cc-accent-gold: var(--fth-color-accent);
+  --cc-accent-crimson: var(--fth-color-danger);
+  --cc-accent-emerald: var(--fth-color-success);
+  --cc-accent-arcane: var(--fth-color-arcane);
+  --cc-accent-frost: var(--fth-color-frost);
+  --cc-action-primary: color-mix(in srgb, var(--fth-color-accent) 52%, var(--fth-color-danger));
+  --cc-action-primary-bright: color-mix(in srgb, var(--fth-color-accent-strong) 58%, var(--fth-color-danger));
+  --cc-action-secondary: color-mix(in srgb, var(--fth-color-arcane) 62%, var(--fth-color-surface-inset));
+  --cc-action-secondary-bright: color-mix(in srgb, var(--fth-color-arcane) 82%, white);
+  --cc-action-success: var(--fth-color-success);
+  --cc-action-warning: var(--fth-color-warning);
+  --cc-action-danger: var(--fth-color-danger);
 
   /* Text */
-  --cc-text-primary: #e8e2d6;
-  --cc-text-secondary: #9a9488;
+  --cc-text-primary: var(--fth-color-text);
+  --cc-text-secondary: var(--fth-color-text-muted);
   --cc-text-accent: var(--cc-accent-bronze);
-  --cc-text-ink-900: #1c140f;
-  --cc-text-ink-800: #2b211a;
-  --cc-text-ink-700: #46372c;
-  --cc-text-ink-600: #6a5748;
+  --cc-text-ink-900: color-mix(in srgb, var(--fth-color-text) 12%, var(--fth-color-canvas));
+  --cc-text-ink-800: color-mix(in srgb, var(--fth-color-text) 22%, var(--fth-color-canvas));
+  --cc-text-ink-700: color-mix(in srgb, var(--fth-color-text) 34%, var(--fth-color-canvas));
+  --cc-text-ink-600: color-mix(in srgb, var(--fth-color-text) 48%, var(--fth-color-canvas));
 
   /* Borders */
-  --cc-border-subtle: rgba(255, 255, 255, 0.06);
-  --cc-border-accent: rgba(200, 167, 93, 0.25);
-  --cc-border-glow: rgba(200, 167, 93, 0.4);
+  --cc-border-subtle: var(--fth-color-border);
+  --cc-border-accent: var(--fth-color-border-strong);
+  --cc-border-glow: color-mix(in srgb, var(--fth-color-accent) 48%, transparent);
 
   /* Type Scale */
   --cc-text-2xs: 0.65rem;
@@ -68,12 +68,12 @@
   --cc-font-utility: "Inter", "Helvetica Neue", Arial, sans-serif;
 
   /* Effects */
-  --cc-focus-ring: 0 0 0 2px rgba(200, 167, 93, 0.15), 0 0 8px rgba(200, 167, 93, 0.2);
-  --cc-shadow-panel: 0 6px 18px rgba(0, 0, 0, 0.28);
-  --cc-shadow-hero: 0 10px 28px rgba(0, 0, 0, 0.35);
-  --cc-shadow-button: 0 4px 10px rgba(0, 0, 0, 0.3);
-  --cc-shadow-inset-pressed: inset 0 2px 6px rgba(0, 0, 0, 0.35);
-  --cc-selected-ring: 0 0 0 2px rgba(185, 232, 138, 0.55), 0 0 18px rgba(185, 232, 138, 0.35);
+  --cc-focus-ring: 0 0 0 2px color-mix(in srgb, var(--fth-color-focus) 18%, transparent), 0 0 8px color-mix(in srgb, var(--fth-color-focus) 22%, transparent);
+  --cc-shadow-panel: var(--fth-theme-shadow-panel);
+  --cc-shadow-hero: var(--fth-theme-shadow-elevated);
+  --cc-shadow-button: 0 4px 10px color-mix(in srgb, var(--fth-color-canvas) 30%, transparent);
+  --cc-shadow-inset-pressed: inset 0 2px 6px color-mix(in srgb, var(--fth-color-canvas) 32%, transparent);
+  --cc-selected-ring: var(--fth-theme-shadow-selected);
 
   /* Spacing */
   --cc-space-2xs: 2px;

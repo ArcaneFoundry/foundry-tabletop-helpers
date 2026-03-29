@@ -48,9 +48,9 @@ function formatMod(n: number): string {
 }
 
 function hpColor(pct: number): string {
-  if (pct > 50) return "#2d8a4e";
-  if (pct > 25) return "#c49a2a";
-  return "#8b1e2d";
+  if (pct > 50) return "var(--lpcs-hp-healthy)";
+  if (pct > 25) return "var(--lpcs-hp-wounded)";
+  return "var(--lpcs-hp-critical)";
 }
 
 function capitalize(s: string): string {
@@ -763,7 +763,7 @@ function createEmptyViewModel(name: string): LPCSViewModel {
     species: "",
     background: "",
     inspiration: false,
-    hp: { value: 0, max: 0, temp: 0, pct: 0, color: "#8b1e2d" },
+    hp: { value: 0, max: 0, temp: 0, pct: 0, color: "var(--lpcs-hp-critical)" },
     ac: 10,
     speed: { primary: 30, label: "walk", all: [{ type: "walk", value: 30 }] },
     initiative: "+0",

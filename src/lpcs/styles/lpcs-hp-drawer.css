@@ -25,7 +25,7 @@
   border: 1px solid var(--lpcs-border-accent);
   border-top: none;
   border-radius: 0 0 var(--lpcs-radius-md) var(--lpcs-radius-md);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--fth-theme-shadow-panel);
   /* Closed state */
   max-height: 0;
   overflow: hidden;
@@ -64,7 +64,7 @@
   gap: 5px;
   min-height: var(--lpcs-touch-min);
   padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--lpcs-bg-glass);
   border: 1px solid var(--lpcs-border);
   border-radius: var(--lpcs-radius-sm);
   color: var(--lpcs-text-secondary);
@@ -78,9 +78,9 @@
   font-family: inherit;
 }
 
-.lpcs-sheet .lpcs-hpd-mode-btn--damage.active { background: rgba(139, 30, 45, 0.28); border-color: var(--lpcs-accent-crimson); color: #e57373; }
-.lpcs-sheet .lpcs-hpd-mode-btn--heal.active   { background: rgba(45, 138, 78, 0.28); border-color: var(--lpcs-hp-healthy);    color: #81c784; }
-.lpcs-sheet .lpcs-hpd-mode-btn--temp.active   { background: rgba(74, 122, 181, 0.28); border-color: var(--lpcs-hp-temp);      color: #64b5f6; }
+.lpcs-sheet .lpcs-hpd-mode-btn--damage.active { background: var(--lpcs-danger-soft); border-color: var(--lpcs-accent-crimson); color: color-mix(in srgb, var(--lpcs-accent-crimson) 48%, white 52%); }
+.lpcs-sheet .lpcs-hpd-mode-btn--heal.active   { background: var(--lpcs-success-soft); border-color: var(--lpcs-hp-healthy);    color: color-mix(in srgb, var(--lpcs-hp-healthy) 48%, white 52%); }
+.lpcs-sheet .lpcs-hpd-mode-btn--temp.active   { background: var(--lpcs-frost-soft); border-color: var(--lpcs-hp-temp);      color: color-mix(in srgb, var(--lpcs-hp-temp) 52%, white 48%); }
 
 /* ── Preset Grid ──────────────────────────────────────────────── */
 .lpcs-sheet .lpcs-hpd-presets {
@@ -96,7 +96,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--lpcs-bg-glass);
   border: 1px solid var(--lpcs-border);
   border-radius: var(--lpcs-radius-sm);
   color: var(--lpcs-text-primary);
@@ -109,9 +109,9 @@
   appearance: none;
 }
 
-.lpcs-sheet [data-hp-drawer][data-mode="damage"] .lpcs-hpd-preset:hover { background: rgba(139, 30, 45, 0.22);  border-color: var(--lpcs-accent-crimson); }
-.lpcs-sheet [data-hp-drawer][data-mode="heal"]   .lpcs-hpd-preset:hover { background: rgba(45, 138, 78, 0.22);  border-color: var(--lpcs-hp-healthy);    }
-.lpcs-sheet [data-hp-drawer][data-mode="temp"]   .lpcs-hpd-preset:hover { background: rgba(74, 122, 181, 0.22); border-color: var(--lpcs-hp-temp);       }
+.lpcs-sheet [data-hp-drawer][data-mode="damage"] .lpcs-hpd-preset:hover { background: var(--lpcs-danger-soft); border-color: var(--lpcs-accent-crimson); }
+.lpcs-sheet [data-hp-drawer][data-mode="heal"]   .lpcs-hpd-preset:hover { background: var(--lpcs-success-soft); border-color: var(--lpcs-hp-healthy);    }
+.lpcs-sheet [data-hp-drawer][data-mode="temp"]   .lpcs-hpd-preset:hover { background: var(--lpcs-frost-soft); border-color: var(--lpcs-hp-temp);       }
 
 /* ── Accumulator Row ──────────────────────────────────────────── */
 .lpcs-sheet .lpcs-hpd-accum-row {
@@ -193,4 +193,3 @@
 .lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply:hover       { background: rgba(45, 138, 78, 0.58); }
 .lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply             { background: rgba(74, 122, 181, 0.35); border-color: var(--lpcs-hp-temp);    }
 .lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply:hover       { background: rgba(74, 122, 181, 0.58); }
-

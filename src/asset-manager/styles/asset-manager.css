@@ -7,23 +7,26 @@
 
 /* ── Window overrides ────────────────────────────────────── */
 .fth-asset-picker {
-  --am-bg-base: #0f1115;
-  --am-bg-panel: #1a1d24;
-  --am-bg-raised: #22262f;
-  --am-bg-glass: rgba(255, 255, 255, 0.04);
-  --am-bg-glass-hover: rgba(255, 255, 255, 0.08);
-  --am-accent: #c8a75d;
-  --am-accent-hover: #d4af37;
-  --am-accent-glow: rgba(200, 167, 93, 0.12);
-  --am-crimson: #8b1e2d;
-  --am-danger: #dc4f4f;
-  --am-danger-glow: rgba(220, 80, 80, 0.15);
-  --am-text-primary: #e8e4dc;
-  --am-text-secondary: #9a9590;
-  --am-text-muted: #5a5550;
-  --am-text-dim: #3d3a35;
-  --am-border: rgba(200, 167, 93, 0.12);
-  --am-border-accent: rgba(200, 167, 93, 0.4);
+  --am-bg-base: var(--fth-color-canvas);
+  --am-bg-panel: var(--fth-color-surface);
+  --am-bg-raised: var(--fth-color-surface-elevated);
+  --am-bg-glass: var(--fth-color-surface-glass);
+  --am-bg-glass-hover: var(--fth-color-surface-glass-strong);
+  --am-accent: var(--fth-color-accent);
+  --am-accent-hover: var(--fth-color-accent-strong);
+  --am-accent-glow: color-mix(in srgb, var(--fth-color-accent) 18%, transparent);
+  --am-crimson: var(--fth-color-danger);
+  --am-danger: var(--fth-color-danger);
+  --am-danger-glow: color-mix(in srgb, var(--fth-color-danger) 18%, transparent);
+  --am-text-primary: var(--fth-color-text);
+  --am-text-secondary: var(--fth-color-text-muted);
+  --am-text-muted: var(--fth-color-text-subtle);
+  --am-text-dim: color-mix(in srgb, var(--fth-color-text-subtle) 78%, transparent);
+  --am-border: var(--fth-color-border);
+  --am-border-accent: var(--fth-color-border-strong);
+  --am-bg-deep: var(--fth-color-canvas);
+  --am-shadow-panel: var(--fth-theme-shadow-panel);
+  --am-shadow-elevated: var(--fth-theme-shadow-elevated);
 
   --am-thumb-size: 120px;
 }
@@ -83,7 +86,7 @@
   gap: 8px;
   padding: 8px 12px;
   background:
-    linear-gradient(180deg, rgba(200, 167, 93, 0.03) 0%, transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--am-accent) 6%, transparent) 0%, transparent 100%),
     var(--am-bg-panel);
   border-bottom: 1px solid var(--am-border);
   flex-shrink: 0;
@@ -127,7 +130,7 @@
 
 .am-search:focus {
   border-color: var(--am-border-accent);
-  box-shadow: 0 0 12px rgba(200, 167, 93, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--am-accent) 10%, transparent), inset 0 1px 0 color-mix(in srgb, var(--am-text-primary) 5%, transparent);
 }
 
 .am-search:focus + .am-search-icon,
@@ -178,13 +181,13 @@
 
 .am-view-btn:hover,
 .am-density-btn:hover {
-  background: rgba(200, 167, 93, 0.08);
+  background: color-mix(in srgb, var(--am-accent) 10%, transparent);
   color: var(--am-text-secondary);
 }
 
 .am-view-btn.am-active,
 .am-density-btn.am-active {
-  background: rgba(200, 167, 93, 0.12);
+  background: color-mix(in srgb, var(--am-accent) 14%, transparent);
   color: var(--am-accent);
 }
 
@@ -219,8 +222,8 @@
   min-height: 30px;
   flex-shrink: 0;
   overflow-x: auto;
-  background: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--am-bg-base) 84%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--am-text-primary) 4%, transparent);
 }
 
 .am-breadcrumbs::-webkit-scrollbar {
@@ -243,7 +246,7 @@
 
 .am-crumb:hover {
   color: var(--am-accent);
-  background: rgba(200, 167, 93, 0.1);
+  background: color-mix(in srgb, var(--am-accent) 12%, transparent);
 }
 
 /* Last segment gets a subtle pill background */

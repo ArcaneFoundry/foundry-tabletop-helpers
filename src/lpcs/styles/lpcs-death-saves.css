@@ -39,8 +39,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(200, 167, 93, 0.2);
+  background: var(--lpcs-bg-overlay);
+  border: 1px solid var(--lpcs-accent-ring);
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
 
@@ -50,14 +50,14 @@
 }
 
 /* Success pips (hearts) */
-.lpcs-sheet .lpcs-ds-pip--success i { color: rgba(255, 255, 255, 0.18); }
-.lpcs-sheet .lpcs-ds-pip--success.filled { background: rgba(45, 138, 78, 0.45); border: 2px solid #3aaa60; }
-.lpcs-sheet .lpcs-ds-pip--success.filled i { color: #a5d6a7; filter: drop-shadow(0 0 6px rgba(45, 138, 78, 0.9)); }
+.lpcs-sheet .lpcs-ds-pip--success i { color: color-mix(in srgb, var(--lpcs-text-primary) 18%, transparent); }
+.lpcs-sheet .lpcs-ds-pip--success.filled { background: color-mix(in srgb, var(--lpcs-hp-healthy) 42%, transparent); border: 2px solid var(--lpcs-hp-healthy); }
+.lpcs-sheet .lpcs-ds-pip--success.filled i { color: color-mix(in srgb, var(--lpcs-hp-healthy) 36%, white 64%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--lpcs-hp-healthy) 90%, transparent)); }
 
 /* Failure pips (skulls) */
-.lpcs-sheet .lpcs-ds-pip--failure i { color: rgba(255, 255, 255, 0.18); }
-.lpcs-sheet .lpcs-ds-pip--failure.filled { background: rgba(180, 30, 45, 0.55); border: 2px solid #cc2233; }
-.lpcs-sheet .lpcs-ds-pip--failure.filled i { color: #ff8a80; filter: drop-shadow(0 0 7px rgba(200, 30, 45, 1.0)); }
+.lpcs-sheet .lpcs-ds-pip--failure i { color: color-mix(in srgb, var(--lpcs-text-primary) 18%, transparent); }
+.lpcs-sheet .lpcs-ds-pip--failure.filled { background: color-mix(in srgb, var(--lpcs-accent-crimson) 48%, transparent); border: 2px solid var(--lpcs-accent-crimson); }
+.lpcs-sheet .lpcs-ds-pip--failure.filled i { color: color-mix(in srgb, var(--lpcs-accent-crimson) 28%, white 72%); filter: drop-shadow(0 0 7px color-mix(in srgb, var(--lpcs-accent-crimson) 92%, transparent)); }
 
 /* ── Roll Mode: Physical ──────────────────────────────────────── */
 
@@ -70,22 +70,22 @@
 }
 
 .lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group:hover {
-  background: rgba(200, 167, 93, 0.08);
+  background: var(--lpcs-accent-soft-bg);
   transform: scale(1.04);
 }
 
 .lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group:active {
   transform: scale(0.96);
-  background: rgba(200, 167, 93, 0.15);
+  background: var(--lpcs-accent-strong-bg);
   transition-duration: 0.05s;
 }
 
 /* Hover feedback trickles into pips when the group is hovered */
 .lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group--success:hover .lpcs-ds-pip--success i {
-  color: rgba(45, 138, 78, 0.5);
+  color: color-mix(in srgb, var(--lpcs-hp-healthy) 60%, transparent);
 }
 .lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group--failure:hover .lpcs-ds-pip--failure i {
-  color: rgba(139, 30, 45, 0.5);
+  color: color-mix(in srgb, var(--lpcs-accent-crimson) 60%, transparent);
 }
 
 /* Pips are display-only — the group handles interaction */
@@ -120,9 +120,9 @@
   padding: 5px 16px;
   min-height: var(--lpcs-touch-min);
   border-radius: 8px;
-  border: 1px solid rgba(200, 167, 93, 0.3);
-  background: rgba(200, 167, 93, 0.08);
-  color: var(--lpcs-text-primary, #f0ead6);
+  border: 1px solid var(--lpcs-accent-ring);
+  background: var(--lpcs-accent-soft-bg);
+  color: var(--lpcs-text-primary);
   font-family: var(--lpcs-font-display);
   font-size: var(--lpcs-text-sm);
   font-weight: 700;
@@ -133,19 +133,18 @@
 }
 
 .lpcs-sheet .lpcs-ds-roll-btn:hover {
-  background: rgba(200, 167, 93, 0.15);
-  border-color: rgba(200, 167, 93, 0.5);
+  background: var(--lpcs-accent-strong-bg);
+  border-color: var(--lpcs-border-accent);
   transform: scale(1.04);
 }
 
 .lpcs-sheet .lpcs-ds-roll-btn:active {
   transform: scale(0.96);
-  background: rgba(200, 167, 93, 0.2);
+  background: color-mix(in srgb, var(--lpcs-accent-gold) 24%, transparent);
   transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-ds-roll-btn i {
   font-size: 0.95rem;
-  color: var(--lpcs-accent-gold, #c8a75d);
+  color: var(--lpcs-accent-gold);
 }
-

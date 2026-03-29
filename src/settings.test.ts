@@ -13,8 +13,9 @@ import {
   shouldShowRotateButton,
   targetUserIds,
 } from "./settings";
-import { registerMenuBackingSettings, registerPrintSettings } from "./settings-registrations";
+import { registerCoreSettings, registerMenuBackingSettings, registerPrintSettings } from "./settings-registrations";
 import { printDefaultsSettingKey } from "./settings-utils";
+import { FTH_THEME_MODE_SETTING_KEY } from "./ui/theme/fth-theme";
 
 interface RegisteredSetting {
   module: string;
@@ -128,5 +129,25 @@ describe("settings behavior", () => {
 
     game.user.isGM = true;
     expect(canUsePrintFeature()).toBe(true);
+  });
+
+  it("registers the per-user theme mode setting", () => {
+    const { settings, registrations } = createSettingsHarness();
+
+    registerCoreSettings(settings);
+
+    expect(registrations).toContainEqual(expect.objectContaining({
+      module: MOD,
+      key: FTH_THEME_MODE_SETTING_KEY,
+      data: expect.objectContaining({
+        default: "system",
+        scope: "client",
+        choices: expect.objectContaining({
+          system: "System",
+          light: "Light",
+          dark: "Dark",
+        }),
+      }),
+    }));
   });
 });

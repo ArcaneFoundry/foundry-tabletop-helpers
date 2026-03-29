@@ -59,7 +59,7 @@ export function BackgroundSkillConflictPane({ shellContext, state, controller }:
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
-      <section className="rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(23,21,28,0.98),rgba(12,12,16,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
+      <section className="rounded-[1.45rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image)] p-4 shadow-[var(--fth-theme-shadow-panel),inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_4%,transparent)]">
         <SectionHeading
           eyebrow={viewModel.backgroundName}
           title="Resolve Skill Overlap"
@@ -71,13 +71,13 @@ export function BackgroundSkillConflictPane({ shellContext, state, controller }:
           <StatCard label="Chosen replacements" value={`${selectedReplacementSet.size} / ${replacementCount}`} />
         </div>
 
-        <div className="mt-4 rounded-[1.15rem] border border-[#e9c176]/16 bg-[rgba(255,255,255,0.02)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03)]">
+        <div className="mt-4 rounded-[1.15rem] border border-[color:var(--fth-color-border)] bg-[color:var(--fth-color-surface-glass)] px-4 py-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_4%,transparent)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
+              <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.24em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_78%,transparent)]">
                 Decision Surface
               </div>
-              <div className="mt-1 font-fth-cc-body text-[0.98rem] leading-6 text-[#d7d1d9]">
+              <div className="mt-1 font-fth-cc-body text-[0.98rem] leading-6 text-[color:var(--fth-color-text-muted)]">
                 Background skills stay locked. Retained class skills are already safe. Choose replacements only from the valid overlap set.
               </div>
             </div>
@@ -101,8 +101,8 @@ export function BackgroundSkillConflictPane({ shellContext, state, controller }:
                 className={cn(
                   "group relative overflow-hidden rounded-[1rem] border px-4 py-3 text-left shadow-[0_12px_22px_rgba(67,43,23,0.08)] transition duration-200",
                   checked
-                    ? "border-[#87a36a] bg-[linear-gradient(180deg,rgba(241,246,220,0.98),rgba(226,234,183,0.94))]"
-                    : "border-[#ceb18a] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(244,231,209,0.94))]",
+                    ? "border-[color:color-mix(in_srgb,var(--fth-color-success)_44%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-success)_12%,var(--fth-color-surface)_88%),color-mix(in_srgb,var(--fth-color-success)_20%,var(--fth-color-surface-elevated)_80%))]"
+                    : "border-[color:color-mix(in_srgb,var(--fth-color-accent)_32%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-text)_10%,var(--fth-color-surface)_90%),color-mix(in_srgb,var(--fth-color-accent)_10%,var(--fth-color-surface-elevated)_90%))]",
                   disabled && !checked && "opacity-60",
                 )}
                 disabled={disabled}
@@ -123,10 +123,10 @@ export function BackgroundSkillConflictPane({ shellContext, state, controller }:
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="font-fth-cc-body text-[1rem] font-semibold text-[#4c3524]">
+                    <div className="font-fth-cc-body text-[1rem] font-semibold text-[color:var(--fth-color-text)]">
                       {option.label}
                     </div>
-                    <div className="mt-1 font-fth-cc-body text-[0.86rem] leading-5 text-[#6b5040]">
+                    <div className="mt-1 font-fth-cc-body text-[0.86rem] leading-5 text-[color:var(--fth-color-text-muted)]">
                       {checked ? "Chosen as a replacement skill." : "Available as a legal class-skill replacement."}
                     </div>
                     <CompactMetaChips

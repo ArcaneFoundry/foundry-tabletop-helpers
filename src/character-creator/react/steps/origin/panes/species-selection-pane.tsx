@@ -23,7 +23,7 @@ export function SpeciesSelectionPane({ shellContext, state, controller }: Specie
     <SelectionPane
       description="Choose the lineage, ancestry, or folk your adventurer carries into the world."
       emptyState={
-        <div className="rounded-[1.1rem] border border-dashed border-[#e9c176]/30 bg-[rgba(19,17,23,0.72)] px-4 py-5 font-fth-cc-body text-[#d1c4c6]">
+        <div className="rounded-[1.1rem] border border-dashed border-[color:color-mix(in_srgb,var(--fth-color-accent)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--fth-color-canvas)_82%,transparent)] px-4 py-5 font-fth-cc-body text-[color:var(--fth-color-text-muted)]">
           {viewModel?.emptyMessage ?? "No species available."}
         </div>
       }

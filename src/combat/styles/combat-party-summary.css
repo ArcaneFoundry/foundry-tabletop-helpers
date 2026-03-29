@@ -6,15 +6,28 @@
 
 /* ── Panel shell ──────────────────────────────────────────── */
 .fth-party-summary {
+  --fth-ps-surface: var(--fth-color-canvas);
+  --fth-ps-surface-alt: var(--fth-color-surface);
+  --fth-ps-glass: var(--fth-color-surface-glass);
+  --fth-ps-glass-strong: var(--fth-color-surface-glass-strong);
+  --fth-ps-border: var(--fth-color-border-strong);
+  --fth-ps-border-soft: var(--fth-color-border);
+  --fth-ps-text: var(--fth-color-text);
+  --fth-ps-text-muted: var(--fth-color-text-muted);
+  --fth-ps-text-subtle: var(--fth-color-text-subtle);
+  --fth-ps-accent: var(--fth-color-accent);
+  --fth-ps-accent-strong: var(--fth-color-accent-strong);
+  --fth-ps-arcane: var(--fth-color-arcane);
+  --fth-ps-frost: var(--fth-color-frost);
+  --fth-ps-danger: var(--fth-color-danger);
+  --fth-ps-shadow: var(--fth-theme-shadow-panel);
   position: fixed;
   z-index: 100;
   max-width: 90vw;
-  background: #0f1115;
-  border: 1px solid rgba(200, 167, 93, 0.4);
+  background: var(--fth-ps-surface);
+  border: 1px solid var(--fth-ps-border);
   border-radius: 10px;
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(200, 167, 93, 0.06);
+  box-shadow: var(--fth-ps-shadow);
   font-family: "Roboto", sans-serif;
   user-select: none;
   overflow: hidden;
@@ -26,15 +39,15 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: #1a1d24;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.12);
+  background: var(--fth-ps-surface-alt);
+  border-bottom: 1px solid var(--fth-ps-border-soft);
 }
 
 .ps-title {
   font-family: "Roboto Slab", serif;
   font-size: 0.65rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-ps-accent);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -50,7 +63,7 @@
   text-align: right;
   font-size: 0.6rem;
   font-weight: 600;
-  color: #5a5550;
+  color: var(--fth-ps-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   white-space: nowrap;
@@ -59,7 +72,7 @@
 .ps-close {
   background: transparent;
   border: none;
-  color: #5a5550;
+  color: var(--fth-ps-text-subtle);
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
@@ -72,8 +85,8 @@
 }
 
 .ps-close:hover {
-  color: #e8e4dc;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--fth-ps-text);
+  background: var(--fth-ps-glass-strong);
 }
 
 /* ── Scrollable body ──────────────────────────────────────── */
@@ -92,12 +105,12 @@
 }
 
 .ps-body::-webkit-scrollbar-thumb {
-  background: rgba(200, 167, 93, 0.2);
+  background: color-mix(in srgb, var(--fth-ps-accent) 22%, transparent);
   border-radius: 3px;
 }
 
 .ps-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 167, 93, 0.35);
+  background: color-mix(in srgb, var(--fth-ps-accent) 36%, transparent);
 }
 
 /* ── Card grid ────────────────────────────────────────────── */
@@ -110,8 +123,8 @@
 .ps-card {
   width: 170px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(200, 167, 93, 0.12);
+  background: var(--fth-ps-glass);
+  border: 1px solid var(--fth-ps-border-soft);
   border-radius: 8px;
   padding: 8px;
   display: flex;
@@ -131,7 +144,7 @@
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(200, 167, 93, 0.3);
+  border: 1.5px solid color-mix(in srgb, var(--fth-ps-accent) 38%, transparent);
   flex-shrink: 0;
 }
 
@@ -150,7 +163,7 @@
   font-family: "Roboto Slab", serif;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-ps-accent);
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
@@ -162,16 +175,16 @@
 }
 
 .ps-card-name:hover {
-  color: #d4af37;
+  color: var(--fth-ps-accent-strong);
 }
 
 .ps-card-name:active {
-  color: #e8c860;
+  color: color-mix(in srgb, var(--fth-ps-accent-strong) 72%, white 28%);
 }
 
 .ps-card-class {
   font-size: 0.55rem;
-  color: #6a6560;
+  color: var(--fth-ps-text-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -194,14 +207,14 @@
 
 .ps-core-icon {
   font-size: 0.55rem;
-  color: #5a5550;
+  color: var(--fth-ps-text-subtle);
 }
 
 .ps-core-val {
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #e8e4dc;
+  color: var(--fth-ps-text);
 }
 
 .ps-core-hp {
@@ -220,24 +233,24 @@
 }
 
 .ps-hp-sep {
-  color: #4a4540;
+  color: var(--fth-ps-text-subtle);
   font-weight: 400;
 }
 
 .ps-hp-max {
-  color: #6a6560;
+  color: var(--fth-ps-text-subtle);
   font-weight: 600;
 }
 
 .ps-temp-hp {
   font-size: 0.55rem;
-  color: #64b5f6;
+  color: var(--fth-ps-frost);
   margin-left: 2px;
 }
 
 .ps-hp-bar-track {
   height: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fth-ps-glass-strong);
   border-radius: 2px;
   margin-top: 2px;
   overflow: hidden;
@@ -254,9 +267,9 @@
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 0.62rem;
   font-weight: 700;
-  color: #bb86fc;
-  background: rgba(128, 0, 200, 0.12);
-  border: 1px solid rgba(128, 0, 200, 0.25);
+  color: color-mix(in srgb, var(--fth-ps-arcane) 74%, white 26%);
+  background: color-mix(in srgb, var(--fth-ps-arcane) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fth-ps-arcane) 28%, transparent);
   border-radius: 4px;
   padding: 1px 4px;
   white-space: nowrap;
@@ -264,7 +277,7 @@
 
 .ps-dc-label {
   font-size: 0.5rem;
-  color: #9a6fcc;
+  color: color-mix(in srgb, var(--fth-ps-arcane) 62%, white 20%);
   margin-right: 1px;
 }
 
@@ -282,8 +295,8 @@
   justify-content: center;
   padding: 3px 2px;
   min-height: 34px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--fth-ps-glass);
+  border: 1px solid color-mix(in srgb, var(--fth-ps-text) 10%, transparent);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -294,29 +307,29 @@
 }
 
 .ps-save-btn:hover {
-  background: rgba(200, 167, 93, 0.08);
-  border-color: rgba(200, 167, 93, 0.2);
+  background: color-mix(in srgb, var(--fth-ps-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--fth-ps-accent) 24%, transparent);
 }
 
 .ps-save-btn:active {
-  background: rgba(200, 167, 93, 0.18);
-  border-color: rgba(200, 167, 93, 0.4);
+  background: color-mix(in srgb, var(--fth-ps-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--fth-ps-accent) 44%, transparent);
   transition-duration: 0.05s;
 }
 
 /* Proficiency indicator */
 .ps-save-prof {
-  border-color: rgba(200, 167, 93, 0.2);
+  border-color: color-mix(in srgb, var(--fth-ps-accent) 24%, transparent);
 }
 
 .ps-save-prof .ps-save-label {
-  color: #c8a75d;
+  color: var(--fth-ps-accent);
 }
 
 .ps-save-label {
   font-size: 0.45rem;
   font-weight: 700;
-  color: #5a5550;
+  color: var(--fth-ps-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   line-height: 1;
@@ -326,7 +339,7 @@
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
-  color: #e8e4dc;
+  color: var(--fth-ps-text);
   line-height: 1;
 }
 
@@ -341,13 +354,13 @@
   font-family: "Roboto Condensed", "Roboto", sans-serif;
   font-size: 0.6rem;
   font-weight: 600;
-  color: #7a7570;
+  color: var(--fth-ps-text-muted);
   white-space: nowrap;
 }
 
 .ps-passive i {
   font-size: 0.5rem;
-  color: #5a5550;
+  color: var(--fth-ps-text-subtle);
   margin-right: 1px;
 }
 
@@ -369,9 +382,9 @@
 }
 
 .ps-badge-conc {
-  background: rgba(128, 0, 200, 0.2);
-  color: #bb86fc;
-  border: 1px solid rgba(128, 0, 200, 0.3);
+  background: color-mix(in srgb, var(--fth-ps-arcane) 18%, transparent);
+  color: color-mix(in srgb, var(--fth-ps-arcane) 74%, white 26%);
+  border: 1px solid color-mix(in srgb, var(--fth-ps-arcane) 30%, transparent);
 }
 
 .ps-badge-conc i {
@@ -380,9 +393,9 @@
 }
 
 .ps-badge-cond {
-  background: rgba(239, 83, 80, 0.12);
-  color: #ef5350;
-  border: 1px solid rgba(239, 83, 80, 0.25);
+  background: color-mix(in srgb, var(--fth-ps-danger) 14%, transparent);
+  color: var(--fth-ps-danger);
+  border: 1px solid color-mix(in srgb, var(--fth-ps-danger) 28%, transparent);
 }
 
 /* ── Reduced motion ───────────────────────────────────────── */

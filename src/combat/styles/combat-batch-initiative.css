@@ -10,12 +10,25 @@
 
 /* ── Window shell ─────────────────────────────────────────────── */
 .batch-initiative-dialog.window-app {
-  background: #0f1115;
-  border: 1px solid rgba(200, 167, 93, 0.45);
+  --fth-bi-surface: var(--fth-color-canvas);
+  --fth-bi-surface-alt: var(--fth-color-surface);
+  --fth-bi-glass: var(--fth-color-surface-glass);
+  --fth-bi-glass-strong: var(--fth-color-surface-glass-strong);
+  --fth-bi-border: var(--fth-color-border-strong);
+  --fth-bi-border-soft: var(--fth-color-border);
+  --fth-bi-text: var(--fth-color-text);
+  --fth-bi-text-muted: var(--fth-color-text-muted);
+  --fth-bi-text-subtle: var(--fth-color-text-subtle);
+  --fth-bi-accent: var(--fth-color-accent);
+  --fth-bi-accent-strong: var(--fth-color-accent-strong);
+  --fth-bi-focus: var(--fth-color-focus);
+  --fth-bi-success: var(--fth-color-success);
+  --fth-bi-frost: var(--fth-color-frost);
+  --fth-bi-shadow: var(--fth-theme-shadow-elevated);
+  background: var(--fth-bi-surface);
+  border: 1px solid var(--fth-bi-border);
   border-radius: 12px;
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(200, 167, 93, 0.07);
+  box-shadow: var(--fth-bi-shadow);
   padding: 0;
   overflow: hidden;
   min-width: 320px;
@@ -23,8 +36,8 @@
 
 /* ── Window header ────────────────────────────────────────────── */
 .batch-initiative-dialog .window-header {
-  background: #1a1d24;
-  border-bottom: 1px solid rgba(200, 167, 93, 0.15);
+  background: var(--fth-bi-surface-alt);
+  border-bottom: 1px solid var(--fth-bi-border-soft);
   border-radius: 12px 12px 0 0;
   padding: 0 0.75rem;
   height: 36px;
@@ -37,7 +50,7 @@
   font-family: "Roboto Slab", serif;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #c8a75d;
+  color: var(--fth-bi-accent);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   flex: 1;
@@ -53,7 +66,7 @@
 .batch-initiative-dialog .close {
   background: transparent;
   border: none;
-  color: #5a5550;
+  color: var(--fth-bi-text-subtle);
   cursor: pointer;
   padding: 0.25rem 0.375rem;
   border-radius: 4px;
@@ -65,8 +78,8 @@
 
 .batch-initiative-dialog .header-button:hover,
 .batch-initiative-dialog .close:hover {
-  color: #e8e4dc;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--fth-bi-text);
+  background: var(--fth-bi-glass-strong);
 }
 
 /* ── Window content area ──────────────────────────────────────── */
@@ -93,7 +106,7 @@
   font-family: "Roboto", sans-serif;
   font-size: 0.72rem;
   font-weight: 500;
-  color: #9a9590;
+  color: var(--fth-bi-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -114,10 +127,10 @@
   gap: 6px;
   min-height: 68px;
   padding: 10px 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(200, 167, 93, 0.15);
+  background: var(--fth-bi-glass);
+  border: 1px solid var(--fth-bi-border-soft);
   border-radius: 8px;
-  color: #9a9590;
+  color: var(--fth-bi-text-muted);
   font-family: "Roboto", sans-serif;
   font-size: 0.66rem;
   font-weight: 700;
@@ -137,31 +150,31 @@
 }
 
 /* ── Disadvantage — blue ──────────────────────────────────────── */
-.batch-initiative-dialog .dialog-button.disadvantage i { color: rgba(74, 122, 181, 0.55); }
+.batch-initiative-dialog .dialog-button.disadvantage i { color: color-mix(in srgb, var(--fth-bi-frost) 78%, transparent); }
 .batch-initiative-dialog .dialog-button.disadvantage:hover {
-  background: rgba(74, 122, 181, 0.16);
-  border-color: #4a7ab5;
-  color: #64b5f6;
+  background: color-mix(in srgb, var(--fth-bi-frost) 22%, transparent);
+  border-color: color-mix(in srgb, var(--fth-bi-frost) 70%, var(--fth-bi-border));
+  color: var(--fth-bi-frost);
 }
-.batch-initiative-dialog .dialog-button.disadvantage:hover i { color: #64b5f6; }
+.batch-initiative-dialog .dialog-button.disadvantage:hover i { color: var(--fth-bi-frost); }
 
 /* ── Normal — bronze/gold ─────────────────────────────────────── */
-.batch-initiative-dialog .dialog-button.normal i { color: rgba(200, 167, 93, 0.55); }
+.batch-initiative-dialog .dialog-button.normal i { color: color-mix(in srgb, var(--fth-bi-accent) 72%, transparent); }
 .batch-initiative-dialog .dialog-button.normal:hover {
-  background: rgba(200, 167, 93, 0.13);
-  border-color: #c8a75d;
-  color: #d4af37;
+  background: color-mix(in srgb, var(--fth-bi-accent) 14%, transparent);
+  border-color: var(--fth-bi-accent);
+  color: var(--fth-bi-accent-strong);
 }
-.batch-initiative-dialog .dialog-button.normal:hover i { color: #d4af37; }
+.batch-initiative-dialog .dialog-button.normal:hover i { color: var(--fth-bi-accent-strong); }
 
 /* ── Advantage — green ────────────────────────────────────────── */
-.batch-initiative-dialog .dialog-button.advantage i { color: rgba(45, 138, 78, 0.55); }
+.batch-initiative-dialog .dialog-button.advantage i { color: color-mix(in srgb, var(--fth-bi-success) 74%, transparent); }
 .batch-initiative-dialog .dialog-button.advantage:hover {
-  background: rgba(45, 138, 78, 0.16);
-  border-color: #2d8a4e;
-  color: #81c784;
+  background: color-mix(in srgb, var(--fth-bi-success) 18%, transparent);
+  border-color: color-mix(in srgb, var(--fth-bi-success) 72%, var(--fth-bi-border));
+  color: color-mix(in srgb, var(--fth-bi-success) 78%, white 22%);
 }
-.batch-initiative-dialog .dialog-button.advantage:hover i { color: #81c784; }
+.batch-initiative-dialog .dialog-button.advantage:hover i { color: color-mix(in srgb, var(--fth-bi-success) 78%, white 22%); }
 
 /* ── Touch feedback ───────────────────────────────────────────── */
 .batch-initiative-dialog .dialog-button,
@@ -178,7 +191,7 @@
 
 /* ── Focus ring (keyboard nav) ────────────────────────────────── */
 .batch-initiative-dialog .dialog-button:focus-visible {
-  outline: 2px solid rgba(200, 167, 93, 0.7);
+  outline: 2px solid var(--fth-bi-focus);
   outline-offset: 2px;
 }
 

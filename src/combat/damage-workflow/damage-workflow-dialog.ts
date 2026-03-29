@@ -20,6 +20,7 @@
 
 import { Log, MOD } from "../../logger";
 import { getHooks, isGM, isDnd5eWorld, getSetting } from "../../types";
+import { applyFthThemeToNode } from "../../ui/theme/fth-theme";
 import { COMBAT_SETTINGS } from "../combat-settings";
 import {
   type WorkflowInput,
@@ -173,6 +174,7 @@ function buildPanel(): HTMLElement {
   const el = document.createElement("div");
   el.id = "fth-damage-panel";
   el.className = "fth-damage-panel";
+  applyFthThemeToNode(el);
   el.innerHTML = getDamageWorkflowPanelHTML(currentTokenCount, getLastCondition());
   attachPanelListeners(el);
   return el;

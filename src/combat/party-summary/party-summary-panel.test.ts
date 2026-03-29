@@ -4,6 +4,7 @@ import type { SaveAbility } from "../combat-types";
 import type { PartySummaryCard } from "./party-summary-types";
 
 const hooksOn = vi.fn();
+const applyFthThemeToNodeMock = vi.fn();
 const getGameMock = vi.fn();
 const getSettingMock = vi.fn();
 const extractCardDataMock = vi.fn<(actor: { id: string; name?: string }) => PartySummaryCard>();
@@ -25,6 +26,10 @@ vi.mock("../../types", () => ({
   getSetting: getSettingMock,
   isGM: () => true,
   isDnd5eWorld: () => true,
+}));
+
+vi.mock("../../ui/theme/fth-theme", () => ({
+  applyFthThemeToNode: applyFthThemeToNodeMock,
 }));
 
 vi.mock("./party-summary-types", () => ({
@@ -322,6 +327,7 @@ describe("party summary panel shell", () => {
     expect(extractCardDataMock.mock.calls.map(([actor]) => actor.id)).toEqual(["pc-a", "pc-b"]);
 
     const renderedPanel = ((globalThis.document as unknown) as FakeDocument).querySelector<FakePanelElement>("#fth-party-summary");
+    expect(applyFthThemeToNodeMock).toHaveBeenCalledWith(renderedPanel);
     expect(renderedPanel?.innerHTML).toContain("2 PCs");
   });
 

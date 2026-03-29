@@ -14,6 +14,8 @@ const setLevelMock = vi.fn();
 const infoMock = vi.fn();
 const debugMock = vi.fn();
 const registerSettingsMock = vi.fn();
+const registerFthThemeHooksMock = vi.fn();
+const initFthThemeMock = vi.fn();
 const registerWindowRotationHooksMock = vi.fn();
 const initWindowRotationReadyMock = vi.fn();
 const registerPrintSheetHooksMock = vi.fn();
@@ -52,6 +54,11 @@ vi.mock("./logger", () => ({
 
 vi.mock("./settings", () => ({
   registerSettings: registerSettingsMock,
+}));
+
+vi.mock("./ui/theme/fth-theme", () => ({
+  registerFthThemeHooks: registerFthThemeHooksMock,
+  initFthTheme: initFthThemeMock,
 }));
 
 vi.mock("./print-sheet/print-sheet", () => ({
@@ -173,6 +180,7 @@ describe("index shell", () => {
     mod.__indexInternals.onInit();
 
     expect(registerSettingsMock).toHaveBeenCalledTimes(1);
+    expect(registerFthThemeHooksMock).toHaveBeenCalledTimes(1);
     expect(registerWindowRotationHooksMock).toHaveBeenCalledTimes(1);
     expect(registerPrintSheetHooksMock).toHaveBeenCalledTimes(1);
     expect(registerLPCSSettingsMock).toHaveBeenCalledWith(settings);
@@ -234,6 +242,7 @@ describe("index shell", () => {
     expect(autoOpenLPCSMock).toHaveBeenCalledTimes(1);
     expect(initCombatReadyMock).toHaveBeenCalledTimes(1);
     expect(initCharacterCreatorReadyMock).toHaveBeenCalledTimes(1);
+    expect(initFthThemeMock).toHaveBeenCalledTimes(1);
     expect(startSoundscapeTriggerServiceMock).toHaveBeenCalledTimes(1);
     expect(attachFthApiMock).toHaveBeenCalledTimes(1);
     expect(debugMock).toHaveBeenCalledWith("window.fth API attached");

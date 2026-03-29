@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowInput, WorkflowResult, WorkflowType } from "../combat-types";
 
 const hooksOn = vi.fn();
+const applyFthThemeToNodeMock = vi.fn();
 const executeWorkflowMock = vi.fn<(...args: unknown[]) => Promise<WorkflowResult>>();
 const postWorkflowChatMock = vi.fn<(...args: unknown[]) => Promise<void>>();
 const updatePanelVisibilityMock = vi.fn();
@@ -28,6 +29,10 @@ vi.mock("../../types", () => ({
   isGM: () => true,
   isDnd5eWorld: () => true,
   getSetting: () => true,
+}));
+
+vi.mock("../../ui/theme/fth-theme", () => ({
+  applyFthThemeToNode: applyFthThemeToNodeMock,
 }));
 
 vi.mock("./damage-workflow-engine", () => ({
@@ -193,6 +198,7 @@ describe("damage workflow dialog shell", () => {
 
     const panel = ((globalThis.document as unknown) as FakeDocument).querySelector<FakePanelElement>("#fth-damage-panel");
     expect(panel).not.toBeNull();
+    expect(applyFthThemeToNodeMock).toHaveBeenCalledWith(panel);
     expect(panel?.style.display).toBe("");
     expect(panel?.targetCount.textContent).toBe("1 target");
 

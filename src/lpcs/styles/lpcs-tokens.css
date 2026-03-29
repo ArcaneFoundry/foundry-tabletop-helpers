@@ -1,28 +1,39 @@
 /* ── LPCS Design Tokens ──────────────────────────────────────── */
 .lpcs-sheet {
   /* Color System */
-  --lpcs-bg-base:           #0f1115;
-  --lpcs-bg-panel:          #1a1d24;
-  --lpcs-bg-panel-hover:    #22262f;
-  --lpcs-bg-glass:          rgba(255, 255, 255, 0.06);
-  --lpcs-bg-glass-hover:    rgba(255, 255, 255, 0.10);
+  --lpcs-bg-base:           var(--fth-color-canvas);
+  --lpcs-bg-panel:          var(--fth-color-surface);
+  --lpcs-bg-panel-hover:    var(--fth-color-surface-elevated);
+  --lpcs-bg-glass:          var(--fth-color-surface-glass);
+  --lpcs-bg-glass-hover:    var(--fth-color-surface-glass-strong);
+  --lpcs-bg-overlay:        color-mix(in srgb, var(--fth-color-canvas) 82%, transparent);
+  --lpcs-bg-overlay-strong: color-mix(in srgb, var(--fth-color-canvas) 90%, transparent);
 
-  --lpcs-accent-bronze:     #c8a75d;
-  --lpcs-accent-crimson:    #8b1e2d;
-  --lpcs-accent-gold:       #d4af37;
+  --lpcs-accent-bronze:     var(--fth-color-accent-soft);
+  --lpcs-accent-crimson:    var(--fth-color-danger);
+  --lpcs-accent-gold:       var(--fth-color-accent);
+  --lpcs-accent-gold-bright: var(--fth-color-accent-strong);
+  --lpcs-accent-soft-bg:    color-mix(in srgb, var(--fth-color-accent) 12%, transparent);
+  --lpcs-accent-strong-bg:  color-mix(in srgb, var(--fth-color-accent) 18%, transparent);
+  --lpcs-accent-ring:       color-mix(in srgb, var(--fth-color-accent) 24%, transparent);
 
-  --lpcs-text-primary:      #e8e4dc;
-  --lpcs-text-secondary:    #9a9590;
-  --lpcs-text-muted:        #5a5550;
+  --lpcs-text-primary:      var(--fth-color-text);
+  --lpcs-text-secondary:    var(--fth-color-text-muted);
+  --lpcs-text-muted:        var(--fth-color-text-subtle);
 
-  --lpcs-border:            rgba(200, 167, 93, 0.15);
-  --lpcs-border-accent:     rgba(200, 167, 93, 0.4);
+  --lpcs-border:            var(--fth-color-border);
+  --lpcs-border-accent:     var(--fth-color-border-strong);
 
   /* HP Colors */
-  --lpcs-hp-healthy:        #2d8a4e;
-  --lpcs-hp-wounded:        #c49a2a;
-  --lpcs-hp-critical:       #8b1e2d;
-  --lpcs-hp-temp:           #4a7ab5;
+  --lpcs-hp-healthy:        var(--fth-color-success);
+  --lpcs-hp-wounded:        var(--fth-color-warning);
+  --lpcs-hp-critical:       var(--fth-color-danger);
+  --lpcs-hp-temp:           var(--fth-color-frost);
+  --lpcs-success-soft:      color-mix(in srgb, var(--fth-color-success) 18%, transparent);
+  --lpcs-danger-soft:       color-mix(in srgb, var(--fth-color-danger) 18%, transparent);
+  --lpcs-frost-soft:        color-mix(in srgb, var(--fth-color-frost) 18%, transparent);
+  --lpcs-arcane:            var(--fth-color-arcane);
+  --lpcs-arcane-soft:       color-mix(in srgb, var(--fth-color-arcane) 18%, transparent);
 
   /* Spacing */
   --lpcs-radius-sm:         8px;
@@ -81,4 +92,3 @@
   min-width: 0;
   line-height: normal;
 }
-

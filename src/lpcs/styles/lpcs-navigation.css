@@ -39,16 +39,16 @@
 
 .lpcs-sheet .lpcs-tab-btn:active {
   transform: scale(0.93);
-  background: rgba(200, 167, 93, 0.15);
+  background: var(--lpcs-accent-strong-bg);
   transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-tab-btn.active {
-  background: rgba(200, 167, 93, 0.12);
+  background: var(--lpcs-accent-soft-bg);
   border-color: var(--lpcs-border-accent);
   color: var(--lpcs-accent-bronze);
   box-shadow:
-    0 0 12px rgba(200, 167, 93, 0.15),
+    0 0 12px var(--lpcs-accent-ring),
     inset 0 -2px 0 var(--lpcs-accent-bronze);
 }
 
@@ -102,4 +102,3 @@
   background: linear-gradient(to bottom, var(--lpcs-accent-bronze), var(--lpcs-accent-crimson));
   border-radius: 2px;
 }
-
