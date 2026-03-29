@@ -159,6 +159,13 @@
   box-shadow: var(--cc-shadow-panel) !important;
 }
 
+.cc-theme-header--hero {
+  background:
+    var(--cc-surface-hero-sheen),
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-surface) 92%, var(--cc-surface-accent-soft) 8%), color-mix(in srgb, var(--cc-bg-elevated) 78%, var(--cc-bg-base) 22%)) !important;
+  box-shadow: var(--cc-shadow-hero) !important;
+}
+
 .cc-theme-panel {
   border-color: color-mix(in srgb, var(--cc-border-subtle) 96%, transparent) !important;
   background:
@@ -166,6 +173,12 @@
     var(--cc-surface-panel) !important;
   box-shadow: var(--cc-shadow-panel) !important;
   color: var(--cc-text-primary) !important;
+}
+
+.cc-theme-panel--soft {
+  background:
+    var(--cc-surface-panel-sheen),
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-surface) 78%, transparent), color-mix(in srgb, var(--cc-bg-elevated) 74%, transparent)) !important;
 }
 
 .cc-theme-panel--accent {
@@ -179,6 +192,16 @@
   border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
   background: color-mix(in srgb, var(--cc-bg-surface) 82%, transparent) !important;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 16%, transparent) !important;
+}
+
+.cc-theme-card--soft {
+  background: color-mix(in srgb, var(--cc-bg-surface) 72%, transparent) !important;
+}
+
+.cc-theme-card--raised {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 16%, transparent),
+    var(--cc-glow-soft) !important;
 }
 
 .cc-theme-card--interactive:hover {
@@ -252,6 +275,24 @@
 
 .cc-theme-progress-fill {
   background: linear-gradient(90deg, var(--cc-accent-gold), var(--cc-action-primary-bright));
+}
+
+.cc-theme-hero-shell {
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--cc-surface-accent-soft) 88%, transparent), transparent 55%),
+    radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--cc-surface-arcane-soft) 80%, transparent), transparent 45%);
+}
+
+.cc-theme-media-frame {
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-elevated) 42%, transparent), color-mix(in srgb, var(--cc-bg-base) 58%, transparent)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 14%, transparent),
+    var(--cc-glow-soft) !important;
+}
+
+.cc-theme-media-frame__fade {
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--cc-bg-base) 82%, transparent)) !important;
 }
 
 .cc-theme-toggle {

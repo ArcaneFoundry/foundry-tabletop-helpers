@@ -80,15 +80,15 @@ function BuildFlowFallbackScreen({ shellContext }: ReactWizardStepProps) {
 
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
-      <div className="cc-theme-panel mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(28,28,34,0.96),rgba(17,17,22,0.98))] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.34)]">
+      <div className="cc-theme-panel cc-theme-panel--soft mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-[1.5rem] p-5">
         <div className="space-y-2">
-          <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em] text-[#e9c176]/74">
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em]">
             Build
           </div>
-          <h2 className="cc-theme-title m-0 font-fth-cc-display text-[1.5rem] leading-none text-[#f7e7c6]">
+          <h2 className="cc-theme-title m-0 font-fth-cc-display text-[1.5rem] leading-none">
             {title || "Build Choices"}
           </h2>
-          <p className="cc-theme-copy m-0 max-w-3xl font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
+          <p className="cc-theme-copy m-0 max-w-3xl font-fth-cc-body text-[0.98rem] leading-7">
             {viewModel?.stepDescription ?? "This build chapter view is being restored after an incomplete migration. Your current selections are still available below while we finish the mounted build-shell path."}
           </p>
         </div>
@@ -116,11 +116,11 @@ function BuildFlowFallbackScreen({ shellContext }: ReactWizardStepProps) {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="cc-theme-card rounded-[1.15rem] border border-white/10 bg-black/20 px-4 py-3">
-      <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#e9c176]/68">
+    <div className="cc-theme-card cc-theme-card--soft rounded-[1.15rem] px-4 py-3">
+      <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]">
         {label}
       </div>
-      <div className="cc-theme-body mt-2 font-fth-cc-body text-[0.98rem] leading-6 text-[#f2ebe2]">
+      <div className="cc-theme-body mt-2 font-fth-cc-body text-[0.98rem] leading-6">
         {value}
       </div>
     </div>

@@ -104,6 +104,15 @@
     background-image: var(--fth-theme-panel-image-alt);
   }
 
+  .fth-theme-panel--header {
+    background-image: var(--fth-theme-panel-image-header);
+    box-shadow: var(--fth-theme-shadow-elevated);
+  }
+
+  .fth-theme-header-glow {
+    background-image: var(--fth-theme-header-glow);
+  }
+
   .fth-theme-panel-accent-line {
     background-image: var(--fth-theme-accent-line);
   }

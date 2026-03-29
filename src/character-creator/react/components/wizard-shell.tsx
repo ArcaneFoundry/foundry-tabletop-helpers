@@ -127,7 +127,7 @@ export function WizardShell({
                       color: step.active
                         ? "var(--fth-color-accent-contrast)"
                         : step.status === "complete"
-                          ? "#1f3118"
+                          ? "var(--fth-theme-step-icon-complete-color)"
                           : undefined,
                       boxShadow: step.active
                         ? "0 0 18px color-mix(in srgb, var(--fth-color-accent) 25%, transparent)"
@@ -162,9 +162,9 @@ export function WizardShell({
       ) : null}
 
       {!shellContext.hideShellHeader ? (
-        <header className="fth-theme-panel fth-theme-panel--alt relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-6 py-5 backdrop-blur-xl md:mx-5">
+        <header className="fth-theme-panel fth-theme-panel--header relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-6 py-5 backdrop-blur-lg md:mx-5">
           <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-6 top-0 h-px" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--fth-color-arcane)_14%,transparent),transparent_34%)]" />
+          <div className="fth-theme-header-glow pointer-events-none absolute inset-0" />
           {shellContext.headerTitle ? (
             <div className="relative z-10">
               <div className="flex items-start gap-4">
@@ -268,7 +268,7 @@ function ActionButton({
       className={cn(
         "cc-shell-footer-btn inline-flex min-w-36 items-center justify-center rounded-[1rem] border px-6 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition",
         variant === "primary"
-          ? "border-fth-border-strong bg-[linear-gradient(180deg,var(--fth-color-accent-strong),var(--fth-color-accent))] text-[color:var(--fth-color-accent-contrast)] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
+          ? "border-fth-border-strong bg-[linear-gradient(180deg,var(--fth-color-accent-strong),var(--fth-color-accent))] text-[color:var(--fth-color-accent-contrast)] shadow-[var(--cc-shadow-button)]"
           : "border-fth-border bg-[color:var(--fth-color-surface-glass)] text-fth-text hover:border-fth-border-strong",
         disabled && "cursor-not-allowed opacity-40",
       )}

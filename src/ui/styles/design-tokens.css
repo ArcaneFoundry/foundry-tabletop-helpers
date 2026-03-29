@@ -90,15 +90,22 @@
     linear-gradient(135deg, rgb(255 255 255 / 0.035), transparent 34%, rgb(255 255 255 / 0.018) 62%, transparent);
   --fth-theme-panel-image: linear-gradient(180deg, rgb(30 26 36 / 0.92), rgb(16 13 21 / 0.96));
   --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(28 24 33 / 0.94), rgb(14 13 19 / 0.98));
+  --fth-theme-panel-image-header:
+    linear-gradient(180deg, rgb(34 29 39 / 0.94), rgb(17 15 22 / 0.98));
   --fth-theme-status-image: linear-gradient(180deg, rgb(215 170 91 / 0.12), rgb(215 170 91 / 0.06));
   --fth-theme-accent-line: linear-gradient(90deg, rgb(233 193 118 / 0), rgb(233 193 118 / 0.7), rgb(233 193 118 / 0));
   --fth-theme-icon-surface: rgb(233 193 118 / 0.1);
   --fth-theme-icon-ring: rgb(233 193 118 / 0.4);
+  --fth-theme-header-glow:
+    radial-gradient(circle at top left, rgb(233 193 118 / 0.14), transparent 34%),
+    radial-gradient(circle at right center, rgb(136 115 190 / 0.14), transparent 38%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 58%);
   --fth-theme-step-active-image: linear-gradient(180deg, rgb(136 115 190 / 0.18), rgb(215 170 91 / 0.08));
   --fth-theme-step-complete-image: linear-gradient(180deg, rgb(111 157 116 / 0.18), rgb(255 255 255 / 0.02));
   --fth-theme-step-invalid-image: linear-gradient(180deg, rgb(169 91 91 / 0.16), rgb(255 255 255 / 0.02));
   --fth-theme-step-icon-image: radial-gradient(circle at 35% 35%, #f3d28e, #d5a84d);
   --fth-theme-step-icon-complete-image: radial-gradient(circle at 35% 35%, #dbe9bc, #8ca96f);
+  --fth-theme-step-icon-complete-color: #1f3118;
   --fth-theme-step-divider-image: linear-gradient(90deg, rgb(233 193 118 / 0), rgb(233 193 118 / 0.38), rgb(233 193 118 / 0));
   --fth-theme-card-shell-image: linear-gradient(180deg, rgb(46 42 48 / 0.94), rgb(15 15 19 / 0.98));
   --fth-theme-card-inner-image: linear-gradient(180deg, rgb(251 247 233 / 0.04) 0%, transparent 22%, rgb(8 7 12 / 0.02) 42%, rgb(8 7 12 / 0.82) 100%);
@@ -154,15 +161,22 @@
     linear-gradient(135deg, rgb(255 255 255 / 0.66), transparent 34%, rgb(255 250 241 / 0.3) 62%, transparent);
   --fth-theme-panel-image: linear-gradient(180deg, rgb(250 246 238 / 0.94), rgb(242 233 220 / 0.98));
   --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(255 251 244 / 0.92), rgb(243 234 220 / 0.98));
+  --fth-theme-panel-image-header:
+    linear-gradient(180deg, rgb(255 252 247 / 0.97), rgb(243 232 215 / 0.98));
   --fth-theme-status-image: linear-gradient(180deg, rgb(187 142 69 / 0.16), rgb(187 142 69 / 0.08));
   --fth-theme-accent-line: linear-gradient(90deg, rgb(187 142 69 / 0), rgb(187 142 69 / 0.62), rgb(187 142 69 / 0));
   --fth-theme-icon-surface: rgb(187 142 69 / 0.12);
   --fth-theme-icon-ring: rgb(187 142 69 / 0.28);
+  --fth-theme-header-glow:
+    radial-gradient(circle at top left, rgb(187 142 69 / 0.16), transparent 38%),
+    radial-gradient(circle at right center, rgb(136 115 190 / 0.08), transparent 42%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.72), transparent 58%);
   --fth-theme-step-active-image: linear-gradient(180deg, rgb(187 142 69 / 0.18), rgb(136 115 190 / 0.06));
   --fth-theme-step-complete-image: linear-gradient(180deg, rgb(95 134 99 / 0.18), rgb(255 255 255 / 0.34));
   --fth-theme-step-invalid-image: linear-gradient(180deg, rgb(160 98 87 / 0.16), rgb(255 255 255 / 0.34));
   --fth-theme-step-icon-image: radial-gradient(circle at 35% 35%, #f5dca6, #bf9041);
   --fth-theme-step-icon-complete-image: radial-gradient(circle at 35% 35%, #e7efd7, #7f9f6a);
+  --fth-theme-step-icon-complete-color: #27411f;
   --fth-theme-step-divider-image: linear-gradient(90deg, rgb(187 142 69 / 0), rgb(187 142 69 / 0.28), rgb(187 142 69 / 0));
   --fth-theme-card-shell-image: linear-gradient(180deg, rgb(255 251 245 / 0.98), rgb(244 231 209 / 0.94));
   --fth-theme-card-inner-image: linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, transparent 22%, rgb(168 128 74 / 0.04) 42%, rgb(73 48 25 / 0.18) 100%);
