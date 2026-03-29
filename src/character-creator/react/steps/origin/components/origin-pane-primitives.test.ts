@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { handleOriginGalleryCornerActionClick, OriginGalleryCard } from "./origin-pane-primitives";
+import { DetailCard, handleOriginGalleryCornerActionClick, OriginGalleryCard } from "./origin-pane-primitives";
 
 describe("origin-pane-primitives", () => {
   it("stops propagation before invoking an origin gallery corner action", () => {
@@ -28,5 +28,25 @@ describe("origin-pane-primitives", () => {
 
     expect(markup).not.toContain("data-origin-gallery-footer=\"true\"");
     expect(markup).not.toContain("data-origin-gallery-meta=\"true\"");
+  });
+
+  it("keeps the shared detail card treatment for origin feat panes", () => {
+    const markup = renderToStaticMarkup(createElement(DetailCard, {
+      entry: {
+        uuid: "feat-1",
+        name: "Lucky",
+        img: "lucky.webp",
+        packId: "phb",
+        packLabel: "PHB",
+        type: "feat",
+        description: "<p>Detailed feat text.</p>",
+      },
+      fallbackIcon: "fa-solid fa-stars",
+    }));
+
+    expect(markup).toContain("Detailed feat text.");
+    expect(markup).toContain("PHB");
+    expect(markup).toContain("aspect-[1.15]");
+    expect(markup).not.toContain("data-origin-detail-card=\"true\"");
   });
 });

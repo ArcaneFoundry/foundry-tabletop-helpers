@@ -122,8 +122,11 @@ describe("BackgroundSelectionPane", () => {
     }));
 
     expect(markup).toContain("data-origin-detail-modal=\"true\"");
+    expect(markup).toContain("data-origin-detail-card=\"true\"");
+    expect(markup).toContain("data-origin-detail-thumbnail=\"true\"");
     expect(markup).toContain("Acolyte Background");
     expect(markup).toContain("Detailed background text.");
     expect(markup).toContain("Close Acolyte Background");
+    expect(markup).not.toContain("aspect-[1.15]");
   });
 });

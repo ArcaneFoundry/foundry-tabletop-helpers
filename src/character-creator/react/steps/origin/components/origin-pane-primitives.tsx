@@ -158,6 +158,63 @@ export function DetailCard({
   );
 }
 
+function CompactDetailCard({
+  entry,
+  fallbackIcon,
+  hideEmptyDescription = false,
+  children,
+}: {
+  entry: (CreatorIndexEntry & { description?: string }) | null;
+  fallbackIcon: string;
+  hideEmptyDescription?: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <section
+      className="rounded-[1.2rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.95),rgba(239,224,198,0.95))] p-3 shadow-[0_18px_34px_rgba(47,29,18,0.12)]"
+      data-origin-detail-card="true"
+    >
+      {entry ? (
+        <div className="grid gap-3 lg:grid-cols-[5.75rem_minmax(0,1fr)] lg:items-start">
+          <div
+            className="overflow-hidden rounded-[0.9rem] border border-[#d4bb96] bg-[#20130e] shadow-[0_8px_16px_rgba(47,29,18,0.1)]"
+            data-origin-detail-thumbnail="true"
+          >
+            {entry.img ? (
+              <img alt={entry.name} className="aspect-square w-full object-cover" loading="lazy" src={entry.img} />
+            ) : (
+              <div className="flex aspect-square w-full items-center justify-center text-[#f0d2a6]">
+                <i className={cn(fallbackIcon, "text-2xl")} aria-hidden="true" />
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <div className="font-fth-cc-body text-[1.02rem] font-semibold text-[#4c3524]">{entry.name}</div>
+            <div className="mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#876145]">
+              {entry.packLabel}
+            </div>
+            {entry.description ? (
+              <div
+                className="prose prose-sm mt-3 max-w-none font-fth-cc-body text-[#5f4636]"
+                dangerouslySetInnerHTML={{ __html: entry.description }}
+              />
+            ) : hideEmptyDescription ? null : (
+              <p className="mt-3 font-fth-cc-body text-[0.92rem] leading-6 text-[#6b5040]">
+                No description is available in the current compendium data.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <EmptySelectionState message="Select a card to inspect its details here." />
+      )}
+
+      {children ? <div className="mt-3">{children}</div> : null}
+    </section>
+  );
+}
+
 export function OriginDetailModal({
   entry,
   title,
@@ -183,30 +240,30 @@ export function OriginDetailModal({
       />
       <motion.div
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative z-10 flex max-h-[min(92vh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.55rem] border border-[#e9c176]/28 bg-[linear-gradient(180deg,rgba(28,24,31,0.98),rgba(12,12,16,0.99))] p-[0.34rem] shadow-[0_30px_70px_rgba(0,0,0,0.42)]"
+        className="relative z-10 flex max-h-[min(88vh,44rem)] w-full max-w-[42rem] flex-col overflow-hidden rounded-[1.45rem] border border-[#e9c176]/28 bg-[linear-gradient(180deg,rgba(28,24,31,0.98),rgba(12,12,16,0.99))] p-[0.28rem] shadow-[0_30px_70px_rgba(0,0,0,0.42)]"
         initial={{ opacity: 0, scale: 0.98, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="flex items-center justify-between gap-3 rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(37,32,40,0.98),rgba(16,16,21,0.98))] px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(37,32,40,0.98),rgba(16,16,21,0.98))] px-3.5 py-2.5">
           <div className="min-w-0">
-            <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.24em] text-[#e9c176]/76">
+            <div className="font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.24em] text-[#e9c176]/76">
               Gallery Detail
             </div>
-            <div className="mt-1 font-fth-cc-display text-[1.2rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+            <div className="mt-1 font-fth-cc-display text-[1.08rem] uppercase tracking-[0.08em] text-[#f5ead5]">
               {title}
             </div>
           </div>
           <button
             aria-label={`Close ${title}`}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] text-[#e9c176] transition hover:border-[#e9c176]/48 hover:bg-[rgba(233,193,118,0.08)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] text-[#e9c176] transition hover:border-[#e9c176]/48 hover:bg-[rgba(233,193,118,0.08)]"
             onClick={onClose}
             type="button"
           >
             <i className="fa-solid fa-xmark" aria-hidden="true" />
           </button>
         </div>
-        <div className="mt-3 overflow-y-auto rounded-[1.2rem]">
-          <DetailCard entry={entry} fallbackIcon={fallbackIcon} hideEmptyDescription />
+        <div className="mt-2.5 overflow-y-auto rounded-[1.1rem]">
+          <CompactDetailCard entry={entry} fallbackIcon={fallbackIcon} hideEmptyDescription />
           {children ? <div className="mt-3">{children}</div> : null}
         </div>
       </motion.div>
