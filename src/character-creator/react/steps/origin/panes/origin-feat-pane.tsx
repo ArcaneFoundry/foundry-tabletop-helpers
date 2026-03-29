@@ -7,7 +7,6 @@ import {
   CompactMetaChips,
   DetailCard,
   EmptySelectionState,
-  SummaryListCard,
 } from "../components/origin-pane-primitives";
 
 type OriginFeatViewModel = {
@@ -60,24 +59,8 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
       <section className="rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(22,20,27,0.98),rgba(11,11,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
-        <div className="border-b border-[#e9c176]/14 pb-4">
-          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[#e9c176]/78">
-            {viewModel.backgroundName}
-          </div>
-          <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[#f5ead5]">
-            Origin Feat
-          </div>
-          <CompactMetaChips
-            chips={[
-              viewModel.defaultOriginFeatName ? `Default: ${viewModel.defaultOriginFeatName}` : "",
-              viewModel.isCustomOriginFeat ? "Custom feat active" : "Using background default",
-            ].filter(Boolean)}
-            tone="dark"
-          />
-        </div>
-
         {viewModel.hasOriginFeats ? (
-          <div className="mt-4 grid gap-3">
+          <div className="grid gap-3" data-origin-feat-list="true">
             {viewModel.availableOriginFeats.map((entry) => {
               const selected = entry.uuid === selectedUuid;
               const isBackgroundDefault = entry.uuid === backgroundFeatUuid;
@@ -91,6 +74,7 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
                       : "border-[#7f6646] bg-[linear-gradient(180deg,rgba(54,42,31,0.98),rgba(23,18,15,0.99))] hover:border-[#cda56c]",
                   )}
                   data-default={isBackgroundDefault ? "true" : "false"}
+                  data-origin-feat-option="true"
                   data-selected={selected ? "true" : "false"}
                   initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
                   key={entry.uuid}
@@ -100,7 +84,7 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
                   whileHover={prefersReducedMotion ? undefined : { scale: 1.01, y: -1 }}
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
                 >
-                  <div className="grid grid-cols-[4.6rem_minmax(0,1fr)] items-start gap-3">
+                  <div className="grid grid-cols-[4.6rem_minmax(0,1fr)_auto] items-center gap-3">
                     <div className="aspect-square overflow-hidden rounded-[0.95rem] border border-[#d4bb96]/50 bg-[#20130e]">
                       {entry.img ? (
                         <img alt={entry.name} className="h-full w-full object-cover" loading="lazy" src={entry.img} />
@@ -115,18 +99,31 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
                     </div>
                     <div className="min-w-0">
                       <div className={cn(
-                        "font-fth-cc-body text-[1rem] font-semibold",
+                        "font-fth-cc-body text-[1rem] font-semibold text-left",
                         selected ? "text-[#4c3524]" : "text-[#f5ead5]",
                       )}>
                         {entry.name}
                       </div>
-                      <CompactMetaChips
-                        chips={[
-                          isBackgroundDefault ? "Background default" : "Alternate feat",
-                          selected ? "Selected feat" : "",
-                        ].filter(Boolean)}
-                        tone={selected ? "light" : "dark"}
-                      />
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <CompactMetaChips
+                          chips={[
+                            isBackgroundDefault ? "Background default" : "Alternate feat",
+                          ].filter(Boolean)}
+                          tone={selected ? "light" : "dark"}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-3 py-1 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.16em]",
+                          selected
+                            ? "border-[#b98a4d]/45 bg-[rgba(107,76,35,0.08)] text-[#6b4c23]"
+                            : "border-white/10 bg-[rgba(255,255,255,0.04)] text-[#c9b79b]",
+                        )}
+                      >
+                        {selected ? "Selected" : "Choose"}
+                      </span>
                     </div>
                   </div>
                 </motion.button>
@@ -156,18 +153,14 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
               tone="dark"
             />
           </div>
-          <div className="mt-3 grid gap-3">
-            <SummaryListCard
-              emptyLabel="No default feat recorded."
-              entries={viewModel.defaultOriginFeatName ? [{ id: viewModel.defaultOriginFeatName, label: viewModel.defaultOriginFeatName }] : []}
-              iconClass="fa-solid fa-scroll"
-              title="Background Default"
+          <div className="mt-3 grid gap-2.5">
+            <FeatStateRow
+              label="Background Default"
+              value={viewModel.defaultOriginFeatName ?? "No default feat recorded."}
             />
-            <SummaryListCard
-              emptyLabel="No feat selected yet."
-              entries={viewModel.originFeatName ? [{ id: viewModel.originFeatName, label: viewModel.originFeatName }] : []}
-              iconClass="fa-solid fa-stars"
-              title="Current Selection"
+            <FeatStateRow
+              label="Current Selection"
+              value={viewModel.originFeatName ?? "No feat selected yet."}
             />
           </div>
           {viewModel.isCustomOriginFeat && backgroundFeatUuid ? (
@@ -182,6 +175,22 @@ export function OriginFeatPane({ shellContext, state, controller, prefersReduced
         </section>
         <DetailCard entry={viewModel.selectedOriginFeat ?? null} fallbackIcon="fa-solid fa-scroll" hideEmptyDescription />
       </aside>
+    </div>
+  );
+}
+
+function FeatStateRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="rounded-[0.95rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-3 py-2.5"
+      data-origin-feat-state-row="true"
+    >
+      <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#d0b27a]">
+        {label}
+      </div>
+      <div className="mt-1 font-fth-cc-body text-[0.95rem] font-semibold text-[#f6e8cc]">
+        {value}
+      </div>
     </div>
   );
 }
