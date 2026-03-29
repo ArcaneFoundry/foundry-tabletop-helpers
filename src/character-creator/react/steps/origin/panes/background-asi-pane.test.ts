@@ -98,13 +98,14 @@ describe("BackgroundAsiPane", () => {
     } as never));
 
     expect(markup).toContain("Background Ability Scores");
-    expect(markup).not.toContain("Spend guide");
+    expect(markup).toContain("3/3 spent");
+    expect(markup).toContain("Fully assigned");
     expect(markup).toContain("Current value");
     expect(markup).toContain("Background-aligned");
     expect(markup).toContain("Class synergy");
-    expect(markup).toContain("Points Spent");
-    expect(markup).toContain("Points Remaining");
-    expect(markup).toContain("Current Spread");
+    expect(markup).not.toContain("Current Spread");
+    expect(markup).not.toContain("Points Spent");
+    expect(markup).not.toContain("Points Remaining");
     expect(markup).toContain("Not enough points left");
   });
 
@@ -154,7 +155,7 @@ describe("BackgroundAsiPane", () => {
     } as never));
 
     expect(markup).toContain("relative isolate rounded-[1.45rem]");
-    expect(markup).toContain("relative z-10 p-4");
+    expect(markup).toContain("relative z-10 p-3");
     expect(markup).not.toContain("data-origins-background-asi-scroll");
     expect(markup).not.toContain("overflow-y-auto");
   });
