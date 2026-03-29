@@ -62,7 +62,7 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
           />
         </div>
 
-        <div className="mt-4 grid gap-3">
+        <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {viewModel.asiAbilities.map((ability) => {
             const currentValue = background.asi.assignments[ability.key as keyof typeof background.asi.assignments] ?? 0;
             const tone = ability.backgroundSuggested || ability.classRecommended || currentValue > 0;
@@ -70,25 +70,21 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
             return (
               <article
                 className={cn(
-                  "rounded-[1.28rem] border p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]",
+                  "flex h-full flex-col rounded-[1.32rem] border p-4 shadow-[0_16px_28px_rgba(0,0,0,0.18)]",
                   tone
                     ? "border-[#e9c176]/[0.18] bg-[linear-gradient(180deg,rgba(40,31,24,0.98),rgba(20,16,13,0.99))]"
                     : "border-white/10 bg-[linear-gradient(180deg,rgba(32,27,24,0.94),rgba(18,15,15,0.99))]",
                 )}
                 key={ability.key}
               >
-                <div className="flex flex-wrap items-start gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="inline-flex h-12 min-w-12 shrink-0 items-center justify-center rounded-[0.9rem] border border-[#e9c176]/32 bg-[rgba(233,193,118,0.08)] px-3 font-fth-cc-display text-[1.1rem] uppercase tracking-[0.08em] text-[#f5ead5]">
+                    {ability.label.slice(0, 3)}
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="inline-flex h-12 min-w-12 items-center justify-center rounded-[0.9rem] border border-[#e9c176]/32 bg-[rgba(233,193,118,0.08)] px-3 font-fth-cc-display text-[1.1rem] uppercase tracking-[0.08em] text-[#f5ead5]">
-                        {ability.label.slice(0, 3)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f5ead5]">{ability.label}</div>
-                        <div className="mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em] text-[#d5b98a]">
-                          Current value {currentValue > 0 ? `+${currentValue}` : "unassigned"}
-                        </div>
-                      </div>
+                    <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f5ead5]">{ability.label}</div>
+                    <div className="mt-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em] text-[#d5b98a]">
+                      Current value {currentValue > 0 ? `+${currentValue}` : "unassigned"}
                     </div>
                     <CompactMetaChips
                       chips={[
@@ -99,9 +95,10 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
                       tone="dark"
                     />
                   </div>
+                </div>
 
-                  <div className="flex min-w-[18rem] flex-1 flex-wrap gap-2">
-                    {ability.options.map((option) => {
+                <div className="mt-4 grid gap-2 min-[420px]:grid-cols-3">
+                  {ability.options.map((option) => {
                       const selected = currentValue === option.value;
                       const blockedBySpend =
                         option.value > 0 && totalUsed - currentValue + option.value > viewModel.asiPoints;
@@ -112,7 +109,7 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
                         <motion.button
                           animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
                           className={cn(
-                            "min-w-[5.6rem] flex-1 rounded-[0.95rem] border px-3 py-2.5 text-left shadow-[0_12px_22px_rgba(0,0,0,0.1)] transition duration-200",
+                            "flex min-h-[7rem] flex-col justify-between rounded-[0.95rem] border px-3 py-3 text-left shadow-[0_12px_22px_rgba(0,0,0,0.1)] transition duration-200",
                             selected
                               ? "border-[#e9c176] bg-[linear-gradient(180deg,rgba(250,232,186,0.96),rgba(228,202,135,0.92))] text-[#4c3524]"
                               : disabled
@@ -130,8 +127,15 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
                           whileHover={prefersReducedMotion || disabled ? undefined : { scale: 1.012, y: -1 }}
                           whileTap={prefersReducedMotion || disabled ? undefined : { scale: 0.99 }}
                         >
-                          <div className="font-fth-cc-display text-[1rem] uppercase tracking-[0.08em]">{option.label}</div>
-                          <div className="mt-1 font-fth-cc-body text-[0.72rem] leading-5 text-inherit/75">
+                          <div>
+                            <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-inherit/70">
+                              Pick
+                            </div>
+                            <div className="mt-1 font-fth-cc-display text-[1rem] uppercase tracking-[0.08em]">
+                              {option.label}
+                            </div>
+                          </div>
+                          <div className="font-fth-cc-body text-[0.72rem] leading-5 text-inherit/75">
                             {selected
                               ? "Applied"
                               : blockedBySpend
@@ -142,8 +146,7 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
                           </div>
                         </motion.button>
                       );
-                    })}
-                  </div>
+                  })}
                 </div>
               </article>
             );

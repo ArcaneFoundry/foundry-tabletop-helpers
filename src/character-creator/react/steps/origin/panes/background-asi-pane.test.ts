@@ -103,6 +103,9 @@ describe("BackgroundAsiPane", () => {
     expect(markup).toContain("Current value");
     expect(markup).toContain("Background-aligned");
     expect(markup).toContain("Class synergy");
+    expect(markup).toContain("Pick");
+    expect(markup).toContain("min-[420px]:grid-cols-3");
+    expect(markup).toContain("xl:grid-cols-3");
     expect(markup).not.toContain("Current Spread");
     expect(markup).not.toContain("Points Spent");
     expect(markup).not.toContain("Points Remaining");
