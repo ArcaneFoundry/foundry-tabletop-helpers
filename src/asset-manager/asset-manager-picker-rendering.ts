@@ -19,6 +19,8 @@ export interface AssetManagerRenderState {
   sortField: SortField;
   sortDir: SortDir;
   sidebarOpen: boolean;
+  serverAvailable: boolean | null;
+  serverStatusTitle: string;
 }
 
 interface HtmlOptions {
@@ -154,8 +156,8 @@ export function buildShellHTML(state: AssetManagerRenderState, options: HtmlOpti
         <i class="fa-solid fa-images"></i>
         <span class="am-thumb-info-label">Thumbs</span>
       </span>
-      <span class="am-server-status" title="Checking optimizer server...">
-        <i class="fa-solid fa-circle am-server-dot am-server-checking"></i>
+      <span class="am-server-status" title="${esc(state.serverStatusTitle)}">
+        <i class="fa-solid fa-circle am-server-dot ${state.serverAvailable === true ? "am-server-online" : state.serverAvailable === false ? "am-server-offline" : "am-server-checking"}"></i>
         <span class="am-server-label">Server</span>
       </span>
     </div>
@@ -235,8 +237,8 @@ export function buildHTML(state: AssetManagerRenderState, options: HtmlOptions):
         <i class="fa-solid fa-images"></i>
         <span class="am-thumb-info-label">Thumbs</span>
       </span>
-      <span class="am-server-status" title="Checking optimizer server...">
-        <i class="fa-solid fa-circle am-server-dot am-server-checking"></i>
+      <span class="am-server-status" title="${esc(state.serverStatusTitle)}">
+        <i class="fa-solid fa-circle am-server-dot ${state.serverAvailable === true ? "am-server-online" : state.serverAvailable === false ? "am-server-offline" : "am-server-checking"}"></i>
         <span class="am-server-label">Server</span>
       </span>
     </div>

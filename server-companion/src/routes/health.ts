@@ -25,6 +25,7 @@ export async function registerHealthRoute(
   app: FastifyInstance,
   ffmpegPath?: string,
   geminiApiKey?: string,
+  maxFileSize?: number,
 ): Promise<void> {
   const startTime = Date.now();
 
@@ -43,6 +44,7 @@ export async function registerHealthRoute(
         video: ffmpeg !== null,
         thumbnail: true,
         portrait: !!geminiApiKey,
+        maxFileSize: maxFileSize ?? 0,
       },
       ffmpeg,
     };

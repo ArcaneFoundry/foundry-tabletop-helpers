@@ -35,7 +35,7 @@ export async function createServer(config: Config) {
   });
 
   // Health endpoint — no auth required
-  await registerHealthRoute(app, config.ffmpegPath, config.geminiApiKey);
+  await registerHealthRoute(app, config.ffmpegPath, config.geminiApiKey, config.maxFileSize);
 
   // Auth-protected routes
   const authHook = createAuthHook(config);

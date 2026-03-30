@@ -24,6 +24,7 @@ describe("server auth and health", () => {
         image: true,
         thumbnail: true,
         portrait: false,
+        maxFileSize: 10 * 1024 * 1024,
       },
     });
   });

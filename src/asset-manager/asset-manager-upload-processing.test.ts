@@ -62,6 +62,73 @@ describe("asset manager upload processing", () => {
     expect(notify).toHaveBeenCalled();
   });
 
+  it("skips server optimization preflight when the file exceeds the companion upload limit", async () => {
+    const item = makeItem();
+    const optimizedBlob = new Blob(["optimized-image"], { type: "image/webp" });
+    Object.defineProperty(optimizedBlob, "size", { value: 80_000 });
+    const serverOptimizeImage = vi.fn();
+
+    const uploaded = await processUploadQueueItemOptimization(item, {
+      presets,
+      notify: vi.fn(),
+      workerAvailable: true,
+      optimizeImage: vi.fn(async () => optimizedBlob),
+      optimizeAudio: vi.fn(),
+      checkOptimizerServer: vi.fn(async () => ({
+        image: true,
+        audio: false,
+        video: false,
+        thumbnail: false,
+        portrait: false,
+        maxFileSize: 200_000,
+      })),
+      serverOptimizeImage,
+      serverOptimizeAudio: vi.fn(),
+      serverOptimizeVideo: vi.fn(),
+    });
+
+    expect(serverOptimizeImage).not.toHaveBeenCalled();
+    expect(item.note).toContain("Skipped optimizer server");
+    expect(uploaded.name).toBe("hero-token.webp");
+    expect(uploaded.type).toBe("image/webp");
+  });
+
+  it("uses the documented default companion limit when health omits maxFileSize", async () => {
+    const largeFile = makeFile("Huge Map.png", 120_000_000, "image/png");
+    const item = makeItem({
+      file: largeFile,
+      originalName: largeFile.name,
+      outputName: "huge-map.webp",
+      preset: "map",
+      originalSize: largeFile.size,
+    });
+    const optimizedBlob = new Blob(["optimized-image"], { type: "image/webp" });
+    Object.defineProperty(optimizedBlob, "size", { value: 15_000_000 });
+    const serverOptimizeImage = vi.fn();
+
+    const uploaded = await processUploadQueueItemOptimization(item, {
+      presets,
+      notify: vi.fn(),
+      workerAvailable: true,
+      optimizeImage: vi.fn(async () => optimizedBlob),
+      optimizeAudio: vi.fn(),
+      checkOptimizerServer: vi.fn(async () => ({
+        image: true,
+        audio: false,
+        video: false,
+        thumbnail: false,
+        portrait: false,
+      })),
+      serverOptimizeImage,
+      serverOptimizeAudio: vi.fn(),
+      serverOptimizeVideo: vi.fn(),
+    });
+
+    expect(serverOptimizeImage).not.toHaveBeenCalled();
+    expect(item.note).toContain("Skipped optimizer server");
+    expect(uploaded.name).toBe("huge-map.webp");
+  });
+
   it("falls back to client image optimization when the server is unavailable", async () => {
     const item = makeItem();
     const optimizedBlob = new Blob(["optimized-image"], { type: "image/webp" });

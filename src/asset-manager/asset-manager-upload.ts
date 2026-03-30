@@ -69,6 +69,8 @@ export interface UploadQueueItem {
   optimizedSize: number;
   /** Error message if failed. */
   error?: string;
+  /** Supplemental note shown alongside success/error state. */
+  note?: string;
   /** Custom optimization settings from the upload dialog. */
   custom?: CustomOptSettings;
 }
@@ -235,12 +237,12 @@ export class UploadManager {
   #nextId = 0;
   #processing = false;
   #onUpdate: QueueUpdateFn;
-  #uploadFn: (file: File, name: string) => Promise<string>;
+  #uploadFn: (file: File, name: string) => Promise<string | null | undefined>;
   #onComplete: () => void;
 
   constructor(
     onUpdate: QueueUpdateFn,
-    uploadFn: (file: File, name: string) => Promise<string>,
+    uploadFn: (file: File, name: string) => Promise<string | null | undefined>,
     onComplete: () => void,
   ) {
     this.#onUpdate = onUpdate;
@@ -342,7 +344,10 @@ export class UploadManager {
 
     const uploadStart = performance.now();
     try {
-      await this.#uploadFn(fileToUpload, item.outputName);
+      const uploadedPath = await this.#uploadFn(fileToUpload, item.outputName);
+      if (!isValidUploadPath(uploadedPath)) {
+        throw new Error(describeEmptyUploadPathFailure(fileToUpload, item.outputName));
+      }
       const uploadMs = Math.round(performance.now() - uploadStart);
       item.status = "done";
       item.progress = 100;
@@ -351,7 +356,7 @@ export class UploadManager {
       Log.info(`Upload: DONE "${item.outputName}" (${formatBytes(fileToUpload.size)}) — upload ${uploadMs}ms, total ${totalMs}ms`);
     } catch (err) {
       item.status = "error";
-      item.error = err instanceof Error ? err.message : String(err);
+      item.error = describeUploadFailure(err, fileToUpload);
       const totalMs = Math.round(performance.now() - totalStart);
       Log.warn(`Upload: FAILED "${item.originalName}" after ${totalMs}ms`, err);
     }
@@ -542,6 +547,9 @@ export function buildUploadQueueHTML(queue: UploadQueueItem[]): string {
     const errorMsg = item.error
       ? `<span class="am-uq-error">${item.error}</span>`
       : "";
+    const noteMsg = item.note
+      ? `<span class="am-uq-note">${item.note}</span>`
+      : "";
 
     return `
       <div class="am-uq-item" data-status="${item.status}">
@@ -549,6 +557,7 @@ export function buildUploadQueueHTML(queue: UploadQueueItem[]): string {
         <span class="am-uq-name" title="${item.originalName}">${item.outputName}</span>
         ${savings}
         ${errorMsg}
+        ${noteMsg}
         <div class="am-uq-bar"><div class="am-uq-fill" style="width: ${item.progress}%"></div></div>
       </div>
     `;
@@ -559,11 +568,55 @@ export function buildUploadQueueHTML(queue: UploadQueueItem[]): string {
 
   return `
     <div class="am-uq-header">
-      <span class="am-uq-title">Uploads ${doneCount}/${totalCount}</span>
+      <div class="am-uq-heading">
+        <span class="am-uq-eyebrow">Upload queue</span>
+        <span class="am-uq-title">Uploads ${doneCount}/${totalCount}</span>
+      </div>
       <button class="am-uq-close" type="button" title="Close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="am-uq-list">${items}</div>
   `;
+}
+
+export function describeUploadFailure(err: unknown, file: File): string {
+  if (isHttp413(err)) {
+    const reason = extractErrorReason(err);
+    return `Upload exceeded the Foundry server limit for "${file.name}" (${formatBytes(file.size)}).${reason ? ` ${reason}` : ""} Try a smaller export, stronger optimization, or raise the server upload limit.`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
+export function describeEmptyUploadPathFailure(file: File, outputName: string): string {
+  return `Foundry accepted the upload request for "${outputName}" from "${file.name}" but returned no file path. This usually means the file exceeded the Foundry server upload limit (${formatBytes(file.size)}). Try a smaller export, stronger optimization, or raise the server upload limit.`;
+}
+
+function isValidUploadPath(path: string | null | undefined): path is string {
+  return typeof path === "string" && path.trim().length > 0;
+}
+
+function isHttp413(err: unknown): boolean {
+  if (!err || typeof err !== "object") {
+    return typeof err === "string" && /(413|request entity too large|payload too large)/i.test(err);
+  }
+
+  const record = err as Record<string, unknown>;
+  const message = typeof record.message === "string" ? record.message : "";
+  const code = typeof record.code === "string" ? record.code : "";
+  const status = typeof record.status === "number"
+    ? record.status
+    : typeof record.statusCode === "number"
+      ? record.statusCode
+      : null;
+
+  return status === 413 || /(413|request entity too large|payload too large)/i.test(`${message} ${code}`);
+}
+
+function extractErrorReason(err: unknown): string {
+  if (!err || typeof err !== "object") return "";
+  const record = err as Record<string, unknown>;
+  const message = typeof record.message === "string" ? record.message.trim() : "";
+  if (!message) return "";
+  return message.endsWith(".") ? message : `${message}.`;
 }
 
 /* ── Preset Selector HTML ─────────────────────────────────── */

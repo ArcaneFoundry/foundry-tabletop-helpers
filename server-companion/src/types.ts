@@ -31,6 +31,7 @@ export interface HealthResponse {
     video: boolean;
     thumbnail: boolean;
     portrait: boolean;
+    maxFileSize: number;
   };
   ffmpeg: string | null;
 }

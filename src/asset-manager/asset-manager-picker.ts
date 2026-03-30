@@ -30,6 +30,7 @@ import { AssetManagerPreviewController } from "./asset-manager-picker-preview";
 import { AssetManagerSelectionController } from "./asset-manager-picker-selection";
 import { AssetManagerStateController } from "./asset-manager-picker-state";
 import { AssetManagerUploadController } from "./asset-manager-picker-upload";
+import { formatBytes } from "./asset-manager-preview";
 import {
   buildBreadcrumbs,
   buildFilterChips,
@@ -212,6 +213,10 @@ export function registerAssetManagerPicker(): void {
     _amBatchRunning = false;
     /** Precomputed count of unoptimized files in _amFiltered. */
     _amUnoptCount = 0;
+    /** Optimizer server availability for server-only UI affordances. */
+    _amServerAvailable: boolean | null = null;
+    /** Human-readable optimizer server status text. */
+    _amServerStatusTitle = "Checking optimizer server...";
     /** Whether the shell has been injected and deferred populate is pending. */
     _amShellPending = false;
     /** Stable current path — survives multiple _onRender calls per render cycle. */
@@ -347,6 +352,8 @@ export function registerAssetManagerPicker(): void {
         sortField,
         sortDir,
         sidebarOpen,
+        serverAvailable: this._amServerAvailable,
+        serverStatusTitle: this._amServerStatusTitle,
       };
     }
 
@@ -898,28 +905,39 @@ export function registerAssetManagerPicker(): void {
       const wrap = root.querySelector<HTMLElement>(".am-server-status");
       if (!dot || !label || !wrap) return;
 
+      this._amServerAvailable = null;
+      this._amServerStatusTitle = "Checking optimizer server...";
+      wrap.title = this._amServerStatusTitle;
+
       checkOptimizerServer().then((caps) => {
         if (caps) {
           const parts: string[] = [];
           if (caps.image) parts.push("images");
           if (caps.audio) parts.push("audio");
           if (caps.video) parts.push("video");
+          const limit = typeof caps.maxFileSize === "number" && caps.maxFileSize > 0 ? `; upload limit ${formatBytes(caps.maxFileSize)}` : "";
+          this._amServerAvailable = true;
+          this._amServerStatusTitle = `Optimizer server connected — ${parts.join(", ")}${limit}`;
           dot.classList.remove("am-server-checking");
           dot.classList.add("am-server-online");
           label.textContent = "Server";
-          wrap.title = `Optimizer server connected — ${parts.join(", ")}`;
+          wrap.title = this._amServerStatusTitle;
         } else {
+          this._amServerAvailable = false;
+          this._amServerStatusTitle = "Optimizer server unavailable — using client-side optimization";
           dot.classList.remove("am-server-checking");
           dot.classList.add("am-server-offline");
           label.textContent = "Server";
-          wrap.title = "Optimizer server unavailable — using client-side optimization";
+          wrap.title = this._amServerStatusTitle;
         }
       }).catch(() => {
         if (!dot) return;
+        this._amServerAvailable = false;
+        this._amServerStatusTitle = "Optimizer server unavailable — using client-side optimization";
         dot.classList.remove("am-server-checking");
         dot.classList.add("am-server-offline");
         if (label) label.textContent = "Server";
-        if (wrap) wrap.title = "Optimizer server unavailable — using client-side optimization";
+        if (wrap) wrap.title = this._amServerStatusTitle;
       });
     }
 

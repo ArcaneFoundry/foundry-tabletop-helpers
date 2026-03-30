@@ -20,7 +20,10 @@ export interface ServerCapabilities {
   video: boolean;
   thumbnail: boolean;
   portrait: boolean;
+  maxFileSize?: number;
 }
+
+export const DEFAULT_OPTIMIZER_MAX_FILE_SIZE = 104_857_600;
 
 export interface OptimizeImageOptions {
   preset?: "token" | "portrait" | "map" | "icon" | "custom";

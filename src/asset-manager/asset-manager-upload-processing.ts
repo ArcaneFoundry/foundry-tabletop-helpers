@@ -1,4 +1,5 @@
 import { Log } from "../logger";
+import { DEFAULT_OPTIMIZER_MAX_FILE_SIZE } from "./asset-manager-optimizer-client";
 import { formatBytes } from "./asset-manager-preview";
 import { classifyExt, extname } from "./asset-manager-types";
 import {
@@ -47,7 +48,13 @@ export async function processUploadQueueItemOptimization(
     const caps = await deps.checkOptimizerServer();
     Log.info(`Upload: health check ${caps ? "OK" : "UNAVAILABLE"} (${Math.round(performance.now() - healthStart)}ms)`);
 
-    if (caps) {
+    const serverLimit = caps ? resolveOptimizerUploadLimit(caps.maxFileSize) : null;
+    const tooLargeForServer = !!serverLimit && item.file.size > serverLimit;
+    if (tooLargeForServer) {
+      item.note = `Skipped optimizer server: ${formatBytes(item.file.size)} exceeds its ${formatBytes(serverLimit)} upload limit.`;
+      Log.info(`Upload: skipping server optimization for "${item.originalName}" because ${formatBytes(item.file.size)} exceeds server limit ${formatBytes(serverLimit)}`);
+      deps.notify();
+    } else if (caps) {
       item.status = "optimizing";
       item.progress = 10;
       deps.notify();
@@ -60,6 +67,7 @@ export async function processUploadQueueItemOptimization(
       if (serverFile) {
         fileToUpload = serverFile.file;
         serverHandled = serverFile.handled;
+        item.note = undefined;
       }
     }
   }
@@ -124,6 +132,10 @@ export async function processUploadQueueItemOptimization(
   }
 
   return fileToUpload;
+}
+
+function resolveOptimizerUploadLimit(maxFileSize?: number): number {
+  return maxFileSize && maxFileSize > 0 ? maxFileSize : DEFAULT_OPTIMIZER_MAX_FILE_SIZE;
 }
 
 async function tryServerOptimization(
