@@ -181,7 +181,6 @@ const CC_TEXT_HERO = "text-[color:var(--cc-text-hero)]";
 const CC_TEXT_PRIMARY = "text-[color:var(--cc-text-primary)]";
 const CC_TEXT_SECONDARY = "text-[color:var(--cc-text-secondary)]";
 const CC_TEXT_KICKER = "text-[color:var(--cc-text-kicker)]";
-const CC_TEXT_ACCENT = "text-[color:var(--cc-text-accent)]";
 
 export function isClassFlowStep(stepId: string | undefined): boolean {
   return Boolean(stepId && CLASS_FLOW_STEP_IDS.has(stepId));

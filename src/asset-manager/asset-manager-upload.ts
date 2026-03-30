@@ -404,30 +404,6 @@ export class UploadManager {
   }
 }
 
-export function describeUploadFailure(err: unknown, file: File): string {
-  if (isHttp413(err)) {
-    return `Upload exceeded the Foundry server limit for "${file.name}" (${formatBytes(file.size)}). Try a smaller export, stronger optimization, or raise the server upload limit.`;
-  }
-  return err instanceof Error ? err.message : String(err);
-}
-
-function isHttp413(err: unknown): boolean {
-  if (!err || typeof err !== "object") {
-    return typeof err === "string" && /(413|request entity too large|payload too large)/i.test(err);
-  }
-
-  const record = err as Record<string, unknown>;
-  const message = typeof record.message === "string" ? record.message : "";
-  const code = typeof record.code === "string" ? record.code : "";
-  const status = typeof record.status === "number"
-    ? record.status
-    : typeof record.statusCode === "number"
-      ? record.statusCode
-      : null;
-
-  return status === 413 || /(413|request entity too large|payload too large)/i.test(`${message} ${code}`);
-}
-
 /* ── Batch Optimization ───────────────────────────────────── */
 
 export interface BatchOptResult {
