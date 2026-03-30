@@ -347,6 +347,10 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("Chosen Weapons");
     expect(markup).toContain("Mastery Techniques");
     expect(markup).toContain("cc-class-choice-layout--weapon-masteries");
+    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-hero)]");
+    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
     expect(optionsPanelIndex).toBeGreaterThanOrEqual(0);
     expect(railIndex).toBeGreaterThan(optionsPanelIndex);
     expect(simpleIndex).toBeGreaterThanOrEqual(0);
@@ -459,6 +463,10 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("Selected Features");
     expect(markup).toContain('data-choice-state="selected"');
     expect(markup).toContain('data-choice-state="available"');
+    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-hero)]");
+    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
     expect(markup).not.toContain("Chosen");
   });
 
@@ -485,5 +493,8 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain(statusLabel);
     expect(markup).toContain(summaryLabel);
     expect(markup).toContain(selectedTitle);
+    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-hero)]");
   });
 });

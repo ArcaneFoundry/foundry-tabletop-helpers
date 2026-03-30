@@ -75,6 +75,9 @@ describe("class stepper layout", () => {
     expect(markup).toContain('data-layout-mode="compact"');
     expect(markup.match(/fth-class-stepper__compact-row/g)).toHaveLength(2);
     expect(markup).toContain("fth-class-stepper__connector");
+    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
+    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
+    expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
     expect(markup).not.toContain("Skills");
     expect(markup).not.toContain("Expertise");
   });
@@ -90,6 +93,8 @@ describe("class stepper layout", () => {
     expect(markup).not.toContain("fth-class-stepper__compact-row");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Expertise");
+    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
+    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
   });
 
   it("measures immediately and responds to resize events", () => {

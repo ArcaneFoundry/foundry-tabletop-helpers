@@ -41,6 +41,10 @@ const CLASS_THEMES: Record<string, { ribbon: string; frame: string; glow: string
   wizard: { ribbon: "from-[#3f506a] to-[#1a2230]", frame: "#7ea3d5", glow: "rgba(111,154,215,0.34)", crest: "fa-solid fa-hat-wizard" },
 };
 
+const CC_TEXT_HERO = "text-[color:var(--cc-text-hero)]";
+const CC_TEXT_PRIMARY = "text-[color:var(--cc-text-primary)]";
+const CC_TEXT_SECONDARY = "text-[color:var(--cc-text-secondary)]";
+
 export function ClassStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
   const initialViewModel = shellContext.stepViewModel as ClassStepViewModel | undefined;
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -242,7 +246,8 @@ export function ClassAggregateStepper({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       aria-label="Class Selection Progress"
       className={cn(
-        "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[#bea37d]/55 text-[#5e4330]",
+        "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[#bea37d]/55",
+        CC_TEXT_SECONDARY,
         isCompactLayout
           ? "fth-class-stepper--compact max-w-4xl gap-3 pb-4"
           : "fth-class-stepper--wide max-w-5xl gap-3 pb-4",
@@ -433,16 +438,16 @@ function getMilestoneTransition(status: ClassAggregatePresentationStatus, prefer
 function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return "border-[#bf8b37] bg-[radial-gradient(circle_at_35%_28%,#fff4d6,#f1d18a_52%,#cb9643)] text-[#5b3816]";
+      return `border-[#bf8b37] bg-[radial-gradient(circle_at_35%_28%,#fff4d6,#f1d18a_52%,#cb9643)] ${CC_TEXT_HERO}`;
     case "in-progress":
-      return "border-[#c59b5c] bg-[radial-gradient(circle_at_35%_28%,#fff5df,#ead1a2_42%,#d2a25d)] text-[#543419]";
+      return `border-[#c59b5c] bg-[radial-gradient(circle_at_35%_28%,#fff5df,#ead1a2_42%,#d2a25d)] ${CC_TEXT_HERO}`;
     case "complete":
     case "collapsed-complete":
-      return "border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] text-[#4b3114]";
+      return `border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] ${CC_TEXT_HERO}`;
     case "skipped":
-      return "border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] text-[#8f7e69]";
+      return `border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] ${CC_TEXT_PRIMARY}`;
     default:
-      return "border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] text-[#6b4d37]";
+      return `border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] ${CC_TEXT_PRIMARY}`;
   }
 }
 
@@ -463,14 +468,14 @@ function getMilestoneHaloClassName(status: ClassAggregatePresentationStatus) {
 function getMilestoneLabelClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return "text-[#f8e8c8]";
+      return CC_TEXT_HERO;
     case "in-progress":
-      return "text-[#f8e6c4]";
+      return CC_TEXT_HERO;
     case "complete":
     case "collapsed-complete":
-      return "text-[#f4dfb6]";
+      return CC_TEXT_HERO;
     default:
-      return "text-[#f2e4ca]";
+      return CC_TEXT_PRIMARY;
   }
 }
 
@@ -492,14 +497,14 @@ function getMilestoneLabelSurfaceClassName(status: ClassAggregatePresentationSta
 
 function getSubstepChipClassName(step: ClassAggregateSubstepNode) {
   if (step.active) {
-    return "border-[#d5ae71]/55 bg-[linear-gradient(180deg,rgba(92,59,29,0.8),rgba(43,28,16,0.92))] text-[#f7e5c2]";
+    return `border-[#d5ae71]/55 bg-[linear-gradient(180deg,rgba(92,59,29,0.8),rgba(43,28,16,0.92))] ${CC_TEXT_HERO}`;
   }
 
   if (step.status === "complete") {
-    return "border-[#c89d56]/42 bg-[linear-gradient(180deg,rgba(77,50,25,0.74),rgba(39,26,15,0.86))] text-[#edd8b0]";
+    return `border-[#c89d56]/42 bg-[linear-gradient(180deg,rgba(77,50,25,0.74),rgba(39,26,15,0.86))] ${CC_TEXT_HERO}`;
   }
 
-  return "border-white/12 bg-[rgba(255,255,255,0.06)] text-[#ead9bb]";
+  return `border-white/12 bg-[rgba(255,255,255,0.06)] ${CC_TEXT_SECONDARY}`;
 }
 
 function ClassCard({
@@ -546,7 +551,7 @@ function ClassCard({
           )}
         >
           <div className="pointer-events-none absolute inset-x-2 top-0 h-px bg-[rgba(255,238,207,0.52)]" />
-          <div className="font-fth-cc-display text-center text-[1.05rem] uppercase tracking-[0.04em] text-[#f7e5bf] md:text-[1.2rem]">
+          <div className={cn("font-fth-cc-display text-center text-[1.05rem] uppercase tracking-[0.04em] md:text-[1.2rem]", CC_TEXT_HERO)}>
             {entry.name}
           </div>
         </motion.div>
@@ -594,7 +599,7 @@ function ClassCard({
           {selected ? (
             <motion.div
               animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-              className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#f2d48f]/70 bg-[radial-gradient(circle_at_35%_35%,rgba(247,214,145,0.95),rgba(182,120,38,0.92))] text-white shadow-[0_6px_12px_rgba(0,0,0,0.24)]"
+              className={cn("pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#f2d48f]/70 bg-[radial-gradient(circle_at_35%_35%,rgba(247,214,145,0.95),rgba(182,120,38,0.92))] shadow-[0_6px_12px_rgba(0,0,0,0.24)]", CC_TEXT_HERO)}
               initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.72, y: 6 }}
               transition={prefersReducedMotion ? { duration: 0.16 } : { type: "spring", stiffness: 460, damping: 24, mass: 0.75 }}
             >
@@ -623,14 +628,14 @@ function InfoChip({
     <motion.span
       animate={prefersReducedMotion ? undefined : "show"}
       aria-label={label}
-      className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border border-[#efd29a]/60 bg-[linear-gradient(180deg,rgba(35,22,15,0.55),rgba(22,14,10,0.86))] px-2 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] text-[#f6deb0] shadow-[0_8px_16px_rgba(0,0,0,0.2)] backdrop-blur-[2px]"
+      className={cn("inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border border-[#efd29a]/60 bg-[linear-gradient(180deg,rgba(35,22,15,0.55),rgba(22,14,10,0.86))] px-2 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em] shadow-[0_8px_16px_rgba(0,0,0,0.2)] backdrop-blur-[2px]", CC_TEXT_SECONDARY)}
       initial={prefersReducedMotion ? false : "hidden"}
       variants={{
         hidden: { opacity: 0, x: -6, scale: 0.96 },
         show: { opacity: 1, x: 0, scale: 1 },
       }}
     >
-      <i aria-hidden="true" className={cn(icon, "shrink-0 text-[0.7rem] text-[#f7d691]")} />
+      <i aria-hidden="true" className={cn(icon, "shrink-0 text-[0.7rem]", CC_TEXT_HERO)} />
       <span className="min-w-0 truncate">{value}</span>
     </motion.span>
   );
@@ -645,13 +650,13 @@ function EmptyState({ message, prefersReducedMotion }: { message: string; prefer
         initial={prefersReducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }}
         transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#ba8e5d]/65 bg-[radial-gradient(circle_at_35%_35%,#f7d691,#b67826)] text-white shadow-lg">
+        <div className={cn("mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#ba8e5d]/65 bg-[radial-gradient(circle_at_35%_35%,#f7d691,#b67826)] shadow-lg", CC_TEXT_HERO)}>
           <i className="fa-solid fa-triangle-exclamation text-xl" aria-hidden="true" />
         </div>
-        <p className="cc-theme-title font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em] text-[#4c3524]">
+        <p className={cn("cc-theme-title font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em]", CC_TEXT_PRIMARY)}>
           No Classes Available
         </p>
-        <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[1.1rem] leading-7 text-[#5f4738]">{message}</p>
+        <p className={cn("cc-theme-body-muted mt-3 font-fth-cc-body text-[1.1rem] leading-7", CC_TEXT_SECONDARY)}>{message}</p>
       </motion.div>
     </div>
   );
