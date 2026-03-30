@@ -408,8 +408,7 @@ function ArcaneStepFrame({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("cc-theme-shell-inner relative flex flex-col rounded-[1.45rem]", `cc-cinematic-step cc-cinematic-step--${scene}`)}>
-      <div className="cc-theme-hero-shell absolute inset-0" />
+    <section className="cc-theme-shell-inner relative isolate flex flex-col rounded-[1.45rem] border shadow-[inset_0_1px_0_color-mix(in_srgb,white_3%,transparent),0_22px_42px_color-mix(in_srgb,var(--cc-bg-base)_22%,transparent)]" data-scene={scene}>
       <div className="relative z-10 flex flex-col gap-5 p-5 xl:p-6">
         {children}
       </div>

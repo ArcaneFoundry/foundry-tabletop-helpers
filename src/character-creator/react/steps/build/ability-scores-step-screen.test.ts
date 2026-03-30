@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { AbilityScoresStepScreen } from "./ability-scores-step-screen";
+import { AbilityScoresStepScreen, __abilityScoresInternals } from "./ability-scores-step-screen";
 
 describe("AbilityScoresStepScreen", () => {
   it("renders the point-buy method rail, budget HUD, and upgraded score cards", () => {
@@ -78,8 +78,11 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("15");
     expect(markup).toContain("Base score only");
     expect(markup).toContain("Point Cost Reference");
+    expect(markup).toContain("cc-theme-header--hero");
+    expect(markup).toContain("cc-theme-panel--soft");
     expect(markup).toContain("cc-method-tabs");
     expect(markup).toContain("cc-method-panel");
+    expect(markup).not.toContain("bg-black/20");
     expect(markup).not.toContain("overflow-y-auto");
   });
 
@@ -130,6 +133,10 @@ describe("AbilityScoresStepScreen", () => {
         },
         state: {
           selections: {
+            class: {
+              identifier: "fighter",
+              primaryAbilities: ["str", "dex"],
+            },
             abilities: {
               method: "4d6",
               scores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
@@ -149,8 +156,48 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("Ritual / Dice-Driven");
     expect(markup).toContain("Roll 4d6");
     expect(markup).toContain("Reroll All");
-    expect(markup).toContain("Results ready for assignment");
+    expect(markup).toContain("Quick Assign");
+    expect(markup).toContain("Strength / Dexterity");
+    expect(markup).toContain("Quick assigns Strength / Dexterity first");
     expect(markup).toContain("Dice Ritual");
+  });
+
+  it("quick assigns rolled values by class priority before the remaining abilities", () => {
+    const nextState = __abilityScoresInternals.buildQuickAssignedAbilityState(
+      {
+        selections: {
+          class: {
+            identifier: "fighter",
+            primaryAbilities: ["str", "dex"],
+          },
+        },
+      } as never,
+      {
+        method: "4d6",
+        scores: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 },
+        assignments: { str: -1, dex: -1, con: -1, int: -1, wis: -1, cha: -1 },
+        rolledValues: [13, 7, 14, 9, 16, 6],
+        rerollCount: 1,
+      } as never,
+    );
+
+    expect(nextState).not.toBeNull();
+    expect(nextState?.scores).toMatchObject({
+      str: 16,
+      dex: 14,
+      con: 13,
+      wis: 9,
+      int: 7,
+      cha: 6,
+    });
+    expect(nextState?.assignments).toMatchObject({
+      str: 4,
+      dex: 2,
+      con: 0,
+      wis: 3,
+      int: 1,
+      cha: 5,
+    });
   });
 
   it("renders assignment controls with summary and open states for the standard array path", () => {

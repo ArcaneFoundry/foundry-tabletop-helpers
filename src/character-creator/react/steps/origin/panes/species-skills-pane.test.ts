@@ -83,6 +83,8 @@ describe("SpeciesSkillsPane", () => {
     expect(markup).toContain("1 / 2 chosen");
     expect(markup).toContain("1 remaining");
     expect(markup).toContain("Select Species Skills");
+    expect(markup).toContain("cc-theme-panel--soft");
+    expect(markup).toContain("cc-theme-card--selected");
     expect(markup).toContain("Required Skills");
     expect(markup).toContain("Chosen Skills");
     expect(markup).toContain("Already Claimed");

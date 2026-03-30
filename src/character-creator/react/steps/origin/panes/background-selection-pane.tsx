@@ -7,6 +7,7 @@ import { buildBackgroundSelectionFromEntry } from "../../../../steps/step-backgr
 import { cn } from "../../../../../ui/lib/cn";
 import type { OriginPaneProps, OriginGalleryMetaItem } from "../components/origin-pane-primitives";
 import {
+  buildOriginDuplicateDisambiguator,
   OriginDetailModal,
   OriginGalleryCard,
   SelectionPane,
@@ -80,7 +81,7 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
       <SelectionPane
         description="Choose the life your character led before the road called them onward."
         emptyState={
-          <div className="rounded-[1.1rem] border border-dashed border-[#e9c176]/30 bg-[rgba(19,17,23,0.72)] px-4 py-5 font-fth-cc-body text-[#d1c4c6]">
+          <div className="cc-theme-empty rounded-[1.1rem] border border-dashed px-4 py-5 font-fth-cc-body">
             {viewModel?.emptyMessage ?? "No backgrounds available."}
           </div>
         }
@@ -148,6 +149,8 @@ export function BackgroundSelectionPane({ shellContext, state, controller, prefe
                 </>
               ) : undefined}
               meta={selectedMeta}
+              variantLabel={buildOriginDuplicateDisambiguator(entry, entries)}
+              sourceLabel={entry.packLabel}
               onSelect={() => {
                 void (async () => {
                   const selection = await buildBackgroundSelectionFromEntry(entry);

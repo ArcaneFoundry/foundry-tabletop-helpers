@@ -156,6 +156,29 @@ function createAdvancementViewModel(type: "expertise" | "languages" | "tools") {
 }
 
 describe("ClassFlowRouteHost", () => {
+  it("renders a parchment-first hero banner on the initial class step", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ClassFlowRouteHost, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "class",
+          steps: createSteps(),
+        },
+        state: createState(),
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain('data-class-hero-banner="true"');
+    expect(markup).toContain("Character Creation");
+    expect(markup).toContain("Choose Your Class");
+    expect(markup).toContain("Class Flow");
+    expect(markup).toContain("Choose the class that sets your hero on the first steps of the build.");
+    expect(markup).not.toContain("fighter's training");
+  });
+
   it("renders class skill groups in canonical order with nested row indentation", () => {
     const markup = renderToStaticMarkup(
       createElement(ClassFlowRouteHost, {

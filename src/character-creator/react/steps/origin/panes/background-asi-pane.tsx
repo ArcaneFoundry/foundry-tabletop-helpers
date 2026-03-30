@@ -6,6 +6,8 @@ import {
   CompactMetaChips,
 } from "../components/origin-pane-primitives";
 
+type BackgroundAsiMode = "background" | "class";
+
 type BackgroundAsiViewModel = {
   backgroundName: string;
   backgroundImg: string;
@@ -19,11 +21,71 @@ type BackgroundAsiViewModel = {
   }>;
   asiPointsUsed: number;
   asiPoints: number;
+  hasClassRecommendations: boolean;
 };
+
+type BackgroundAsiAbility = BackgroundAsiViewModel["asiAbilities"][number];
+type BackgroundAsiQuickPickMode = "background" | "class";
 
 type BackgroundAsiPaneProps = OriginPaneProps & {
   prefersReducedMotion: boolean;
 };
+
+export function buildBackgroundAsiQuickPickAssignments(
+  abilities: BackgroundAsiAbility[],
+  points: number,
+  mode: BackgroundAsiQuickPickMode,
+): Record<string, number> {
+  const prioritized = [...abilities].map((ability, index) => ({
+    ability,
+    index,
+    maxValue: Math.max(...ability.options.map((option) => option.value)),
+    priority: mode === "background"
+      ? [
+        ability.backgroundSuggested ? 2 : 0,
+        ability.classRecommended ? 1 : 0,
+        ability.emphasized ? 1 : 0,
+        -index,
+      ]
+      : [
+        ability.classRecommended ? 2 : 0,
+        ability.backgroundSuggested ? 1 : 0,
+        ability.emphasized ? 1 : 0,
+        -index,
+      ],
+  }))
+    .sort((left, right) => {
+      for (let i = 0; i < left.priority.length; i += 1) {
+        if (left.priority[i] !== right.priority[i]) return right.priority[i] - left.priority[i];
+      }
+      return left.index - right.index;
+    });
+
+  const nextAssignments: Record<string, number> = {};
+  let remaining = points;
+
+  for (const item of prioritized) {
+    if (remaining <= 0) break;
+    if (item.maxValue < 1) continue;
+    nextAssignments[item.ability.key] = 1;
+    remaining -= 1;
+  }
+
+  if (remaining > 0) {
+    for (const item of prioritized) {
+      if (remaining <= 0) break;
+      const currentValue = nextAssignments[item.ability.key] ?? 0;
+      const maxValue = item.maxValue;
+      if (currentValue >= maxValue) continue;
+
+      const nextValue = Math.min(maxValue, currentValue + remaining);
+      nextAssignments[item.ability.key] = nextValue;
+      remaining -= nextValue - currentValue;
+    }
+  }
+
+  return nextAssignments;
+}
 
 export function BackgroundAsiPane({ shellContext, state, controller, prefersReducedMotion }: BackgroundAsiPaneProps) {
   const viewModel = shellContext.stepViewModel as BackgroundAsiViewModel | undefined;
@@ -32,6 +94,11 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
 
   const totalUsed = Object.values(background.asi.assignments).reduce((sum, value) => sum + (value ?? 0), 0);
   const remainingPoints = Math.max(0, viewModel.asiPoints - totalUsed);
+
+  const applyQuickAssign = (mode: BackgroundAsiMode) => {
+    background.asi.assignments = buildBackgroundAsiQuickPickAssignments(viewModel.asiAbilities, viewModel.asiPoints, mode);
+    void controller.refresh();
+  };
 
   const applyValue = (abilityKey: string, value: number) => {
     const nextAssignments = { ...background.asi.assignments };
@@ -53,13 +120,33 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
               Background Ability Scores
             </div>
           </div>
-          <CompactMetaChips
-            chips={[
-              `${totalUsed}/${viewModel.asiPoints} spent`,
-              remainingPoints > 0 ? `${remainingPoints} remaining` : "Fully assigned",
-            ]}
-            tone="dark"
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              className="cc-theme-badge cc-theme-badge--muted rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.16em] transition hover:brightness-[1.03]"
+              disabled={remainingPoints <= 0}
+              onClick={() => applyQuickAssign("background")}
+              type="button"
+            >
+              Apply Background Suggestions
+            </button>
+            {viewModel.hasClassRecommendations ? (
+              <button
+                className="cc-theme-badge cc-theme-badge--muted rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.16em] transition hover:brightness-[1.03]"
+                disabled={remainingPoints <= 0}
+                onClick={() => applyQuickAssign("class")}
+                type="button"
+              >
+                Apply Class Synergy
+              </button>
+            ) : null}
+            <CompactMetaChips
+              chips={[
+                `${totalUsed}/${viewModel.asiPoints} spent`,
+                remainingPoints > 0 ? `${remainingPoints} remaining` : "Fully assigned",
+              ]}
+              tone="dark"
+            />
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -156,3 +243,7 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
     </section>
   );
 }
+
+export const __backgroundAsiPaneInternals = {
+  buildBackgroundAsiQuickPickAssignments,
+};

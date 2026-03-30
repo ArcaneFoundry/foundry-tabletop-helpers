@@ -4,6 +4,8 @@ import type { LevelUpState } from "../level-up-types";
 
 const loadPacksMock = vi.fn(async () => {});
 const getIndexedEntriesMock = vi.fn();
+const resolveClassSpellUuidsMock = vi.fn(async () => null);
+const fromUuidMock = vi.fn(async () => null);
 
 vi.mock("../../../logger", () => ({
   MOD: "foundry-tabletop-helpers",
@@ -16,10 +18,25 @@ vi.mock("../../data/compendium-indexer", () => ({
   },
 }));
 
+vi.mock("../../data/spell-list-resolver", () => ({
+  resolveClassSpellUuids: resolveClassSpellUuidsMock,
+}));
+
+vi.mock("../../../types", async () => {
+  const actual = await vi.importActual<typeof import("../../../types")>("../../../types");
+  return {
+    ...actual,
+    fromUuid: fromUuidMock,
+  };
+});
+
 class FakeElement {
   dataset: Record<string, string> = {};
   style = { display: "" };
   value = "";
+  classList = {
+    toggle: vi.fn(),
+  };
   private readonly listeners = new Map<string, Array<() => void>>();
   private readonly selectorMap = new Map<string, unknown>();
   private readonly selectorAllMap = new Map<string, unknown[]>();
@@ -73,29 +90,42 @@ function makeState(overrides: Partial<LevelUpState> = {}): LevelUpState {
       },
     },
     stepStatus: new Map(),
-    classItems: [],
+    classItems: [
+      {
+        itemId: "class-1",
+        name: "Wizard",
+        identifier: "wizard",
+        levels: 3,
+        hitDie: "d6",
+        advancement: [],
+      },
+    ],
     ...overrides,
   };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resolveClassSpellUuidsMock.mockResolvedValue(null);
   getIndexedEntriesMock.mockReturnValue([
     {
       uuid: "Compendium.dnd5e.spells.Item.light",
       name: "Light",
+      img: "light.png",
       spellLevel: 0,
       school: "evo",
     },
     {
       uuid: "Compendium.dnd5e.spells.Item.magicMissile",
       name: "Magic Missile",
+      img: "magic-missile.png",
       spellLevel: 1,
       school: "evo",
     },
     {
       uuid: "Compendium.dnd5e.spells.Item.fireball",
       name: "Fireball",
+      img: "fireball.png",
       spellLevel: 3,
       school: "evo",
     },
@@ -135,26 +165,42 @@ describe("level-up step spells", () => {
     expect(viewModel).toMatchObject({
       newSpellCount: 1,
       newCantripCount: 1,
-      hasCantrips: true,
-      hasSpells: true,
+      hasCantripChoices: true,
+      hasSpellChoices: true,
       hasCurrentSpells: true,
       maxSpellLevel: 2,
       className: "Wizard",
       targetLevel: 4,
+      selectionSummary: "1 / 1 cantrips, 1 / 2 spells",
     });
 
     expect((viewModel.cantrips as Array<{ name: string; selected: boolean }>)).toEqual([
       expect.objectContaining({ name: "Light", selected: true, schoolLabel: "Evocation" }),
     ]);
-    expect((viewModel.spells as Array<{ name: string }>).map((spell) => spell.name)).toEqual(["Magic Missile"]);
-    expect(viewModel.currentSpells).toEqual([{ id: "spell-1", name: "Shield", level: 1 }]);
+    expect((viewModel.spellsByLevel as Array<{ spells: Array<{ name: string }> }>)[0]?.spells.map((spell) => spell.name)).toEqual(["Magic Missile"]);
+    expect(viewModel.currentSpells).toEqual([
+      expect.objectContaining({ id: "spell-1", name: "Shield", level: 1 }),
+    ]);
   });
 
-  it("exposes helper internals for max spell level and actor item normalization", async () => {
+  it("exposes helper internals for normalization and actor item access", async () => {
     const { __luStepSpellsInternals } = await import("./lu-step-spells");
 
-    expect(__luStepSpellsInternals.getMaxSpellLevel(17)).toBe(9);
-    expect(__luStepSpellsInternals.getMaxSpellLevel(5)).toBe(3);
+    expect(__luStepSpellsInternals.normalizeChoice({
+      newSpellUuids: ["spell-a", "spell-a"],
+      swappedOutUuids: ["old-a", "old-b"],
+      swappedInUuids: ["new-a", "spell-a"],
+      newCantripUuids: ["cantrip-a", "cantrip-a"],
+    }, {
+      newCantrips: 1,
+      newSpells: 1,
+      swapLimit: 1,
+    })).toEqual({
+      newSpellUuids: ["spell-a"],
+      swappedOutUuids: ["old-a"],
+      swappedInUuids: ["new-a"],
+      newCantripUuids: ["cantrip-a"],
+    });
     expect(__luStepSpellsInternals.getActorItems({
       id: "actor-1",
       items: new Set([{ id: "spell-1", type: "spell" }]),
@@ -171,19 +217,27 @@ describe("level-up step spells", () => {
 
     const cantripCard = new FakeElement();
     cantripCard.dataset.cantripUuid = "Compendium.dnd5e.spells.Item.light";
+    cantripCard.dataset.spellName = "light";
+    cantripCard.dataset.spellSchool = "evo";
     const spellCard = new FakeElement();
     spellCard.dataset.spellUuid = "Compendium.dnd5e.spells.Item.magicMissile";
+    spellCard.dataset.spellName = "magic missile";
+    spellCard.dataset.spellSchool = "evo";
     const searchInput = new FakeElement();
     const visibleRow = new FakeElement();
     visibleRow.dataset.spellName = "magic missile";
+    visibleRow.dataset.spellSchool = "evo";
     const hiddenRow = new FakeElement();
     hiddenRow.dataset.spellName = "fireball";
+    hiddenRow.dataset.spellSchool = "evo";
 
     const root = new FakeElement();
     root.setQuerySelectorAll("[data-cantrip-uuid]", [cantripCard]);
     root.setQuerySelectorAll("[data-spell-uuid]", [spellCard]);
+    root.setQuerySelectorAll("[data-filter-card]", [visibleRow, hiddenRow]);
+    root.setQuerySelectorAll("[data-school-filter-button]", []);
+    root.setQuerySelectorAll("[data-preview-uuid]", []);
     root.setQuerySelector("[data-spell-search]", searchInput);
-    root.setQuerySelectorAll("[data-spell-name]", [visibleRow, hiddenRow]);
 
     step.onActivate?.(makeState(), root as unknown as HTMLElement, {
       setData,

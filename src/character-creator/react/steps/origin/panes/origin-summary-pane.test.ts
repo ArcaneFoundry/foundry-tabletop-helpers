@@ -65,6 +65,9 @@ describe("OriginSummaryPane", () => {
 
     expect(markup).toContain("Origin Summary");
     expect(markup).toContain("Origins Recap");
+    expect(markup).toContain("cc-theme-panel--soft");
+    expect(markup).toContain("cc-theme-card--raised");
+    expect(markup).toContain("cc-theme-card--soft");
     expect(markup).toContain("Fixed Origin Grants");
     expect(markup).toContain("Chosen Origin Grants");
     expect(markup).toContain("Origin Feat");

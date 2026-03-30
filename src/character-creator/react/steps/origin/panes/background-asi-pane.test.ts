@@ -23,7 +23,7 @@ vi.mock("motion/react", async () => {
   };
 });
 
-import { BackgroundAsiPane } from "./background-asi-pane";
+import { BackgroundAsiPane, __backgroundAsiPaneInternals } from "./background-asi-pane";
 
 describe("BackgroundAsiPane", () => {
   it("renders the simplified allocator with budget-aware option copy", () => {
@@ -161,5 +161,57 @@ describe("BackgroundAsiPane", () => {
     expect(markup).toContain("relative z-10 p-3");
     expect(markup).not.toContain("data-origins-background-asi-scroll");
     expect(markup).not.toContain("overflow-y-auto");
+  });
+
+  it("builds a legal quick-pick spread that prefers the requested priority mode", () => {
+    const assignments = __backgroundAsiPaneInternals.buildBackgroundAsiQuickPickAssignments(
+      [
+        {
+          key: "int",
+          label: "Intelligence",
+          backgroundSuggested: true,
+          classRecommended: true,
+          emphasized: true,
+          options: [
+            { value: 0, label: "+0", selected: false },
+            { value: 1, label: "+1", selected: false },
+            { value: 2, label: "+2", selected: false },
+          ],
+        },
+        {
+          key: "wis",
+          label: "Wisdom",
+          backgroundSuggested: true,
+          classRecommended: false,
+          emphasized: true,
+          options: [
+            { value: 0, label: "+0", selected: false },
+            { value: 1, label: "+1", selected: false },
+            { value: 2, label: "+2", selected: false },
+          ],
+        },
+        {
+          key: "cha",
+          label: "Charisma",
+          backgroundSuggested: false,
+          classRecommended: true,
+          emphasized: true,
+          options: [
+            { value: 0, label: "+0", selected: false },
+            { value: 1, label: "+1", selected: false },
+            { value: 2, label: "+2", selected: false },
+          ],
+        },
+      ],
+      3,
+      "background",
+    );
+
+    expect(Object.values(assignments).reduce((sum, value) => sum + value, 0)).toBe(3);
+    expect(assignments).toMatchObject({
+      int: 1,
+      wis: 1,
+      cha: 1,
+    });
   });
 });

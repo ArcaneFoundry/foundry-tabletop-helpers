@@ -758,6 +758,13 @@ export interface WizardShellContext {
   /** Short status hint for the navigation bar */
   statusHint: string;
   statusHintStyle?: "progress" | "selection" | "warning" | "summary";
+  localProgress?: {
+    current: number;
+    total: number;
+    percent: number;
+    label: string;
+    detail?: string;
+  };
   /** Atmospheric gradient class for current step */
   atmosphereClass: string;
   chapterKey?: "class" | "origins" | "build" | "finalize";

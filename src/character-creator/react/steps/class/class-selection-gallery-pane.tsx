@@ -19,8 +19,8 @@ export function ClassSelectionGalleryPane<TEntry>({
   if (entries.length === 0) return <>{emptyState}</>;
 
   return (
-    <div className="cc-class-selection-pane relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] border border-[#e9c176]/[0.14] pb-2 pt-2 shadow-[inset_0_1px_0_rgba(255,248,233,0.03),0_22px_42px_rgba(0,0,0,0.22)]">
-      <div className="cc-class-selection-pane__gallery-shell relative z-[1] w-full min-w-0 rounded-[1.25rem] border border-[#e9c176]/[0.13] shadow-[inset_0_1px_0_rgba(255,243,219,0.03),0_18px_34px_rgba(0,0,0,0.24)]">
+    <div className="cc-class-selection-pane cc-theme-panel cc-theme-panel--soft relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] border pb-2 pt-2">
+      <div className="cc-class-selection-pane__gallery-shell relative z-[1] w-full min-w-0 rounded-[1.25rem] border border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_68%,transparent)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_14%,transparent),0_18px_34px_color-mix(in_srgb,var(--cc-bg-base)_14%,transparent)]">
         <div className="cc-class-selection-pane__gallery-inner w-full min-w-0 px-2">
           <motion.div
             animate={prefersReducedMotion ? undefined : "show"}

@@ -75,6 +75,8 @@ describe("BackgroundSkillConflictPane", () => {
     expect(markup).toContain("Replacements remaining");
     expect(markup).toContain("Chosen replacements");
     expect(markup).toContain("Decision Surface");
+    expect(markup).toContain("cc-theme-panel--soft");
+    expect(markup).toContain("cc-theme-card--selected");
     expect(markup).toContain("Fixed Background Skills (2)");
     expect(markup).toContain("Retained Class Skills (1)");
     expect(markup).toContain("Overlapping Skills (1)");

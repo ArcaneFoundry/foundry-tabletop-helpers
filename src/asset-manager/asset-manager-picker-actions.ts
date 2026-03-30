@@ -1,6 +1,8 @@
+import { getUI } from "../types";
 import { Log } from "../logger";
 import { getBrowseCache } from "./asset-manager-browse-cache";
 import {
+  checkOptimizerServer,
   getThumbCacheStats,
   invalidateThumbStats,
   serverDeleteFile,
@@ -29,6 +31,14 @@ export class AssetManagerActionController {
   async deleteSelected(root: HTMLElement): Promise<void> {
     const targets = this.getDeleteTargets(root);
     if (targets.length === 0) return;
+    const caps = await checkOptimizerServer();
+    if (!caps) {
+      this.showUnavailableMessage(
+        root,
+        "Deletion requires the optimizer server. The current server connection is unavailable.",
+      );
+      return;
+    }
 
     const folders = targets.filter((path) => this.deps.getEntries().some((entry) => entry.path === path && entry.isDir));
     const files = targets.filter((path) => !folders.includes(path));
@@ -126,6 +136,18 @@ export class AssetManagerActionController {
 
     const selected = root.querySelector<HTMLElement>(".am-selected[data-am-path]");
     return selected?.dataset.amPath ? [selected.dataset.amPath] : [];
+  }
+
+  private showUnavailableMessage(root: HTMLElement, message: string): void {
+    const statusCount = root.querySelector<HTMLElement>(".am-status-count");
+    const originalText = statusCount?.textContent ?? "";
+    if (statusCount) {
+      statusCount.textContent = message;
+      setTimeout(() => {
+        if (statusCount.textContent === message) statusCount.textContent = originalText;
+      }, 4000);
+    }
+    getUI()?.notifications?.warn?.(message);
   }
 
   private async confirmDelete(folders: string[], files: string[]): Promise<boolean> {

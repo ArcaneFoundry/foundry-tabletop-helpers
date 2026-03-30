@@ -1,0 +1,257 @@
+.fth-soundscape-studio,
+.fth-soundscape-live-controls {
+  --ss-bg-shell: var(--fth-theme-backdrop-image);
+  --ss-surface-panel: var(--fth-theme-panel-image);
+  --ss-surface-panel-alt: var(--fth-theme-panel-image-alt);
+  --ss-surface-panel-header: var(--fth-theme-panel-image-header);
+  --ss-surface-card: color-mix(in srgb, var(--fth-color-surface-glass) 92%, var(--fth-color-surface) 8%);
+  --ss-surface-card-hover: color-mix(in srgb, var(--fth-color-surface-glass-strong) 78%, var(--fth-color-surface-elevated) 22%);
+  --ss-surface-inset: color-mix(in srgb, var(--fth-color-surface-inset) 86%, var(--fth-color-canvas) 14%);
+  --ss-surface-selected: var(--fth-theme-card-selected-bg);
+  --ss-surface-chip: var(--fth-theme-card-chip-bg);
+  --ss-border-subtle: var(--fth-color-border);
+  --ss-border-strong: var(--fth-color-border-strong);
+  --ss-border-selected: var(--fth-theme-card-selected-border);
+  --ss-text-primary: var(--fth-color-text);
+  --ss-text-secondary: var(--fth-color-text-muted);
+  --ss-text-muted: var(--fth-color-text-subtle);
+  --ss-text-kicker: color-mix(in srgb, var(--fth-color-accent-strong) 68%, var(--fth-color-text) 32%);
+  --ss-text-selected: var(--fth-theme-card-selected-text);
+  --ss-accent: var(--fth-color-accent);
+  --ss-accent-strong: var(--fth-color-accent-strong);
+  --ss-success-bg: color-mix(in srgb, var(--fth-color-success) 18%, transparent);
+  --ss-success-border: color-mix(in srgb, var(--fth-color-success) 42%, transparent);
+  --ss-success-text: color-mix(in srgb, var(--fth-color-success) 78%, var(--fth-color-text) 22%);
+  --ss-danger-bg: color-mix(in srgb, var(--fth-color-danger) 18%, transparent);
+  --ss-danger-border: color-mix(in srgb, var(--fth-color-danger) 42%, transparent);
+  --ss-danger-text: color-mix(in srgb, var(--fth-color-danger) 78%, var(--fth-color-text) 22%);
+  --ss-focus-ring: 0 0 0 1px color-mix(in srgb, var(--fth-color-focus) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--fth-color-focus) 14%, transparent);
+  --ss-button-primary: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fth-color-accent-strong) 62%, white 38%),
+    color-mix(in srgb, var(--fth-color-accent) 82%, var(--fth-color-canvas) 18%)
+  );
+  --ss-button-secondary: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fth-color-surface-glass-strong) 84%, white 16%),
+    color-mix(in srgb, var(--fth-color-surface-elevated) 84%, var(--fth-color-canvas) 16%)
+  );
+  --ss-button-danger: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fth-color-danger) 44%, white 8%),
+    color-mix(in srgb, var(--fth-color-danger) 74%, var(--fth-color-canvas) 26%)
+  );
+  --ss-shadow-card: var(--fth-theme-shadow-panel);
+  --ss-shadow-elevated: var(--fth-theme-shadow-elevated);
+
+  background: var(--fth-color-canvas);
+  color: var(--ss-text-primary);
+  container-type: inline-size;
+  container-name: soundscapes;
+}
+
+.fth-soundscape-studio .window-content,
+.fth-soundscape-live-controls .window-content {
+  padding: 0 !important;
+  background: var(--fth-color-canvas) !important;
+}
+
+.fth-soundscape-shell {
+  background-image: var(--ss-bg-shell);
+}
+
+.fth-soundscape-panel {
+  border: 1px solid var(--ss-border-subtle);
+  background-image: var(--ss-surface-panel);
+  box-shadow: var(--ss-shadow-card);
+  color: var(--ss-text-primary);
+}
+
+.fth-soundscape-panel--alt {
+  background-image: var(--ss-surface-panel-alt);
+}
+
+.fth-soundscape-panel--header {
+  background-image: var(--ss-surface-panel-header);
+  box-shadow: var(--ss-shadow-elevated);
+}
+
+.fth-soundscape-card {
+  border: 1px solid var(--ss-border-subtle);
+  background: var(--ss-surface-card);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--fth-color-text) 4%, transparent);
+  color: var(--ss-text-primary);
+}
+
+.fth-soundscape-card--interactive {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.fth-soundscape-card--interactive:hover {
+  border-color: var(--ss-border-strong);
+  background: var(--ss-surface-card-hover);
+}
+
+.fth-soundscape-card--selected {
+  border-color: var(--ss-border-selected);
+  background: linear-gradient(180deg, var(--ss-surface-selected), var(--ss-surface-card));
+  box-shadow: var(--fth-theme-shadow-selected);
+  color: var(--ss-text-selected);
+}
+
+.fth-soundscape-input {
+  width: 100%;
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: 1rem;
+  background: var(--ss-surface-inset);
+  color: var(--ss-text-primary);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.fth-soundscape-input::placeholder {
+  color: var(--ss-text-muted);
+}
+
+.fth-soundscape-input:focus {
+  border-color: var(--ss-border-strong);
+  box-shadow: var(--ss-focus-ring);
+}
+
+.fth-soundscape-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: 999px;
+  font-family: var(--font-fth-cc-ui);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.fth-soundscape-button:hover {
+  transform: translateY(-1px);
+}
+
+.fth-soundscape-button:focus-visible {
+  outline: none;
+  box-shadow: var(--ss-focus-ring);
+}
+
+.fth-soundscape-button:disabled {
+  cursor: not-allowed;
+  transform: none;
+  border-color: var(--ss-border-subtle);
+  background: var(--ss-surface-card);
+  color: var(--ss-text-muted);
+  opacity: 0.72;
+}
+
+.fth-soundscape-button--primary {
+  border-color: color-mix(in srgb, var(--ss-accent) 52%, transparent);
+  background: var(--ss-button-primary);
+  color: var(--fth-color-accent-contrast);
+}
+
+.fth-soundscape-button--secondary {
+  background: var(--ss-button-secondary);
+  color: var(--ss-text-primary);
+}
+
+.fth-soundscape-button--danger {
+  border-color: var(--ss-danger-border);
+  background: var(--ss-button-danger);
+  color: color-mix(in srgb, white 88%, var(--fth-color-danger) 12%);
+}
+
+.fth-soundscape-kicker {
+  color: var(--ss-text-kicker);
+}
+
+.fth-soundscape-muted {
+  color: var(--ss-text-secondary);
+}
+
+.fth-soundscape-subtle {
+  color: var(--ss-text-muted);
+}
+
+.fth-soundscape-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: 999px;
+  background: var(--ss-surface-chip);
+  color: var(--ss-text-secondary);
+}
+
+.fth-soundscape-chip--accent {
+  border-color: var(--ss-border-selected);
+  background: var(--ss-surface-selected);
+  color: var(--ss-text-selected);
+}
+
+.fth-soundscape-chip--success {
+  border-color: var(--ss-success-border);
+  background: var(--ss-success-bg);
+  color: var(--ss-success-text);
+}
+
+.fth-soundscape-chip--danger {
+  border-color: var(--ss-danger-border);
+  background: var(--ss-danger-bg);
+  color: var(--ss-danger-text);
+}
+
+.fth-soundscape-empty {
+  border: 1px dashed var(--ss-border-subtle);
+  background: color-mix(in srgb, var(--ss-surface-card) 72%, transparent);
+  color: var(--ss-text-secondary);
+}
+
+.fth-soundscape-manager-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.fth-soundscape-entity-toggle[aria-expanded="true"] .fth-soundscape-caret {
+  transform: rotate(90deg);
+}
+
+.fth-soundscape-caret {
+  transition: transform 180ms ease;
+}
+
+@container soundscapes (min-width: 860px) {
+  .fth-soundscape-manager-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fth-soundscape-studio *,
+  .fth-soundscape-live-controls *,
+  .fth-soundscape-studio *::before,
+  .fth-soundscape-studio *::after,
+  .fth-soundscape-live-controls *::before,
+  .fth-soundscape-live-controls *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

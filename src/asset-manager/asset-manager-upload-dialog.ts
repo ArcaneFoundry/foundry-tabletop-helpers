@@ -128,27 +128,26 @@ function buildDialogHTML(entries: DialogFileEntry[], targetPath: string): string
     "none",
   ];
 
-  let html = "";
+  let html = `<div class="am-upload-dialog">`;
 
-  // Header
   html += `<div class="am-ud-header">`;
-  html += `<strong>${entries.length} file${entries.length !== 1 ? "s" : ""}</strong>`;
-  html += ` &middot; ${esc(formatBytes(totalSize))}`;
-  html += ` &rarr; <code>${esc(targetPath)}</code>`;
+  html += `<div class="am-ud-header-copy">`;
+  html += `<span class="am-ud-eyebrow">Upload queue</span>`;
+  html += `<strong>${entries.length} file${entries.length !== 1 ? "s" : ""} &middot; ${esc(formatBytes(totalSize))}</strong>`;
+  html += `<span class="am-ud-target">Destination <code>${esc(targetPath)}</code></span>`;
+  html += `</div>`;
   html += `</div>`;
 
-  // Global preset bar
   html += `<div class="am-ud-global-bar">`;
   for (const p of globalPresets) {
     html += `<button type="button" class="am-ud-global" data-ud-global="${p}">${esc(capitalize(p))}</button>`;
   }
   html += `</div>`;
 
-  // Tags input
   html += `<div class="am-ud-tags">`;
   html += `<div class="am-ud-tags__label">`;
   html += `<i class="fa-solid fa-tags"></i> Tags`;
-  html += `<span class="am-ud-tags__hint">Applied to all uploaded files</span>`;
+  html += `<span class="am-ud-tags__hint">Applied to every uploaded file</span>`;
   html += `</div>`;
   html += `<div class="am-ud-tags__list" data-ud-tag-list></div>`;
   html += `<div class="am-ud-tags__input-wrap">`;
@@ -156,7 +155,6 @@ function buildDialogHTML(entries: DialogFileEntry[], targetPath: string): string
   html += `</div>`;
   html += `</div>`;
 
-  // File list
   html += `<div class="am-ud-list">`;
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
@@ -168,9 +166,14 @@ function buildDialogHTML(entries: DialogFileEntry[], targetPath: string): string
     const showGear = isImage && e.isOptimizable && e.preset !== "none";
 
     html += `<div class="am-ud-row" data-ud-index="${i}">`;
+    html += `<div class="am-ud-row-main">`;
     html += `<span class="am-ud-name" data-ud-name>${esc(e.outputName)}</span>`;
+    html += `<div class="am-ud-meta">`;
     html += `<span class="am-ud-size">${esc(formatBytes(e.file.size))}</span>`;
     html += `<span class="am-ud-dims" data-ud-dims></span>`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `<div class="am-ud-row-actions">`;
     html += `<button type="button" class="${badgeClass}" data-ud-preset data-ud-index="${i}"`;
     if (!e.isOptimizable) html += ` disabled`;
     html += `>${esc(badgeLabel)}</button>`;
@@ -178,7 +181,9 @@ function buildDialogHTML(entries: DialogFileEntry[], targetPath: string): string
     if (!showGear) html += ` style="display:none"`;
     html += `><i class="fas fa-cog"></i></button>`;
     html += `</div>`;
+    html += `</div>`;
   }
+  html += `</div>`;
   html += `</div>`;
 
   return html;

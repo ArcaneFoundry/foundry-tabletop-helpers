@@ -71,6 +71,9 @@ export async function buildWizardShellContext(
   const statusHintStyle = (vmData.statusHintStyle as WizardShellContext["statusHintStyle"] | undefined)
     ?? (machine.isReviewStep ? "summary" : stepDef?.getStatusHint?.(machine.state) ? "progress" : "selection");
   const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
+  const currentStepNumber = machine.state.currentStep + 1;
+  const totalSteps = machine.stepCount;
+  const localProgressDetail = vmData.localProgressDetail as string | undefined;
 
   return {
     steps: machine.buildStepIndicatorData(),
@@ -84,6 +87,13 @@ export async function buildWizardShellContext(
     nextButtonLabel,
     statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
     statusHintStyle,
+    localProgress: {
+      current: currentStepNumber,
+      total: totalSteps,
+      percent: totalSteps > 0 ? Math.round((currentStepNumber / totalSteps) * 100) : 0,
+      label: `Step ${currentStepNumber} of ${totalSteps}`,
+      detail: localProgressDetail,
+    },
     atmosphereClass: getStepAtmosphere(machine.currentStepId),
     chapterKey,
     chapterSceneKey,

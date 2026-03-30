@@ -186,7 +186,7 @@ describe("SpellsStepScreen", () => {
     expect(markup).toContain("Magic Missile");
     expect(markup).toContain("Prepared Workings");
     expect(markup).toContain("Prepared Now");
-    expect(markup).toContain("Chosen Invocations");
+    expect(markup).toContain("Chosen Spells");
   });
 
   it("renders prepared-caster controls and prepared summaries for explicit prepared pickers", () => {
@@ -336,7 +336,16 @@ describe("PortraitStepScreen", () => {
     expect(markup).toContain("Choose the Visage");
     expect(markup).toContain("Portrait Atelier");
     expect(markup).toContain("Shape the Likeness");
+    expect(markup).toContain("cc-theme-panel--soft");
+    expect(markup).toContain("cc-theme-hero-shell");
+    expect(markup).toContain("cc-theme-badge");
+    expect(markup).toContain("cc-theme-card--raised");
+    expect(markup).toContain("Portrait Prompt");
     expect(markup).toContain("Arcane portrait prompt");
+    expect(markup).toContain('id="portrait-prompt"');
+    expect(markup).toContain('name="portraitPrompt"');
+    expect(markup).toContain('autoComplete="off"');
+    expect(markup).toContain("focus-visible:ring-2");
     expect(markup).toContain("Generate Portraits");
     expect(markup).toContain("Upload Portrait");
     expect(markup).toContain("Generated Portraits");
@@ -383,6 +392,7 @@ describe("PortraitStepScreen", () => {
     expect(markup).toContain("Clear");
     expect(markup).toContain("Uploaded likeness");
     expect(markup).toContain("Ready for final review");
+    expect(markup).toContain("cc-theme-media-frame");
   });
 });
 
@@ -446,11 +456,21 @@ describe("ReviewStepScreen", () => {
     );
 
     expect(markup).toContain("The Ritual Is Complete");
+    expect(markup).toContain("cc-theme-hero-shell");
+    expect(markup).toContain("cc-theme-panel--accent");
+    expect(markup).toContain("cc-theme-card--soft");
+    expect(markup).toContain("cc-theme-media-frame__fade");
     expect(markup).toContain("2 unresolved");
     expect(markup).toContain("Jump back to revise any card");
     expect(markup).toContain("Character Name");
+    expect(markup).toContain('for="review-character-name"');
+    expect(markup).toContain('id="review-character-name"');
+    expect(markup).toContain('name="characterName"');
+    expect(markup).toContain('autoComplete="off"');
+    expect(markup).toContain("focus-visible:ring-2");
     expect(markup).toContain("The final binding uses this name exactly as shown here.");
     expect(markup).toContain("Bound Identity");
+    expect(markup).toContain("cc-theme-card--selected");
     expect(markup).toContain("Edit");
     expect(markup).toContain("Jump back");
     expect(markup).toContain("Readiness");

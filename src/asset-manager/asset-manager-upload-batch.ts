@@ -1,3 +1,4 @@
+import { DEFAULT_OPTIMIZER_MAX_FILE_SIZE } from "./asset-manager-optimizer-client";
 import { audioMimeToExt, detectAudioBitrate } from "./asset-manager-upload-helpers";
 import type { ServerCapabilities, OptimizeImageOptions, OptimizeResult } from "./asset-manager-optimizer-client";
 import type { OptPreset, OptPresetConfig } from "./asset-manager-upload";
@@ -31,8 +32,10 @@ export async function processBatchOptimizationEntry(
 ): Promise<BatchOptimizationOutcome> {
   const originalSize = inputFile.size;
   let newName = fileName;
+  const serverLimit = deps.serverCaps ? resolveOptimizerUploadLimit(deps.serverCaps.maxFileSize) : null;
+  const tooLargeForServer = !!serverLimit && inputFile.size > serverLimit;
 
-  if (deps.serverCaps) {
+  if (deps.serverCaps && !tooLargeForServer) {
     let serverResult: OptimizeResult | null = null;
 
     if (fileType === "image" && deps.serverCaps.image) {
@@ -101,6 +104,10 @@ export async function processBatchOptimizationEntry(
   }
 
   return { processed: false, savedBytes: 0 };
+}
+
+function resolveOptimizerUploadLimit(maxFileSize?: number): number {
+  return maxFileSize && maxFileSize > 0 ? maxFileSize : DEFAULT_OPTIMIZER_MAX_FILE_SIZE;
 }
 
 async function deleteIfRenamed(

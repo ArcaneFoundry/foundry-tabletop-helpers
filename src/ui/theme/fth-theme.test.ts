@@ -149,6 +149,7 @@ describe("fth-theme", () => {
 
   it("includes downstream FTH surfaces in the theme root selector", () => {
     expect(__themeInternals.FTH_THEME_ROOT_SELECTOR).toContain(".fth-asset-picker");
+    expect(__themeInternals.FTH_THEME_ROOT_SELECTOR).toContain(".am-upload-dialog-window");
     expect(__themeInternals.FTH_THEME_ROOT_SELECTOR).toContain(".batch-initiative-dialog");
     expect(__themeInternals.FTH_THEME_ROOT_SELECTOR).toContain(".fth-damage-panel");
     expect(__themeInternals.FTH_THEME_ROOT_SELECTOR).toContain(".fth-monster-preview");

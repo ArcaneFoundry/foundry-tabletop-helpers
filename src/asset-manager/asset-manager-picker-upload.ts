@@ -1,11 +1,11 @@
 import { Log, MOD } from "../logger";
-import { getGame } from "../types";
+import { getGame, getUI } from "../types";
 import { AM_SETTINGS } from "./asset-manager-settings";
 import { getBrowseCache } from "./asset-manager-browse-cache";
 import { type OptPreset, UploadManager, batchOptimize, buildUploadQueueHTML, type UploadQueueItem } from "./asset-manager-upload";
 import { showUploadConfirmDialog } from "./asset-manager-upload-dialog";
 import { getMetadataStore } from "./asset-manager-metadata";
-import { serverCreateFolder } from "./asset-manager-optimizer-client";
+import { checkOptimizerServer, serverCreateFolder } from "./asset-manager-optimizer-client";
 import { formatBytes } from "./asset-manager-preview";
 import { type AssetEntry } from "./asset-manager-types";
 
@@ -80,6 +80,15 @@ export class AssetManagerUploadController {
   }
 
   async promptCreateFolder(root: HTMLElement): Promise<void> {
+    const caps = await checkOptimizerServer();
+    if (!caps) {
+      this.showUnavailableMessage(
+        root,
+        "Folder creation requires the optimizer server. The current server connection is unavailable.",
+      );
+      return;
+    }
+
     const source = this.deps.getActiveSource();
     const target = this.deps.getCurrentPath();
 
@@ -121,7 +130,7 @@ export class AssetManagerUploadController {
 
             const fullPath = target ? `${target}/${name}` : name;
             const ok = await serverCreateFolder(fullPath);
-            const statusEl = root.querySelector<HTMLElement>(".am-status-text");
+            const statusEl = root.querySelector<HTMLElement>(".am-status-count");
 
             if (ok) {
               getBrowseCache().invalidate(source, target);
@@ -167,6 +176,10 @@ export class AssetManagerUploadController {
     const progressWrap = root.querySelector<HTMLElement>(".am-batch-progress");
     const progressFill = root.querySelector<HTMLElement>(".am-batch-progress-fill");
     const originalText = statusCount?.textContent ?? "";
+    const caps = await checkOptimizerServer();
+    if (!caps && statusCount) {
+      statusCount.textContent = "Optimizer server unavailable. Running client-side fallback where possible.";
+    }
 
     this.deps.setBatchRunning(true);
     if (progressWrap) progressWrap.style.display = "";
@@ -207,5 +220,17 @@ export class AssetManagerUploadController {
       getBrowseCache().invalidate(source, target);
       this.deps.browse(target);
     }
+  }
+
+  private showUnavailableMessage(root: HTMLElement, message: string): void {
+    const statusCount = root.querySelector<HTMLElement>(".am-status-count");
+    const originalText = statusCount?.textContent ?? "";
+    if (statusCount) {
+      statusCount.textContent = message;
+      setTimeout(() => {
+        if (statusCount.textContent === message) statusCount.textContent = originalText;
+      }, 4000);
+    }
+    getUI()?.notifications?.warn?.(message);
   }
 }

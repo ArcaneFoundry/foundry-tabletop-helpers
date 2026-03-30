@@ -20,6 +20,7 @@ export interface LevelUpStepDef {
   icon: string;
   templatePath: string;
   isComplete(state: LevelUpState): boolean;
+  getStatusHint?(state: LevelUpState): string;
   buildViewModel(state: LevelUpState, actor: FoundryDocument): Promise<Record<string, unknown>>;
   onActivate?(state: LevelUpState, el: HTMLElement, callbacks: { setData: (v: unknown) => void; rerender: () => void }): void;
 }

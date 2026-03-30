@@ -5,10 +5,7 @@ import type {
   ReactWizardStepProps,
 } from "../../../character-creator-types";
 import { buildOriginFlowShellModel } from "./build-origin-flow-shell-model";
-import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
-import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import { ClassAggregateStepper } from "../class/class-step-screen";
-import { getClassTheme } from "../class/class-presentation";
 import { useClassStepperLayoutMode } from "../class/class-stepper-layout";
 import {
   buildEmptySpeciesChoicesState,
@@ -72,10 +69,8 @@ export function OriginFlowRouteHost(
     [shellContext.currentStepId, shellContext.steps, state],
   );
   const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
-  const theme = getClassTheme(shellModel.selectedClassIdentifier ?? "fighter");
 
   useEffect(() => {
-    if (shellModel.currentPane !== "originChoices") return;
     const backgroundFeatUuid = state.selections.background?.grants.originFeatUuid;
     if (!backgroundFeatUuid || state.selections.originFeat) return;
     state.selections.originFeat = {
@@ -91,43 +86,29 @@ export function OriginFlowRouteHost(
     <section className="flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="cc-theme-shell relative flex flex-col rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
+        className="cc-theme-shell relative flex flex-col rounded-[1.75rem] p-[0.35rem]"
         initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
-
-        <div className="cc-theme-shell-inner relative flex flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        <div className="cc-theme-shell-inner relative flex flex-col rounded-[1.45rem]">
           <motion.header
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-            className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
+            className="mx-2 mt-2 px-4 pt-3 md:px-6"
             initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
             transition={{ delay: 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div
-              className="relative overflow-hidden rounded-[1.15rem] border border-fth-cc-gold/50"
-              style={{
-                borderColor: `${theme.frame}9c`,
-                boxShadow: `inset 0 1px 0 rgba(255,236,206,0.22), 0 10px 22px rgba(0,0,0,0.18), 0 18px 34px rgba(77,46,18,0.2), 0 0 20px ${theme.glow}`,
-              }}
-            >
-              <img
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                src={classStepHeaderBackground}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.24),rgba(16,12,11,0.42))]" />
-              <div className="relative z-10 flex items-center justify-center px-4 py-3">
+            <div className="cc-theme-header cc-theme-header--hero relative overflow-hidden rounded-[1.15rem] border px-4 py-3 md:px-5">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--cc-surface-accent-soft)_18%,transparent),transparent_38%)]" />
+              <div className="relative z-10 flex items-center justify-center gap-3">
                 <HeaderFlourish side="left" />
-                <div className="relative min-w-0 flex-1" style={{ containerType: "inline-size" }}>
+                <div className="min-w-0 flex-1 text-center" style={{ containerType: "inline-size" }}>
+                  <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.26em]">
+                    Origins
+                  </div>
                   <h2
-                    className="m-0 text-center font-fth-cc-display uppercase tracking-[0.12em] text-fth-cc-gold-bright"
+                    className="m-0 mt-1 font-fth-cc-display uppercase tracking-[0.12em] text-[clamp(1.075rem,8cqi,2.15rem)] leading-none"
                     style={{
-                      color: "#f7e7c6",
-                      fontSize: "clamp(1.075rem, 8cqi, 2.15rem)",
-                      lineHeight: 1.05,
-                      textShadow: `0 0 9px rgba(255,230,178,0.36), 0 0 18px ${theme.glow}, 0 2px 10px rgba(16, 9, 6, 0.72)`,
+                      textShadow: "0 2px 10px color-mix(in_srgb,var(--cc-bg-base)_55%,transparent)",
                     }}
                   >
                     {shellModel.title}
@@ -139,22 +120,19 @@ export function OriginFlowRouteHost(
           </motion.header>
 
           <div className="relative flex flex-col px-3 pb-4 pt-3 md:px-6">
-            <img
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16]"
-              src={classStepFieldBackground}
-            />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(211,190,235,0.1),rgba(15,15,19,0)_52%,rgba(233,193,118,0.06)_100%)]" />
-            <div ref={setStepperContainer} className="relative z-10 w-full">
-              <ClassAggregateStepper
-                layoutMode={layoutMode}
-                model={shellModel.aggregateStepper}
-                prefersReducedMotion={prefersReducedMotion}
-              />
-            </div>
+            <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3">
+              <div
+                ref={setStepperContainer}
+                className="cc-theme-panel cc-theme-panel--soft rounded-[1.25rem] border px-3 py-3 md:px-4"
+              >
+                <ClassAggregateStepper
+                  layoutMode={layoutMode}
+                  model={shellModel.aggregateStepper}
+                  prefersReducedMotion={prefersReducedMotion}
+                />
+              </div>
 
-            <div className="relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
+              <div className="relative z-10 flex min-h-0 flex-1 flex-col">
               <AnimatePresence initial={false} mode="wait">
                 <motion.div
                   key={shellModel.currentPane}
@@ -241,6 +219,7 @@ export function OriginFlowRouteHost(
                   )}
                 </motion.div>
               </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>

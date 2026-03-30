@@ -169,19 +169,21 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
               />
             </div>
 
-            <div className="relative z-10 mt-4 grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(15.5rem,0.72fr)]">
-              <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
-                <div className="border-b border-[#cfb58f]/55 pb-4">
-                  {viewModel.primaryAbilityHint ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#d5b98b]/70 bg-[rgba(255,247,233,0.78)] px-3 py-1.5 font-fth-cc-body text-sm text-[#6b503f]">
-                      <i className={cn(theme.sigil, "text-[#8a613e]")} aria-hidden="true" />
-                      <span><strong>Prime Attribute Guidance:</strong> {viewModel.primaryAbilityHint}</span>
-                    </div>
-                  ) : null}
-                </div>
+            <div className="relative z-10 mt-4 flex min-h-0 flex-1 flex-col gap-4">
+              <SelectionSummaryCard
+                accent={theme.accent}
+                glow={theme.glow}
+                sigil={theme.sigil}
+                maxCount={maxCount}
+                primaryAbilityHint={viewModel.primaryAbilityHint}
+                savingThrows={viewModel.savingThrows}
+                selectedCount={selectedKeys.length}
+                selectedEntries={viewModel.skillSection.selectedEntries}
+              />
 
+              <section className="flex min-h-0 flex-col rounded-[1.45rem] border border-[#c9ab80]/55 bg-[linear-gradient(180deg,rgba(255,250,241,0.94),rgba(239,224,198,0.94))] p-4 shadow-[0_18px_34px_rgba(47,29,18,0.12)]">
                 {viewModel.skillSection.hasChoices ? (
-                  <div className="mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
+                  <div className="flex flex-col px-1 pb-3 pt-2 pr-2">
                     <div className="grid gap-4">
                       {groupedOptions.map((group, groupIndex) => (
                         <section className="grid gap-2.5" key={group.abilityAbbrev}>
@@ -208,23 +210,11 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-4 rounded-[1.1rem] border border-dashed border-[#c7aa80]/65 bg-[rgba(255,250,241,0.7)] px-4 py-5 font-fth-cc-body text-[#6b5040]">
+                  <div className="rounded-[1.1rem] border border-dashed border-[#c7aa80]/65 bg-[rgba(255,250,241,0.7)] px-4 py-5 font-fth-cc-body text-[#6b5040]">
                     {viewModel.skillSection.emptyMessage}
                   </div>
                 )}
               </section>
-
-              <aside className="flex min-h-0 flex-col gap-4">
-                <SelectionSummaryCard
-                  accent={theme.accent}
-                  glow={theme.glow}
-                  maxCount={maxCount}
-                  selectedCount={selectedKeys.length}
-                />
-                <ClassProficienciesCard
-                  savingThrows={viewModel.savingThrows}
-                />
-              </aside>
             </div>
           </div>
         </div>
@@ -307,11 +297,19 @@ function SelectionSummaryCard({
   maxCount,
   accent,
   glow,
+  sigil,
+  primaryAbilityHint,
+  selectedEntries,
+  savingThrows,
 }: {
   selectedCount: number;
   maxCount: number;
   accent: string;
   glow: string;
+  sigil: string;
+  primaryAbilityHint: string;
+  selectedEntries: ClassChoicesStepViewModel["skillSection"]["selectedEntries"];
+  savingThrows: string[];
 }) {
   return (
     <section
@@ -319,44 +317,33 @@ function SelectionSummaryCard({
       style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
     >
       <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Selection Summary</div>
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
-            <div
-              className="flex h-20 w-20 flex-col items-center justify-center rounded-full border text-[#fff9ea] shadow-[inset_0_2px_0_rgba(255,244,225,0.22),0_12px_24px_rgba(0,0,0,0.24)]"
-              style={{
-                borderColor: accent,
-                background: `radial-gradient(circle at 35% 30%, rgba(247,214,145,0.98), ${accent})`,
-              }}
-            >
-              <div className="flex items-end leading-none">
-                <span className="font-fth-cc-display text-[2.2rem]">{selectedCount}</span>
-                <span className="ml-1 font-fth-cc-display text-[1.55rem] opacity-90">/{maxCount}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#8f6c47]/40 pb-4">
+          <div className="min-w-0 flex-1">
+            {primaryAbilityHint ? (
+              <div className="inline-flex max-w-full items-start gap-2 rounded-full border border-[#d5b98b]/70 bg-[rgba(255,247,233,0.78)] px-3 py-1.5 font-fth-cc-body text-sm text-[#6b503f]">
+                <i className={cn(sigil, "mt-0.5 text-[#8a613e]")} aria-hidden="true" />
+                <span className="min-w-0">
+                  <strong>Prime Attribute Guidance:</strong> {primaryAbilityHint}
+                </span>
               </div>
-            </div>
-            <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.55),rgba(214,177,111,0))]" />
+            ) : null}
           </div>
-          <div className="mt-3 font-fth-cc-body text-[1.02rem] text-[#f7e7c8]">Skills Chosen</div>
+          <div
+            className="flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-[#fff9ea] shadow-[inset_0_2px_0_rgba(255,244,225,0.22),0_12px_24px_rgba(0,0,0,0.24)]"
+            style={{
+              borderColor: accent,
+              background: `radial-gradient(circle at 35% 30%, rgba(247,214,145,0.98), ${accent})`,
+            }}
+          >
+            <span className="font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.22em]">Selection Summary</span>
+            <span className="font-fth-cc-display text-[1.55rem] leading-none">{selectedCount}/{maxCount}</span>
+          </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ClassProficienciesCard({
-  savingThrows,
-}: {
-  savingThrows: string[];
-}) {
-  return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[#5b3e2a] bg-[linear-gradient(180deg,rgba(67,45,31,0.98),rgba(24,15,11,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className="rounded-[1.18rem] border border-[#8e6a47]/70 bg-[linear-gradient(180deg,rgba(63,41,28,0.98),rgba(25,16,12,0.98))] px-4 py-4 text-[#f1ddbc]">
-        <div className="border-b border-[#8f6c47]/40 pb-3 text-center">
-          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em] text-[#e6c88f]">Saving Throw Proficiencies</div>
-        </div>
-        <div className="mt-4">
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-[#8e6a47]/65 bg-[rgba(255,250,241,0.14)] px-3 py-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#f0dcb9]">
+              Saving Throws
+            </span>
             {savingThrows.map((value) => (
               <span
                 className="inline-flex items-center rounded-full border border-[#8a6a48] bg-[linear-gradient(180deg,rgba(101,70,49,0.94),rgba(54,35,25,0.98))] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.14em] text-[#f2deb6]"
@@ -365,6 +352,26 @@ function ClassProficienciesCard({
                 {value}
               </span>
             ))}
+          </div>
+          <span aria-hidden="true" className="hidden h-6 w-px bg-[rgba(255,233,188,0.18)] md:block" />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-[#8e6a47]/65 bg-[rgba(255,250,241,0.14)] px-3 py-1 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] text-[#f0dcb9]">
+              Chosen Skills
+            </span>
+            {selectedEntries.length > 0 ? (
+              selectedEntries.map((entry) => (
+                <span
+                  className="inline-flex items-center rounded-full border border-[#8c6a47]/55 bg-[rgba(255,247,233,0.76)] px-3 py-1.5 font-fth-cc-body text-[0.88rem] text-[#6a4f3c]"
+                  key={entry.label}
+                >
+                  {entry.label}
+                </span>
+              ))
+            ) : (
+              <span className="inline-flex items-center rounded-full border border-dashed border-[#8c6a47]/45 bg-[rgba(255,247,233,0.6)] px-3 py-1.5 font-fth-cc-body text-[0.88rem] text-[#7a5d49]">
+                No skills selected yet
+              </span>
+            )}
           </div>
         </div>
       </div>

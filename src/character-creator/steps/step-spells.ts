@@ -19,12 +19,9 @@ import { compendiumIndexer } from "../data/compendium-indexer";
 import { resolveClassSpellUuids } from "../data/spell-list-resolver";
 import {
   buildPreparationNotice,
-  getSpellPreparationPolicy,
-  parsePreparationScaleIdentifier,
-  resolveScaleValue,
   type SpellPreparationClassDocumentLike,
-  type SpellScaleAdvancementLike,
 } from "../spell-preparation-policy";
+import { resolveCreationSpellEntitlements } from "../spell-selection-resolver";
 import { SpellsStepScreen } from "../react/steps/cinematic/creator-cinematic-step-screens";
 
 /* ── Constants ───────────────────────────────────────────── */
@@ -73,76 +70,6 @@ function getAllSpells(state: WizardState): CreatorIndexEntry[] {
   return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
 }
 
-/**
- * Max spell slot level available at a given character level,
- * based on spellcasting progression.
- */
-function getMaxSpellLevel(characterLevel: number, progression: string): number {
-  if (progression === "pact") {
-    // Pact magic: level = ceil(casterLevel / 2), max 5
-    return Math.min(5, Math.ceil(characterLevel / 2));
-  }
-
-  // Caster level depends on progression
-  let casterLevel = characterLevel;
-  if (progression === "half" || progression === "artificer") casterLevel = Math.ceil(characterLevel / 2);
-  else if (progression === "third") casterLevel = Math.ceil(characterLevel / 3);
-
-  if (casterLevel >= 17) return 9;
-  if (casterLevel >= 15) return 8;
-  if (casterLevel >= 13) return 7;
-  if (casterLevel >= 11) return 6;
-  if (casterLevel >= 9) return 5;
-  if (casterLevel >= 7) return 4;
-  if (casterLevel >= 5) return 3;
-  if (casterLevel >= 3) return 2;
-  return 1;
-}
-
-async function getSpellSelectionLimits(
-  state: WizardState,
-): Promise<{
-  maxCantrips: number | null;
-  maxSpells: number | null;
-  classDoc: SpellPreparationClassDocumentLike | null;
-}> {
-  const classUuid = state.selections.class?.uuid;
-  const classIdentifier = state.selections.class?.identifier ?? "";
-  if (!classUuid) return { maxCantrips: null, maxSpells: null, classDoc: null };
-
-  const classDoc = await fromUuid(classUuid) as SpellPreparationClassDocumentLike | null;
-  if (!classDoc) return { maxCantrips: null, maxSpells: null, classDoc: null };
-
-  const advancements = classDoc.system?.advancement ?? [];
-  const maxCantrips = resolveScaleByTitle(advancements, "Cantrips Known", state.config.startingLevel);
-  const knownSpellLimit = resolveKnownSpellLimit(classIdentifier, state.config.startingLevel);
-  if (knownSpellLimit !== null) {
-    return { maxCantrips, maxSpells: knownSpellLimit, classDoc };
-  }
-
-  const policy = getSpellPreparationPolicy(classIdentifier, classDoc, state.config.startingLevel);
-  return { maxCantrips, maxSpells: policy.usesPreparedSpellPicker ? null : policy.preparedLimit, classDoc };
-}
-
-function resolveScaleByTitle(
-  advancements: SpellScaleAdvancementLike[],
-  title: string,
-  level: number,
-): number | null {
-  const match = advancements.find((entry) => entry.type === "ScaleValue" && entry.title === title);
-  return resolveScaleValue(match?.configuration?.scale, level);
-}
-
-function resolveKnownSpellLimit(classIdentifier: string, level: number): number | null {
-  switch (classIdentifier) {
-    case "wizard":
-      // Wizards add two spells to their spellbook at every level after starting with six.
-      return Math.max(6, 4 + (level * 2));
-    default:
-      return null;
-  }
-}
-
 function isSelectionComplete(
   selectedCount: number,
   requiredCount: number | undefined,
@@ -166,6 +93,8 @@ function buildSelectionSummary(
   spellCount: number,
   maxCantrips: number | null,
   maxSpells: number | null,
+  preparedCount = 0,
+  preparedLimit: number | null = null,
 ): string {
   const cantripSummary = maxCantrips !== null
     ? `${cantripCount} / ${maxCantrips} cantrips`
@@ -173,6 +102,10 @@ function buildSelectionSummary(
   const spellSummary = maxSpells !== null
     ? `${spellCount} / ${maxSpells} spells`
     : `${spellCount} spells`;
+  if (preparedLimit !== null && preparedLimit > 0) {
+    const preparedSummary = `${preparedCount} / ${preparedLimit} prepared`;
+    return `${cantripSummary}, ${spellSummary}, ${preparedSummary}`;
+  }
   return `${cantripSummary}, ${spellSummary}`;
 }
 
@@ -290,20 +223,30 @@ export function createSpellsStep(): WizardStepDefinition {
       const cls = state.selections.class;
       const className = cls?.name ?? "your class";
       const classIdentifier = cls?.identifier ?? "";
-      const progression = cls?.spellcastingProgression ?? "full";
-      const maxLevel = getMaxSpellLevel(state.config.startingLevel, progression);
+      const classDoc = cls?.uuid
+        ? await fromUuid(cls.uuid) as SpellPreparationClassDocumentLike | null
+        : null;
+      const entitlements = resolveCreationSpellEntitlements({
+        classIdentifier,
+        className,
+        level: state.config.startingLevel,
+        progression: cls?.spellcastingProgression ?? "full",
+        subclassName: state.selections.subclass?.name ?? null,
+        classDoc,
+      });
+      const maxLevel = entitlements.maxSpellLevel;
 
       // Resolve class spell list (cached per class identifier)
-      if (!classIdentifier) {
+      if (!entitlements.listIdentifier) {
         cachedClassId = "";
         cachedSpellUuids = null;
-      } else if (classIdentifier !== cachedClassId) {
-        cachedClassId = classIdentifier;
-        cachedSpellUuids = await resolveClassSpellUuids(classIdentifier);
+      } else if (entitlements.listIdentifier !== cachedClassId) {
+        cachedClassId = entitlements.listIdentifier;
+        cachedSpellUuids = await resolveClassSpellUuids(entitlements.listIdentifier);
         if (cachedSpellUuids) {
-          Log.debug(`Spells step: resolved ${cachedSpellUuids.size} spells for "${classIdentifier}"`);
+          Log.debug(`Spells step: resolved ${cachedSpellUuids.size} spells for "${entitlements.listIdentifier}"`);
         } else {
-          Log.debug(`Spells step: no spell list API found for "${classIdentifier}", showing all spells`);
+          Log.debug(`Spells step: no spell list API found for "${entitlements.listIdentifier}", showing all spells`);
         }
       }
 
@@ -320,17 +263,11 @@ export function createSpellsStep(): WizardStepDefinition {
       });
 
       const data = state.selections.spells ?? { cantrips: [], spells: [] };
-      const limits = await getSpellSelectionLimits(state);
       const selectedCantrips = new Set(data.cantrips);
       const selectedSpells = new Set(data.spells);
-      const preparationPolicy = getSpellPreparationPolicy(
-        classIdentifier,
-        limits.classDoc,
-        state.config.startingLevel,
-      );
-      const usesPreparedPicker = preparationPolicy.usesPreparedSpellPicker;
+      const usesPreparedPicker = entitlements.usesPreparedSpellPicker;
       const preparedSpellUuids = usesPreparedPicker
-        ? sanitizePreparedSpellSelection(data.spells, data.preparedSpells, preparationPolicy.preparedLimit)
+        ? sanitizePreparedSpellSelection(data.spells, data.preparedSpells, entitlements.preparedLimit)
         : [];
       const preparedSpells = new Set(preparedSpellUuids);
 
@@ -372,10 +309,10 @@ export function createSpellsStep(): WizardStepDefinition {
       return {
         cantrips,
         cantripCount: data.cantrips.length,
-        maxCantrips: limits.maxCantrips,
+        maxCantrips: entitlements.maxCantrips,
         spellsByLevel,
         spellCount: data.spells.length,
-        maxSpells: limits.maxSpells,
+        maxSpells: entitlements.maxSpells,
         hasCantrips: cantrips.length > 0,
         hasSpells: leveledSpells.length > 0,
         maxSpellLevel: maxLevel,
@@ -384,14 +321,27 @@ export function createSpellsStep(): WizardStepDefinition {
         selectionSummary: buildSelectionSummary(
           data.cantrips.length,
           data.spells.length,
-          limits.maxCantrips,
-          limits.maxSpells,
+          entitlements.maxCantrips,
+          entitlements.maxSpells,
+          preparedSpellUuids.length,
+          entitlements.preparedLimit,
         ),
-        preparationNotice: buildPreparationNotice(className, data.spells.length, preparationPolicy),
-        hasPreparationNotice: preparationPolicy.usesPreparedSpells,
+        preparationNotice: buildPreparationNotice(className, data.spells.length, entitlements),
+        hasPreparationNotice: entitlements.usesPreparedSpells,
         showPreparedPicker: usesPreparedPicker,
         preparedCount: preparedSpellUuids.length,
-        preparedLimit: preparationPolicy.preparedLimit,
+        preparedLimit: entitlements.preparedLimit,
+        sourceContextLabel: entitlements.sourceContextLabel,
+        spellListLabel: entitlements.listLabel,
+        schoolFilters: Object.entries(SCHOOL_LABELS).map(([value, label]) => ({ value, label })),
+        localProgressDetail: buildSelectionSummary(
+          data.cantrips.length,
+          data.spells.length,
+          entitlements.maxCantrips,
+          entitlements.maxSpells,
+          preparedSpellUuids.length,
+          entitlements.preparedLimit,
+        ),
       };
     },
 
@@ -630,14 +580,10 @@ function isDocumentLike(value: unknown): value is DocumentLike {
 }
 
 export const __spellsStepInternals = {
-  getSpellSelectionLimits,
-  getMaxSpellLevel,
   buildSelectionSummary,
   buildStatusHint,
   sanitizePreparedSpellSelection,
   getDefaultPreparedSpellSelection,
   patchSpellCard,
   patchSpellCounter,
-  parsePreparationScaleIdentifier,
-  resolveScaleValue,
 };

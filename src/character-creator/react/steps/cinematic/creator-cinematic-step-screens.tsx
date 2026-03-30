@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import type {
@@ -10,6 +10,7 @@ import type {
   SubclassSelection,
 } from "../../../character-creator-types";
 import { cn } from "../../../../ui/lib/cn";
+import { fromUuid } from "../../../../types";
 import { buildPortraitPrompt } from "../../../portrait/portrait-prompt-builder";
 import { generatePortraits } from "../../../portrait/portrait-client";
 import type { GeneratedPortrait } from "../../../portrait/portrait-client";
@@ -27,13 +28,13 @@ type SubclassStepViewModel = {
 };
 
 type SpellViewModel = {
-  cantrips: Array<CinematicSelectionEntry & { schoolLabel?: string }>;
+  cantrips: Array<CinematicSelectionEntry & { schoolLabel?: string; description?: string }>;
   cantripCount: number;
   maxCantrips: number | null;
   spellsByLevel: Array<{
     level: number;
     label: string;
-    spells: Array<CinematicSelectionEntry & { schoolLabel?: string; prepared?: boolean }>;
+    spells: Array<CinematicSelectionEntry & { schoolLabel?: string; prepared?: boolean; description?: string }>;
   }>;
   spellCount: number;
   maxSpells: number | null;
@@ -44,6 +45,9 @@ type SpellViewModel = {
   showPreparedPicker?: boolean;
   preparedCount?: number;
   preparedLimit?: number | null;
+  sourceContextLabel?: string;
+  spellListLabel?: string;
+  schoolFilters?: Array<{ value: string; label: string }>;
 };
 
 type PortraitViewModel = {
@@ -198,6 +202,20 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
   const selection = state.selections.spells ?? { cantrips: [], spells: [] };
   const preparedLimit = viewModel.preparedLimit ?? null;
   const usesPreparedPicker = Boolean(viewModel.showPreparedPicker);
+  const [searchText, setSearchText] = useState("");
+  const [schoolFilter, setSchoolFilter] = useState("");
+  const deferredSearchText = useDeferredValue(searchText);
+  const allSpellEntries = [
+    ...viewModel.cantrips,
+    ...viewModel.spellsByLevel.flatMap((group) => group.spells),
+  ];
+  const initialPreviewId = selection.preparedSpells?.[0]
+    ?? selection.spells[0]
+    ?? selection.cantrips[0]
+    ?? allSpellEntries[0]?.uuid
+    ?? null;
+  const [previewUuid, setPreviewUuid] = useState<string | null>(initialPreviewId);
+  const [previewDescriptions, setPreviewDescriptions] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const preparedSpells = usesPreparedPicker
@@ -227,6 +245,38 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
     viewModel.maxCantrips,
     viewModel.maxSpells,
   ]);
+
+  useEffect(() => {
+    if (!previewUuid) {
+      setPreviewUuid(initialPreviewId);
+      return;
+    }
+    const stillPresent = allSpellEntries.some((entry) => entry.uuid === previewUuid);
+    if (!stillPresent) setPreviewUuid(initialPreviewId);
+  }, [allSpellEntries, initialPreviewId, previewUuid]);
+
+  useEffect(() => {
+    if (!previewUuid || previewDescriptions[previewUuid]) return;
+    const previewEntry = allSpellEntries.find((entry) => entry.uuid === previewUuid);
+    if (previewEntry?.description) {
+      setPreviewDescriptions((current) => ({ ...current, [previewUuid]: previewEntry.description ?? "" }));
+      return;
+    }
+
+    let active = true;
+    void (async () => {
+      const doc = await fromUuid(previewUuid);
+      const description = typeof doc?.system === "object" && doc?.system !== null
+        ? ((doc.system as { description?: { value?: string } }).description?.value ?? "")
+        : "";
+      if (!active) return;
+      setPreviewDescriptions((current) => ({ ...current, [previewUuid]: description }));
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [allSpellEntries, previewDescriptions, previewUuid]);
 
   const toggleCantrip = (uuid: string) => {
     const current = new Set(selection.cantrips);
@@ -265,6 +315,30 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
     } satisfies SpellSelection);
   };
 
+  const normalizedQuery = deferredSearchText.trim().toLowerCase();
+  const filteredCantrips = viewModel.cantrips.filter((entry) => {
+    const matchesQuery = !normalizedQuery || entry.name.toLowerCase().includes(normalizedQuery);
+    const matchesSchool = !schoolFilter || entry.school === schoolFilter;
+    return matchesQuery && matchesSchool;
+  });
+  const filteredSpellGroups = viewModel.spellsByLevel
+    .map((group) => ({
+      ...group,
+      spells: group.spells.filter((entry) => {
+        const matchesQuery = !normalizedQuery || entry.name.toLowerCase().includes(normalizedQuery);
+        const matchesSchool = !schoolFilter || entry.school === schoolFilter;
+        return matchesQuery && matchesSchool;
+      }),
+    }))
+    .filter((group) => group.spells.length > 0);
+  const previewEntry = allSpellEntries.find((entry) => entry.uuid === previewUuid) ?? null;
+  const previewDescription = previewEntry
+    ? previewDescriptions[previewEntry.uuid] ?? previewEntry.description ?? ""
+    : "";
+  const selectedCantripEntries = viewModel.cantrips.filter((entry) => selection.cantrips.includes(entry.uuid));
+  const selectedSpellEntries = viewModel.spellsByLevel.flatMap((group) => group.spells).filter((entry) => selection.spells.includes(entry.uuid));
+  const preparedSpellEntries = selectedSpellEntries.filter((entry) => selection.preparedSpells?.includes(entry.uuid));
+
   return (
     <ArcaneStepFrame scene="grimoire">
       <ArcaneHero
@@ -279,16 +353,45 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
             <MicroLabel>Selection State</MicroLabel>
             <ValueBadge>{viewModel.selectionSummary}</ValueBadge>
           </div>
+          <p className="mt-4 font-fth-cc-body text-[0.95rem] leading-7 text-[#d4ccc6]">
+            {viewModel.sourceContextLabel ?? `Filtered to the ${viewModel.className} spell list.`}
+          </p>
           {viewModel.hasPreparationNotice ? (
             <div className="mt-4 rounded-[1.2rem] border border-[#e9c176]/20 bg-[rgba(125,86,153,0.12)] px-4 py-3 font-fth-cc-body text-[0.98rem] leading-7 text-[#ded5eb]">
               {viewModel.preparationNotice}
             </div>
           ) : null}
+          <div className="mt-5 grid gap-3 rounded-[1.25rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4 md:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="flex items-center gap-3 rounded-full border border-white/10 bg-[rgba(0,0,0,0.18)] px-4 py-3 text-[#d8d0c7]">
+              <i className="fa-solid fa-magnifying-glass text-[0.8rem] text-[#e9c176]" />
+              <input
+                className="w-full bg-transparent font-fth-cc-body text-[0.96rem] outline-none placeholder:text-[#998fa8]"
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder={`Search the ${viewModel.spellListLabel ?? viewModel.className} list`}
+                type="text"
+                value={searchText}
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <ModeToggleButton active={schoolFilter === ""} label="All Schools" onClick={() => setSchoolFilter("")} />
+              {(viewModel.schoolFilters ?? []).map((filter) => (
+                <ModeToggleButton
+                  active={schoolFilter === filter.value}
+                  key={filter.value}
+                  label={filter.label}
+                  onClick={() => setSchoolFilter(filter.value)}
+                />
+              ))}
+            </div>
+          </div>
 
           <SpellGroupSection
-            emptyMessage={`No cantrips are available for ${viewModel.className} from the enabled spell data right now.`}
-            entries={viewModel.cantrips}
+            emptyMessage={normalizedQuery || schoolFilter
+              ? `No cantrips match the current filters for ${viewModel.className}.`
+              : `No cantrips are available for ${viewModel.className} from the enabled spell data right now.`}
+            entries={filteredCantrips}
             onToggle={toggleCantrip}
+            onPreview={setPreviewUuid}
             prefersReducedMotion={prefersReducedMotion}
             selectedIds={new Set(selection.cantrips)}
             subtitle={viewModel.maxCantrips !== null ? `${selection.cantrips.length} / ${viewModel.maxCantrips} chosen` : `${selection.cantrips.length} chosen`}
@@ -296,12 +399,13 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
           />
 
           <div className="mt-6 space-y-5">
-            {viewModel.spellsByLevel.length > 0 ? viewModel.spellsByLevel.map((group) => (
+            {filteredSpellGroups.length > 0 ? filteredSpellGroups.map((group) => (
               <SpellGroupSection
                 entries={group.spells}
                 key={group.level}
                 onToggle={toggleSpell}
                 onTogglePrepared={usesPreparedPicker ? togglePrepared : undefined}
+                onPreview={setPreviewUuid}
                 preparedIds={new Set(selection.preparedSpells ?? [])}
                 prefersReducedMotion={prefersReducedMotion}
                 selectedIds={new Set(selection.spells)}
@@ -315,13 +419,15 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
                 <div className="flex items-center justify-between gap-3">
                   <MicroLabel>Leveled Spells</MicroLabel>
                   <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
-                    No valid entries
+                    {normalizedQuery || schoolFilter ? "No filtered entries" : "No valid entries"}
                   </div>
                 </div>
                 <div className="mt-4">
                   <ArcaneEmptyState
                     compact
-                    message={`No leveled spells are available for ${viewModel.className} from the enabled spell data right now.`}
+                    message={normalizedQuery || schoolFilter
+                      ? `No leveled spells match the current filters for ${viewModel.className}.`
+                      : `No leveled spells are available for ${viewModel.className} from the enabled spell data right now.`}
                   />
                 </div>
               </section>
@@ -332,24 +438,64 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
         <ArcaneInspectorPanel title="Prepared Workings" eyebrow={viewModel.className}>
           <div className="space-y-4">
             <ValueBadge>{selection.cantrips.length} cantrips • {selection.spells.length} spells</ValueBadge>
+            <div className="rounded-[1.2rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4">
+              <MicroLabel>Spell Preview</MicroLabel>
+              {previewEntry ? (
+                <div className="mt-3">
+                  <div className="flex items-start gap-3">
+                    <img alt={previewEntry.name} className="h-16 w-16 rounded-[0.95rem] object-cover" src={previewEntry.img} />
+                    <div className="min-w-0">
+                      <div className="font-fth-cc-display text-[1.25rem] text-[#f4e7cf]">{previewEntry.name}</div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {previewEntry.schoolLabel ? <TokenPill muted>{previewEntry.schoolLabel}</TokenPill> : null}
+                        {typeof previewEntry.spellLevel === "number" ? <TokenPill muted>Level {previewEntry.spellLevel}</TokenPill> : null}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 max-h-56 overflow-y-auto pr-2">
+                    {previewDescription ? (
+                      <div
+                        className="arcane-prose"
+                        // eslint-disable-next-line react/no-danger
+                        dangerouslySetInnerHTML={{ __html: previewDescription }}
+                      />
+                    ) : (
+                      <p className="font-fth-cc-body text-[0.95rem] leading-7 text-[#cfc6bf]">
+                        No description is available for this spell yet.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <ArcaneEmptyState compact message="Hover or focus a spell to inspect its details here." />
+                </div>
+              )}
+            </div>
             {usesPreparedPicker ? (
               <div className="space-y-3">
                 <MicroLabel>Prepared Now</MicroLabel>
                 <div className="flex flex-wrap gap-2">
-                  {(selection.preparedSpells ?? []).length > 0 ? (selection.preparedSpells ?? []).map((uuid) => {
-                    const spell = viewModel.spellsByLevel.flatMap((group) => group.spells).find((entry) => entry.uuid === uuid);
-                    return <TokenPill key={uuid}>{spell?.name ?? uuid}</TokenPill>;
-                  }) : <TokenPill muted>Choose prepared spells</TokenPill>}
+                  {preparedSpellEntries.length > 0
+                    ? preparedSpellEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
+                    : <TokenPill muted>Choose prepared spells</TokenPill>}
                 </div>
               </div>
             ) : null}
             <div className="space-y-3">
-              <MicroLabel>Chosen Invocations</MicroLabel>
+              <MicroLabel>Chosen Cantrips</MicroLabel>
               <div className="flex flex-wrap gap-2">
-                {selection.cantrips.concat(selection.spells).length > 0 ? selection.cantrips.concat(selection.spells).map((uuid) => {
-                  const spell = [...viewModel.cantrips, ...viewModel.spellsByLevel.flatMap((group) => group.spells)].find((entry) => entry.uuid === uuid);
-                  return <TokenPill key={uuid}>{spell?.name ?? uuid}</TokenPill>;
-                }) : <TokenPill muted>No spells chosen yet</TokenPill>}
+                {selectedCantripEntries.length > 0
+                  ? selectedCantripEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
+                  : <TokenPill muted>No cantrips chosen yet</TokenPill>}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <MicroLabel>Chosen Spells</MicroLabel>
+              <div className="flex flex-wrap gap-2">
+                {selectedSpellEntries.length > 0
+                  ? selectedSpellEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
+                  : <TokenPill muted>No leveled spells chosen yet</TokenPill>}
               </div>
             </div>
           </div>
@@ -430,24 +576,34 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]">
         <ArcaneScrollPanel className="min-h-0">
           <div className="space-y-5">
-            <section className="rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,34,38,0.95),rgba(19,19,23,0.98))] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.18)]">
+            <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.45rem] p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-3">
                   <MicroLabel>Portrait Atelier</MicroLabel>
-                  <div className="font-fth-cc-display text-[1.6rem] leading-tight text-[#f4e7ce]">Shape the Likeness</div>
-                  <p className="max-w-2xl font-fth-cc-body text-[0.98rem] leading-7 text-[#d1c9c2]">
+                  <div className="cc-theme-title font-fth-cc-display text-[1.6rem] leading-tight">Shape the Likeness</div>
+                  <p className="cc-theme-body-muted max-w-2xl font-fth-cc-body text-[0.98rem] leading-7">
                     Describe the face you want, choose a tonal style, and summon candidate portraits before you bind one.
                   </p>
                 </div>
                 <ValueBadge>{portraitSourceLabel}</ValueBadge>
               </div>
 
+              <label className="cc-theme-kicker mt-5 block font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em]" htmlFor="portrait-prompt">
+                Portrait Prompt
+              </label>
               <textarea
-                className="mt-5 min-h-32 w-full rounded-[1rem] border border-white/10 bg-black/25 px-4 py-3 font-fth-cc-body text-[1rem] leading-7 text-[#f1ece8] outline-none transition placeholder:text-[#928881] focus:border-[#e9c176]/55"
+                autoComplete="off"
+                className="cc-theme-card cc-theme-card--raised mt-3 min-h-32 w-full rounded-[1rem] px-4 py-3 font-fth-cc-body text-[1rem] leading-7 text-[color:var(--cc-text-primary)] outline-none transition placeholder:text-[color:var(--cc-text-secondary)] focus-visible:border-[#e9c176]/55 focus-visible:ring-2 focus-visible:ring-[#e9c176]/35 focus-visible:ring-offset-0"
                 onChange={(event) => setDescription(event.target.value)}
+                id="portrait-prompt"
+                name="portraitPrompt"
                 placeholder={viewModel.autoPrompt}
+                aria-describedby="portrait-prompt-guidance"
                 value={description}
               />
+              <p id="portrait-prompt-guidance" className="sr-only">
+                Enter the portrait description used to generate candidate likenesses.
+              </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(["fantasy", "realistic", "painterly"] as const).map((option) => (
                   <ModeToggleButton
@@ -461,7 +617,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
               <div className="mt-5 flex flex-wrap gap-3">
                 {viewModel.serverAvailable ? (
                   <button
-                    className="rounded-[1rem] border border-[#e9c176]/70 bg-[linear-gradient(180deg,#f2cb84,#d6a447)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#3b280f] shadow-[0_12px_26px_rgba(0,0,0,0.16)] transition hover:translate-y-[-1px] hover:shadow-[0_16px_34px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-border-accent)_72%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-action-primary-bright)_92%,white_8%),color-mix(in_srgb,var(--cc-action-primary)_88%,var(--cc-accent-bronze)_12%))] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-text-primary)_70%,var(--cc-bg-base)_30%)] shadow-[var(--cc-shadow-panel)] transition hover:translate-y-[-1px] hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-70"
                     disabled={generating}
                     onClick={() => void runGeneration()}
                     type="button"
@@ -470,7 +626,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                   </button>
                 ) : null}
                 <button
-                  className="rounded-[1rem] border border-white/12 bg-[rgba(255,255,255,0.04)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#efe7df] transition hover:border-[#e9c176]/45 hover:bg-[rgba(255,255,255,0.06)]"
+                  className="cc-theme-card cc-theme-card--soft rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_48%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_84%,var(--cc-surface-accent-soft)_16%)]"
                   onClick={openUploadPicker}
                   type="button"
                 >
@@ -478,7 +634,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 </button>
                 {currentPortrait ? (
                   <button
-                    className="rounded-[1rem] border border-[#d07364]/40 bg-[rgba(117,42,42,0.18)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[#f4d3cd] transition hover:border-[#d07364]/70 hover:bg-[rgba(117,42,42,0.26)]"
+                    className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-danger)_48%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-danger)_20%,transparent)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-danger)_72%,var(--cc-text-primary)_28%)] transition hover:border-[color:color-mix(in_srgb,var(--cc-danger)_68%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-danger)_28%,transparent)]"
                     onClick={clearPortrait}
                     type="button"
                   >
@@ -488,10 +644,10 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
               </div>
             </section>
 
-            <section className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(28,28,33,0.92),rgba(15,15,19,0.97))] p-4">
+            <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.35rem] p-4">
               <div className="flex items-center justify-between gap-3">
                 <MicroLabel>Generated Portraits</MicroLabel>
-                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
+                <div className="cc-theme-body-muted font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em]">
                   {generated.length > 0 ? `${generated.length} summoned` : "Awaiting invocation"}
                 </div>
               </div>
@@ -501,10 +657,10 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                     <motion.button
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "overflow-hidden rounded-[1.3rem] border transition",
+                        "cc-theme-card cc-theme-card--interactive overflow-hidden rounded-[1.3rem] border transition",
                         currentPortrait === image.dataUrl
-                          ? "border-[#e9c176] shadow-[0_0_0_1px_rgba(233,193,118,0.28),0_16px_30px_rgba(0,0,0,0.22)]"
-                          : "border-white/10 hover:border-[#e9c176]/45",
+                          ? "cc-theme-card--selected"
+                          : "cc-theme-card--soft",
                       )}
                       initial={{ opacity: 0, y: 8 }}
                       key={`${image.dataUrl}-${index}`}
@@ -535,7 +691,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
               {currentPortrait ? <TokenPill muted>Ready for final review</TokenPill> : null}
             </div>
             {currentPortrait ? (
-              <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-3">
+              <div className="cc-theme-media-frame overflow-hidden rounded-[1.4rem] border p-3">
                 <img alt="Selected portrait" className="aspect-[4/5] w-full rounded-[1rem] object-cover" src={currentPortrait} />
               </div>
             ) : (
@@ -587,7 +743,7 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.16fr)_minmax(20rem,0.84fr)]">
         <ArcaneScrollPanel className="min-h-0">
-          <div className="overflow-hidden rounded-[1.6rem] border border-[#e9c176]/20 bg-[linear-gradient(180deg,rgba(35,35,39,0.95),rgba(19,19,24,0.98))] shadow-[0_28px_60px_rgba(0,0,0,0.28)]">
+          <div className="cc-theme-panel cc-theme-panel--accent overflow-hidden rounded-[1.6rem]">
             <div className="grid gap-0 xl:grid-cols-[minmax(20rem,0.78fr)_minmax(0,1fr)]">
               <div className="relative min-h-[20rem] overflow-hidden">
                 <img
@@ -595,10 +751,10 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                   className="h-full w-full object-cover"
                   src={viewModel.sections.find((section) => section.id === "portrait")?.img ?? speciesSection?.img ?? heroSection?.img ?? ""}
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,12,0.22),rgba(8,8,12,0.88))]" />
+                <div className="cc-theme-media-frame__fade absolute inset-0" />
                 <div className="absolute inset-x-6 bottom-6">
                   <MicroLabel>Bound Identity</MicroLabel>
-                  <div className="mt-3 font-fth-cc-display text-[2.4rem] leading-none text-[#f5e8cf]">
+                  <div className="cc-theme-title mt-3 font-fth-cc-display text-[2.4rem] leading-none">
                     {characterName || "Name Your Artifact"}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -606,7 +762,7 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                       <TokenPill key={String(entry)}>{String(entry)}</TokenPill>
                     ))}
                   </div>
-                  <p className="mt-4 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6 text-[#d6cdc8]">
+                  <p className="cc-theme-copy mt-4 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6">
                     This is the name that will appear on the character sheet and in the world. Keep it clear, bold, and easy to
                     recognize when the ritual closes.
                   </p>
@@ -614,37 +770,42 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
               </div>
 
               <div className="space-y-5 p-6">
-                <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.16)]">
-                  <MicroLabel>Character Name</MicroLabel>
-                  <p id="review-character-name-guidance" className="mt-3 max-w-xl font-fth-cc-body text-[0.94rem] leading-6 text-[#cec5be]">
+                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                  <label className="cc-theme-kicker block font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em]" htmlFor="review-character-name">
+                    Character Name
+                  </label>
+                  <p id="review-character-name-guidance" className="cc-theme-body-muted mt-3 max-w-xl font-fth-cc-body text-[0.94rem] leading-6">
                     The final binding uses this name exactly as shown here. Review it now so the finished character arrives
                     with the right identity.
                   </p>
                   <input
+                    autoComplete="off"
                     aria-describedby="review-character-name-guidance"
-                    className="mt-4 w-full rounded-[1rem] border border-white/12 bg-black/20 px-4 py-3 font-fth-cc-display text-[1.35rem] text-[#f5e8cf] outline-none transition focus:border-[#e9c176]/55"
+                    className="cc-theme-card cc-theme-card--raised mt-4 w-full rounded-[1rem] px-4 py-3 font-fth-cc-display text-[1.35rem] text-[color:var(--cc-text-primary)] outline-none transition focus-visible:border-[#e9c176]/55 focus-visible:ring-2 focus-visible:ring-[#e9c176]/35 focus-visible:ring-offset-0"
                     onChange={(event) => {
                       const value = event.target.value;
                       setCharacterName(value);
                       controller.updateCurrentStepData({ characterName: value }, { silent: true });
                     }}
-                    placeholder="Name the artifact"
+                    id="review-character-name"
+                    name="characterName"
+                    placeholder="Enter character name..."
                     value={characterName}
                   />
                 </section>
 
                 {Array.isArray(abilitiesSection?.summary) ? (
-                  <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.16)]">
+                  <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
                     <MicroLabel>Core Attributes</MicroLabel>
                     <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                       {(abilitiesSection.summary as Array<{ key: string; score: number; modifier: string }>).map((ability) => (
                         <div
-                          className="rounded-[1rem] border border-white/10 bg-[rgba(255,255,255,0.04)] px-4 py-3"
+                          className="cc-theme-card cc-theme-card--soft rounded-[1rem] px-4 py-3"
                           key={ability.key}
                         >
-                          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.2em] text-[#aa9fc5]">{ability.key}</div>
-                          <div className="mt-2 font-fth-cc-display text-[1.55rem] text-[#f4e7cf]">{ability.score}</div>
-                          <div className="font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.14em] text-[#d1c8bf]">{ability.modifier}</div>
+                          <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.2em]">{ability.key}</div>
+                          <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.55rem]">{ability.score}</div>
+                          <div className="cc-theme-body-muted font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.14em]">{ability.modifier}</div>
                         </div>
                       ))}
                     </div>
@@ -652,12 +813,12 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                 ) : null}
 
                 {originSummarySection?.selectedGrantGroups?.length ? (
-                  <section className="rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_16px_30px_rgba(0,0,0,0.16)]">
+                  <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
                     <MicroLabel>Origins</MicroLabel>
                     <div className="mt-3 grid gap-3">
                       {originSummarySection.selectedGrantGroups.map((group) => (
-                        <div className="rounded-[1rem] border border-white/10 bg-[rgba(255,255,255,0.04)] p-4" key={group.id}>
-                          <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f4e7cf]">{group.title}</div>
+                        <div className="cc-theme-card cc-theme-card--soft rounded-[1rem] p-4" key={group.id}>
+                          <div className="cc-theme-body font-fth-cc-body text-[1rem] font-semibold">{group.title}</div>
                           <div className="mt-3 flex flex-wrap gap-2">
                             {group.entries.map((entry) => <TokenPill key={`${group.id}-${entry}`}>{entry}</TokenPill>)}
                           </div>
@@ -694,7 +855,7 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                 </div>
               </div>
             ) : (
-              <p className="font-fth-cc-body text-[0.98rem] leading-7 text-[#d7d0cb]">
+              <p className="cc-theme-body-muted font-fth-cc-body text-[0.98rem] leading-7">
                 The creator has all of the selections it needs. When you are satisfied with the artifact above, the footer action will complete the binding and create the character in Foundry.
               </p>
             )}
@@ -703,10 +864,10 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                 <MicroLabel>Build Outcomes</MicroLabel>
                 <div className="grid gap-3">
                   {buildSections.map((section) => (
-                    <div className="rounded-[1rem] border border-white/10 bg-[rgba(255,255,255,0.04)] p-4" key={section.id}>
-                      <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f4e7cf]">{section.label}</div>
+                    <div className="cc-theme-card cc-theme-card--soft rounded-[1rem] p-4" key={section.id}>
+                      <div className="cc-theme-body font-fth-cc-body text-[1rem] font-semibold">{section.label}</div>
                       {typeof section.summary === "string" && section.summary ? (
-                        <p className="mt-2 font-fth-cc-body text-[0.95rem] leading-6 text-[#d7d0cb]">{section.summary}</p>
+                        <p className="cc-theme-body-muted mt-2 font-fth-cc-body text-[0.95rem] leading-6">{section.summary}</p>
                       ) : null}
                     </div>
                   ))}
@@ -729,6 +890,7 @@ function SpellGroupSection({
   preparedIds,
   onToggle,
   onTogglePrepared,
+  onPreview,
   prefersReducedMotion,
 }: {
   title: string;
@@ -739,6 +901,7 @@ function SpellGroupSection({
   preparedIds?: Set<string>;
   onToggle: (uuid: string) => void;
   onTogglePrepared?: (uuid: string) => void;
+  onPreview?: (uuid: string) => void;
   prefersReducedMotion: boolean;
 }) {
   return (
@@ -763,6 +926,8 @@ function SpellGroupSection({
                 )}
                 initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
                 key={entry.uuid}
+                onFocus={() => onPreview?.(entry.uuid)}
+                onMouseEnter={() => onPreview?.(entry.uuid)}
                 onClick={() => onToggle(entry.uuid)}
                 transition={{ duration: 0.22, delay: index * 0.02, ease: [0.22, 1, 0.36, 1] }}
                 type="button"
@@ -836,14 +1001,14 @@ function ArcaneHero({
   children?: ReactNode;
 }) {
   return (
-    <header className="mx-auto mb-5 flex w-full max-w-5xl flex-col items-center text-center">
+    <header className="cc-theme-hero-shell mx-auto mb-5 flex w-full max-w-5xl flex-col items-center rounded-[2rem] px-6 py-5 text-center">
       {eyebrow ? <MicroLabel>{eyebrow}</MicroLabel> : null}
-      <h2 className="mt-3 max-w-4xl font-fth-cc-display text-[clamp(2.4rem,5vw,4.8rem)] leading-[0.95] text-[#f3e6cc]">
+      <h2 className="cc-theme-title mt-3 max-w-4xl font-fth-cc-display text-[clamp(2.4rem,5vw,4.8rem)] leading-[0.95]">
         {title}
       </h2>
-      <div className="mt-4 h-px w-full max-w-3xl bg-[linear-gradient(90deg,rgba(233,193,118,0),rgba(233,193,118,0.7),rgba(233,193,118,0))]" />
+      <div className="mt-4 h-px w-full max-w-3xl bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--cc-border-accent)_72%,transparent),transparent)]" />
       {description ? (
-        <p className="mt-5 max-w-3xl font-fth-cc-body text-[1.06rem] leading-8 text-[#d1c9c2]">
+        <p className="cc-theme-copy mt-5 max-w-3xl font-fth-cc-body text-[1.06rem] leading-8">
           {description}
         </p>
       ) : null}
@@ -861,7 +1026,7 @@ function ArcaneScrollPanel({
 }) {
   return (
     <section className={cn(
-      "fth-react-scrollbar rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(25,25,30,0.9),rgba(15,15,19,0.96))] p-5 shadow-[0_30px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl",
+      "fth-react-scrollbar cc-theme-panel cc-theme-panel--soft rounded-[1.7rem] border p-5 backdrop-blur-xl",
       className,
     )}
     >
@@ -880,9 +1045,9 @@ function ArcaneInspectorPanel({
   children: ReactNode;
 }) {
   return (
-    <aside className="rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(23,23,29,0.92),rgba(13,13,18,0.98))] p-5 shadow-[0_24px_55px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+    <aside className="cc-theme-panel cc-theme-panel--soft rounded-[1.7rem] border p-5 backdrop-blur-xl">
       {eyebrow ? <MicroLabel>{eyebrow}</MicroLabel> : null}
-      <div className="mt-3 font-fth-cc-display text-[1.7rem] leading-tight text-[#f3e6cc]">{title}</div>
+      <div className="cc-theme-title mt-3 font-fth-cc-display text-[1.7rem] leading-tight">{title}</div>
       <div className="mt-5">{children}</div>
     </aside>
   );
@@ -891,11 +1056,11 @@ function ArcaneInspectorPanel({
 function ArcaneEmptyState({ message, compact = false }: { message: string; compact?: boolean }) {
   return (
     <div className={cn(
-      "rounded-[1.25rem] border border-dashed border-white/12 bg-[rgba(255,255,255,0.03)] px-5 py-8 text-center",
+      "cc-theme-empty rounded-[1.25rem] border border-dashed px-5 py-8 text-center",
       compact && "px-4 py-6",
     )}
     >
-      <p className="mx-auto max-w-xl font-fth-cc-body text-[0.98rem] leading-7 text-[#c9c1ba]">{message}</p>
+      <p className="cc-theme-body-muted mx-auto max-w-xl font-fth-cc-body text-[0.98rem] leading-7">{message}</p>
     </div>
   );
 }
@@ -912,10 +1077,10 @@ function ModeToggleButton({
   return (
     <button
       className={cn(
-        "rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em] transition",
+        "cc-theme-toggle rounded-full border px-4 py-2 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em] transition",
         active
-          ? "border-[#e9c176] bg-[linear-gradient(180deg,#f3d28e,#d5a84d)] text-[#38260f] shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
-          : "border-white/10 bg-[rgba(255,255,255,0.04)] text-[#e6dfd8] hover:border-[#e9c176]/45",
+          ? "cc-theme-toggle--active"
+          : "",
       )}
       onClick={onClick}
       type="button"
@@ -927,7 +1092,7 @@ function ModeToggleButton({
 
 function MicroLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.26em] text-[#e9c176]">
+    <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.26em]">
       {children}
     </div>
   );
@@ -935,7 +1100,7 @@ function MicroLabel({ children }: { children: ReactNode }) {
 
 function ValueBadge({ children }: { children: ReactNode }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-[#e9c176]/25 bg-[rgba(211,190,235,0.1)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#f2e6d0]">
+    <div className="cc-theme-badge inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em]">
       {children}
     </div>
   );
@@ -953,8 +1118,8 @@ function TokenPill({
       className={cn(
         "inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-body text-[0.92rem]",
         muted
-          ? "border-white/10 bg-[rgba(255,255,255,0.03)] text-[#c9c1ba]"
-          : "border-[#e9c176]/25 bg-[rgba(211,190,235,0.1)] text-[#f1e5cf]",
+          ? "cc-theme-pill--muted"
+          : "cc-theme-pill",
       )}
     >
       {children}
@@ -977,10 +1142,10 @@ function ReviewRecapCard({
     <motion.button
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       className={cn(
-        "rounded-[1.35rem] border p-4 text-left transition",
+        "cc-theme-card rounded-[1.35rem] border p-4 text-left transition",
         section.complete
-          ? "border-white/12 bg-[linear-gradient(180deg,rgba(31,31,35,0.92),rgba(18,18,23,0.96))] hover:border-[#e9c176]/35"
-          : "border-[#d07364]/35 bg-[linear-gradient(180deg,rgba(58,30,30,0.82),rgba(29,17,20,0.94))] hover:border-[#e9c176]/35",
+          ? "cc-theme-card--raised cc-theme-card--interactive"
+          : "cc-theme-card--selected",
       )}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
       onClick={() => controller.jumpToStep(section.id)}
@@ -989,21 +1154,21 @@ function ReviewRecapCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="font-fth-cc-display text-[1.2rem] text-[#f4e7cf]">{section.label}</div>
+          <div className="cc-theme-title font-fth-cc-display text-[1.2rem]">{section.label}</div>
           <div className="mt-2 flex flex-wrap gap-2">
             <TokenPill muted>{section.complete ? "Complete" : "Needs attention"}</TokenPill>
             <TokenPill muted>Jump back</TokenPill>
           </div>
           {typeof section.summary === "string" && section.summary ? (
-            <p className="mt-3 font-fth-cc-body text-[0.96rem] leading-6 text-[#d3cbc4]">{section.summary}</p>
+            <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.96rem] leading-6">{section.summary}</p>
           ) : null}
           {section.detail ? (
-            <p className="mt-2 font-fth-cc-body text-[0.9rem] leading-6 text-[#9d94ad]">{section.detail}</p>
+            <p className="cc-theme-kicker mt-2 font-fth-cc-body text-[0.9rem] leading-6">{section.detail}</p>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <SelectionSigil checked={section.complete} />
-          <span className="rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#d8d0c7]">
+          <span className="cc-theme-badge--muted rounded-full border px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
             Edit
           </span>
         </div>
@@ -1019,8 +1184,8 @@ function SelectionSigil({ checked }: { checked: boolean }) {
       className={cn(
         "inline-flex h-11 w-11 items-center justify-center rounded-full border transition",
         checked
-          ? "border-[#e9c176] bg-[radial-gradient(circle_at_35%_35%,#f3d28e,#d5a84d)] text-[#38260f] shadow-[0_0_16px_rgba(233,193,118,0.25)]"
-          : "border-white/10 bg-[rgba(255,255,255,0.04)] text-[#bdb4ab]",
+          ? "cc-theme-sigil cc-theme-sigil--selected shadow-[0_0_16px_color-mix(in_srgb,var(--cc-border-accent)_28%,transparent)]"
+          : "cc-theme-sigil",
       )}
     >
       <i className={cn("fa-solid", checked ? "fa-check" : "fa-sparkles")} />

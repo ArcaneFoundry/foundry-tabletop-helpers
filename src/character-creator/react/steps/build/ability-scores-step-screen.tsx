@@ -4,9 +4,11 @@ import type {
   AbilityKey,
   AbilityScoreMethod,
   ReactWizardStepProps,
+  WizardState,
 } from "../../../character-creator-types";
 import {
   ABILITY_KEYS,
+  ABILITY_LABELS,
   POINT_BUY_BUDGET,
   POINT_BUY_MAX,
   POINT_BUY_MIN,
@@ -20,6 +22,7 @@ import {
   pointBuySpent,
   rollAllAbilities,
 } from "../../../steps/step-abilities-model";
+import { getClassRecommendation } from "../../../steps/step-class-model";
 
 type AbilityStepViewModel = {
   method: AbilityScoreMethod;
@@ -99,6 +102,8 @@ const METHOD_COPY: Record<AbilityScoreMethod, {
   },
 };
 
+const DEFAULT_ABILITY_PRIORITY: AbilityKey[] = ["str", "dex", "con", "wis", "int", "cha"];
+
 export function AbilityScoresStepScreen({
   shellContext,
   state,
@@ -117,6 +122,9 @@ export function AbilityScoresStepScreen({
       )
     : 0;
   const openCount = isAssignmentMode ? ABILITY_KEYS.length - assignedCount : 0;
+  const canQuickAssign = isAssignmentMode && (
+    viewModel.isStandardArray || (viewModel.isRoll && viewModel.hasRolled)
+  );
 
   const updateState = (nextState: ReturnType<typeof getAbilityState>) => {
     controller.updateCurrentStepData(nextState);
@@ -134,6 +142,12 @@ export function AbilityScoresStepScreen({
       scores: defaultScores(),
       rerollCount: (current.rerollCount ?? 0) + 1,
     });
+  };
+
+  const handleQuickAssign = () => {
+    const nextState = buildQuickAssignedAbilityState(state, current);
+    if (!nextState) return;
+    updateState(nextState);
   };
 
   const handleAdjust = (key: AbilityKey, delta: number) => {
@@ -178,28 +192,28 @@ export function AbilityScoresStepScreen({
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="cc-abilities mx-auto flex w-full max-w-5xl flex-col gap-4">
-        <header className="cc-theme-header rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(30,24,28,0.96),rgba(16,15,19,0.98))] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.24)] md:px-6 md:py-5">
+        <header className="cc-theme-header cc-theme-header--hero rounded-[1.5rem] px-5 py-5 md:px-6 md:py-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-2">
-              <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-[#e9c176]/72">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em]">
                 Ability Scores
               </div>
-              <h2 className="cc-theme-title m-0 font-fth-cc-display text-[1.65rem] leading-[1.05] text-[#f7e7c6] md:text-[1.9rem]">
+              <h2 className="cc-theme-title m-0 font-fth-cc-display text-[1.65rem] leading-[1.05] md:text-[1.9rem]">
                 Choose the ritual that forges your six abilities
               </h2>
-              <p className="cc-theme-copy m-0 text-[0.98rem] leading-7 text-[#d7d0cb] md:text-[1.03rem]">
+              <p className="cc-theme-copy m-0 text-[0.98rem] leading-7 md:text-[1.03rem]">
                 {selectedMethod.detail}
               </p>
             </div>
 
-            <div className="cc-theme-card min-w-[14rem] rounded-[1.1rem] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-              <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#e9c176]/70">
+            <div className="cc-theme-panel cc-theme-panel--soft min-w-[14rem] rounded-[1.1rem] px-4 py-3">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                 Active Method
               </div>
-              <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.25rem] leading-none text-[#f7e7c6]">
+              <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.25rem] leading-none">
                 {selectedMethod.title}
               </div>
-              <p className="cc-theme-body-muted m-0 mt-2 text-[0.86rem] leading-6 text-[#cfc5bd]">
+              <p className="cc-theme-body-muted m-0 mt-2 text-[0.86rem] leading-6">
                 {selectedMethod.summary}
               </p>
             </div>
@@ -271,8 +285,20 @@ export function AbilityScoresStepScreen({
                     <i className="fa-solid fa-dice" aria-hidden="true" />
                     <span>{viewModel.hasRolled ? "Reroll All" : "Roll Abilities"}</span>
                   </button>
+                  {isAssignmentMode && canQuickAssign ? (
+                    <button
+                      className="cc-roll-btn"
+                      onClick={handleQuickAssign}
+                      type="button"
+                    >
+                      <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
+                      <span>Quick Assign</span>
+                    </button>
+                  ) : null}
                   <span className="cc-roll-controls__state">
-                    {viewModel.hasRolled
+                    {canQuickAssign
+                      ? `Quick assigns ${getQuickAssignPriorityText(state)} first`
+                      : viewModel.hasRolled
                       ? openCount > 0
                         ? `${openCount} values still open`
                         : "Results ready for assignment"
@@ -301,9 +327,21 @@ export function AbilityScoresStepScreen({
                     Assign the full array of 15, 14, 13, 12, 10, and 8 to keep the build disciplined and predictable.
                   </p>
                 </div>
-                <span className="cc-roll-controls__state">
-                  {openCount > 0 ? `${openCount} values still open` : "Array fully assigned"}
-                </span>
+                <div className="cc-roll-controls__actions">
+                  {isAssignmentMode && canQuickAssign ? (
+                    <button className="cc-roll-btn" onClick={handleQuickAssign} type="button">
+                      <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
+                      <span>Quick Assign</span>
+                    </button>
+                  ) : null}
+                  <span className="cc-roll-controls__state">
+                    {canQuickAssign
+                      ? `Quick assigns ${getQuickAssignPriorityText(state)} first`
+                      : openCount > 0
+                        ? `${openCount} values still open`
+                        : "Array fully assigned"}
+                  </span>
+                </div>
               </div>
             ) : null}
 
@@ -490,3 +528,65 @@ export function AbilityScoresStepScreen({
     </section>
   );
 }
+
+function getQuickAssignPriorityOrder(state: WizardState): AbilityKey[] {
+  const primaryAbilities = getQuickAssignPrimaryAbilities(state);
+  return [...new Set([...primaryAbilities, ...DEFAULT_ABILITY_PRIORITY])];
+}
+
+function getQuickAssignPriorityText(state: WizardState): string {
+  const abilities = getQuickAssignPrimaryAbilities(state);
+  return abilities.length > 0
+    ? abilities.map((ability) => ABILITY_LABELS[ability]).join(" / ")
+    : "the class order";
+}
+
+function getQuickAssignPrimaryAbilities(state: WizardState): AbilityKey[] {
+  const selectedClass = state.selections.class;
+  const recommendation = selectedClass
+    ? getClassRecommendation(selectedClass.identifier ?? "")
+    : { primaryAbilities: [] as AbilityKey[] };
+
+  return selectedClass?.primaryAbilities?.length
+    ? selectedClass.primaryAbilities
+    : recommendation.primaryAbilities;
+}
+
+function buildQuickAssignedAbilityState(
+  state: WizardState,
+  current: ReturnType<typeof getAbilityState>,
+): ReturnType<typeof getAbilityState> | null {
+  const pool = current.method === "4d6"
+    ? [...(current.rolledValues ?? [])]
+    : current.method === "standardArray"
+      ? [...STANDARD_ARRAY]
+      : [];
+
+  if (pool.length !== 6) return null;
+
+  const sortedPool = pool
+    .map((value, index) => ({ value, index }))
+    .sort((a, b) => b.value - a.value || a.index - b.index);
+  const prioritizedAbilities = getQuickAssignPriorityOrder(state);
+  const nextAssignments = defaultAssignments();
+  const nextScores = defaultScores();
+
+  sortedPool.forEach((entry, index) => {
+    const abilityKey = prioritizedAbilities[index] ?? DEFAULT_ABILITY_PRIORITY[index];
+    if (!abilityKey) return;
+    nextAssignments[abilityKey] = entry.index;
+    nextScores[abilityKey] = entry.value;
+  });
+
+  return {
+    ...current,
+    assignments: nextAssignments,
+    scores: nextScores,
+  };
+}
+
+export const __abilityScoresInternals = {
+  buildQuickAssignedAbilityState,
+  getQuickAssignPriorityOrder,
+  getQuickAssignPriorityText,
+};

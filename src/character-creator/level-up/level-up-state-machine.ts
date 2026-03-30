@@ -101,6 +101,10 @@ export class LevelUpStateMachine {
     this.state.stepStatus.set(stepId, "complete");
   }
 
+  markPending(stepId: string): void {
+    this.state.stepStatus.set(stepId, "pending");
+  }
+
   getStepStatus(stepId: string): "pending" | "complete" {
     return this.state.stepStatus.get(stepId) ?? "pending";
   }

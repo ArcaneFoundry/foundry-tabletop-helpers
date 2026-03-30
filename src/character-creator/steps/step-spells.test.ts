@@ -275,7 +275,7 @@ describe("step spells", () => {
     expect(viewModel).toMatchObject({
       className: "Wizard",
       usingClassFilter: true,
-      maxSpellLevel: 2,
+      maxSpellLevel: 3,
       cantripCount: 0,
       spellCount: 0,
       maxCantrips: 4,
@@ -287,7 +287,10 @@ describe("step spells", () => {
       .map((group) => ({ level: group.level, names: group.spells.map((s) => s.name) }));
 
     expect(cantrips).toEqual(["Light"]);
-    expect(levels).toEqual([{ level: 1, names: ["Magic Missile"] }]);
+    expect(levels).toEqual([
+      { level: 1, names: ["Magic Missile"] },
+      { level: 3, names: ["Fireball"] },
+    ]);
   });
 
   it("uses spellbook counts for wizard creation instead of prepared spell counts", async () => {
@@ -327,7 +330,7 @@ describe("step spells", () => {
       maxSpellLevel: 3,
       maxCantrips: 4,
       maxSpells: 14,
-      selectionSummary: "0 / 4 cantrips, 0 / 14 spells",
+      selectionSummary: "0 / 4 cantrips, 0 / 14 spells, 0 / 9 prepared",
       hasPreparationNotice: true,
       preparationNotice: "Choose which leveled spells start prepared for this Wizard. You can change them later on the sheet.",
       showPreparedPicker: true,

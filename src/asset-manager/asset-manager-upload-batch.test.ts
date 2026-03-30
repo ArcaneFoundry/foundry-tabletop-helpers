@@ -84,6 +84,39 @@ describe("asset manager upload batch helper", () => {
     expect(deleteOriginal).toHaveBeenCalledWith("music/theme.wav");
   });
 
+  it("skips server optimization for oversized images and falls back to the worker path", async () => {
+    const uploadFn = vi.fn(async (_file: File, name: string) => name);
+    const deleteOriginal = vi.fn(async () => undefined);
+    const optimized = new Blob(["optimized-image"], { type: "image/webp" });
+    Object.defineProperty(optimized, "size", { value: 120_000 });
+    const serverOptimizeImage = vi.fn();
+
+    const outcome = await processBatchOptimizationEntry(
+      "maps/world-map.png",
+      "maps",
+      "world-map.png",
+      makeFile("world-map.png", 500_000, "image/png"),
+      "image",
+      {
+        serverCaps: { image: true, audio: false, video: false, thumbnail: false, portrait: false, maxFileSize: 200_000 },
+        resolvedPreset: "map",
+        config,
+        uploadFn,
+        optimizeAudio: vi.fn(),
+        optimizeImageWithWorker: vi.fn(async () => optimized),
+        serverOptimizeImage,
+        serverOptimizeAudio: vi.fn(),
+        serverOptimizeVideo: vi.fn(),
+        deleteOriginal,
+      },
+    );
+
+    expect(serverOptimizeImage).not.toHaveBeenCalled();
+    expect(outcome).toEqual({ processed: true, savedBytes: 380_000 });
+    expect(uploadFn).toHaveBeenCalled();
+    expect(deleteOriginal).toHaveBeenCalledWith("maps/world-map.png");
+  });
+
   it("skips video when no server optimization is available", async () => {
     const outcome = await processBatchOptimizationEntry(
       "video/intro.mp4",

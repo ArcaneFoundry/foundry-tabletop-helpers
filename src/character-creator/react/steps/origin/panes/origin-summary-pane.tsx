@@ -69,21 +69,21 @@ export function OriginSummaryPane({ shellContext }: OriginSummaryPaneProps) {
       <div className="grid gap-4 pr-1">
           <motion.section
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[1.55rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image)] p-4 shadow-[var(--fth-theme-shadow-panel),inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_6%,transparent)] md:p-5"
+            className="cc-theme-panel cc-theme-panel--soft relative overflow-hidden rounded-[1.55rem] p-4 md:p-5"
             initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
             transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_srgb,var(--fth-color-arcane)_14%,transparent),transparent_34%),radial-gradient(circle_at_bottom_right,color-mix(in_srgb,var(--fth-color-accent)_14%,transparent),transparent_34%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_srgb,var(--cc-surface-accent-soft)_18%,transparent),transparent_34%),radial-gradient(circle_at_bottom_right,color-mix(in_srgb,var(--cc-surface-arcane-soft)_16%,transparent),transparent_34%)]" />
             <div className="relative z-10 flex flex-col gap-5">
-              <div className="flex flex-col gap-4 border-b border-[color:color-mix(in_srgb,var(--fth-color-text)_8%,transparent)] pb-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex flex-col gap-4 border-b border-[color:color-mix(in_srgb,var(--cc-border-subtle)_72%,transparent)] pb-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
-                  <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_78%,transparent)]">
+                  <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.3em]">
                     Origins Recap
                   </div>
-                  <h3 className="mt-2 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em] text-[color:var(--fth-color-text)]">
+                  <h3 className="cc-theme-title mt-2 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.08em]">
                     Origin Summary
                   </h3>
-                  <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-7 text-[color:var(--fth-color-text-muted)]">
+                  <p className="cc-theme-body-muted mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-7">
                     Review the lineage, background, and chapter grants now bound to this character before you leave Origins
                     and step into the build phase.
                   </p>
@@ -179,16 +179,16 @@ export function OriginSummaryPane({ shellContext }: OriginSummaryPaneProps) {
 
           <motion.section
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-            className="rounded-[1.45rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image-alt)] p-4 shadow-[var(--fth-theme-shadow-panel),inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_5%,transparent)]"
+            className="cc-theme-panel cc-theme-panel--accent rounded-[1.45rem] p-4"
             initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
             transition={{ delay: 0.03, duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex flex-col gap-3 border-b border-[color:color-mix(in_srgb,var(--fth-color-text)_8%,transparent)] pb-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 border-b border-[color:color-mix(in_srgb,var(--cc-border-subtle)_72%,transparent)] pb-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_74%,transparent)]">
+                <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em]">
                   Chapter Readiness
                 </div>
-                <div className="mt-1 font-fth-cc-body text-[1rem] font-semibold text-[color:var(--fth-color-text)]">
+                <div className="cc-theme-body mt-1 font-fth-cc-body text-[1rem] font-semibold">
                   Origins is ready to hand off into Build.
                 </div>
               </div>
@@ -225,25 +225,25 @@ function OriginHeroAnchor({
   iconClass: string;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[1.28rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-card-shell-image)] shadow-[var(--fth-theme-shadow-panel)]">
+    <section className="cc-theme-card cc-theme-card--raised relative overflow-hidden rounded-[1.28rem] border">
       <div className="relative aspect-[1.22] overflow-hidden">
         {image ? (
           <img alt={label} className="h-full w-full object-cover" loading="lazy" src={image} />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[color:var(--fth-color-accent-strong)]">
+          <div className="cc-theme-kicker flex h-full w-full items-center justify-center">
             <i className={cn(iconClass, "text-3xl")} aria-hidden="true" />
           </div>
         )}
-        <div className="pointer-events-none absolute inset-0 bg-[image:var(--fth-theme-card-inner-image)]" />
-        <div className="pointer-events-none absolute inset-x-3 top-3 h-10 rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-text)_12%,transparent),transparent)]" />
-        <div className="absolute inset-x-4 bottom-4 rounded-[1rem] border border-[color:color-mix(in_srgb,var(--fth-color-accent)_32%,transparent)] bg-[color:color-mix(in_srgb,var(--fth-color-canvas)_72%,transparent)] px-4 py-3 shadow-[0_14px_24px_rgb(0_0_0_/_0.16)] backdrop-blur-[4px]">
-          <div className="font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.22em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_78%,transparent)]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-bg-surface)_10%,transparent),transparent 22%,color-mix(in_srgb,var(--cc-bg-base)_8%,transparent)_58%,color-mix(in_srgb,var(--cc-bg-base)_82%,transparent)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-3 top-3 h-10 rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_18%,transparent),transparent)]" />
+        <div className="cc-theme-panel cc-theme-panel--soft absolute inset-x-4 bottom-4 rounded-[1rem] border px-4 py-3 backdrop-blur-[4px]">
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.22em]">
             {kicker}
           </div>
-          <div className="mt-1 font-fth-cc-display text-[1.15rem] uppercase tracking-[0.06em] text-[color:var(--fth-color-text)]">
+          <div className="cc-theme-title mt-1 font-fth-cc-display text-[1.15rem] uppercase tracking-[0.06em]">
             {label}
           </div>
-          <p className="mt-1.5 font-fth-cc-body text-[0.86rem] leading-5 text-[color:var(--fth-color-text-muted)]">
+          <p className="cc-theme-body-muted mt-1.5 font-fth-cc-body text-[0.86rem] leading-5">
             {sublabel}
           </p>
         </div>
@@ -264,14 +264,14 @@ function RecapPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[1.28rem] border border-[color:color-mix(in_srgb,var(--fth-color-text)_8%,transparent)] bg-[color:var(--fth-color-surface-glass)] p-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_4%,transparent)]">
-      <div className="flex items-start gap-3 border-b border-[color:color-mix(in_srgb,var(--fth-color-text)_8%,transparent)] pb-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--fth-color-accent)_38%,transparent)] bg-[radial-gradient(circle_at_35%_35%,color-mix(in_srgb,var(--fth-color-accent-strong)_24%,transparent),color-mix(in_srgb,var(--fth-color-accent-contrast)_66%,transparent))] text-[color:var(--fth-color-accent-strong)] shadow-[0_10px_20px_rgb(0_0_0_/_0.16)]">
+    <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.28rem] border p-4">
+      <div className="flex items-start gap-3 border-b border-[color:color-mix(in_srgb,var(--cc-border-subtle)_72%,transparent)] pb-3">
+        <div className="cc-theme-badge flex h-11 w-11 shrink-0 items-center justify-center rounded-full">
           <i className={iconClass} aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <div className="font-fth-cc-body text-[1rem] font-semibold text-[color:var(--fth-color-text)]">{title}</div>
-          <p className="mt-1 font-fth-cc-body text-[0.9rem] leading-6 text-[color:var(--fth-color-text-muted)]">{description}</p>
+          <div className="cc-theme-body font-fth-cc-body text-[1rem] font-semibold">{title}</div>
+          <p className="cc-theme-body-muted mt-1 font-fth-cc-body text-[0.9rem] leading-6">{description}</p>
         </div>
       </div>
       <div className="mt-4">{children}</div>
@@ -293,23 +293,23 @@ function DarkSummaryCard({
   source?: "background" | "species";
 }) {
   return (
-    <section className="rounded-[1.12rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image-alt)] p-4 shadow-[var(--fth-theme-shadow-panel)]">
-      <div className="flex items-center justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--fth-color-text)_8%,transparent)] pb-3">
+    <section className="cc-theme-card cc-theme-card--soft rounded-[1.12rem] border p-4">
+      <div className="flex items-center justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--cc-border-subtle)_72%,transparent)] pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--fth-color-accent)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--fth-color-accent)_10%,transparent)] text-[color:var(--fth-color-accent-strong)]">
+          <div className="cc-theme-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
             <i className={iconClass} aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <div className="font-fth-cc-body text-[0.96rem] font-semibold text-[color:var(--fth-color-text)]">{title}</div>
+            <div className="cc-theme-body font-fth-cc-body text-[0.96rem] font-semibold">{title}</div>
             {source ? (
-              <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_72%,transparent)]">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
                 {source === "background" ? "Background choice" : "Species choice"}
               </div>
             ) : null}
           </div>
         </div>
         {entries.length > 0 ? (
-          <span className="rounded-full border border-[color:color-mix(in_srgb,var(--fth-color-text)_8%,transparent)] bg-[color:var(--fth-color-surface-glass)] px-2.5 py-1 font-fth-cc-ui text-[0.55rem] uppercase tracking-[0.16em] text-[color:var(--fth-color-text-muted)]">
+          <span className="cc-theme-badge--muted rounded-full px-2.5 py-1 font-fth-cc-ui text-[0.55rem] uppercase tracking-[0.16em]">
             {entries.length} item{entries.length === 1 ? "" : "s"}
           </span>
         ) : null}
@@ -319,7 +319,7 @@ function DarkSummaryCard({
         <div className="mt-3 flex flex-wrap gap-2">
           {entries.map((entry) => (
             <span
-              className="rounded-full border border-[color:color-mix(in_srgb,var(--fth-color-accent)_28%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-accent)_18%,transparent),color-mix(in_srgb,var(--fth-color-canvas)_76%,transparent))] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.16em] text-[color:var(--fth-color-accent-strong)]"
+              className="cc-theme-pill rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.16em]"
               key={`${title}-${entry}`}
             >
               {entry}
@@ -327,7 +327,7 @@ function DarkSummaryCard({
           ))}
         </div>
       ) : (
-        <div className="mt-3 font-fth-cc-body text-[0.92rem] leading-6 text-[color:var(--fth-color-text-muted)]">
+        <div className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.92rem] leading-6">
           {emptyLabel ?? "No entries recorded."}
         </div>
       )}
@@ -337,7 +337,7 @@ function DarkSummaryCard({
 
 function EmptyRecapState({ message }: { message: string }) {
   return (
-    <div className="rounded-[1.1rem] border border-dashed border-[color:color-mix(in_srgb,var(--fth-color-accent)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--fth-color-text)_3%,transparent)] px-4 py-5 font-fth-cc-body text-[color:var(--fth-color-text-muted)]">
+    <div className="cc-theme-empty rounded-[1.1rem] border border-dashed px-4 py-5 text-center font-fth-cc-body">
       {message}
     </div>
   );

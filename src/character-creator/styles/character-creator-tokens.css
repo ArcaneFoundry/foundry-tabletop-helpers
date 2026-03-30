@@ -88,6 +88,57 @@
   --cc-text-hero: color-mix(in srgb, var(--fth-color-text) 94%, white 6%);
   --cc-text-hero-muted: color-mix(in srgb, var(--fth-color-text) 78%, transparent);
   --cc-text-kicker: color-mix(in srgb, var(--fth-color-accent-strong) 68%, var(--fth-color-text) 32%);
+  --cc-class-hero-art-opacity: 0.26;
+  --cc-class-field-art-opacity: 0.1;
+  --cc-class-stepper-rail: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cc-border-accent) 10%, transparent),
+    color-mix(in srgb, var(--cc-border-accent) 78%, transparent),
+    color-mix(in srgb, var(--cc-border-accent) 10%, transparent)
+  );
+  --cc-class-stepper-node-idle: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 84%, white 16%),
+    color-mix(in srgb, var(--cc-bg-elevated) 86%, var(--cc-bg-base) 14%)
+  );
+  --cc-class-stepper-node-idle-text: color-mix(in srgb, var(--cc-text-primary) 58%, var(--cc-bg-base) 42%);
+  --cc-class-stepper-label: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 88%, white 12%),
+    color-mix(in srgb, var(--cc-bg-elevated) 84%, var(--cc-bg-base) 16%)
+  );
+  --cc-class-stepper-label-active: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-surface-accent-soft) 76%, white 8%),
+    color-mix(in srgb, var(--cc-bg-elevated) 72%, var(--cc-bg-base) 28%)
+  );
+  --cc-class-stepper-label-text: color-mix(in srgb, var(--cc-text-primary) 92%, var(--cc-bg-base) 8%);
+  --cc-class-stepper-label-muted: color-mix(in srgb, var(--cc-text-secondary) 90%, var(--cc-bg-base) 10%);
+  --cc-class-card-outer: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 96%, white 4%),
+    color-mix(in srgb, var(--cc-bg-elevated) 90%, var(--cc-bg-base) 10%)
+  );
+  --cc-class-card-inner: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 36%, transparent) 0%,
+    transparent 24%,
+    color-mix(in srgb, var(--cc-bg-base) 12%, transparent) 54%,
+    color-mix(in srgb, var(--cc-bg-base) 68%, transparent) 100%
+  );
+  --cc-class-card-title-shadow: 0 1px 3px color-mix(in srgb, var(--cc-bg-base) 34%, transparent);
+  --cc-class-card-chip-bg: color-mix(in srgb, var(--cc-bg-surface) 78%, white 22%);
+  --cc-class-card-chip-shadow: 0 10px 18px color-mix(in srgb, var(--cc-bg-base) 18%, transparent);
+  --cc-class-footer-button-primary: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-action-primary-bright) 78%, white 22%),
+    color-mix(in srgb, var(--cc-action-primary) 92%, var(--cc-bg-base) 8%)
+  );
+  --cc-class-footer-button-secondary: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 92%, white 8%),
+    color-mix(in srgb, var(--cc-bg-elevated) 88%, var(--cc-bg-base) 12%)
+  );
 
   /* Spacing */
   --cc-space-2xs: 2px;

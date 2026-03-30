@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "../../../../ui/lib/cn";
 import type {
@@ -22,6 +22,10 @@ type EquipmentShopStepViewModel = {
 };
 
 const EQUIPMENT_LEDGER_STEP_ID = "equipment";
+const LARGE_LIST_ROW_STYLE: CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "auto 9.5rem",
+};
 
 export function mergeEquipmentShopSelection(
   current: EquipmentSelection | undefined,
@@ -295,6 +299,7 @@ function ShopInventoryPanel({
             quantityCanIncrease={canIncrease}
             quantityCanDecrease={quantity > 0}
             valueLabel={priceCp > 0 ? formatCurrencyCp(priceCp) : "No price"}
+            style={LARGE_LIST_ROW_STYLE}
           >
             <TokenPill muted={quantity === 0}>{quantity} selected</TokenPill>
             {priceCp > 0 ? null : <TokenPill muted>Unavailable to buy</TokenPill>}
@@ -347,6 +352,7 @@ function SellInventoryPanel({
             quantityCanIncrease={quantity < maxSellable}
             quantityCanDecrease={quantity > 0}
             valueLabel={`Recovers ${formatCurrencyCp(priceCp)}`}
+            style={LARGE_LIST_ROW_STYLE}
           >
             <TokenPill muted={quantity === 0}>{quantity} marked</TokenPill>
             <TokenPill muted>Own {item.quantity}</TokenPill>
@@ -367,6 +373,7 @@ function TradeRow({
   onIncrease,
   onDecrease,
   children,
+  style,
 }: {
   entry: Pick<CreatorIndexEntry, "uuid" | "name" | "img" | "itemType" | "packLabel" | "priceCp">;
   valueLabel: string;
@@ -377,9 +384,10 @@ function TradeRow({
   onIncrease: () => void;
   onDecrease: () => void;
   children?: ReactNode;
+  style?: CSSProperties;
 }) {
   return (
-    <div className="cc-theme-card cc-theme-card--soft rounded-[1.15rem] px-4 py-4">
+    <div className="cc-theme-card cc-theme-card--soft rounded-[1.15rem] px-4 py-4" style={style}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

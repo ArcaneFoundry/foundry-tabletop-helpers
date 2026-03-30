@@ -61,6 +61,9 @@ describe("ClassCard", () => {
     expect(markup).toContain("D12");
     expect(markup).toContain("STR");
     expect(markup).toContain("STR / CON");
+    expect(markup).toContain("bg-[image:var(--cc-class-card-outer)]");
+    expect(markup).toContain("bg-[image:var(--cc-class-card-inner)]");
+    expect(markup).toContain("color-mix(in srgb, var(--cc-text-kicker) 84%, transparent)");
   });
 
   it("uses motion-driven lift behavior without CSS hover transform classes", () => {
@@ -78,5 +81,19 @@ describe("ClassCard", () => {
 
   it("uses the same media footprint for selected and unselected cards", () => {
     expect(getClassCardMediaClassName(true)).toBe(getClassCardMediaClassName(false));
+  });
+
+  it("renders a selected-state treatment and a readable class label stack", () => {
+    const markup = renderToStaticMarkup(createElement(ClassCard, {
+      entry: createEntry({ selected: true }),
+      onSelect: async () => {},
+      prefersReducedMotion: true,
+      selected: true,
+    }));
+
+    expect(markup).toContain("Selected Class");
+    expect(markup).toContain("var(--cc-class-stepper-label-text)");
+    expect(markup).toContain("var(--cc-class-card-chip-bg)");
+    expect(markup).toContain("var(--cc-class-card-chip-shadow)");
   });
 });

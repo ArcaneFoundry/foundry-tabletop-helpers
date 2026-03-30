@@ -10,14 +10,18 @@ export interface LevelUpShellContext extends WizardShellContext {
 export function createLevelUpStepCallbacks(
   machine: LevelUpStateMachine,
   render: () => void,
+  getStepDef?: (stepId: string) => LevelUpStepDef | undefined,
 ): {
   setData: (value: unknown) => void;
   rerender: () => void;
 } {
   return {
     setData: (value: unknown) => {
-      machine.setStepData(machine.currentStepId, value);
-      machine.markComplete(machine.currentStepId);
+      const stepId = machine.currentStepId;
+      machine.setStepData(stepId, value);
+      const stepDef = getStepDef?.(stepId);
+      if (stepDef?.isComplete(machine.state) ?? true) machine.markComplete(stepId);
+      else machine.markPending(stepId);
       render();
     },
     rerender: () => {
@@ -35,9 +39,12 @@ export async function buildLevelUpShellContext(
   getStepAtmosphere: (stepId: string) => string,
 ): Promise<LevelUpShellContext> {
   let stepContentHtml = "";
+  let vmData: Record<string, unknown> = {};
 
   if (stepDef && actor) {
-    const vmData = await stepDef.buildViewModel(machine.state, actor);
+    vmData = await stepDef.buildViewModel(machine.state, actor);
+    if (stepDef.isComplete(machine.state)) machine.markComplete(stepId);
+    else machine.markPending(stepId);
     stepContentHtml = await renderTemplateFn(stepDef.templatePath, vmData);
   }
 
@@ -50,7 +57,16 @@ export async function buildLevelUpShellContext(
     canGoBack: machine.canGoBack,
     canGoNext: machine.canGoNext,
     isReviewStep: machine.isReviewStep,
-    statusHint: "",
+    statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
+    localProgress: {
+      current: machine.state.currentStep + 1,
+      total: machine.state.applicableSteps.length,
+      percent: machine.state.applicableSteps.length > 0
+        ? Math.round(((machine.state.currentStep + 1) / machine.state.applicableSteps.length) * 100)
+        : 0,
+      label: `Step ${machine.state.currentStep + 1} of ${machine.state.applicableSteps.length}`,
+      detail: vmData.localProgressDetail as string | undefined,
+    },
     atmosphereClass: getStepAtmosphere(stepId),
     isLevelUp: true,
   };

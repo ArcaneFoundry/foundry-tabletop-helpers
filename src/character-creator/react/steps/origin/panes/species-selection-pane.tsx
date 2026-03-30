@@ -4,7 +4,11 @@ import type { CreatorIndexEntry, WizardState } from "../../../../character-creat
 import { buildSpeciesSelectionFromEntry } from "../../../../steps/step-species";
 import { buildEmptySpeciesChoicesState } from "../../../../steps/origin-flow-utils";
 import type { OriginPaneProps } from "../components/origin-pane-primitives";
-import { OriginGalleryCard, SelectionPane } from "../components/origin-pane-primitives";
+import {
+  buildOriginDuplicateDisambiguator,
+  OriginGalleryCard,
+  SelectionPane,
+} from "../components/origin-pane-primitives";
 
 type SpeciesStepViewModel = {
   entries: Array<CreatorIndexEntry & { selected?: boolean; blurb?: string; traits?: string[] }>;
@@ -23,7 +27,7 @@ export function SpeciesSelectionPane({ shellContext, state, controller }: Specie
     <SelectionPane
       description="Choose the lineage, ancestry, or folk your adventurer carries into the world."
       emptyState={
-        <div className="rounded-[1.1rem] border border-dashed border-[color:color-mix(in_srgb,var(--fth-color-accent)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--fth-color-canvas)_82%,transparent)] px-4 py-5 font-fth-cc-body text-[color:var(--fth-color-text-muted)]">
+        <div className="cc-theme-empty rounded-[1.1rem] border border-dashed px-4 py-5 font-fth-cc-body">
           {viewModel?.emptyMessage ?? "No species available."}
         </div>
       }
@@ -48,6 +52,8 @@ export function SpeciesSelectionPane({ shellContext, state, controller }: Specie
                 src={entry.img}
               />
             ) : undefined}
+            variantLabel={buildOriginDuplicateDisambiguator(entry, entries)}
+            sourceLabel={entry.packLabel}
             onSelect={() => {
               void (async () => {
                 const selection = await buildSpeciesSelectionFromEntry(entry);

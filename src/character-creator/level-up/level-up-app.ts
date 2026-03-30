@@ -206,7 +206,7 @@ export function buildLevelUpAppClass(): void {
 
       const callbacks = createLevelUpStepCallbacks(machine, () => {
         this.render({ force: true });
-      });
+      }, (id) => this._getStepDef(id));
 
       activateLevelUpStep(stepDef, machine, this.element, callbacks);
       applyLevelUpAtmosphere(this.element, getStepAtmosphere(machine.currentStepId));

@@ -38,6 +38,20 @@
   {{/if}}
   {{/unless}}
 
+  {{#if localProgress}}
+  <section class="cc-local-progress" aria-label="Current step progress">
+    <div class="cc-local-progress__meta">
+      <span class="cc-local-progress__label">{{localProgress.label}}</span>
+      {{#if localProgress.detail}}
+      <span class="cc-local-progress__detail">{{localProgress.detail}}</span>
+      {{/if}}
+    </div>
+    <div class="cc-local-progress__track">
+      <div class="cc-local-progress__fill" style="width: {{localProgress.percent}}%;"></div>
+    </div>
+  </section>
+  {{/if}}
+
   {{!-- Step Content Area --}}
   <section class="cc-step-content{{#if shellContentClass}} {{shellContentClass}}{{/if}}">
     {{{stepContentHtml}}}

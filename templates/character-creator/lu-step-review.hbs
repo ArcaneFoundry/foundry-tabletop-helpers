@@ -8,6 +8,14 @@
     <span class="cc-lu-review__class">{{className}}</span>
   </div>
 
+  {{#if hasPendingSections}}
+  <div class="cc-lu-review__pending">
+    {{#each pendingSections}}
+    <span class="cc-lu-review__item">{{this}}</span>
+    {{/each}}
+  </div>
+  {{/if}}
+
   {{#if hasChanges}}
   <div class="cc-lu-review__changes">
     {{#each changes}}
@@ -16,11 +24,25 @@
         <i class="cc-review-section__icon {{icon}}"></i>
         <span class="cc-review-section__label">{{label}}</span>
         <i class="fa-solid fa-check cc-review-section__check"></i>
+        <button class="cc-review-section__edit cc-lu-review__edit"
+                type="button"
+                data-action="jumpToStep"
+                data-step-id="{{stepId}}">
+          <i class="fa-solid fa-pen"></i>
+          Edit
+        </button>
       </div>
       <div class="cc-review-section__body">
         <div class="cc-review-simple">
-          <span class="cc-review-simple__text">{{detail}}</span>
+          <span class="cc-review-simple__text cc-lu-review__detail">{{detail}}</span>
         </div>
+        {{#if hasItems}}
+        <div class="cc-lu-review__items">
+          {{#each items}}
+          <span class="cc-lu-review__item">{{this}}</span>
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
     </div>
     {{/each}}
@@ -31,6 +53,5 @@
     <p>No changes to apply. Complete the previous steps first.</p>
   </div>
   {{/if}}
-
 
 </div>

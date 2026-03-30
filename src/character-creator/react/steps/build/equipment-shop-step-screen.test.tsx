@@ -113,6 +113,7 @@ describe("EquipmentShopStepScreen", () => {
     expect(markup).toContain("Marked to buy");
     expect(markup).toContain("Projected inventory");
     expect(markup).toContain("Book");
+    expect(markup).toContain("content-visibility:auto");
   });
 
   it("renders an explicit empty state when no supported shop inventory is available", () => {

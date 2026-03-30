@@ -254,7 +254,10 @@ export function buildPreviewHTML(entry: AssetEntry, meta: FileMetadata | null, e
 
   return `
     <div class="am-preview-header">
-      <span class="am-preview-title" title="${esc(entry.name)}">${esc(entry.name)}</span>
+      <div class="am-preview-heading">
+        <span class="am-preview-eyebrow">Inspector</span>
+        <span class="am-preview-title" title="${esc(entry.name)}">${esc(entry.name)}</span>
+      </div>
       <button class="am-preview-close" type="button" title="Close preview">
         <i class="fa-solid fa-xmark"></i>
       </button>

@@ -25,14 +25,31 @@ export interface AssetManagerRenderState {
 
 interface HtmlOptions {
   esc: (value: string) => string;
+  serverAvailable?: boolean | null;
 }
 
 export function buildShellHTML(state: AssetManagerRenderState, options: HtmlOptions): string {
   const { esc } = options;
-  const breadcrumbs = buildBreadcrumbs(state.currentPath, options);
+  const breadcrumbs = buildBreadcrumbs(state.currentPath, { ...options, serverAvailable: state.serverAvailable });
   const thumbSize = DENSITY_SIZES[state.density];
   const meta = getMetadataStore();
   const allTags = meta.getAllTags();
+  const serverOffline = state.serverAvailable === false;
+  const createFolderTitle = serverOffline
+    ? "Folder creation requires the optimizer server. The current server connection is unavailable."
+    : "Create folder";
+  const uploadTitle = serverOffline
+    ? "Upload files. Image and audio optimization will use client-side fallback while the server is unavailable."
+    : "Upload files";
+  const batchTitle = serverOffline
+    ? "Batch optimize images and audio. The optimizer server is unavailable, so compatible files will use client-side fallback."
+    : "Batch optimize images and audio in this folder";
+  const dropHint = serverOffline
+    ? "Image and audio optimization will use client-side fallback while server-only actions stay disabled"
+    : "Images and audio will be optimized automatically";
+  const serverNote = serverOffline
+    ? `<span class="am-server-note">Server offline. Folder creation and deletion require the companion server.</span>`
+    : "";
 
   const tagPills = allTags.map((tag) => {
     const color = meta.getTagColor(tag);
@@ -44,39 +61,48 @@ export function buildShellHTML(state: AssetManagerRenderState, options: HtmlOpti
 
   return `
     <div class="am-toolbar">
-      <button class="am-sidebar-toggle" type="button" title="Toggle sidebar">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-      <div class="am-search-wrap">
-        <i class="fa-solid fa-magnifying-glass am-search-icon"></i>
-        <input type="search" class="am-search" placeholder="Search files..." autocomplete="off" value="${esc(state.search)}" />
+      <div class="am-toolbar-leading">
+        <button class="am-sidebar-toggle" type="button" title="Toggle sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="am-search-wrap">
+          <i class="fa-solid fa-magnifying-glass am-search-icon"></i>
+          <input type="search" class="am-search" placeholder="Search files..." autocomplete="off" value="${esc(state.search)}" />
+        </div>
       </div>
       <div class="am-toolbar-controls">
-        <div class="am-view-toggle">
-          <button class="am-view-btn ${state.viewMode === "grid" ? "am-active" : ""}" data-am-view="grid" type="button" title="Grid view"><i class="fa-solid fa-grid-2"></i></button>
-          <button class="am-view-btn ${state.viewMode === "list" ? "am-active" : ""}" data-am-view="list" type="button" title="List view"><i class="fa-solid fa-list"></i></button>
+        <div class="am-toolbar-group">
+          <div class="am-view-toggle">
+            <button class="am-view-btn ${state.viewMode === "grid" ? "am-active" : ""}" data-am-view="grid" type="button" title="Grid view"><i class="fa-solid fa-grid-2"></i></button>
+            <button class="am-view-btn ${state.viewMode === "list" ? "am-active" : ""}" data-am-view="list" type="button" title="List view"><i class="fa-solid fa-list"></i></button>
+          </div>
+          <div class="am-density-toggle">
+            <button class="am-density-btn ${state.density === "small" ? "am-active" : ""}" data-am-density="small" type="button" title="Small">S</button>
+            <button class="am-density-btn ${state.density === "medium" ? "am-active" : ""}" data-am-density="medium" type="button" title="Medium">M</button>
+            <button class="am-density-btn ${state.density === "large" ? "am-active" : ""}" data-am-density="large" type="button" title="Large">L</button>
+          </div>
         </div>
-        <div class="am-density-toggle">
-          <button class="am-density-btn ${state.density === "small" ? "am-active" : ""}" data-am-density="small" type="button" title="Small">S</button>
-          <button class="am-density-btn ${state.density === "medium" ? "am-active" : ""}" data-am-density="medium" type="button" title="Medium">M</button>
-          <button class="am-density-btn ${state.density === "large" ? "am-active" : ""}" data-am-density="large" type="button" title="Large">L</button>
+        <div class="am-toolbar-group am-toolbar-group-actions">
+          <button class="am-sort-btn" type="button" title="Sort: ${state.sortField} ${state.sortDir}">
+            <i class="fa-solid fa-arrow-down-short-wide"></i>
+          </button>
+          <button class="am-batch-btn" type="button" title="${batchTitle}">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </button>
+          <button class="am-create-folder-btn" type="button" title="${createFolderTitle}"${serverOffline ? " disabled aria-disabled=\"true\"" : ""}>
+            <i class="fa-solid fa-folder-plus"></i>
+          </button>
+          <button class="am-upload-btn" type="button" title="${uploadTitle}">
+            <i class="fa-solid fa-plus"></i>
+          </button>
         </div>
-        <button class="am-sort-btn" type="button" title="Sort: ${state.sortField} ${state.sortDir}">
-          <i class="fa-solid fa-arrow-down-short-wide"></i>
-        </button>
-        <button class="am-batch-btn" type="button" title="Batch optimize images in this folder">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-        </button>
-        <button class="am-create-folder-btn" type="button" title="Create folder">
-          <i class="fa-solid fa-folder-plus"></i>
-        </button>
-        <button class="am-upload-btn" type="button" title="Upload files">
-          <i class="fa-solid fa-plus"></i>
-        </button>
       </div>
     </div>
     ${filterChips}
-    <div class="am-breadcrumbs">${breadcrumbs}</div>
+    <div class="am-breadcrumbs">
+      <span class="am-breadcrumbs-label">Path</span>
+      <div class="am-breadcrumbs-track">${breadcrumbs}</div>
+    </div>
     <div class="am-body${state.sidebarOpen ? "" : " am-sidebar-collapsed"}">
       <div class="am-sidebar">
         <div class="am-sb-section">
@@ -138,7 +164,7 @@ export function buildShellHTML(state: AssetManagerRenderState, options: HtmlOpti
         <div class="am-drop-overlay">
           <i class="fa-solid fa-cloud-arrow-up am-drop-icon"></i>
           <span class="am-drop-label">Drop files to upload</span>
-          <span class="am-drop-hint">Images will be optimized automatically</span>
+          <span class="am-drop-hint">${dropHint}</span>
         </div>
       </div>
     </div>
@@ -146,67 +172,97 @@ export function buildShellHTML(state: AssetManagerRenderState, options: HtmlOpti
       <!-- Upload queue items injected dynamically -->
     </div>
     <div class="am-status-bar">
-      <span class="am-status-count">Loading...</span>
-      <div class="am-batch-progress" style="display:none;">
-        <div class="am-batch-progress-track">
-          <div class="am-batch-progress-fill"></div>
+      <div class="am-status-primary">
+        <span class="am-status-count">Loading...</span>
+        <div class="am-batch-progress" style="display:none;">
+          <div class="am-batch-progress-track">
+            <div class="am-batch-progress-fill"></div>
+          </div>
         </div>
       </div>
-      <span class="am-thumb-info" title="Thumbnail cache info">
-        <i class="fa-solid fa-images"></i>
-        <span class="am-thumb-info-label">Thumbs</span>
-      </span>
-      <span class="am-server-status" title="${esc(state.serverStatusTitle)}">
-        <i class="fa-solid fa-circle am-server-dot ${state.serverAvailable === true ? "am-server-online" : state.serverAvailable === false ? "am-server-offline" : "am-server-checking"}"></i>
-        <span class="am-server-label">Server</span>
-      </span>
+      <div class="am-status-secondary">
+        <span class="am-thumb-info" title="Thumbnail cache info">
+          <i class="fa-solid fa-images"></i>
+          <span class="am-thumb-info-label">Thumbs</span>
+        </span>
+        <span class="am-server-status" title="${esc(state.serverStatusTitle)}">
+          <i class="fa-solid fa-circle am-server-dot ${state.serverAvailable === true ? "am-server-online" : state.serverAvailable === false ? "am-server-offline" : "am-server-checking"}"></i>
+          <span class="am-server-label">Server</span>
+        </span>
+        ${serverNote}
+      </div>
     </div>
   `;
 }
 
 export function buildHTML(state: AssetManagerRenderState, options: HtmlOptions): string {
   const { esc } = options;
-  const breadcrumbs = buildBreadcrumbs(state.currentPath, options);
+  const breadcrumbs = buildBreadcrumbs(state.currentPath, { ...options, serverAvailable: state.serverAvailable });
   const thumbSize = DENSITY_SIZES[state.density];
   const hasPreview = state.previewPath !== null;
   const sidebar = buildSidebar(state, options);
   const filterChips = buildFilterChips(state, options);
+  const serverOffline = state.serverAvailable === false;
+  const createFolderTitle = serverOffline
+    ? "Folder creation requires the optimizer server. The current server connection is unavailable."
+    : "Create folder";
+  const uploadTitle = serverOffline
+    ? "Upload files. Image and audio optimization will use client-side fallback while the server is unavailable."
+    : "Upload files";
+  const batchTitle = serverOffline
+    ? "Batch optimize images and audio. The optimizer server is unavailable, so compatible files will use client-side fallback."
+    : "Batch optimize images and audio in this folder";
+  const dropHint = serverOffline
+    ? "Image and audio optimization will use client-side fallback while server-only actions stay disabled"
+    : "Images and audio will be optimized automatically";
+  const serverNote = serverOffline
+    ? `<span class="am-server-note">Server offline. Folder creation and deletion require the companion server.</span>`
+    : "";
 
   return `
     <div class="am-toolbar">
-      <button class="am-sidebar-toggle" type="button" title="Toggle sidebar">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-      <div class="am-search-wrap">
-        <i class="fa-solid fa-magnifying-glass am-search-icon"></i>
-        <input type="search" class="am-search" placeholder="Search files..." autocomplete="off" value="${esc(state.search)}" />
+      <div class="am-toolbar-leading">
+        <button class="am-sidebar-toggle" type="button" title="Toggle sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="am-search-wrap">
+          <i class="fa-solid fa-magnifying-glass am-search-icon"></i>
+          <input type="search" class="am-search" placeholder="Search files..." autocomplete="off" value="${esc(state.search)}" />
+        </div>
       </div>
       <div class="am-toolbar-controls">
-        <div class="am-view-toggle">
-          <button class="am-view-btn ${state.viewMode === "grid" ? "am-active" : ""}" data-am-view="grid" type="button" title="Grid view"><i class="fa-solid fa-grid-2"></i></button>
-          <button class="am-view-btn ${state.viewMode === "list" ? "am-active" : ""}" data-am-view="list" type="button" title="List view"><i class="fa-solid fa-list"></i></button>
+        <div class="am-toolbar-group">
+          <div class="am-view-toggle">
+            <button class="am-view-btn ${state.viewMode === "grid" ? "am-active" : ""}" data-am-view="grid" type="button" title="Grid view"><i class="fa-solid fa-grid-2"></i></button>
+            <button class="am-view-btn ${state.viewMode === "list" ? "am-active" : ""}" data-am-view="list" type="button" title="List view"><i class="fa-solid fa-list"></i></button>
+          </div>
+          <div class="am-density-toggle">
+            <button class="am-density-btn ${state.density === "small" ? "am-active" : ""}" data-am-density="small" type="button" title="Small">S</button>
+            <button class="am-density-btn ${state.density === "medium" ? "am-active" : ""}" data-am-density="medium" type="button" title="Medium">M</button>
+            <button class="am-density-btn ${state.density === "large" ? "am-active" : ""}" data-am-density="large" type="button" title="Large">L</button>
+          </div>
         </div>
-        <div class="am-density-toggle">
-          <button class="am-density-btn ${state.density === "small" ? "am-active" : ""}" data-am-density="small" type="button" title="Small">S</button>
-          <button class="am-density-btn ${state.density === "medium" ? "am-active" : ""}" data-am-density="medium" type="button" title="Medium">M</button>
-          <button class="am-density-btn ${state.density === "large" ? "am-active" : ""}" data-am-density="large" type="button" title="Large">L</button>
+        <div class="am-toolbar-group am-toolbar-group-actions">
+          <button class="am-sort-btn" type="button" title="Sort: ${state.sortField} ${state.sortDir}">
+            <i class="fa-solid fa-arrow-down-short-wide"></i>
+          </button>
+          <button class="am-batch-btn" type="button" title="${batchTitle}">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </button>
+          <button class="am-create-folder-btn" type="button" title="${createFolderTitle}"${serverOffline ? " disabled aria-disabled=\"true\"" : ""}>
+            <i class="fa-solid fa-folder-plus"></i>
+          </button>
+          <button class="am-upload-btn" type="button" title="${uploadTitle}">
+            <i class="fa-solid fa-plus"></i>
+          </button>
         </div>
-        <button class="am-sort-btn" type="button" title="Sort: ${state.sortField} ${state.sortDir}">
-          <i class="fa-solid fa-arrow-down-short-wide"></i>
-        </button>
-        <button class="am-batch-btn" type="button" title="Batch optimize images in this folder">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-        </button>
-        <button class="am-create-folder-btn" type="button" title="Create folder">
-          <i class="fa-solid fa-folder-plus"></i>
-        </button>
-        <button class="am-upload-btn" type="button" title="Upload files">
-          <i class="fa-solid fa-plus"></i>
-        </button>
       </div>
     </div>
     ${filterChips}
-    <div class="am-breadcrumbs">${breadcrumbs}</div>
+    <div class="am-breadcrumbs">
+      <span class="am-breadcrumbs-label">Path</span>
+      <div class="am-breadcrumbs-track">${breadcrumbs}</div>
+    </div>
     <div class="am-body${state.sidebarOpen ? "" : " am-sidebar-collapsed"}">
       ${sidebar}
       <div class="am-content-wrap${hasPreview ? " am-has-preview" : ""}">
@@ -219,7 +275,7 @@ export function buildHTML(state: AssetManagerRenderState, options: HtmlOptions):
         <div class="am-drop-overlay">
           <i class="fa-solid fa-cloud-arrow-up am-drop-icon"></i>
           <span class="am-drop-label">Drop files to upload</span>
-          <span class="am-drop-hint">Images will be optimized automatically</span>
+          <span class="am-drop-hint">${dropHint}</span>
         </div>
       </div>
     </div>
@@ -227,20 +283,25 @@ export function buildHTML(state: AssetManagerRenderState, options: HtmlOptions):
       <!-- Upload queue items injected dynamically -->
     </div>
     <div class="am-status-bar">
-      <span class="am-status-count">${state.filteredEntries.length} items</span>
-      <div class="am-batch-progress" style="display:none;">
-        <div class="am-batch-progress-track">
-          <div class="am-batch-progress-fill"></div>
+      <div class="am-status-primary">
+        <span class="am-status-count">${state.filteredEntries.length} items</span>
+        <div class="am-batch-progress" style="display:none;">
+          <div class="am-batch-progress-track">
+            <div class="am-batch-progress-fill"></div>
+          </div>
         </div>
       </div>
-      <span class="am-thumb-info" title="Thumbnail cache info">
-        <i class="fa-solid fa-images"></i>
-        <span class="am-thumb-info-label">Thumbs</span>
-      </span>
-      <span class="am-server-status" title="${esc(state.serverStatusTitle)}">
-        <i class="fa-solid fa-circle am-server-dot ${state.serverAvailable === true ? "am-server-online" : state.serverAvailable === false ? "am-server-offline" : "am-server-checking"}"></i>
-        <span class="am-server-label">Server</span>
-      </span>
+      <div class="am-status-secondary">
+        <span class="am-thumb-info" title="Thumbnail cache info">
+          <i class="fa-solid fa-images"></i>
+          <span class="am-thumb-info-label">Thumbs</span>
+        </span>
+        <span class="am-server-status" title="${esc(state.serverStatusTitle)}">
+          <i class="fa-solid fa-circle am-server-dot ${state.serverAvailable === true ? "am-server-online" : state.serverAvailable === false ? "am-server-offline" : "am-server-checking"}"></i>
+          <span class="am-server-label">Server</span>
+        </span>
+        ${serverNote}
+      </div>
     </div>
   `;
 }
@@ -363,6 +424,10 @@ export function buildFilterChips(state: AssetManagerRenderState, options: HtmlOp
 
 export function buildBreadcrumbs(path: string, options: HtmlOptions): string {
   const { esc } = options;
+  const serverOffline = options.serverAvailable === false;
+  const deleteTitle = serverOffline
+    ? "Deletion requires the optimizer server. The current server connection is unavailable."
+    : "Delete selected files";
   const segments = path.split("/").filter(Boolean);
   let html = `<button class="am-crumb" data-am-path="" type="button"><i class="fa-solid fa-house-chimney"></i></button>`;
 
@@ -378,7 +443,7 @@ export function buildBreadcrumbs(path: string, options: HtmlOptions): string {
     html += `<button class="am-crumb" data-am-path="${esc(cumPath)}" type="button">${esc(segment)}</button>`;
   }
 
-  html += `<button class="am-crumb-delete" type="button" title="Delete selected files"><i class="fa-solid fa-trash"></i></button>`;
+  html += `<button class="am-crumb-delete" type="button" title="${deleteTitle}"${serverOffline ? " disabled aria-disabled=\"true\"" : ""}><i class="fa-solid fa-trash"></i></button>`;
   return html;
 }
 
@@ -396,12 +461,16 @@ function getFileIcon(ext: string): string {
 
 export function renderGridItem(entry: AssetEntry, options: HtmlOptions): string {
   const { esc } = options;
+  const serverOffline = options.serverAvailable === false;
+  const deleteTitle = serverOffline
+    ? "Folder deletion requires the optimizer server. The current server connection is unavailable."
+    : "Delete folder";
   if (entry.isDir) {
     return `
       <div class="am-card am-card-dir" data-am-path="${esc(entry.path)}">
         <div class="am-card-thumb am-card-thumb-dir">
           <i class="fa-solid fa-folder"></i>
-          <button class="am-dir-delete" type="button" title="Delete folder" data-am-dir-delete="${esc(entry.path)}"><i class="fa-solid fa-trash"></i></button>
+          <button class="am-dir-delete" type="button" title="${deleteTitle}" data-am-dir-delete="${esc(entry.path)}"${serverOffline ? " disabled aria-disabled=\"true\"" : ""}><i class="fa-solid fa-trash"></i></button>
         </div>
         <div class="am-card-name" title="${esc(entry.name)}">${esc(entry.name)}</div>
       </div>
@@ -438,12 +507,16 @@ export function renderGridItem(entry: AssetEntry, options: HtmlOptions): string 
 
 export function renderListItem(entry: AssetEntry, options: HtmlOptions): string {
   const { esc } = options;
+  const serverOffline = options.serverAvailable === false;
+  const deleteTitle = serverOffline
+    ? "Folder deletion requires the optimizer server. The current server connection is unavailable."
+    : "Delete folder";
   if (entry.isDir) {
     return `
       <div class="am-list-row am-list-dir" data-am-path="${esc(entry.path)}">
         <i class="fa-solid fa-folder am-list-icon"></i>
         <span class="am-list-name">${esc(entry.name)}</span>
-        <button class="am-dir-delete" type="button" title="Delete folder" data-am-dir-delete="${esc(entry.path)}"><i class="fa-solid fa-trash"></i></button>
+        <button class="am-dir-delete" type="button" title="${deleteTitle}" data-am-dir-delete="${esc(entry.path)}"${serverOffline ? " disabled aria-disabled=\"true\"" : ""}><i class="fa-solid fa-trash"></i></button>
       </div>
     `;
   }

@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX, type ReactNode } from "react";
 
 import { Log, MOD } from "../logger";
 import { getHooks, getUI, isGM, loadTemplates } from "../types";
+import { cn } from "../ui/lib/cn";
 import { getFoundryReactMount, FoundryReactRenderer } from "../ui/foundry/react/foundry-react-application";
 import { ensureNativeWindowResizeHandle, type ApplicationV2Like } from "../ui/foundry/application-v2/window-resize-handle";
 import {
@@ -21,6 +22,8 @@ import {
 } from "./soundscape-accessors";
 import {
   type PersistentSoundscapeLibrarySnapshot,
+  type SoundscapeAmbienceLayer,
+  type SoundscapeMusicProgram,
   type ResolvedSoundscapeState,
   type SoundscapeProfile,
   type SoundscapeRule,
@@ -137,14 +140,57 @@ function getNextSelectedProfileId(snapshot: PersistentSoundscapeLibrarySnapshot)
 function renderAssignmentBadge(
   assignment: SoundscapeSceneAssignment | null,
   worldDefaultProfileId: string | null,
-): { label: string; tone: string } {
+): { label: string; tone: "accent" | "default" | "subtle" } {
   if (assignment?.profileId) {
-    return { label: "Direct", tone: "border-[#d6b06e]/45 bg-[rgba(214,176,110,0.12)] text-[#f1d8a5]" };
+    return { label: "Direct", tone: "accent" };
   }
   if (worldDefaultProfileId) {
-    return { label: "Inherited", tone: "border-white/12 bg-white/[0.05] text-[#d8d0c7]" };
+    return { label: "Inherited", tone: "default" };
   }
-  return { label: "Unassigned", tone: "border-white/10 bg-white/[0.03] text-[#aba39a]" };
+  return { label: "Unassigned", tone: "subtle" };
+}
+
+function getFirstEntityId<T extends { id: string }>(entries: Record<string, T>): string | null {
+  return Object.values(entries)[0]?.id ?? null;
+}
+
+function ensureExpandedEntityId<T extends { id: string }>(
+  currentId: string | null,
+  entries: Record<string, T>,
+): string | null {
+  if (currentId && entries[currentId]) return currentId;
+  return getFirstEntityId(entries);
+}
+
+function formatProfileSummary(profile: SoundscapeProfile): Array<{ label: string; value: string }> {
+  return [
+    { label: "Music", value: `${Object.keys(profile.musicPrograms).length}` },
+    { label: "Atmosphere", value: `${Object.keys(profile.ambienceLayers).length}` },
+    { label: "Moments", value: `${Object.keys(profile.soundMoments).length}` },
+    { label: "Rules", value: `${profile.rules.length}` },
+  ];
+}
+
+function formatMusicProgramSummary(program: SoundscapeMusicProgram): string[] {
+  return [
+    program.selectionMode === "random" ? "Random" : "Sequential",
+    `${program.audioPaths.length} track${program.audioPaths.length === 1 ? "" : "s"}`,
+    program.delaySeconds > 0 ? `${program.delaySeconds}s gap` : "No gap",
+  ];
+}
+
+function formatDelayRange(minDelaySeconds: number, maxDelaySeconds: number): string {
+  if (minDelaySeconds === 0 && maxDelaySeconds === 0) return "No delay";
+  if (minDelaySeconds === maxDelaySeconds) return `${minDelaySeconds}s delay`;
+  return `${minDelaySeconds}-${maxDelaySeconds}s delay`;
+}
+
+function formatAmbienceLayerSummary(layer: SoundscapeAmbienceLayer): string[] {
+  return [
+    layer.mode === "random" ? "Random" : "Loop",
+    `${layer.audioPaths.length} sound${layer.audioPaths.length === 1 ? "" : "s"}`,
+    layer.mode === "random" ? formatDelayRange(layer.minDelaySeconds, layer.maxDelaySeconds) : "Continuous",
+  ];
 }
 
 function getAudioFilePickerClass(): RuntimeFilePickerClass | null {
@@ -210,6 +256,9 @@ function SoundscapeStudioView(): JSX.Element {
   const [messages, setMessages] = useState<SoundscapeStudioValidationMessage[]>([]);
   const [status, setStatus] = useState<string>("Ready to author soundscapes.");
   const [isSaving, setIsSaving] = useState(false);
+  const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
+  const [expandedMusicProgramId, setExpandedMusicProgramId] = useState<string | null>(null);
+  const [expandedAmbienceLayerId, setExpandedAmbienceLayerId] = useState<string | null>(null);
 
   const selectedProfile = getSelectedProfile(library, selectedProfileId);
   const previewState = selectedProfile
@@ -231,6 +280,17 @@ function SoundscapeStudioView(): JSX.Element {
     setPreviewSceneId(scenes.find((scene) => scene.active)?.id ?? scenes[0]?.id ?? null);
   }, []);
 
+  useEffect(() => {
+    if (!selectedProfile) {
+      setExpandedMusicProgramId(null);
+      setExpandedAmbienceLayerId(null);
+      return;
+    }
+
+    setExpandedMusicProgramId((current) => ensureExpandedEntityId(current, selectedProfile.musicPrograms));
+    setExpandedAmbienceLayerId((current) => ensureExpandedEntityId(current, selectedProfile.ambienceLayers));
+  }, [selectedProfile]);
+
   function updateProfile(nextProfile: SoundscapeProfile): void {
     setLibrary((current) => replaceProfileInLibrary(current, nextProfile));
   }
@@ -249,6 +309,8 @@ function SoundscapeStudioView(): JSX.Element {
     const profile = createSoundscapeProfile(Object.keys(library.profiles));
     setLibrary((current) => replaceProfileInLibrary(current, profile));
     setSelectedProfileId(profile.id);
+    setExpandedMusicProgramId(null);
+    setExpandedAmbienceLayerId(null);
     setStatus(`Created ${profile.name}.`);
     setMessages([]);
   }
@@ -258,6 +320,8 @@ function SoundscapeStudioView(): JSX.Element {
     const profile = duplicateSoundscapeProfile(selectedProfile, Object.keys(library.profiles));
     setLibrary((current) => replaceProfileInLibrary(current, profile));
     setSelectedProfileId(profile.id);
+    setExpandedMusicProgramId(getFirstEntityId(profile.musicPrograms));
+    setExpandedAmbienceLayerId(getFirstEntityId(profile.ambienceLayers));
     setStatus(`Duplicated ${selectedProfile.name}.`);
     setMessages([]);
   }
@@ -270,8 +334,38 @@ function SoundscapeStudioView(): JSX.Element {
     setSceneAssignments((current) => sanitizeSceneAssignmentsForProfileDeletion(current, selectedProfile.id));
     setWorldDefaultProfileIdState((current) => current === selectedProfile.id ? null : current);
     setSelectedProfileId(getNextSelectedProfileId(nextLibrary));
+    setExpandedMusicProgramId(null);
+    setExpandedAmbienceLayerId(null);
     setStatus(`Deleted ${selectedProfile.name}.`);
     setMessages([]);
+  }
+
+  function addMusicProgram(): void {
+    if (!selectedProfile) return;
+    const musicProgram = createSoundscapeMusicProgram(Object.keys(selectedProfile.musicPrograms));
+    updateProfile({
+      ...selectedProfile,
+      musicPrograms: {
+        ...selectedProfile.musicPrograms,
+        [musicProgram.id]: musicProgram,
+      },
+    });
+    setExpandedMusicProgramId(musicProgram.id);
+    setStatus(`Added ${musicProgram.name}.`);
+  }
+
+  function addAmbienceLayer(): void {
+    if (!selectedProfile) return;
+    const ambienceLayer = createSoundscapeAmbienceLayer(Object.keys(selectedProfile.ambienceLayers));
+    updateProfile({
+      ...selectedProfile,
+      ambienceLayers: {
+        ...selectedProfile.ambienceLayers,
+        [ambienceLayer.id]: ambienceLayer,
+      },
+    });
+    setExpandedAmbienceLayerId(ambienceLayer.id);
+    setStatus(`Added ${ambienceLayer.name}.`);
   }
 
   async function saveStudio(): Promise<void> {
@@ -313,74 +407,142 @@ function SoundscapeStudioView(): JSX.Element {
   }
 
   return (
-    <div className="fth-react-app-shell fth-ui-root flex h-full min-h-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_top,rgba(114,78,33,0.18),transparent_28%),linear-gradient(180deg,#120f12_0%,#1b171c_48%,#0e0c0f_100%)] text-[#f5efe6]">
-      <div className="border-b border-white/8 bg-[linear-gradient(180deg,rgba(20,17,19,0.92),rgba(12,10,12,0.78))] px-5 py-4 md:px-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0">
-            <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-[#d9bb84]/76">Reactive Soundscapes</div>
-            <h1 className="mt-2 font-fth-cc-display text-[1.75rem] leading-none text-[#f7e7ca] md:text-[2rem]">
-              Soundscape Studio
-            </h1>
-            <p className="mt-2 max-w-4xl font-fth-cc-body text-[0.96rem] leading-6 text-[#d6cec5]">
-              Author music, atmosphere, manual moments, and trigger rules in one GM-only workspace. This studio saves authored state and scene assignments only; live playback stays in later runtime issues.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <StudioButton label="New Profile" onClick={createProfile} tone="gold" />
-            <StudioButton disabled={!selectedProfile} label="Duplicate" onClick={duplicateProfile} />
-            <StudioButton disabled={!selectedProfile} label="Delete" onClick={deleteProfile} tone="danger" />
-            <StudioButton disabled={isSaving} label={isSaving ? "Saving..." : "Save Studio"} onClick={() => void saveStudio()} tone="gold" />
-          </div>
-        </div>
-      </div>
+    <div className="fth-react-app-shell fth-ui-root fth-soundscape-shell relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="fth-theme-shell-sheen pointer-events-none absolute inset-0 opacity-40" />
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <header className="fth-soundscape-panel fth-soundscape-panel--header relative mx-4 mt-4 overflow-hidden rounded-[1.8rem] px-5 py-5 md:mx-5 md:px-6 md:py-6">
+          <div className="fth-theme-header-glow absolute inset-0 opacity-80" />
+          <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-6 top-0 h-px opacity-80" />
+          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em]">
+                Reactive Soundscapes
+              </div>
+              <h1 className="mt-2 font-fth-cc-display text-[1.85rem] leading-none text-[color:var(--ss-text-primary)] md:text-[2.2rem]">
+                Soundscape Studio
+              </h1>
+              <p className="fth-soundscape-muted mt-3 max-w-3xl font-fth-cc-body text-[0.96rem] leading-6">
+                Author score, atmosphere, moments, and trigger rules in one GM workspace.
+              </p>
+            </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
-        <aside className="border-b border-white/8 bg-[rgba(8,8,10,0.38)] xl:w-[20rem] xl:border-b-0 xl:border-r xl:border-white/8">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div>
-              <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.24em] text-[#d8ba84]/72">Profiles</div>
-              <div className="mt-1 font-fth-cc-body text-sm text-[#cfc7be]">{Object.keys(library.profiles).length} authored</div>
+            <div className="flex flex-col gap-3 xl:max-w-[26rem] xl:items-end">
+              {selectedProfile ? (
+                <div className="flex flex-wrap gap-2 xl:justify-end">
+                  <StatusChip label="Profile" tone="accent" value={selectedProfile.name} />
+                  {formatProfileSummary(selectedProfile).map((entry) => (
+                    <StatusChip key={entry.label} label={entry.label} value={entry.value} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 xl:justify-end">
+                  <StatusChip label="Profile" value="None selected" />
+                  <StatusChip label="Studio" value={`${Object.keys(library.profiles).length} authored`} />
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 xl:justify-end">
+                <StudioButton
+                  label={isProfileManagerOpen ? "Hide Profiles" : "Manage Profiles"}
+                  onClick={() => setIsProfileManagerOpen((current) => !current)}
+                />
+                <StudioButton
+                  disabled={isSaving}
+                  label={isSaving ? "Saving..." : "Save Studio"}
+                  onClick={() => void saveStudio()}
+                  tone="gold"
+                />
+              </div>
             </div>
           </div>
-          <div className="max-h-[16rem] overflow-y-auto px-3 pb-4 xl:max-h-none xl:pb-6">
-            {listSoundscapeProfiles(library).length === 0 ? (
-              <EmptyPanel message="No soundscapes yet. Create a profile to start authoring music, ambience, and trigger rules." />
-            ) : (
-              <div className="space-y-2">
-                {listSoundscapeProfiles(library).map((profile) => {
-                  const isSelected = profile.id === selectedProfileId;
-                  return (
-                    <button
-                      className={[
-                        "w-full rounded-[1rem] border px-4 py-3 text-left transition",
-                        isSelected
-                          ? "border-[#ddb675]/48 bg-[linear-gradient(180deg,rgba(84,60,32,0.48),rgba(23,19,18,0.94))] shadow-[0_18px_38px_rgba(0,0,0,0.28)]"
-                          : "border-white/8 bg-white/[0.03] hover:border-[#d4b06d]/28 hover:bg-white/[0.05]",
-                      ].join(" ")}
-                      key={profile.id}
-                      onClick={() => setSelectedProfileId(profile.id)}
-                      type="button"
-                    >
-                      <div className="font-fth-cc-display text-[1.12rem] text-[#f6e7cc]">{profile.name}</div>
-                      <div className="mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#c9bfaf]">{profile.id}</div>
-                      <div className="mt-3 flex flex-wrap gap-2 font-fth-cc-ui text-[0.55rem] uppercase tracking-[0.16em] text-[#d8cfbe]">
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">{Object.keys(profile.musicPrograms).length} music</span>
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">{Object.keys(profile.ambienceLayers).length} ambience</span>
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">{profile.rules.length} rules</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </aside>
+        </header>
 
-        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-4 py-4 md:px-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(22rem,0.95fr)]">
-          <div className="space-y-4">
-            <StudioCard title="Profile">
+        {isProfileManagerOpen ? (
+          <section className="mx-4 mt-4 md:mx-5">
+            <div className="fth-soundscape-panel rounded-[1.55rem] p-4 md:p-5">
+              <div className="fth-soundscape-manager-grid">
+                <div className="space-y-4">
+                  <div>
+                    <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.24em]">
+                      Profiles
+                    </div>
+                    <p className="fth-soundscape-muted mt-2 font-fth-cc-body text-sm leading-6">
+                      Select a soundscape to edit or manage profile actions without dedicating the whole window to a sidebar.
+                    </p>
+                  </div>
+
+                  {selectedProfile ? (
+                    <div className="fth-soundscape-card fth-soundscape-card--selected rounded-[1.35rem] p-4">
+                      <div className="font-fth-cc-display text-[1.2rem]">{selectedProfile.name}</div>
+                      <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                        {selectedProfile.id}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {formatProfileSummary(selectedProfile).map((entry) => (
+                          <StatusChip key={entry.label} label={entry.label} value={entry.value} />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <EmptyPanel message="Create a profile to unlock the Studio authoring surfaces." />
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <StudioButton label="New Profile" onClick={createProfile} tone="gold" />
+                    <StudioButton disabled={!selectedProfile} label="Duplicate" onClick={duplicateProfile} />
+                    <StudioButton disabled={!selectedProfile} label="Delete" onClick={deleteProfile} tone="danger" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {listSoundscapeProfiles(library).length > 0 ? listSoundscapeProfiles(library).map((profile) => {
+                    const isSelected = profile.id === selectedProfileId;
+                    return (
+                      <button
+                        className={cn(
+                          "fth-soundscape-card fth-soundscape-card--interactive w-full rounded-[1.25rem] px-4 py-3 text-left",
+                          isSelected && "fth-soundscape-card--selected",
+                        )}
+                        key={profile.id}
+                        onClick={() => {
+                          setSelectedProfileId(profile.id);
+                          setIsProfileManagerOpen(false);
+                        }}
+                        type="button"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-fth-cc-display text-[1.08rem]">{profile.name}</div>
+                            <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                              {profile.id}
+                            </div>
+                          </div>
+                          {isSelected ? <StatusChip label="Current" tone="accent" value="Editing" /> : null}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {formatProfileSummary(profile).map((entry) => (
+                            <StatusChip key={`${profile.id}-${entry.label}`} label={entry.label} value={entry.value} />
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  }) : (
+                    <EmptyPanel message="No soundscapes yet. Create a profile to begin authoring." />
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <div className="fth-react-scrollbar grid min-h-0 flex-1 gap-4 overflow-y-auto px-4 py-4 md:px-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(21rem,0.95fr)]">
+          <section className="space-y-4">
+            <StudioCard
+              description="Rename the active soundscape and confirm its identifier before editing the authored runtime pieces."
+              title="Profile"
+            >
               {selectedProfile ? (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
                   <LabeledField label="Name">
                     <input
                       className={studioInputClassName()}
@@ -390,46 +552,37 @@ function SoundscapeStudioView(): JSX.Element {
                     />
                   </LabeledField>
                   <LabeledField label="Profile Id">
-                    <input className={studioInputClassName("opacity-75")} readOnly type="text" value={selectedProfile.id} />
+                    <input className={studioInputClassName("opacity-80")} readOnly type="text" value={selectedProfile.id} />
                   </LabeledField>
                 </div>
               ) : (
-                <EmptyPanel message="Create a soundscape profile to unlock the music, atmosphere, and trigger editors." />
+                <EmptyPanel message="Create or select a profile from the manager tray to start authoring." />
               )}
             </StudioCard>
 
             <StudioCard
-              action={selectedProfile ? (
-                <StudioInlineButton
-                  label="Add Program"
-                  onClick={() => {
-                    if (!selectedProfile) return;
-                    const musicProgram = createSoundscapeMusicProgram(Object.keys(selectedProfile.musicPrograms));
-                    updateProfile({
-                      ...selectedProfile,
-                      musicPrograms: {
-                        ...selectedProfile.musicPrograms,
-                        [musicProgram.id]: musicProgram,
-                      },
-                    });
-                  }}
-                />
-              ) : null}
+              action={selectedProfile ? <StudioInlineButton label="Add Program" onClick={addMusicProgram} /> : null}
+              description="Programs define score selection mode, delay, and track order."
               title="Music"
             >
               {selectedProfile && Object.keys(selectedProfile.musicPrograms).length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {Object.values(selectedProfile.musicPrograms).map((program) => (
-                    <EntityCard
+                    <CompactEntityCard
+                      expanded={expandedMusicProgramId === program.id}
+                      iconClass="fa-solid fa-waveform-lines"
                       key={program.id}
                       onRemove={() => {
                         const nextPrograms = { ...selectedProfile.musicPrograms };
                         delete nextPrograms[program.id];
                         updateProfile({ ...selectedProfile, musicPrograms: nextPrograms });
+                        setExpandedMusicProgramId((current) => current === program.id ? ensureExpandedEntityId(null, nextPrograms) : current);
                       }}
+                      onToggle={() => setExpandedMusicProgramId((current) => current === program.id ? null : program.id)}
+                      summaryItems={formatMusicProgramSummary(program)}
                       title={program.name}
                     >
-                      <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid gap-3 md:grid-cols-3">
                         <LabeledField label="Name">
                           <input
                             className={studioInputClassName()}
@@ -463,7 +616,7 @@ function SoundscapeStudioView(): JSX.Element {
                             <option value="random">Random</option>
                           </select>
                         </LabeledField>
-                        <LabeledField label="Delay After Track (seconds)">
+                        <LabeledField label="Delay After Track">
                           <input
                             className={studioInputClassName()}
                             onChange={(event) => updateProfile({
@@ -481,7 +634,8 @@ function SoundscapeStudioView(): JSX.Element {
                       <AudioPathField
                         addLabel="Add Track"
                         audioPaths={program.audioPaths}
-                        emptyMessage="No tracks selected yet. Browse Foundry audio assets to build this program one path at a time."
+                        emptyMessage="No tracks yet."
+                        helperText="Tracks stay in authored playback order."
                         label="Tracks"
                         onAdd={() => openPickerOrWarn({
                           currentPath: program.audioPaths.at(-1),
@@ -508,46 +662,37 @@ function SoundscapeStudioView(): JSX.Element {
                           },
                         })}
                       />
-                    </EntityCard>
+                    </CompactEntityCard>
                   ))}
                 </div>
               ) : (
-                <EmptyPanel message="Music programs decide how authored tracks are selected and how long the score rests between tracks." />
+                <EmptyPanel message="Add a program to define score playback order and delay." />
               )}
             </StudioCard>
 
             <StudioCard
-              action={selectedProfile ? (
-                <StudioInlineButton
-                  label="Add Layer"
-                  onClick={() => {
-                    if (!selectedProfile) return;
-                    const ambienceLayer = createSoundscapeAmbienceLayer(Object.keys(selectedProfile.ambienceLayers));
-                    updateProfile({
-                      ...selectedProfile,
-                      ambienceLayers: {
-                        ...selectedProfile.ambienceLayers,
-                        [ambienceLayer.id]: ambienceLayer,
-                      },
-                    });
-                  }}
-                />
-              ) : null}
+              action={selectedProfile ? <StudioInlineButton label="Add Layer" onClick={addAmbienceLayer} /> : null}
+              description="Layers handle loops and randomized environmental sound beds."
               title="Atmosphere"
             >
               {selectedProfile && Object.keys(selectedProfile.ambienceLayers).length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {Object.values(selectedProfile.ambienceLayers).map((layer) => (
-                    <EntityCard
+                    <CompactEntityCard
+                      expanded={expandedAmbienceLayerId === layer.id}
+                      iconClass="fa-solid fa-wind"
                       key={layer.id}
                       onRemove={() => {
                         const nextLayers = { ...selectedProfile.ambienceLayers };
                         delete nextLayers[layer.id];
                         updateProfile({ ...selectedProfile, ambienceLayers: nextLayers });
+                        setExpandedAmbienceLayerId((current) => current === layer.id ? ensureExpandedEntityId(null, nextLayers) : current);
                       }}
+                      onToggle={() => setExpandedAmbienceLayerId((current) => current === layer.id ? null : layer.id)}
+                      summaryItems={formatAmbienceLayerSummary(layer)}
                       title={layer.name}
                     >
-                      <div className="grid gap-4 md:grid-cols-4">
+                      <div className="grid gap-3 md:grid-cols-4">
                         <LabeledField label="Name">
                           <input
                             className={studioInputClassName()}
@@ -610,7 +755,8 @@ function SoundscapeStudioView(): JSX.Element {
                       <AudioPathField
                         addLabel="Add Sound"
                         audioPaths={layer.audioPaths}
-                        emptyMessage="No ambience sounds selected yet. Browse Foundry audio assets one at a time for this layer."
+                        emptyMessage="No sounds yet."
+                        helperText="Loop beds and random hits share the same authored list."
                         label="Audio"
                         onAdd={() => openPickerOrWarn({
                           currentPath: layer.audioPaths.at(-1),
@@ -637,11 +783,11 @@ function SoundscapeStudioView(): JSX.Element {
                           },
                         })}
                       />
-                    </EntityCard>
+                    </CompactEntityCard>
                   ))}
                 </div>
               ) : (
-                <EmptyPanel message="Atmosphere layers cover looping beds and randomized environmental sounds." />
+                <EmptyPanel message="Add a layer to author looping beds or randomized environmental sound." />
               )}
             </StudioCard>
 
@@ -662,10 +808,11 @@ function SoundscapeStudioView(): JSX.Element {
                   }}
                 />
               ) : null}
+              description="Manual cues surface in live controls without changing the authored state."
               title="Moments"
             >
               {selectedProfile && Object.keys(selectedProfile.soundMoments).length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {Object.values(selectedProfile.soundMoments).map((moment) => (
                     <EntityCard
                       key={moment.id}
@@ -676,7 +823,7 @@ function SoundscapeStudioView(): JSX.Element {
                       }}
                       title={moment.name}
                     >
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-3 md:grid-cols-2">
                         <LabeledField label="Name">
                           <input
                             className={studioInputClassName()}
@@ -711,7 +858,8 @@ function SoundscapeStudioView(): JSX.Element {
                       <AudioPathField
                         addLabel="Add Sound"
                         audioPaths={moment.audioPaths}
-                        emptyMessage="No moment sounds selected yet. Browse Foundry audio assets one path at a time."
+                        emptyMessage="No sounds yet."
+                        helperText="Moments stay manual and do not change the current runtime mix."
                         label="Audio"
                         onAdd={() => openPickerOrWarn({
                           currentPath: moment.audioPaths.at(-1),
@@ -742,7 +890,7 @@ function SoundscapeStudioView(): JSX.Element {
                   ))}
                 </div>
               ) : (
-                <EmptyPanel message="Moments are manual cues the GM can trigger later without changing the authored soundscape state." />
+                <EmptyPanel message="Add a moment to expose manual cues in live controls." />
               )}
             </StudioCard>
 
@@ -759,10 +907,11 @@ function SoundscapeStudioView(): JSX.Element {
                   }}
                 />
               ) : null}
+              description="Rules swap music and atmosphere based on preview, combat, weather, and time."
               title="Triggers"
             >
               {selectedProfile ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {selectedProfile.rules.map((rule, index) => {
                     const triggerType = rule.trigger.type;
                     const musicMode = !Object.prototype.hasOwnProperty.call(rule, "musicProgramId")
@@ -787,7 +936,7 @@ function SoundscapeStudioView(): JSX.Element {
                           })}
                         title={triggerType === "base" ? "Base Rule" : `Rule ${index + 1}`}
                       >
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-3 md:grid-cols-2">
                           <LabeledField label="Trigger">
                             <select
                               className={studioInputClassName()}
@@ -854,7 +1003,7 @@ function SoundscapeStudioView(): JSX.Element {
                           ) : <div />}
                         </div>
 
-                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
                           <LabeledField label="Music Override">
                             <div className="space-y-2">
                               <select
@@ -918,26 +1067,28 @@ function SoundscapeStudioView(): JSX.Element {
                                 <option value="set">Use Layers</option>
                               </select>
                               {ambienceMode === "set" ? (
-                                <div className="grid gap-2 rounded-[0.85rem] border border-white/8 bg-black/15 p-3">
-                                  {Object.values(selectedProfile.ambienceLayers).map((layer) => {
-                                    const checked = (rule.ambienceLayerIds ?? []).includes(layer.id);
-                                    return (
-                                      <label className="flex items-center gap-2 text-sm text-[#eee3d3]" key={layer.id}>
-                                        <input
-                                          checked={checked}
-                                          onChange={(event) => updateRule(rule.id, (current) => {
-                                            const currentIds = current.ambienceLayerIds ?? [];
-                                            const nextIds = event.target.checked
-                                              ? [...new Set([...currentIds, layer.id])]
-                                              : currentIds.filter((entry) => entry !== layer.id);
-                                            return { ...current, ambienceLayerIds: nextIds };
-                                          })}
-                                          type="checkbox"
-                                        />
-                                        <span>{layer.name}</span>
-                                      </label>
-                                    );
-                                  })}
+                                <div className="fth-soundscape-card rounded-[1rem] p-3">
+                                  <div className="grid gap-2">
+                                    {Object.values(selectedProfile.ambienceLayers).map((layer) => {
+                                      const checked = (rule.ambienceLayerIds ?? []).includes(layer.id);
+                                      return (
+                                        <label className="flex items-center gap-2 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]" key={layer.id}>
+                                          <input
+                                            checked={checked}
+                                            onChange={(event) => updateRule(rule.id, (current) => {
+                                              const currentIds = current.ambienceLayerIds ?? [];
+                                              const nextIds = event.target.checked
+                                                ? [...new Set([...currentIds, layer.id])]
+                                                : currentIds.filter((entry) => entry !== layer.id);
+                                              return { ...current, ambienceLayerIds: nextIds };
+                                            })}
+                                            type="checkbox"
+                                          />
+                                          <span>{layer.name}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
                               ) : null}
                             </div>
@@ -948,13 +1099,16 @@ function SoundscapeStudioView(): JSX.Element {
                   })}
                 </div>
               ) : (
-                <EmptyPanel message="Trigger rules tell the soundscape how to react when combat, weather, or time-of-day conditions change." />
+                <EmptyPanel message="Create or select a profile to author trigger rules." />
               )}
             </StudioCard>
-          </div>
+          </section>
 
-          <div className="space-y-4">
-            <StudioCard title="Assignments">
+          <aside className="space-y-4">
+            <StudioCard
+              description="Assign world defaults and scene-level overrides without leaving the authoring workspace."
+              title="Assignments"
+            >
               <LabeledField label="World Default">
                 <select
                   className={studioInputClassName()}
@@ -973,17 +1127,15 @@ function SoundscapeStudioView(): JSX.Element {
                   const assignment = sceneAssignments[scene.id] ?? null;
                   const badge = renderAssignmentBadge(assignment, worldDefaultProfileId);
                   return (
-                    <div className="rounded-[1rem] border border-white/8 bg-white/[0.03] p-3" key={scene.id}>
+                    <div className="fth-soundscape-card rounded-[1.05rem] p-3" key={scene.id}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="font-fth-cc-body text-sm font-semibold text-[#f3ebdf]">{scene.name}</div>
-                          <div className="mt-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.18em] text-[#bfb7ad]">
+                          <div className="font-fth-cc-body text-sm font-semibold text-[color:var(--ss-text-primary)]">{scene.name}</div>
+                          <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.18em]">
                             {scene.active ? "Active Scene" : "Scene"}
                           </div>
                         </div>
-                        <span className={`rounded-full border px-2.5 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em] ${badge.tone}`}>
-                          {badge.label}
-                        </span>
+                        <StatusChip label={badge.label} tone={badge.tone} value={assignment?.profileId ? "Scene" : worldDefaultProfileId ? "World" : "None"} />
                       </div>
                       <div className="mt-3">
                         <select
@@ -1008,7 +1160,10 @@ function SoundscapeStudioView(): JSX.Element {
               </div>
             </StudioCard>
 
-            <StudioCard title="Preview">
+            <StudioCard
+              description="Preview how authored rules resolve before saving the world state."
+              title="Preview"
+            >
               <div className="grid gap-4">
                 <LabeledField label="Scene Context">
                   <select
@@ -1034,7 +1189,7 @@ function SoundscapeStudioView(): JSX.Element {
                     onChange={(checked) => setPreviewContext((current) => ({ ...current, inCombat: checked }))}
                   />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   <LabeledField label="Time of Day">
                     <select
                       className={studioInputClassName()}
@@ -1071,26 +1226,29 @@ function SoundscapeStudioView(): JSX.Element {
               </div>
             </StudioCard>
 
-            <StudioCard title="Validation">
-              <div className="rounded-[1rem] border border-white/8 bg-white/[0.03] p-3">
-                <div className="font-fth-cc-body text-sm text-[#f4ebde]">{status}</div>
+            <StudioCard
+              description="Keep save feedback and validation errors in one operator-visible status lane."
+              title="Validation"
+            >
+              <div className="fth-soundscape-card rounded-[1.05rem] p-3">
+                <div className="font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{status}</div>
                 {messages.length > 0 ? (
                   <ul className="mt-3 space-y-2">
                     {messages.map((message, index) => (
-                      <li className="rounded-[0.9rem] border border-[#ca8e73]/35 bg-[rgba(116,45,31,0.2)] px-3 py-2 font-fth-cc-body text-sm text-[#f0d2c1]" key={`${message.path}-${index}`}>
-                        <div className="font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.16em] text-[#efc2a7]/78">{message.path}</div>
-                        <div className="mt-1">{message.message}</div>
+                      <li className="fth-soundscape-chip fth-soundscape-chip--danger flex flex-col items-start rounded-[1rem] px-3 py-2" key={`${message.path}-${index}`}>
+                        <div className="font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.16em]">{message.path}</div>
+                        <div className="mt-1 font-fth-cc-body text-sm leading-6">{message.message}</div>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <div className="mt-3 rounded-[0.9rem] border border-[#90a677]/24 bg-[rgba(72,92,44,0.18)] px-3 py-2 font-fth-cc-body text-sm text-[#d8e7c8]">
-                    No validation issues yet.
+                  <div className="mt-3">
+                    <StatusChip label="Validation" tone="success" value="No issues" />
                   </div>
                 )}
               </div>
             </StudioCard>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -1103,7 +1261,7 @@ function ResolvedStatePanel({ state }: { state: ResolvedSoundscapeState | null }
   }
 
   return (
-    <div className="rounded-[1rem] border border-white/8 bg-white/[0.03] p-3">
+    <div className="fth-soundscape-card rounded-[1rem] p-3">
       <div className="grid gap-3 md:grid-cols-2">
         <PreviewValue label="Music">{state.musicProgram?.name ?? "No music"}</PreviewValue>
         <PreviewValue label="Ambience">{state.ambienceLayers.length > 0 ? state.ambienceLayers.map((layer) => layer.name).join(", ") : "No ambience"}</PreviewValue>
@@ -1118,9 +1276,9 @@ function ResolvedStatePanel({ state }: { state: ResolvedSoundscapeState | null }
 
 function PreviewValue({ label, children }: { label: string; children: string }): JSX.Element {
   return (
-    <div className="rounded-[0.9rem] border border-white/8 bg-black/15 px-3 py-2">
-      <div className="font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.16em] text-[#d6ba88]/74">{label}</div>
-      <div className="mt-1 font-fth-cc-body text-sm text-[#f2eadf]">{children}</div>
+    <div className="fth-soundscape-card rounded-[0.95rem] px-3 py-2.5">
+      <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.16em]">{label}</div>
+      <div className="mt-1 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{children}</div>
     </div>
   );
 }
@@ -1129,16 +1287,23 @@ function StudioCard({
   title,
   children,
   action,
+  description,
 }: {
   title: string;
   children: ReactNode;
   action?: ReactNode;
+  description?: string;
 }): JSX.Element {
   return (
-    <section className="rounded-[1.2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(31,27,31,0.92),rgba(13,11,13,0.88))] p-4 shadow-[0_24px_60px_rgba(0,0,0,0.24)]">
-      <div className="flex items-center justify-between gap-3">
-        <div className="font-fth-cc-display text-[1.24rem] text-[#f7e6c8]">{title}</div>
-        {action}
+    <section className="fth-soundscape-panel rounded-[1.35rem] p-4 shadow-[var(--ss-shadow-card)]">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="font-fth-cc-display text-[1.22rem] text-[color:var(--ss-text-primary)]">{title}</div>
+          {description ? (
+            <p className="fth-soundscape-muted mt-1 font-fth-cc-body text-sm leading-6">{description}</p>
+          ) : null}
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       <div className="mt-4">{children}</div>
     </section>
@@ -1155,12 +1320,68 @@ function EntityCard({
   onRemove?: () => void;
 }): JSX.Element {
   return (
-    <div className="rounded-[1rem] border border-white/8 bg-white/[0.03] p-4">
+    <div className="fth-soundscape-card rounded-[1.1rem] p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-fth-cc-body text-[1rem] font-semibold text-[#f3eadf]">{title}</div>
+        <div className="font-fth-cc-body text-[1rem] font-semibold text-[color:var(--ss-text-primary)]">{title}</div>
         {onRemove ? <StudioInlineButton label="Remove" onClick={onRemove} tone="danger" /> : null}
       </div>
       <div className="mt-4 space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function CompactEntityCard({
+  title,
+  summaryItems,
+  expanded,
+  onToggle,
+  onRemove,
+  iconClass,
+  children,
+}: {
+  title: string;
+  summaryItems: string[];
+  expanded: boolean;
+  onToggle: () => void;
+  onRemove: () => void;
+  iconClass: string;
+  children: ReactNode;
+}): JSX.Element {
+  return (
+    <div className={cn(
+      "fth-soundscape-card fth-soundscape-card--interactive rounded-[1.2rem] p-4",
+      expanded && "fth-soundscape-card--selected",
+    )}>
+      <div className="flex items-start gap-3">
+        <button
+          aria-expanded={expanded}
+          className="fth-soundscape-entity-toggle flex min-w-0 flex-1 items-start gap-3 text-left"
+          onClick={onToggle}
+          type="button"
+        >
+          <div className="fth-soundscape-card flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[color:var(--ss-text-primary)]">
+            <i aria-hidden="true" className={iconClass} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <div className="font-fth-cc-body text-[1rem] font-semibold text-[color:var(--ss-text-primary)]">{title}</div>
+              <i aria-hidden="true" className="fth-soundscape-caret fa-solid fa-chevron-right text-[0.72rem] text-[color:var(--ss-text-muted)]" />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {summaryItems.map((item) => (
+                <StatusChip key={`${title}-${item}`} value={item} />
+              ))}
+            </div>
+          </div>
+        </button>
+
+        <div className="flex shrink-0 gap-2">
+          <StudioInlineButton label={expanded ? "Collapse" : "Expand"} onClick={onToggle} />
+          <StudioInlineButton label="Remove" onClick={onRemove} tone="danger" />
+        </div>
+      </div>
+
+      {expanded ? <div className="mt-4 space-y-4">{children}</div> : null}
     </div>
   );
 }
@@ -1170,6 +1391,7 @@ function AudioPathField({
   audioPaths,
   addLabel,
   emptyMessage,
+  helperText,
   onAdd,
   onMove,
   onRemove,
@@ -1178,16 +1400,17 @@ function AudioPathField({
   audioPaths: string[];
   addLabel: string;
   emptyMessage: string;
+  helperText: string;
   onAdd: () => void;
   onMove: (index: number, direction: "up" | "down") => void;
   onRemove: (index: number) => void;
 }): JSX.Element {
   return (
     <LabeledField label={label}>
-      <div className="space-y-3 rounded-[1rem] border border-white/8 bg-black/15 p-3">
+      <div className="fth-soundscape-card rounded-[1rem] p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="font-fth-cc-body text-sm text-[#d8d0c7]">
-            Select Foundry audio assets one at a time and keep them in authored playback order.
+          <div className="fth-soundscape-muted font-fth-cc-body text-sm">
+            {helperText}
           </div>
           <StudioInlineButton label={addLabel} onClick={onAdd} />
         </div>
@@ -1196,24 +1419,24 @@ function AudioPathField({
           <div className="space-y-2">
             {audioPaths.map((audioPath, index) => (
               <div
-                className="flex flex-col gap-3 rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-3 md:flex-row md:items-start md:justify-between"
+                className="fth-soundscape-card rounded-[0.95rem] px-3 py-3 md:flex md:items-start md:justify-between"
                 key={`${audioPath}-${index}`}
               >
-                <div className="min-w-0">
-                  <div className="font-fth-cc-body text-sm font-semibold text-[#f2eadf]">{formatAudioPathLabel(audioPath)}</div>
-                  <div className="mt-1 break-all font-fth-cc-ui text-[0.58rem] tracking-[0.08em] text-[#bfb7ad]">
+                <div className="min-w-0 flex-1">
+                  <div className="font-fth-cc-body text-sm font-semibold text-[color:var(--ss-text-primary)]">{formatAudioPathLabel(audioPath)}</div>
+                  <div className="fth-soundscape-subtle mt-1 break-all font-fth-cc-ui text-[0.58rem] tracking-[0.08em]">
                     {audioPath}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 md:justify-end">
+                <div className="mt-3 flex flex-wrap gap-2 md:mt-0 md:justify-end">
                   <PathActionButton
                     disabled={index === 0}
-                    label="Move Up"
+                    label="Up"
                     onClick={() => onMove(index, "up")}
                   />
                   <PathActionButton
                     disabled={index === audioPaths.length - 1}
-                    label="Move Down"
+                    label="Down"
                     onClick={() => onMove(index, "down")}
                   />
                   <PathActionButton label="Remove" onClick={() => onRemove(index)} tone="danger" />
@@ -1231,7 +1454,7 @@ function AudioPathField({
 
 function EmptyPanel({ message }: { message: string }): JSX.Element {
   return (
-    <div className="rounded-[1rem] border border-dashed border-white/10 bg-white/[0.02] px-4 py-5 font-fth-cc-body text-sm leading-6 text-[#c9c1b8]">
+    <div className="fth-soundscape-empty rounded-[1rem] px-4 py-5 font-fth-cc-body text-sm leading-6">
       {message}
     </div>
   );
@@ -1246,7 +1469,7 @@ function LabeledField({
 }): JSX.Element {
   return (
     <label className="grid gap-2">
-      <span className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#cfb583]/74">{label}</span>
+      <span className="fth-soundscape-kicker font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">{label}</span>
       {children}
     </label>
   );
@@ -1262,10 +1485,31 @@ function ToggleField({
   onChange: (checked: boolean) => void;
 }): JSX.Element {
   return (
-    <label className="flex items-center justify-between rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-2">
-      <span className="font-fth-cc-body text-sm text-[#efe5d8]">{label}</span>
+    <label className="fth-soundscape-card flex items-center justify-between rounded-[0.95rem] px-3 py-2.5">
+      <span className="font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{label}</span>
       <input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
     </label>
+  );
+}
+
+function StatusChip({
+  label,
+  value,
+  tone = "default",
+}: {
+  label?: string;
+  value: string;
+  tone?: "accent" | "default" | "success" | "danger" | "subtle";
+}): JSX.Element {
+  return (
+    <span className={cn(
+      "fth-soundscape-chip rounded-full px-2.5 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em]",
+      tone === "accent" && "fth-soundscape-chip--accent",
+      tone === "success" && "fth-soundscape-chip--success",
+      tone === "danger" && "fth-soundscape-chip--danger",
+    )}>
+      {label ? `${label}: ${value}` : value}
+    </span>
   );
 }
 
@@ -1336,11 +1580,10 @@ function PathActionButton({
 }
 
 function studioInputClassName(extra = ""): string {
-  return [
-    "w-full rounded-[0.9rem] border border-white/10 bg-[rgba(255,255,255,0.04)] px-3 py-2 font-fth-cc-body text-sm text-[#f4ece1] outline-none transition placeholder:text-[#8e867d]",
-    "focus:border-[#d7b776]/45 focus:bg-[rgba(255,255,255,0.06)]",
+  return cn(
+    "fth-soundscape-input px-3 py-2 font-fth-cc-body text-sm",
     extra,
-  ].filter(Boolean).join(" ");
+  );
 }
 
 function studioButtonClassName(
@@ -1348,17 +1591,12 @@ function studioButtonClassName(
   disabled: boolean,
   sizeClass = "px-4 py-2",
 ): string {
-  return [
-    "inline-flex items-center justify-center rounded-full border font-fth-cc-ui uppercase tracking-[0.16em] transition",
+  return cn(
+    "fth-soundscape-button",
+    tone === "gold" ? "fth-soundscape-button--primary" : tone === "danger" ? "fth-soundscape-button--danger" : "fth-soundscape-button--secondary",
     sizeClass,
-    disabled
-      ? "cursor-not-allowed border-white/8 bg-white/[0.04] text-[#8f877d]"
-      : tone === "gold"
-        ? "border-[#ddb675]/55 bg-[linear-gradient(180deg,rgba(101,74,37,0.96),rgba(53,37,21,0.96))] text-[#f7e2b5] hover:border-[#e6c487] hover:text-[#fff0d1]"
-        : tone === "danger"
-          ? "border-[#b26b5b]/45 bg-[rgba(93,42,34,0.42)] text-[#f2c6b8] hover:border-[#cc8a79]"
-          : "border-white/10 bg-white/[0.05] text-[#e8dfd3] hover:border-[#d3b06b]/28 hover:text-[#f8ecd4]",
-  ].join(" ");
+    disabled && "opacity-75",
+  );
 }
 
 let _SoundscapeStudioAppClass: RuntimeApplicationClass | null = null;

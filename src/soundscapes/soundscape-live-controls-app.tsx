@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from "react";
 
 import { Log, MOD } from "../logger";
 import { getHooks, getUI, isGM, loadTemplates } from "../types";
+import { cn } from "../ui/lib/cn";
 import { ensureNativeWindowResizeHandle, type ApplicationV2Like } from "../ui/foundry/application-v2/window-resize-handle";
 import {
   ensureWindowSizeConstraints,
@@ -292,113 +293,146 @@ function SoundscapeLiveControlsView(): JSX.Element {
   const activeScene = getSoundscapeSceneById();
 
   return (
-    <div className="fth-react-app-shell fth-ui-root flex h-full min-h-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_top,rgba(114,78,33,0.16),transparent_28%),linear-gradient(180deg,#120f12_0%,#19161b_50%,#0e0c10_100%)] text-[#f5efe6]">
-      <div className="border-b border-white/8 bg-[linear-gradient(180deg,rgba(20,17,19,0.94),rgba(12,10,12,0.82))] px-5 py-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
-            <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-[#d9bb84]/76">Reactive Soundscapes</div>
-            <h1 className="mt-2 font-fth-cc-display text-[1.6rem] leading-none text-[#f7e7ca]">Soundscape Live Controls</h1>
-            <p className="mt-2 max-w-2xl font-fth-cc-body text-[0.95rem] leading-6 text-[#d6cec5]">
-              Trigger authored manual moments against the current live soundscape state without reopening the full studio.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <LiveControlsButton
-              disabled={isRefreshing || isStartingScene || isStoppingScene}
-              label={isStartingScene ? "Starting..." : "Begin Scene"}
-              onClick={() => void beginScene()}
-              tone="gold"
-            />
-            <LiveControlsButton
-              disabled={isRefreshing || isStartingScene || isStoppingScene}
-              label={isStoppingScene ? "Stopping..." : "Stop Current Soundscape"}
-              onClick={() => void stopScene()}
-            />
-            <LiveControlsButton
-              disabled={isRefreshing || isStoppingScene}
-              label={isRefreshing ? "Refreshing..." : "Refresh"}
-              onClick={() => void refreshState()}
-              tone="gold"
-            />
-            <LiveControlsButton label="Open Studio" onClick={() => openSoundscapeStudio()} />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-4 py-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:px-5">
-        <section className="space-y-4">
-          <LiveControlsCard title="Current State">
-            {resolvedState ? (
-              <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <LiveControlsValue label="Scene">{normalizeSceneLabel(activeScene?.id ?? null)}</LiveControlsValue>
-                  <LiveControlsValue label="Profile">{resolvedState.profileId}</LiveControlsValue>
-                  <LiveControlsValue label="Assignment">{resolvedState.assignmentSource === "scene" ? "Scene Override" : "World Default"}</LiveControlsValue>
-                  <LiveControlsValue label="Time Of Day">{normalizeTimeOfDay(context.timeOfDay)}</LiveControlsValue>
-                  <LiveControlsValue label="Combat">{context.inCombat ? "Active" : "Inactive"}</LiveControlsValue>
-                  <LiveControlsValue label="Weather">{context.weather ?? "None"}</LiveControlsValue>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <LiveControlsValue label="Music">{resolvedState.musicProgram?.name ?? "No music"}</LiveControlsValue>
-                  <LiveControlsValue label="Ambience">
-                    {resolvedState.ambienceLayers.length > 0
-                      ? resolvedState.ambienceLayers.map((layer) => layer.name).join(", ")
-                      : "No ambience"}
-                  </LiveControlsValue>
-                </div>
+    <div className="fth-react-app-shell fth-ui-root fth-soundscape-shell relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="fth-theme-shell-sheen pointer-events-none absolute inset-0 opacity-40" />
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <header className="fth-soundscape-panel fth-soundscape-panel--header relative mx-4 mt-4 overflow-hidden rounded-[1.8rem] px-5 py-5 md:mx-5 md:px-6 md:py-6">
+          <div className="fth-theme-header-glow absolute inset-0 opacity-80" />
+          <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-6 top-0 h-px opacity-80" />
+          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em]">
+                Reactive Soundscapes
               </div>
-            ) : (
-              <EmptyPanel message="No active scene assignment or world default soundscape is resolving right now." />
-            )}
-          </LiveControlsCard>
+              <h1 className="mt-2 font-fth-cc-display text-[1.8rem] leading-none text-[color:var(--ss-text-primary)]">
+                Soundscape Live Controls
+              </h1>
+              <p className="fth-soundscape-muted mt-3 max-w-2xl font-fth-cc-body text-[0.95rem] leading-6">
+                Trigger authored moments and inspect the active runtime mix without reopening the full studio.
+              </p>
+            </div>
 
-          <LiveControlsCard title="Manual Moments">
-            {resolvedState && resolvedState.soundMoments.length > 0 ? (
-              <div className="space-y-3">
-                {resolvedState.soundMoments.map((moment) => (
-                  <div
-                    className="flex flex-col gap-3 rounded-[1rem] border border-white/8 bg-white/[0.04] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                    key={moment.id}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-fth-cc-display text-[1.08rem] text-[#f5e5c6]">{moment.name}</div>
-                      <div className="mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em] text-[#c7bcad]">
-                        {moment.id} · {moment.audioPaths.length} sound{moment.audioPaths.length === 1 ? "" : "s"}
-                      </div>
-                    </div>
-                    <LiveControlsButton
-                      disabled={playingMomentId !== null}
-                      label={playingMomentId === moment.id ? "Playing..." : "Play Moment"}
-                      onClick={() => void playMoment(moment.id, moment.name)}
-                      tone="gold"
-                    />
+            <div className="flex flex-col gap-3 xl:max-w-[26rem] xl:items-end">
+              <div className="flex flex-wrap gap-2 xl:justify-end">
+                <LiveChip label="Scene" value={normalizeSceneLabel(activeScene?.id ?? null)} tone="accent" />
+                <LiveChip label="Profile" value={resolvedState?.profileId ?? "None"} />
+                <LiveChip
+                  label="Playback"
+                  tone={musicSnapshot.lastError || ambienceSnapshot.lastError ? "danger" : "default"}
+                  value={(musicSnapshot.activeProgramId ?? (ambienceSnapshot.activeLayerIds.length > 0 ? "Active" : null)) ?? "Idle"}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 xl:justify-end">
+                <LiveControlsButton
+                  disabled={isRefreshing || isStartingScene || isStoppingScene}
+                  label={isStartingScene ? "Starting..." : "Begin Scene"}
+                  onClick={() => void beginScene()}
+                  tone="gold"
+                />
+                <LiveControlsButton
+                  disabled={isRefreshing || isStartingScene || isStoppingScene}
+                  label={isStoppingScene ? "Stopping..." : "Stop Current Soundscape"}
+                  onClick={() => void stopScene()}
+                />
+                <LiveControlsButton
+                  disabled={isRefreshing || isStoppingScene}
+                  label={isRefreshing ? "Refreshing..." : "Refresh"}
+                  onClick={() => void refreshState()}
+                  tone="gold"
+                />
+                <LiveControlsButton label="Open Studio" onClick={() => openSoundscapeStudio()} />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="fth-react-scrollbar grid min-h-0 flex-1 gap-4 overflow-y-auto px-4 py-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:px-5">
+          <section className="space-y-4">
+            <LiveControlsCard
+              description="Read the resolved scene context before firing manual cues or restarting the scene mix."
+              title="Current State"
+            >
+              {resolvedState ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <LiveControlsValue label="Scene">{normalizeSceneLabel(activeScene?.id ?? null)}</LiveControlsValue>
+                    <LiveControlsValue label="Profile">{resolvedState.profileId}</LiveControlsValue>
+                    <LiveControlsValue label="Assignment">{resolvedState.assignmentSource === "scene" ? "Scene Override" : "World Default"}</LiveControlsValue>
+                    <LiveControlsValue label="Time Of Day">{normalizeTimeOfDay(context.timeOfDay)}</LiveControlsValue>
+                    <LiveControlsValue label="Combat">{context.inCombat ? "Active" : "Inactive"}</LiveControlsValue>
+                    <LiveControlsValue label="Weather">{context.weather ?? "None"}</LiveControlsValue>
                   </div>
-                ))}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <LiveControlsValue label="Music">{resolvedState.musicProgram?.name ?? "No music"}</LiveControlsValue>
+                    <LiveControlsValue label="Ambience">
+                      {resolvedState.ambienceLayers.length > 0
+                        ? resolvedState.ambienceLayers.map((layer) => layer.name).join(", ")
+                        : "No ambience"}
+                    </LiveControlsValue>
+                  </div>
+                </div>
+              ) : (
+                <EmptyPanel message="No active scene assignment or world default soundscape is resolving right now." />
+              )}
+            </LiveControlsCard>
+
+            <LiveControlsCard
+              description="Manual moments stay compact until you need to fire them."
+              title="Manual Moments"
+            >
+              {resolvedState && resolvedState.soundMoments.length > 0 ? (
+                <div className="space-y-3">
+                  {resolvedState.soundMoments.map((moment) => (
+                    <div
+                      className="fth-soundscape-card fth-soundscape-card--interactive flex flex-col gap-3 rounded-[1rem] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      key={moment.id}
+                    >
+                      <div className="min-w-0">
+                        <div className="font-fth-cc-display text-[1.08rem] text-[color:var(--ss-text-primary)]">{moment.name}</div>
+                        <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                          {moment.id} · {moment.audioPaths.length} sound{moment.audioPaths.length === 1 ? "" : "s"}
+                        </div>
+                      </div>
+                      <LiveControlsButton
+                        disabled={playingMomentId !== null}
+                        label={playingMomentId === moment.id ? "Playing..." : "Play Moment"}
+                        onClick={() => void playMoment(moment.id, moment.name)}
+                        tone="gold"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel message="The current live soundscape does not expose any manual moments." />
+              )}
+            </LiveControlsCard>
+          </section>
+
+          <section className="space-y-4">
+            <LiveControlsCard
+              description="Runtime values stay visible in a single scanable stack."
+              title="Runtime Snapshot"
+            >
+              <div className="grid gap-3">
+                <RuntimePill label="Music Program" value={musicSnapshot.activeProgramId ?? "Idle"} />
+                <RuntimePill label="Audio Path" value={musicSnapshot.activeAudioPath ?? "None"} />
+                <RuntimePill label="Queued Delay" value={musicSnapshot.pendingDelayMs !== null ? `${musicSnapshot.pendingDelayMs} ms` : "None"} />
+                <RuntimePill label="Ambience Layers" value={ambienceSnapshot.activeLayerIds.length > 0 ? ambienceSnapshot.activeLayerIds.join(", ") : "Idle"} />
+                <RuntimePill label="Random Layers Pending" value={ambienceSnapshot.pendingRandomLayerIds.length > 0 ? ambienceSnapshot.pendingRandomLayerIds.join(", ") : "None"} />
+                <RuntimePill label="Last Error" value={musicSnapshot.lastError ?? ambienceSnapshot.lastError ?? "None"} tone={musicSnapshot.lastError || ambienceSnapshot.lastError ? "danger" : "default"} />
               </div>
-            ) : (
-              <EmptyPanel message="The current live soundscape does not expose any manual moments." />
-            )}
-          </LiveControlsCard>
-        </section>
+            </LiveControlsCard>
 
-        <section className="space-y-4">
-          <LiveControlsCard title="Runtime Snapshot">
-            <div className="grid gap-3">
-              <RuntimePill label="Music Program" value={musicSnapshot.activeProgramId ?? "Idle"} />
-              <RuntimePill label="Audio Path" value={musicSnapshot.activeAudioPath ?? "None"} />
-              <RuntimePill label="Queued Delay" value={musicSnapshot.pendingDelayMs !== null ? `${musicSnapshot.pendingDelayMs} ms` : "None"} />
-              <RuntimePill label="Ambience Layers" value={ambienceSnapshot.activeLayerIds.length > 0 ? ambienceSnapshot.activeLayerIds.join(", ") : "Idle"} />
-              <RuntimePill label="Random Layers Pending" value={ambienceSnapshot.pendingRandomLayerIds.length > 0 ? ambienceSnapshot.pendingRandomLayerIds.join(", ") : "None"} />
-              <RuntimePill label="Last Error" value={musicSnapshot.lastError ?? ambienceSnapshot.lastError ?? "None"} tone={musicSnapshot.lastError || ambienceSnapshot.lastError ? "danger" : "default"} />
-            </div>
-          </LiveControlsCard>
-
-          <LiveControlsCard title="Status">
-            <div className="rounded-[1rem] border border-white/8 bg-white/[0.03] px-4 py-3 font-fth-cc-body text-sm text-[#eee3d4]">
-              {status}
-            </div>
-          </LiveControlsCard>
-        </section>
+            <LiveControlsCard
+              description="Keep the latest scene action result visible even when panels change."
+              title="Status"
+            >
+              <div className="fth-soundscape-card rounded-[1rem] px-4 py-3 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">
+                {status}
+              </div>
+            </LiveControlsCard>
+          </section>
+        </div>
       </div>
     </div>
   );
@@ -407,13 +441,18 @@ function SoundscapeLiveControlsView(): JSX.Element {
 function LiveControlsCard({
   title,
   children,
+  description,
 }: {
   title: string;
   children: JSX.Element;
+  description?: string;
 }): JSX.Element {
   return (
-    <section className="rounded-[1.35rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-4 shadow-[0_20px_45px_rgba(0,0,0,0.22)]">
-      <div className="font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-[#d8ba84]/78">{title}</div>
+    <section className="fth-soundscape-panel rounded-[1.35rem] p-4 shadow-[var(--ss-shadow-card)]">
+      <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">{title}</div>
+      {description ? (
+        <p className="fth-soundscape-muted mt-2 font-fth-cc-body text-sm leading-6">{description}</p>
+      ) : null}
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -427,9 +466,9 @@ function LiveControlsValue({
   children: string;
 }): JSX.Element {
   return (
-    <div className="rounded-[0.95rem] border border-white/8 bg-white/[0.04] px-3 py-2.5">
-      <div className="font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.18em] text-[#c8bdaf]">{label}</div>
-      <div className="mt-1 font-fth-cc-body text-sm text-[#f5ebdf]">{children}</div>
+    <div className="fth-soundscape-card rounded-[0.95rem] px-3 py-2.5">
+      <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.18em]">{label}</div>
+      <div className="mt-1 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{children}</div>
     </div>
   );
 }
@@ -444,21 +483,19 @@ function RuntimePill({
   tone?: "default" | "danger";
 }): JSX.Element {
   return (
-    <div className={[
-      "rounded-[0.95rem] border px-3 py-2.5",
-      tone === "danger"
-        ? "border-[#bf7c69]/35 bg-[rgba(105,41,29,0.24)]"
-        : "border-white/8 bg-white/[0.04]",
-    ].join(" ")}>
-      <div className="font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.18em] text-[#c8bdaf]">{label}</div>
-      <div className="mt-1 break-all font-fth-cc-body text-sm text-[#f5ebdf]">{value}</div>
+    <div className={cn(
+      "fth-soundscape-card rounded-[0.95rem] px-3 py-2.5",
+      tone === "danger" && "border-[color:var(--ss-danger-border)] bg-[color:var(--ss-danger-bg)]",
+    )}>
+      <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.18em]">{label}</div>
+      <div className="mt-1 break-all font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{value}</div>
     </div>
   );
 }
 
 function EmptyPanel({ message }: { message: string }): JSX.Element {
   return (
-    <div className="rounded-[1rem] border border-dashed border-white/10 bg-white/[0.025] px-4 py-5 font-fth-cc-body text-sm leading-6 text-[#b9b0a6]">
+    <div className="fth-soundscape-empty rounded-[1rem] px-4 py-5 font-fth-cc-body text-sm leading-6">
       {message}
     </div>
   );
@@ -477,20 +514,36 @@ function LiveControlsButton({
 }): JSX.Element {
   return (
     <button
-      className={[
-        "inline-flex items-center justify-center rounded-full border px-4 py-2 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.16em] transition",
-        disabled
-          ? "cursor-not-allowed border-white/8 bg-white/[0.04] text-[#8f877d]"
-          : tone === "gold"
-            ? "border-[#ddb675]/55 bg-[linear-gradient(180deg,rgba(101,74,37,0.96),rgba(53,37,21,0.96))] text-[#f7e2b5] hover:border-[#e6c487] hover:text-[#fff0d1]"
-            : "border-white/10 bg-white/[0.05] text-[#e8dfd3] hover:border-[#d3b06b]/28 hover:text-[#f8ecd4]",
-      ].join(" ")}
+      className={cn(
+        "fth-soundscape-button px-4 py-2",
+        tone === "gold" ? "fth-soundscape-button--primary" : "fth-soundscape-button--secondary",
+      )}
       disabled={disabled}
       onClick={onClick}
       type="button"
     >
       {label}
     </button>
+  );
+}
+
+function LiveChip({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "accent" | "default" | "danger";
+}): JSX.Element {
+  return (
+    <span className={cn(
+      "fth-soundscape-chip rounded-full px-2.5 py-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em]",
+      tone === "accent" && "fth-soundscape-chip--accent",
+      tone === "danger" && "fth-soundscape-chip--danger",
+    )}>
+      {label}: {value}
+    </span>
   );
 }
 

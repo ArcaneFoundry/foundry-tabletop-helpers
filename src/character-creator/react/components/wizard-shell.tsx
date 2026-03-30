@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import type { WizardShellContext } from "../../character-creator-types";
@@ -21,6 +21,36 @@ const CHAPTER_LABELS: Record<string, string> = {
   finalize: "Finalize",
 };
 
+function shouldResetWizardScroll(previousStepId: string | undefined, currentStepId: string | undefined): boolean {
+  return previousStepId !== currentStepId;
+}
+
+interface WizardScrollContainer {
+  scrollTop: number;
+  scrollTo?(options: ScrollToOptions): void;
+}
+
+function applyWizardScrollReset(scrollContainer: WizardScrollContainer): void {
+  scrollContainer.scrollTop = 0;
+  scrollContainer.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+}
+
+function queueWizardScrollReset(scrollContainer: WizardScrollContainer): () => void {
+  applyWizardScrollReset(scrollContainer);
+
+  if (typeof globalThis.requestAnimationFrame !== "function") {
+    return () => {};
+  }
+
+  const frameId = globalThis.requestAnimationFrame(() => {
+    applyWizardScrollReset(scrollContainer);
+  });
+
+  return () => {
+    globalThis.cancelAnimationFrame?.(frameId);
+  };
+}
+
 export function WizardShell({
   shellContext,
   stepContent,
@@ -31,7 +61,14 @@ export function WizardShell({
 }: WizardShellProps) {
   const [isCreating, setIsCreating] = useState(false);
   const prefersReducedMotion = useReducedMotion() ?? false;
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const previousStepIdRef = useRef<string | undefined>(shellContext.currentStepId);
   const chapterLabel = CHAPTER_LABELS[shellContext.chapterKey ?? "finalize"] ?? shellContext.currentStepLabel;
+  const currentStepIndex = Math.max(
+    shellContext.steps.findIndex((step) => step.id === shellContext.currentStepId),
+    0,
+  );
+  const currentStepNumber = currentStepIndex + 1;
 
   const handleCreateCharacter = async () => {
     if (isCreating) return;
@@ -42,6 +79,19 @@ export function WizardShell({
       setIsCreating(false);
     }
   };
+
+  useLayoutEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    let cleanup: (() => void) | undefined;
+    if (shouldResetWizardScroll(previousStepIdRef.current, shellContext.currentStepId)) {
+      cleanup = queueWizardScrollReset(scrollContainer);
+    }
+
+    previousStepIdRef.current = shellContext.currentStepId;
+    return cleanup;
+  }, [shellContext.currentStepId]);
 
   return (
     <div
@@ -74,6 +124,26 @@ export function WizardShell({
               <div className="mt-2 font-fth-cc-display text-[1.6rem] leading-none text-fth-text">
                 {chapterLabel}
               </div>
+              {shellContext.localProgress ? (
+                <div className="mt-3 max-w-md">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                      {shellContext.localProgress.label}
+                    </div>
+                    {shellContext.localProgress.detail ? (
+                      <span className="font-fth-cc-body text-[0.88rem] leading-6 text-fth-text-muted">
+                        {shellContext.localProgress.detail}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--fth-color-border)]">
+                    <div
+                      className="fth-theme-panel-accent-line h-full rounded-full"
+                      style={{ width: `${shellContext.localProgress.percent}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
             {shellContext.statusHint ? (
               <div className="fth-theme-status-pill max-w-xs rounded-full px-3 py-2 text-right font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em]">
@@ -204,51 +274,97 @@ export function WizardShell({
         </header>
       ) : null}
 
-      <div className="fth-react-scrollbar relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-contain">{stepContent}</div>
+      <div
+        ref={scrollContainerRef}
+        className="fth-react-scrollbar relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-contain"
+      >
+        {stepContent}
+      </div>
 
       <motion.footer
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-        className="fth-theme-panel fth-theme-panel--alt relative z-10 mx-4 mb-4 mt-auto overflow-hidden rounded-[1.75rem] px-5 py-4 backdrop-blur-xl md:mx-5"
+        className="cc-theme-panel cc-theme-panel--soft relative z-10 mx-4 mb-4 mt-auto overflow-hidden rounded-[1.75rem] border px-5 py-4 backdrop-blur-xl md:mx-5"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
         transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-8 top-0 h-px" />
-        <div className="relative z-10 flex items-center justify-between gap-4">
-          <ActionButton
-            disabled={!shellContext.canGoBack}
-            label="Back"
-            onClick={onBack}
-            variant="secondary"
-          />
-
-          <div className="hidden flex-1 items-center justify-center xl:flex">
-            {shellContext.statusHint ? (
-              <div className="fth-theme-status-pill rounded-full px-4 py-2 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
-                {shellContext.statusHint}
-              </div>
-            ) : null}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--cc-surface-accent-soft)_74%,transparent),transparent_48%)]" />
+        <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-8 top-0 h-px opacity-75" />
+        <div className="pointer-events-none absolute inset-x-6 bottom-0 h-px bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-border-accent)_0%,transparent),color-mix(in_srgb,var(--cc-border-accent)_48%,transparent),color-mix(in_srgb,var(--cc-border-accent)_0%,transparent))] opacity-60" />
+        <div className="relative z-10 grid gap-4 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
+          <div className="order-2 md:order-1">
+            <ActionButton
+              disabled={!shellContext.canGoBack}
+              label="Back"
+              onClick={onBack}
+              variant="secondary"
+            />
           </div>
 
-          {shellContext.isReviewStep ? (
-            <ActionButton
-              disabled={isCreating}
-              label={isCreating ? "Binding..." : "Forge Character"}
-              onClick={() => void handleCreateCharacter()}
-              variant="primary"
-            />
-          ) : (
-            <ActionButton
-              disabled={!shellContext.canGoNext}
-              label={shellContext.nextButtonLabel ?? "Next"}
-              onClick={onNext}
-              variant="primary"
-            />
-          )}
+          <div
+            className="order-1 min-w-0 md:order-2"
+            data-wizard-footer-summary="true"
+          >
+            <div className="cc-theme-card cc-theme-card--soft relative overflow-hidden rounded-[1.25rem] border px-4 py-3">
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_52%,transparent),transparent)] opacity-70" />
+              <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.22em] text-[color:var(--cc-text-secondary)]">
+                    {chapterLabel} • Step {currentStepNumber} of {shellContext.steps.length}
+                  </div>
+                  <div className="mt-2 font-fth-cc-display text-[1.05rem] leading-none text-[color:var(--cc-text-primary)]">
+                    {shellContext.currentStepLabel}
+                  </div>
+                  {shellContext.localProgress?.detail ? (
+                    <div className="mt-2 font-fth-cc-body text-[0.86rem] leading-6 text-[color:var(--cc-text-secondary)]">
+                      {shellContext.localProgress.detail}
+                    </div>
+                  ) : null}
+                </div>
+                {shellContext.statusHint ? (
+                  <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                    {shellContext.statusHint}
+                  </div>
+                ) : null}
+              </div>
+              {shellContext.localProgress ? (
+                <div className="relative z-10 mt-3 h-1.5 overflow-hidden rounded-full bg-[color:color-mix(in_srgb,var(--cc-border-subtle)_82%,transparent)]">
+                  <div
+                    className="h-full rounded-full bg-[image:var(--cc-class-footer-button-primary)]"
+                    style={{ width: `${shellContext.localProgress.percent}%` }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="order-3 md:justify-self-end">
+            {shellContext.isReviewStep ? (
+              <ActionButton
+                disabled={isCreating}
+                label={isCreating ? "Binding..." : "Forge Character"}
+                onClick={() => void handleCreateCharacter()}
+                variant="primary"
+              />
+            ) : (
+              <ActionButton
+                disabled={!shellContext.canGoNext}
+                label={shellContext.nextButtonLabel ?? "Next"}
+                onClick={onNext}
+                variant="primary"
+              />
+            )}
+          </div>
         </div>
       </motion.footer>
     </div>
   );
 }
+
+export const __wizardShellInternals = {
+  applyWizardScrollReset,
+  queueWizardScrollReset,
+  shouldResetWizardScroll,
+};
 
 function ActionButton({
   label,
@@ -266,10 +382,10 @@ function ActionButton({
   return (
     <motion.button
       className={cn(
-        "cc-shell-footer-btn inline-flex min-w-36 items-center justify-center rounded-[1rem] border px-6 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition",
+        "cc-shell-footer-btn inline-flex min-w-36 items-center justify-center rounded-[1rem] border px-6 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition shadow-[var(--cc-shadow-button)]",
         variant === "primary"
-          ? "border-fth-border-strong bg-[linear-gradient(180deg,var(--fth-color-accent-strong),var(--fth-color-accent))] text-[color:var(--fth-color-accent-contrast)] shadow-[var(--cc-shadow-button)]"
-          : "border-fth-border bg-[color:var(--fth-color-surface-glass)] text-fth-text hover:border-fth-border-strong",
+          ? "border-[color:color-mix(in_srgb,var(--cc-border-accent)_58%,transparent)] bg-[image:var(--cc-class-footer-button-primary)] text-[color:var(--cc-text-ink-900)]"
+          : "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-class-footer-button-secondary)] text-[color:var(--cc-text-primary)] hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_42%,transparent)]",
         disabled && "cursor-not-allowed opacity-40",
       )}
       disabled={disabled}

@@ -217,24 +217,9 @@ export class AssetManagerStateController {
   }
 
   refreshUI(root: HTMLElement): void {
-    const serverDot = root.querySelector<HTMLElement>(".am-server-dot");
-    const wasOnline = serverDot?.classList.contains("am-server-online");
-    const wasOffline = serverDot?.classList.contains("am-server-offline");
-    const serverTitle = root.querySelector<HTMLElement>(".am-server-status")?.title ?? "";
-
     root.innerHTML = this.deps.buildHTML();
     this.deps.attachListeners(root);
     this.deps.setupScroller(root);
-
-    if (wasOnline || wasOffline) {
-      const newDot = root.querySelector<HTMLElement>(".am-server-dot");
-      const newWrap = root.querySelector<HTMLElement>(".am-server-status");
-      if (newDot) {
-        newDot.classList.remove("am-server-checking");
-        newDot.classList.add(wasOnline ? "am-server-online" : "am-server-offline");
-      }
-      if (newWrap) newWrap.title = serverTitle;
-    }
   }
 
   refreshContent(root: HTMLElement): void {

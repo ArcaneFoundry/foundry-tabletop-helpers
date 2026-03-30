@@ -63,6 +63,8 @@ describe("FeatsStepScreen", () => {
     expect(markup).toContain("At max");
     expect(markup).toContain("Strength");
     expect(markup).toContain("1 choice remain");
+    expect(markup).toContain("cc-theme-shell-inner");
+    expect(markup).not.toContain("cc-cinematic-step");
     expect(markup).not.toContain("Choose a feat to inspect");
   });
 
@@ -163,5 +165,6 @@ describe("FeatsStepScreen", () => {
     expect(markup).toContain("No feats indexed");
     expect(markup).toContain("Catalog sealed");
     expect(markup).toContain("No feats available. Check your GM configuration.");
+    expect(markup).not.toContain("cc-cinematic-step");
   });
 });

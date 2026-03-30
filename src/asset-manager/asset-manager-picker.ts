@@ -650,27 +650,27 @@ export function registerAssetManagerPicker(): void {
      * Content pane and sidebar folders show loading spinners.
      */
     _amBuildShellHTML(): string {
-      return buildShellHTML(this._amBuildRenderState(), { esc });
+      return buildShellHTML(this._amBuildRenderState(), { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Build the complete asset manager HTML. */
     _amBuildHTML(): string {
-      return buildHTML(this._amBuildRenderState(), { esc });
+      return buildHTML(this._amBuildRenderState(), { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Build sidebar HTML with smart collections, folders, and tags. */
     _amBuildSidebar(): string {
-      return buildSidebar(this._amBuildRenderState(), { esc });
+      return buildSidebar(this._amBuildRenderState(), { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Build active filter chips HTML. */
     _amBuildFilterChips(): string {
-      return buildFilterChips(this._amBuildRenderState(), { esc });
+      return buildFilterChips(this._amBuildRenderState(), { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Build breadcrumb HTML from a path. */
     _amBuildBreadcrumbs(path: string): string {
-      return buildBreadcrumbs(path, { esc });
+      return buildBreadcrumbs(path, { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Get a type-specific icon for non-media file extensions. */
@@ -688,12 +688,12 @@ export function registerAssetManagerPicker(): void {
 
     /** Render a single grid card for a file/directory. */
     _amRenderGridItem(entry: AssetEntry): string {
-      return renderGridItem(entry, { esc });
+      return renderGridItem(entry, { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Render a single list row for a file/directory. */
     _amRenderListItem(entry: AssetEntry): string {
-      return renderListItem(entry, { esc });
+      return renderListItem(entry, { esc, serverAvailable: this._amServerAvailable });
     }
 
     /** Setup virtual scroller for the content area. */
@@ -900,15 +900,9 @@ export function registerAssetManagerPicker(): void {
 
     /** Check optimizer server health and update the status indicator. */
     _amCheckServerStatus(root: HTMLElement): void {
-      const dot = root.querySelector<HTMLElement>(".am-server-dot");
-      const label = root.querySelector<HTMLElement>(".am-server-label");
-      const wrap = root.querySelector<HTMLElement>(".am-server-status");
-      if (!dot || !label || !wrap) return;
-
       this._amServerAvailable = null;
       this._amServerStatusTitle = "Checking optimizer server...";
-      wrap.title = this._amServerStatusTitle;
-
+      this._amApplyServerState(root);
       checkOptimizerServer().then((caps) => {
         if (caps) {
           const parts: string[] = [];
@@ -917,28 +911,83 @@ export function registerAssetManagerPicker(): void {
           if (caps.video) parts.push("video");
           const limit = typeof caps.maxFileSize === "number" && caps.maxFileSize > 0 ? `; upload limit ${formatBytes(caps.maxFileSize)}` : "";
           this._amServerAvailable = true;
-          this._amServerStatusTitle = `Optimizer server connected — ${parts.join(", ")}${limit}`;
-          dot.classList.remove("am-server-checking");
-          dot.classList.add("am-server-online");
-          label.textContent = "Server";
-          wrap.title = this._amServerStatusTitle;
+          const capabilities = parts.length > 0 ? parts.join(", ") : "health check passed";
+          this._amServerStatusTitle = `Optimizer server connected — ${capabilities}${limit}`;
         } else {
           this._amServerAvailable = false;
-          this._amServerStatusTitle = "Optimizer server unavailable — using client-side optimization";
-          dot.classList.remove("am-server-checking");
-          dot.classList.add("am-server-offline");
-          label.textContent = "Server";
-          wrap.title = this._amServerStatusTitle;
+          this._amServerStatusTitle = "Optimizer server unavailable. Folder creation and deletion are disabled; uploads fall back to client-side optimization where possible.";
         }
+        this._amApplyServerState(root);
       }).catch(() => {
-        if (!dot) return;
         this._amServerAvailable = false;
-        this._amServerStatusTitle = "Optimizer server unavailable — using client-side optimization";
-        dot.classList.remove("am-server-checking");
-        dot.classList.add("am-server-offline");
-        if (label) label.textContent = "Server";
-        if (wrap) wrap.title = this._amServerStatusTitle;
+        this._amServerStatusTitle = "Optimizer server unavailable. Folder creation and deletion are disabled; uploads fall back to client-side optimization where possible.";
+        this._amApplyServerState(root);
       });
+    }
+
+    _amApplyServerState(root: HTMLElement): void {
+      const dot = root.querySelector<HTMLElement>(".am-server-dot");
+      const wrap = root.querySelector<HTMLElement>(".am-server-status");
+      const createFolderBtn = root.querySelector<HTMLButtonElement>(".am-create-folder-btn");
+      const uploadBtn = root.querySelector<HTMLButtonElement>(".am-upload-btn");
+      const batchBtn = root.querySelector<HTMLButtonElement>(".am-batch-btn");
+      const deleteBtn = root.querySelector<HTMLButtonElement>(".am-crumb-delete");
+      const folderDeleteBtns = root.querySelectorAll<HTMLButtonElement>(".am-dir-delete");
+      const dropHint = root.querySelector<HTMLElement>(".am-drop-hint");
+      const serverNote = root.querySelector<HTMLElement>(".am-server-note");
+      const offline = this._amServerAvailable === false;
+
+      if (dot) {
+        dot.classList.remove("am-server-checking", "am-server-online", "am-server-offline");
+        dot.classList.add(this._amServerAvailable === true ? "am-server-online" : offline ? "am-server-offline" : "am-server-checking");
+      }
+      if (wrap) wrap.title = this._amServerStatusTitle;
+
+      if (createFolderBtn) {
+        createFolderBtn.disabled = offline;
+        createFolderBtn.title = offline
+          ? "Folder creation requires the optimizer server. The current server connection is unavailable."
+          : "Create folder";
+      }
+
+      if (uploadBtn) {
+        uploadBtn.title = offline
+          ? "Upload files. Image and audio optimization will use client-side fallback while the server is unavailable."
+          : "Upload files";
+      }
+
+      if (batchBtn) {
+        batchBtn.title = offline
+          ? "Batch optimize images and audio. The optimizer server is unavailable, so compatible files will use client-side fallback."
+          : "Batch optimize images and audio in this folder";
+      }
+
+      if (deleteBtn) {
+        deleteBtn.disabled = offline;
+        deleteBtn.title = offline
+          ? "Deletion requires the optimizer server. The current server connection is unavailable."
+          : "Delete selected files";
+      }
+
+      for (const button of folderDeleteBtns) {
+        button.disabled = offline;
+        button.title = offline
+          ? "Folder deletion requires the optimizer server. The current server connection is unavailable."
+          : "Delete folder";
+      }
+
+      if (dropHint) {
+        dropHint.textContent = offline
+          ? "Image and audio optimization will use client-side fallback while server-only actions stay disabled"
+          : "Images and audio will be optimized automatically";
+      }
+
+      if (serverNote) {
+        serverNote.textContent = offline
+          ? "Server offline. Folder creation and deletion require the companion server."
+          : "";
+        serverNote.hidden = !offline;
+      }
     }
 
     /* ── Preview Panel ───────────────────────────────────────── */

@@ -12,6 +12,7 @@ const FTH_THEME_ROOT_SELECTOR = [
   ".fth-character-creator",
   ".lpcs-sheet",
   ".fth-asset-picker",
+  ".am-upload-dialog-window",
   ".batch-initiative-dialog",
   ".fth-damage-panel",
   ".fth-monster-preview",

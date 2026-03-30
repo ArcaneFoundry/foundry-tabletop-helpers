@@ -299,6 +299,148 @@
   border-radius: 3px;
 }
 
+/* ── Spells Step ────────────────────────────────────────── */
+
+.cc-lu-spells__context {
+  display: block;
+  margin-top: var(--cc-space-xs);
+  color: var(--cc-text-secondary);
+}
+
+.cc-lu-spells__layout {
+  display: grid;
+  gap: var(--cc-space-lg);
+}
+
+@media (min-width: 980px) {
+  .cc-lu-spells__layout {
+    grid-template-columns: minmax(0, 1.12fr) minmax(18rem, 0.88fr);
+    align-items: start;
+  }
+}
+
+.cc-lu-spells__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-lg);
+}
+
+.cc-lu-spells__summary,
+.cc-lu-spells__preview,
+.cc-lu-spells__tray {
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  padding: var(--cc-space-md);
+}
+
+.cc-lu-spells__summary-label,
+.cc-lu-spells__sidebar-label,
+.cc-lu-spells__level-label,
+.cc-lu-spells__swap-title {
+  display: block;
+  margin-bottom: var(--cc-space-xs);
+  font-size: var(--cc-text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cc-text-secondary);
+}
+
+.cc-lu-spells__summary-value,
+.cc-lu-spells__preview-name {
+  color: var(--cc-text-primary);
+  font-size: var(--cc-text-md);
+}
+
+.cc-lu-spells__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-space-xs);
+}
+
+.cc-lu-spells__filter {
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 999px;
+  background: var(--cc-bg-glass);
+  color: var(--cc-text-secondary);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.cc-lu-spells__filter:hover,
+.cc-lu-spells__filter--active {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(212, 175, 55, 0.14);
+  color: var(--cc-text-primary);
+}
+
+.cc-lu-spells__level-block,
+.cc-lu-spells__swap-column {
+  margin-top: var(--cc-space-md);
+}
+
+.cc-lu-spells__grid-compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.cc-lu-spells__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-md);
+}
+
+.cc-lu-spells__preview-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cc-space-md);
+  margin-bottom: var(--cc-space-md);
+}
+
+.cc-lu-spells__preview-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--cc-border-subtle);
+}
+
+.cc-lu-spells__preview-meta {
+  margin-top: 4px;
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-xs);
+}
+
+.cc-lu-spells__preview-description {
+  max-height: 16rem;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cc-lu-spells__tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cc-lu-spells__token {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  background: rgba(212, 175, 55, 0.08);
+  color: var(--cc-text-primary);
+  padding: 4px 10px;
+  font-size: var(--cc-text-xs);
+}
+
+.cc-lu-spells__token--muted {
+  border-color: var(--cc-border-subtle);
+  background: var(--cc-bg-glass);
+  color: var(--cc-text-secondary);
+}
+
 /* ── Review Step ────────────────────────────────────────── */
 
 .cc-lu-review__header {
@@ -337,6 +479,41 @@
   flex-direction: column;
   gap: var(--cc-space-sm);
   margin-bottom: var(--cc-space-xl);
+}
+
+.cc-lu-review__detail {
+  display: block;
+  color: var(--cc-text-primary);
+}
+
+.cc-lu-review__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--cc-space-sm);
+}
+
+.cc-lu-review__item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--cc-border-subtle);
+  background: var(--cc-bg-glass);
+  padding: 4px 10px;
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-xs);
+}
+
+.cc-lu-review__pending {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: var(--cc-space-lg);
+}
+
+.cc-lu-review__edit {
+  margin-left: auto;
 }
 
 .cc-lu-review__action {

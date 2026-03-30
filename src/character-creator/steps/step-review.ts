@@ -215,7 +215,8 @@ export function createReviewStep(): WizardStepDefinition {
         isSimple: true,
       };
 
-      const originChoicesComplete = !bg?.grants.originFeatUuid || !!sel.originFeat?.uuid;
+      const resolvedOriginFeatUuid = sel.originFeat?.uuid ?? bg?.grants.originFeatUuid ?? null;
+      const originChoicesComplete = !bg?.grants.originFeatUuid || !!resolvedOriginFeatUuid;
       const originChoicesSummary = sel.originFeat?.name ?? bgOriginFeat ?? "No origin feat";
 
       const originChoicesSection = {

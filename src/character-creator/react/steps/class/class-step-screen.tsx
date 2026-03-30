@@ -103,8 +103,9 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
             transition={{ delay: 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.div
-              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              className="cc-theme-header relative overflow-hidden rounded-[1.15rem] border border-fth-cc-gold/50 shadow-[inset_0_1px_0_rgba(255,236,206,0.22),0_10px_22px_rgba(0,0,0,0.18),0_18px_34px_rgba(77,46,18,0.2)]"
+              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+              className="relative overflow-hidden rounded-[1.35rem] border border-[#d3b277]/55 bg-[linear-gradient(180deg,rgba(251,245,233,0.98),rgba(237,223,193,0.96))] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_18px_34px_rgba(84,60,30,0.14)]"
+              data-class-hero-banner="true"
               initial={prefersReducedMotion ? false : { opacity: 0, y: -12, scale: 0.988 }}
               transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
@@ -112,30 +113,46 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
                 alt=""
                 animate={prefersReducedMotion ? undefined : { scale: 1 }}
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                initial={prefersReducedMotion ? false : { scale: 1.035 }}
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16] mix-blend-multiply saturate-[0.86]"
+                initial={prefersReducedMotion ? false : { scale: 1.02 }}
                 src={classStepHeaderBackground}
                 transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
               />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,11,0.24),rgba(16,12,11,0.42))]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(214,177,111,0.1))]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_32%),radial-gradient(circle_at_82%_16%,rgba(214,177,111,0.22),transparent_28%)]" />
               <motion.div
-                animate={prefersReducedMotion ? undefined : { opacity: [0.18, 0.32, 0.18] }}
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,220,170,0.08),transparent_40%)]"
-                transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+                animate={prefersReducedMotion ? undefined : { opacity: [0.48, 0.72, 0.48] }}
+                className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.88),rgba(214,177,111,0))]"
+                transition={{ duration: 5.8, ease: "easeInOut", repeat: Infinity }}
               />
-              <div className="relative z-10 flex items-center justify-center px-4 py-3">
-                <HeaderFlourish prefersReducedMotion={prefersReducedMotion} side="left" />
-                <h2
-                  className="cc-theme-title m-0 font-fth-cc-display text-[1.55rem] uppercase tracking-[0.12em] text-fth-cc-gold-bright md:text-[2.15rem]"
-                  style={{
-                    textShadow:
-                      "0 0 8px rgba(255,225,164,0.4), 0 0 18px rgba(255,211,130,0.2), 0 2px 10px rgba(16, 9, 6, 0.72)",
-                  }}
-                >
-                  Choose Your Class
-                </h2>
-                <HeaderFlourish prefersReducedMotion={prefersReducedMotion} side="right" />
+              <div className="relative z-10 flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0 max-w-3xl">
+                  <div className="font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.3em] text-[#8b6437]">
+                    Character Creation
+                  </div>
+                  <h2
+                    className="mt-2 font-fth-cc-display text-[clamp(1.6rem,3.2vw,2.55rem)] leading-[0.96] text-[#4a311a]"
+                    style={{
+                      textShadow: "0 1px 0 rgba(255,255,255,0.66), 0 8px 18px rgba(121,87,37,0.12)",
+                    }}
+                  >
+                    Choose Your Class
+                  </h2>
+                  <p className="mt-3 max-w-2xl font-fth-cc-body text-[0.96rem] leading-7 text-[#5a4630]">
+                    Select the class that defines your first steps and unlocks the rest of the build.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex rounded-full border border-[#d3b277]/60 bg-[rgba(255,255,255,0.72)] px-3 py-1.5 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.2em] text-[#8a6438]">
+                    Step 1
+                  </span>
+                  <span className="inline-flex rounded-full border border-[#c9a768]/45 bg-[rgba(247,236,217,0.92)] px-3 py-1.5 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em] text-[#6f4f2e]">
+                    Class Selection
+                  </span>
+                </div>
               </div>
+              <div className="pointer-events-none absolute inset-x-4 bottom-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.92),rgba(214,177,111,0))]" />
             </motion.div>
           </motion.header>
 
@@ -178,51 +195,6 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
   );
 }
 
-function HeaderFlourish({ side, prefersReducedMotion }: { side: "left" | "right"; prefersReducedMotion: boolean }) {
-  const containerClasses =
-    side === "left"
-      ? "mr-2 flex min-w-0 flex-1 items-center justify-end gap-1.5 md:mr-4 md:gap-2"
-      : "ml-2 flex min-w-0 flex-1 items-center justify-start gap-1.5 md:ml-4 md:gap-2";
-  const lineClasses =
-    side === "left"
-      ? "bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.88),rgba(255,233,188,0.42))]"
-      : "bg-[linear-gradient(90deg,rgba(255,233,188,0.42),rgba(214,177,111,0.88),rgba(214,177,111,0))]";
-
-  return (
-    <motion.span
-      animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
-      aria-hidden="true"
-      className={containerClasses}
-      initial={prefersReducedMotion ? false : { opacity: 0, x: side === "left" ? 10 : -10 }}
-      transition={{ delay: 0.18, duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {side === "right" ? <FlourishGem prefersReducedMotion={prefersReducedMotion} /> : null}
-      <span className="relative block h-4 w-full max-w-[4.25rem] md:max-w-[10.5rem]">
-        <motion.span
-          animate={prefersReducedMotion ? undefined : { scaleX: 1, opacity: 1 }}
-          className={cn("absolute inset-x-0 top-1/2 h-px origin-center -translate-y-1/2", lineClasses)}
-          initial={prefersReducedMotion ? false : { scaleX: 0.7, opacity: 0.3 }}
-          transition={{ delay: 0.24, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </span>
-      {side === "left" ? <FlourishGem prefersReducedMotion={prefersReducedMotion} /> : null}
-    </motion.span>
-  );
-}
-
-function FlourishGem({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
-  return (
-    <motion.span
-      animate={prefersReducedMotion ? undefined : { scale: [1, 1.07, 1], opacity: [0.92, 1, 0.92] }}
-      className="relative block h-3.5 w-3.5 md:h-4.5 md:w-4.5"
-      transition={{ duration: 3.8, ease: "easeInOut", repeat: Infinity }}
-    >
-      <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[0.15rem] border border-[#d6b16f]/85 bg-[linear-gradient(180deg,rgba(121,87,37,0.35),rgba(214,177,111,0.18))] shadow-[0_0_8px_rgba(242,216,157,0.14)] md:h-3.5 md:w-3.5" />
-      <span className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#f4ddb1]/85 md:h-1.5 md:w-1.5" />
-    </motion.span>
-  );
-}
-
 export function ClassAggregateStepper({
   model,
   layoutMode = "wide",
@@ -246,8 +218,7 @@ export function ClassAggregateStepper({
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       aria-label="Class Selection Progress"
       className={cn(
-        "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[#bea37d]/55",
-        CC_TEXT_SECONDARY,
+        "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] text-[color:var(--cc-class-stepper-label-muted)]",
         isCompactLayout
           ? "fth-class-stepper--compact max-w-4xl gap-3 pb-4"
           : "fth-class-stepper--wide max-w-5xl gap-3 pb-4",
@@ -394,7 +365,7 @@ function RailConnector({ compact = false }: { compact?: boolean }) {
       aria-hidden="true"
       className={cn(
         "fth-class-stepper__connector",
-        "bg-[linear-gradient(90deg,rgba(190,163,125,0.2),rgba(190,163,125,0.8),rgba(190,163,125,0.2))]",
+        "bg-[image:var(--cc-class-stepper-rail)]",
         compact ? "h-px w-7 opacity-65" : "h-px w-10",
       )}
     />
@@ -406,9 +377,10 @@ function RailEndcap({ side }: { side: "left" | "right" }) {
     <span
       aria-hidden="true"
       className={cn(
-        "h-3 w-3 rotate-45 border border-[#d0b07b]/75 bg-[rgba(255,236,204,0.34)]",
+        "h-3 w-3 rotate-45 border bg-[color:color-mix(in_srgb,var(--cc-surface-accent-soft)_82%,white_18%)]",
         side === "left" ? "mr-1" : "ml-1",
       )}
+      style={{ borderColor: "color-mix(in srgb, var(--cc-border-accent) 64%, transparent)" }}
     />
   );
 }
@@ -438,16 +410,16 @@ function getMilestoneTransition(status: ClassAggregatePresentationStatus, prefer
 function getMilestoneClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return `border-[#bf8b37] bg-[radial-gradient(circle_at_35%_28%,#fff4d6,#f1d18a_52%,#cb9643)] ${CC_TEXT_HERO}`;
+      return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_72%,transparent)] bg-[radial-gradient(circle_at_35%_28%,color-mix(in_srgb,var(--cc-accent-gold)_58%,white_42%),var(--cc-accent-gold)_58%,var(--cc-accent-bronze))] text-[color:var(--cc-text-ink-900)]";
     case "in-progress":
-      return `border-[#c59b5c] bg-[radial-gradient(circle_at_35%_28%,#fff5df,#ead1a2_42%,#d2a25d)] ${CC_TEXT_HERO}`;
+      return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_66%,transparent)] bg-[radial-gradient(circle_at_35%_28%,color-mix(in_srgb,var(--cc-accent-gold)_52%,white_48%),color-mix(in_srgb,var(--cc-accent-gold)_82%,var(--cc-accent-bronze)_18%))] text-[color:var(--cc-text-ink-900)]";
     case "complete":
     case "collapsed-complete":
-      return `border-[#8e6426] bg-[linear-gradient(180deg,#f6e7bc,#d7ab59)] ${CC_TEXT_HERO}`;
+      return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_62%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_72%,white_28%),color-mix(in_srgb,var(--cc-accent-gold)_68%,var(--cc-accent-bronze)_32%))] text-[color:var(--cc-text-ink-900)]";
     case "skipped":
-      return `border-[#c8b7a1]/65 bg-[linear-gradient(180deg,rgba(236,229,218,0.88),rgba(210,198,180,0.94))] ${CC_TEXT_PRIMARY}`;
+      return "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_88%,transparent)] bg-[image:var(--cc-class-stepper-node-idle)] text-[color:var(--cc-class-stepper-node-idle-text)]";
     default:
-      return `border-[#c7ab83] bg-[linear-gradient(180deg,#f5ebdc,#e3d0b3)] ${CC_TEXT_PRIMARY}`;
+      return "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-class-stepper-node-idle)] text-[color:var(--cc-class-stepper-node-idle-text)]";
   }
 }
 
@@ -468,43 +440,43 @@ function getMilestoneHaloClassName(status: ClassAggregatePresentationStatus) {
 function getMilestoneLabelClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return CC_TEXT_HERO;
+      return "text-[color:var(--cc-class-stepper-label-text)]";
     case "in-progress":
-      return CC_TEXT_HERO;
+      return "text-[color:var(--cc-class-stepper-label-text)]";
     case "complete":
     case "collapsed-complete":
-      return CC_TEXT_HERO;
+      return "text-[color:var(--cc-class-stepper-label-text)]";
     default:
-      return CC_TEXT_PRIMARY;
+      return "text-[color:var(--cc-class-stepper-label-muted)]";
   }
 }
 
 function getMilestoneLabelSurfaceClassName(status: ClassAggregatePresentationStatus) {
   switch (status) {
     case "selection-active":
-      return "border-[#d9ab63]/65 bg-[linear-gradient(180deg,rgba(104,65,27,0.82),rgba(53,33,17,0.92))]";
+      return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_52%,transparent)] bg-[image:var(--cc-class-stepper-label-active)]";
     case "in-progress":
-      return "border-[#d3ab6c]/55 bg-[linear-gradient(180deg,rgba(90,58,29,0.8),rgba(43,28,16,0.92))]";
+      return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_44%,transparent)] bg-[image:var(--cc-class-stepper-label-active)]";
     case "complete":
     case "collapsed-complete":
-      return "border-[#d0a35a]/46 bg-[linear-gradient(180deg,rgba(84,55,27,0.78),rgba(42,28,17,0.9))]";
+      return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_38%,transparent)] bg-[image:var(--cc-class-stepper-label)]";
     case "skipped":
-      return "border-white/12 bg-[rgba(255,255,255,0.05)]";
+      return "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_88%,transparent)] bg-[image:var(--cc-class-stepper-label)]";
     default:
-      return "border-white/12 bg-[rgba(255,255,255,0.06)]";
+      return "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-class-stepper-label)]";
   }
 }
 
 function getSubstepChipClassName(step: ClassAggregateSubstepNode) {
   if (step.active) {
-    return `border-[#d5ae71]/55 bg-[linear-gradient(180deg,rgba(92,59,29,0.8),rgba(43,28,16,0.92))] ${CC_TEXT_HERO}`;
+    return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_52%,transparent)] bg-[image:var(--cc-class-stepper-label-active)] text-[color:var(--cc-class-stepper-label-text)]";
   }
 
   if (step.status === "complete") {
-    return `border-[#c89d56]/42 bg-[linear-gradient(180deg,rgba(77,50,25,0.74),rgba(39,26,15,0.86))] ${CC_TEXT_HERO}`;
+    return "border-[color:color-mix(in_srgb,var(--cc-border-accent)_34%,transparent)] bg-[image:var(--cc-class-stepper-label)] text-[color:var(--cc-class-stepper-label-text)]";
   }
 
-  return `border-white/12 bg-[rgba(255,255,255,0.06)] ${CC_TEXT_SECONDARY}`;
+  return "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-class-stepper-label)] text-[color:var(--cc-class-stepper-label-muted)]";
 }
 
 function ClassCard({

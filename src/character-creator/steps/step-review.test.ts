@@ -309,6 +309,36 @@ describe("step review", () => {
     });
   });
 
+  it("treats a background-granted origin feat as complete even when the explicit selection is absent", async () => {
+    const { createReviewStep } = await import("./step-review");
+    const step = createReviewStep();
+    const state = makeState();
+    const background = state.selections.background!;
+    state.selections.originFeat = undefined;
+    state.selections.background = {
+      ...background,
+      grants: {
+        ...background.grants,
+        originFeatUuid: "feat.magic-initiate",
+        originFeatName: "Magic Initiate",
+        originFeatImg: "feat.png",
+      },
+    };
+
+    const viewModel = await step.buildViewModel(state);
+    const sections = viewModel.sections as Array<Record<string, unknown>>;
+    const originChoicesSection = sections.find((section) => section.id === "originChoices");
+
+    expect(originChoicesSection).toMatchObject({
+      complete: true,
+      summary: "Magic Initiate",
+    });
+    expect(viewModel).toMatchObject({
+      allComplete: true,
+      incompleteSectionLabels: expect.not.arrayContaining(["Origin Feat"]),
+    });
+  });
+
   it("lists incomplete section labels in the review warning context", async () => {
     const { createReviewStep } = await import("./step-review");
     const step = createReviewStep();

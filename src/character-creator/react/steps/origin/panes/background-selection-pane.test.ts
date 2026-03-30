@@ -89,9 +89,12 @@ describe("BackgroundSelectionPane", () => {
 
     expect(markup).toContain("cc-origin-selection-pane");
     expect(markup).not.toContain("cc-origin-selection-pane__intro");
+    expect(markup).toContain("cc-theme-panel--soft");
     expect(markup).toContain("data-origin-gallery-card=\"true\"");
     expect(markup).toContain("data-origin-gallery-footer=\"true\"");
     expect(markup).toContain("data-origin-gallery-meta=\"true\"");
+    expect(markup).toContain("PHB");
+    expect(markup).toContain("Heroes of Faerun");
     expect(markup).toContain("Inspect background details for Acolyte");
     expect(markup).toContain("Inspect background details for Soldier");
     expect(markup).toContain("Inspect background details for Wayfarer");
@@ -103,6 +106,46 @@ describe("BackgroundSelectionPane", () => {
     expect(markup).not.toContain("Select a Background");
     expect(markup.match(/data-background-art-treatment="icon-bleed"/g)).toHaveLength(2);
     expect(markup.match(/data-background-art-treatment="cover"/g)).toHaveLength(1);
+  });
+
+  it("uses the pack label as a duplicate disambiguator for same-name backgrounds from different packs", () => {
+    const markup = renderToStaticMarkup(createElement(BackgroundSelectionPane, {
+      controller: {
+        updateCurrentStepData: vi.fn(),
+      },
+      prefersReducedMotion: true,
+      shellContext: {
+        stepViewModel: {
+          entries: [
+            {
+              uuid: "background-1",
+              name: "Acolyte",
+              img: "acolyte-phb.webp",
+              packId: "phb",
+              packLabel: "PHB",
+              type: "background",
+              blurb: "Keeper of sacred rites.",
+            },
+            {
+              uuid: "background-2",
+              name: "Acolyte",
+              img: "acolyte-faerun.webp",
+              packId: "faerun",
+              packLabel: "Heroes of Faerun",
+              type: "background",
+              blurb: "A regional acolyte variant.",
+            },
+          ],
+        },
+      },
+      state: {
+        selections: {},
+      },
+    } as never));
+
+    expect(markup).toContain("data-origin-disambiguator=\"true\"");
+    expect(markup).toContain("PHB");
+    expect(markup).toContain("Heroes of Faerun");
   });
 
   it("renders the local background detail modal shell", () => {

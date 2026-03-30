@@ -78,26 +78,26 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-      <section className="relative isolate flex flex-col rounded-[1.45rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image)] shadow-[var(--fth-theme-shadow-panel),inset_0_1px_0_color-mix(in_srgb,var(--fth-color-text)_4%,transparent)]">
+      <section className="cc-theme-panel cc-theme-panel--soft relative isolate flex flex-col rounded-[1.45rem] border">
         <div className="px-4 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--fth-color-border)] pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--cc-border-subtle)] pb-4">
             <div className="min-w-0 max-w-3xl">
-              <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_78%,transparent)]">
+              <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.24em]">
                 {state.selections.species?.name ?? "Species"}
               </div>
-              <div className="mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em] text-[color:var(--fth-color-text)]">
+              <div className="cc-theme-title mt-2 font-fth-cc-display text-[1.45rem] uppercase tracking-[0.08em]">
                 {viewModel?.title ?? "Choose Species Skills"}
               </div>
-              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-6 text-[color:var(--fth-color-text-muted)]">
+              <p className="cc-theme-body-muted mt-2 max-w-3xl font-fth-cc-body text-[0.98rem] leading-6">
                 {viewModel?.description ?? "Choose the skills granted by this species while keeping earlier background and class choices in mind."}
               </p>
-              <p className="mt-2 max-w-3xl font-fth-cc-body text-[0.92rem] leading-6 text-[color:var(--fth-color-text-muted)]">
+              <p className="cc-theme-body-muted mt-2 max-w-3xl font-fth-cc-body text-[0.92rem] leading-6">
                 Background, class, and fixed species skill grants already remove illegal options from the pool. Only the legal choices remain visible here.
               </p>
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-2">
-              <div className="inline-flex whitespace-nowrap rounded-full border border-[color:color-mix(in_srgb,var(--fth-color-text)_10%,transparent)] bg-[color:var(--fth-color-surface-glass)] px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em] text-[color:var(--fth-color-text-muted)]">
+              <div className="cc-theme-badge--muted inline-flex whitespace-nowrap rounded-full px-4 py-2 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.24em]">
                 {requestedSkillChoiceCount > 0 ? "Select Species Skills" : "No Skill Choice Required"}
               </div>
               <CompactMetaChips
@@ -122,8 +122,8 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
                     className={cn(
                       "group relative flex items-center justify-between gap-3 rounded-[1rem] border px-4 py-3 text-left shadow-[0_14px_28px_rgba(0,0,0,0.22)] transition duration-200",
                       checked
-                        ? "border-[color:color-mix(in_srgb,var(--fth-color-accent)_64%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-success)_16%,var(--fth-color-surface)_84%),color-mix(in_srgb,var(--fth-color-success)_12%,var(--fth-color-canvas)_88%))] text-[color:var(--fth-color-text)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--fth-color-accent)_18%,transparent),0_18px_34px_rgb(0_0_0_/_0.24)]"
-                        : "border-[color:color-mix(in_srgb,var(--fth-color-accent)_24%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--fth-color-text)_6%,var(--fth-color-surface)_94%),color-mix(in_srgb,var(--fth-color-canvas)_92%,transparent))] text-[color:var(--fth-color-text)] hover:border-[color:color-mix(in_srgb,var(--fth-color-accent)_70%,transparent)] hover:brightness-[1.03]",
+                        ? "cc-theme-card cc-theme-card--selected text-[color:var(--fth-color-text)]"
+                        : "cc-theme-card cc-theme-card--soft text-[color:var(--fth-color-text)] hover:border-[color:color-mix(in_srgb,var(--fth-color-accent)_70%,transparent)]",
                       disabled && !checked && "cursor-not-allowed opacity-60",
                     )}
                     aria-pressed={checked}
@@ -194,11 +194,11 @@ export function SpeciesSkillsPane({ shellContext, state, controller }: OriginPan
           iconClass="fa-solid fa-lock"
           title="Already Claimed"
         />
-        <section className="rounded-[1.35rem] border border-[color:var(--fth-color-border)] bg-[image:var(--fth-theme-panel-image-alt)] p-4 shadow-[var(--fth-theme-shadow-panel)]">
-          <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em] text-[color:color-mix(in_srgb,var(--fth-color-accent)_72%,transparent)]">
+        <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.35rem] border p-4">
+          <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.22em]">
             Guidance
           </div>
-          <div className="mt-3 space-y-2 font-fth-cc-body text-[0.96rem] leading-6 text-[color:var(--fth-color-text-muted)]">
+          <div className="cc-theme-body-muted mt-3 space-y-2 font-fth-cc-body text-[0.96rem] leading-6">
             {hasValidationMessages ? (
               viewModel?.validationMessages?.map((message) => <p key={message}>{message}</p>)
             ) : (
