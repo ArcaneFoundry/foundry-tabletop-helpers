@@ -266,7 +266,7 @@ describe("WizardShell", () => {
     expect(markup).toContain('data-scene-key="binding"');
   });
 
-  it("keeps the full footer layout on review even when shell chrome is otherwise hidden", () => {
+  it("compacts review shell chrome while keeping the forge action readable", () => {
     const shellContext = {
       steps: [
         { id: "portrait", label: "Portrait", icon: "fa-solid fa-image", status: "complete", active: false, index: 0 },
@@ -303,12 +303,60 @@ describe("WizardShell", () => {
       onCreateCharacter: vi.fn(async () => {}),
     }));
 
-    expect(markup).toContain('data-shell-layout="standard"');
-    expect(markup).toContain('data-footer-density="full"');
-    expect(markup).toContain('data-wizard-footer-detail="true"');
-    expect(markup).toContain('data-wizard-footer-progress="true"');
+    expect(markup).toContain('data-shell-layout="final-chapter"');
+    expect(markup).toContain('data-shell-density="compact"');
+    expect(markup).toContain('data-footer-density="compact"');
+    expect(markup).not.toContain('data-wizard-shell-header="true"');
+    expect(markup).not.toContain('data-wizard-footer-detail="true"');
+    expect(markup).not.toContain('data-wizard-footer-progress="true"');
     expect(markup).toContain("Forge Character");
     expect(markup).toContain("Final pass");
+  });
+
+  it("hides the duplicate shell header and uses compact chrome on portrait", () => {
+    const shellContext = {
+      steps: [
+        { id: "portrait", label: "Portrait", icon: "fa-solid fa-image", status: "pending", active: true, index: 0 },
+        { id: "review", label: "Review", icon: "fa-solid fa-stars", status: "pending", active: false, index: 1 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "portrait",
+      currentStepLabel: "Portrait",
+      currentStepIcon: "fa-solid fa-image",
+      canGoBack: true,
+      canGoNext: true,
+      isReviewStep: false,
+      statusHint: "Portrait optional",
+      atmosphereClass: "cc-atmosphere--gold",
+      chapterKey: "lore",
+      chapterSceneKey: "binding",
+      headerTitle: "Choose the Visage",
+      headerDescription: "Bind a likeness now or skip it.",
+      localProgress: {
+        current: 7,
+        total: 8,
+        label: "Step 7 of 8",
+        detail: "Portraits and token art are optional.",
+        percent: 88,
+      },
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain('data-shell-layout="final-chapter"');
+    expect(markup).toContain('data-shell-density="compact"');
+    expect(markup).toContain('data-footer-density="compact"');
+    expect(markup).not.toContain('data-wizard-shell-header="true"');
+    expect(markup).toContain("Lore");
+    expect(markup).toContain("Portrait optional");
+    expect(markup).toContain("Step 1 of 1");
   });
 
   it("renders compact-height hooks for the step rail and shell header chrome", () => {

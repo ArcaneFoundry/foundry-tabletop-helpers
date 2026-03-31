@@ -144,9 +144,17 @@ export function WizardShell({
     0,
   );
   const currentStepNumber = currentStepIndex + 1;
-  const usesCompactFooter = !shellContext.isReviewStep
+  const usesMountedFlowLayout = !shellContext.isReviewStep
     && shellContext.hideStepIndicator
     && shellContext.hideShellHeader;
+  const usesFinalChapterCompaction = shellContext.currentStepId === "portrait" || shellContext.isReviewStep;
+  const usesCompactFooter = usesMountedFlowLayout || usesFinalChapterCompaction;
+  const shellLayout = usesMountedFlowLayout
+    ? "mounted-flow"
+    : usesFinalChapterCompaction
+      ? "final-chapter"
+      : "standard";
+  const shellDensity = usesFinalChapterCompaction ? "compact" : "standard";
   const displayProgress = shellContext.localProgress
     ? {
       ...shellContext.localProgress,
@@ -191,7 +199,8 @@ export function WizardShell({
       data-motion-profile={shellContext.motionProfile ?? "ceremonial"}
       data-panel-style={shellContext.panelStyleVariant ?? "artifact"}
       data-scene-key={shellContext.chapterSceneKey ?? shellContext.chapterKey ?? "lore"}
-      data-shell-layout={usesCompactFooter ? "mounted-flow" : "standard"}
+      data-shell-density={shellDensity}
+      data-shell-layout={shellLayout}
       data-status-hint-style={shellContext.statusHintStyle ?? "progress"}
     >
       <div className="pointer-events-none absolute inset-0">
@@ -307,7 +316,7 @@ export function WizardShell({
                     </span>
                   </span>
                 </button>
-                {index < shellContext.steps.length - 1 ? (
+                {index < displaySteps.length - 1 ? (
                   <div className="relative h-px min-w-6 flex-1 overflow-hidden rounded-full bg-[color:var(--fth-color-border)] [@media(max-height:900px)]:min-w-4">
                     <div
                       className={cn(
@@ -323,7 +332,7 @@ export function WizardShell({
         </nav>
       ) : null}
 
-      {!shellContext.hideShellHeader ? (
+      {!shellContext.hideShellHeader && !usesFinalChapterCompaction ? (
         <header className="fth-theme-panel fth-theme-panel--header relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-6 py-5 backdrop-blur-lg md:mx-5 [@media(max-height:900px)]:mt-3 [@media(max-height:900px)]:px-4 [@media(max-height:900px)]:py-3.5" data-wizard-shell-header="true">
           <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-6 top-0 h-px" />
           <div className="fth-theme-header-glow pointer-events-none absolute inset-0" />
