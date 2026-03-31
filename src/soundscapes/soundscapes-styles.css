@@ -76,6 +76,10 @@
   box-shadow: var(--ss-shadow-elevated);
 }
 
+.fth-soundscape-panel--raised {
+  box-shadow: var(--ss-shadow-card);
+}
+
 .fth-soundscape-card {
   border: 1px solid var(--ss-border-subtle);
   background: var(--ss-surface-card);
@@ -191,6 +195,18 @@
   color: var(--ss-text-muted);
 }
 
+.fth-soundscape-title {
+  color: var(--ss-text-primary);
+}
+
+.fth-soundscape-text {
+  color: var(--ss-text-primary);
+}
+
+.fth-soundscape-text-muted {
+  color: var(--ss-text-muted);
+}
+
 .fth-soundscape-chip {
   display: inline-flex;
   align-items: center;
@@ -223,6 +239,11 @@
   border: 1px dashed var(--ss-border-subtle);
   background: color-mix(in srgb, var(--ss-surface-card) 72%, transparent);
   color: var(--ss-text-secondary);
+}
+
+.fth-soundscape-surface-danger {
+  border-color: var(--ss-danger-border);
+  background: var(--ss-danger-bg);
 }
 
 .fth-soundscape-manager-grid {

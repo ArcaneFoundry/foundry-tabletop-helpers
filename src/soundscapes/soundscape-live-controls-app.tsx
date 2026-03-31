@@ -304,7 +304,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
               <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em]">
                 Reactive Soundscapes
               </div>
-              <h1 className="mt-2 font-fth-cc-display text-[1.8rem] leading-none text-[color:var(--ss-text-primary)]">
+              <h1 className="fth-soundscape-title mt-2 font-fth-cc-display text-[1.8rem] leading-none">
                 Soundscape Live Controls
               </h1>
               <p className="fth-soundscape-muted mt-3 max-w-2xl font-fth-cc-body text-[0.95rem] leading-6">
@@ -388,7 +388,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
                       key={moment.id}
                     >
                       <div className="min-w-0">
-                        <div className="font-fth-cc-display text-[1.08rem] text-[color:var(--ss-text-primary)]">{moment.name}</div>
+                        <div className="fth-soundscape-title font-fth-cc-display text-[1.08rem]">{moment.name}</div>
                         <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
                           {moment.id} · {moment.audioPaths.length} sound{moment.audioPaths.length === 1 ? "" : "s"}
                         </div>
@@ -427,7 +427,7 @@ function SoundscapeLiveControlsView(): JSX.Element {
               description="Keep the latest scene action result visible even when panels change."
               title="Status"
             >
-              <div className="fth-soundscape-card rounded-[1rem] px-4 py-3 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">
+              <div className="fth-soundscape-card fth-soundscape-text rounded-[1rem] px-4 py-3 font-fth-cc-body text-sm">
                 {status}
               </div>
             </LiveControlsCard>
@@ -448,7 +448,7 @@ function LiveControlsCard({
   description?: string;
 }): JSX.Element {
   return (
-    <section className="fth-soundscape-panel rounded-[1.35rem] p-4 shadow-[var(--ss-shadow-card)]">
+    <section className="fth-soundscape-panel fth-soundscape-panel--raised rounded-[1.35rem] p-4">
       <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">{title}</div>
       {description ? (
         <p className="fth-soundscape-muted mt-2 font-fth-cc-body text-sm leading-6">{description}</p>
@@ -468,7 +468,7 @@ function LiveControlsValue({
   return (
     <div className="fth-soundscape-card rounded-[0.95rem] px-3 py-2.5">
       <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.18em]">{label}</div>
-      <div className="mt-1 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{children}</div>
+      <div className="fth-soundscape-text mt-1 font-fth-cc-body text-sm">{children}</div>
     </div>
   );
 }
@@ -485,10 +485,10 @@ function RuntimePill({
   return (
     <div className={cn(
       "fth-soundscape-card rounded-[0.95rem] px-3 py-2.5",
-      tone === "danger" && "border-[color:var(--ss-danger-border)] bg-[color:var(--ss-danger-bg)]",
+      tone === "danger" && "fth-soundscape-surface-danger",
     )}>
       <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.18em]">{label}</div>
-      <div className="mt-1 break-all font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{value}</div>
+      <div className="fth-soundscape-text mt-1 break-all font-fth-cc-body text-sm">{value}</div>
     </div>
   );
 }

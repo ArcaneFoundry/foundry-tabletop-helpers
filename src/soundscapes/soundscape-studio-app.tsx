@@ -105,6 +105,8 @@ const SOUNDSCAPE_STUDIO_WINDOW_CONSTRAINTS = {
   maxHeight: 1120,
 } satisfies WindowSizeConstraints;
 
+const PROFILE_MANAGER_PANEL_ID = "fth-soundscape-profile-manager";
+
 const getFoundryAppClasses = () => {
   const g = globalThis as Record<string, unknown>;
   const api = (g.foundry as Record<string, unknown> | undefined)
@@ -193,6 +195,36 @@ function formatAmbienceLayerSummary(layer: SoundscapeAmbienceLayer): string[] {
   ];
 }
 
+function summarizeSoundscapeMusicPrograms(profile: SoundscapeProfile): {
+  count: number;
+  trackCount: number;
+  previewPrograms: SoundscapeMusicProgram[];
+} {
+  const previewPrograms = Object.values(profile.musicPrograms).slice(0, 2);
+  const trackCount = Object.values(profile.musicPrograms).reduce((total, program) => total + program.audioPaths.length, 0);
+
+  return {
+    count: Object.keys(profile.musicPrograms).length,
+    trackCount,
+    previewPrograms,
+  };
+}
+
+function summarizeSoundscapeAmbienceLayers(profile: SoundscapeProfile): {
+  count: number;
+  soundCount: number;
+  previewLayers: SoundscapeAmbienceLayer[];
+} {
+  const previewLayers = Object.values(profile.ambienceLayers).slice(0, 2);
+  const soundCount = Object.values(profile.ambienceLayers).reduce((total, layer) => total + layer.audioPaths.length, 0);
+
+  return {
+    count: Object.keys(profile.ambienceLayers).length,
+    soundCount,
+    previewLayers,
+  };
+}
+
 function getAudioFilePickerClass(): RuntimeFilePickerClass | null {
   const g = globalThis as {
     CONFIG?: { ux?: { FilePicker?: RuntimeFilePickerClass } };
@@ -245,7 +277,11 @@ function openAudioPathPicker(options: {
   return true;
 }
 
-function SoundscapeStudioView(): JSX.Element {
+function SoundscapeStudioView({
+  initialProfileManagerOpen,
+}: {
+  initialProfileManagerOpen?: boolean;
+} = {}): JSX.Element {
   const [library, setLibrary] = useState<PersistentSoundscapeLibrarySnapshot>(() => getSoundscapeLibrarySnapshot());
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(() => getNextSelectedProfileId(getSoundscapeLibrarySnapshot()));
   const [worldDefaultProfileId, setWorldDefaultProfileIdState] = useState<string | null>(() => getSoundscapeWorldDefaultProfileId());
@@ -256,11 +292,15 @@ function SoundscapeStudioView(): JSX.Element {
   const [messages, setMessages] = useState<SoundscapeStudioValidationMessage[]>([]);
   const [status, setStatus] = useState<string>("Ready to author soundscapes.");
   const [isSaving, setIsSaving] = useState(false);
-  const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
+  const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(() => initialProfileManagerOpen ?? false);
+  const [isMusicSectionExpanded, setIsMusicSectionExpanded] = useState(false);
+  const [isAtmosphereSectionExpanded, setIsAtmosphereSectionExpanded] = useState(false);
   const [expandedMusicProgramId, setExpandedMusicProgramId] = useState<string | null>(null);
   const [expandedAmbienceLayerId, setExpandedAmbienceLayerId] = useState<string | null>(null);
 
   const selectedProfile = getSelectedProfile(library, selectedProfileId);
+  const musicSummary = selectedProfile ? summarizeSoundscapeMusicPrograms(selectedProfile) : null;
+  const ambienceSummary = selectedProfile ? summarizeSoundscapeAmbienceLayers(selectedProfile) : null;
   const previewState = selectedProfile
     ? resolveSoundscapeStudioPreview({
       library,
@@ -343,6 +383,7 @@ function SoundscapeStudioView(): JSX.Element {
   function addMusicProgram(): void {
     if (!selectedProfile) return;
     const musicProgram = createSoundscapeMusicProgram(Object.keys(selectedProfile.musicPrograms));
+    setIsMusicSectionExpanded(true);
     updateProfile({
       ...selectedProfile,
       musicPrograms: {
@@ -357,6 +398,7 @@ function SoundscapeStudioView(): JSX.Element {
   function addAmbienceLayer(): void {
     if (!selectedProfile) return;
     const ambienceLayer = createSoundscapeAmbienceLayer(Object.keys(selectedProfile.ambienceLayers));
+    setIsAtmosphereSectionExpanded(true);
     updateProfile({
       ...selectedProfile,
       ambienceLayers: {
@@ -418,7 +460,7 @@ function SoundscapeStudioView(): JSX.Element {
               <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em]">
                 Reactive Soundscapes
               </div>
-              <h1 className="mt-2 font-fth-cc-display text-[1.85rem] leading-none text-[color:var(--ss-text-primary)] md:text-[2.2rem]">
+              <h1 className="fth-soundscape-title mt-2 font-fth-cc-display text-[1.85rem] leading-none md:text-[2.2rem]">
                 Soundscape Studio
               </h1>
               <p className="fth-soundscape-muted mt-3 max-w-3xl font-fth-cc-body text-[0.96rem] leading-6">
@@ -444,6 +486,8 @@ function SoundscapeStudioView(): JSX.Element {
               <div className="flex flex-wrap gap-2 xl:justify-end">
                 <StudioButton
                   label={isProfileManagerOpen ? "Hide Profiles" : "Manage Profiles"}
+                  ariaControls={PROFILE_MANAGER_PANEL_ID}
+                  ariaExpanded={isProfileManagerOpen}
                   onClick={() => setIsProfileManagerOpen((current) => !current)}
                 />
                 <StudioButton
@@ -458,7 +502,12 @@ function SoundscapeStudioView(): JSX.Element {
         </header>
 
         {isProfileManagerOpen ? (
-          <section className="mx-4 mt-4 md:mx-5">
+          <section
+            aria-label="Profile manager"
+            className="mx-4 mt-4 md:mx-5"
+            id={PROFILE_MANAGER_PANEL_ID}
+            role="region"
+          >
             <div className="fth-soundscape-panel rounded-[1.55rem] p-4 md:p-5">
               <div className="fth-soundscape-manager-grid">
                 <div className="space-y-4">
@@ -473,7 +522,7 @@ function SoundscapeStudioView(): JSX.Element {
 
                   {selectedProfile ? (
                     <div className="fth-soundscape-card fth-soundscape-card--selected rounded-[1.35rem] p-4">
-                      <div className="font-fth-cc-display text-[1.2rem]">{selectedProfile.name}</div>
+                      <div className="fth-soundscape-title font-fth-cc-display text-[1.2rem]">{selectedProfile.name}</div>
                       <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
                         {selectedProfile.id}
                       </div>
@@ -512,7 +561,7 @@ function SoundscapeStudioView(): JSX.Element {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="font-fth-cc-display text-[1.08rem]">{profile.name}</div>
+                            <div className="fth-soundscape-title font-fth-cc-display text-[1.08rem]">{profile.name}</div>
                             <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
                               {profile.id}
                             </div>
@@ -561,231 +610,309 @@ function SoundscapeStudioView(): JSX.Element {
             </StudioCard>
 
             <StudioCard
-              action={selectedProfile ? <StudioInlineButton label="Add Program" onClick={addMusicProgram} /> : null}
-              description="Programs define score selection mode, delay, and track order."
+              action={selectedProfile ? (
+                <div className="flex flex-wrap gap-2">
+                  <StudioInlineButton label="Add Program" onClick={addMusicProgram} />
+                  <StudioInlineButton
+                    label={isMusicSectionExpanded ? "Collapse" : "Expand"}
+                    onClick={() => setIsMusicSectionExpanded((current) => !current)}
+                  />
+                </div>
+              ) : null}
+              description="Programs stay collapsed to a compact summary until you open them."
               title="Music"
             >
-              {selectedProfile && Object.keys(selectedProfile.musicPrograms).length > 0 ? (
-                <div className="space-y-3">
-                  {Object.values(selectedProfile.musicPrograms).map((program) => (
-                    <CompactEntityCard
-                      expanded={expandedMusicProgramId === program.id}
-                      iconClass="fa-solid fa-waveform-lines"
-                      key={program.id}
-                      onRemove={() => {
-                        const nextPrograms = { ...selectedProfile.musicPrograms };
-                        delete nextPrograms[program.id];
-                        updateProfile({ ...selectedProfile, musicPrograms: nextPrograms });
-                        setExpandedMusicProgramId((current) => current === program.id ? ensureExpandedEntityId(null, nextPrograms) : current);
-                      }}
-                      onToggle={() => setExpandedMusicProgramId((current) => current === program.id ? null : program.id)}
-                      summaryItems={formatMusicProgramSummary(program)}
-                      title={program.name}
-                    >
-                      <div className="grid gap-3 md:grid-cols-3">
-                        <LabeledField label="Name">
-                          <input
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
-                              ...selectedProfile,
-                              musicPrograms: {
-                                ...selectedProfile.musicPrograms,
-                                [program.id]: { ...program, name: event.target.value },
-                              },
-                            })}
-                            type="text"
-                            value={program.name}
-                          />
-                        </LabeledField>
-                        <LabeledField label="Selection">
-                          <select
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
-                              ...selectedProfile,
-                              musicPrograms: {
-                                ...selectedProfile.musicPrograms,
-                                [program.id]: {
-                                  ...program,
-                                  selectionMode: event.target.value === "random" ? "random" : "sequential",
+              {selectedProfile && musicSummary && musicSummary.count > 0 ? (
+                isMusicSectionExpanded ? (
+                  <div className="space-y-3">
+                    {Object.values(selectedProfile.musicPrograms).map((program) => (
+                      <CompactEntityCard
+                        expanded={expandedMusicProgramId === program.id}
+                        iconClass="fa-solid fa-waveform-lines"
+                        key={program.id}
+                        onRemove={() => {
+                          const nextPrograms = { ...selectedProfile.musicPrograms };
+                          delete nextPrograms[program.id];
+                          updateProfile({ ...selectedProfile, musicPrograms: nextPrograms });
+                          setExpandedMusicProgramId((current) => current === program.id ? ensureExpandedEntityId(null, nextPrograms) : current);
+                        }}
+                        onToggle={() => setExpandedMusicProgramId((current) => current === program.id ? null : program.id)}
+                        summaryItems={formatMusicProgramSummary(program)}
+                        title={program.name}
+                      >
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <LabeledField label="Name">
+                            <input
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                musicPrograms: {
+                                  ...selectedProfile.musicPrograms,
+                                  [program.id]: { ...program, name: event.target.value },
                                 },
-                              },
-                            })}
-                            value={program.selectionMode}
-                          >
-                            <option value="sequential">Sequential</option>
-                            <option value="random">Random</option>
-                          </select>
-                        </LabeledField>
-                        <LabeledField label="Delay After Track">
-                          <input
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
+                              })}
+                              type="text"
+                              value={program.name}
+                            />
+                          </LabeledField>
+                          <LabeledField label="Selection">
+                            <select
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                musicPrograms: {
+                                  ...selectedProfile.musicPrograms,
+                                  [program.id]: {
+                                    ...program,
+                                    selectionMode: event.target.value === "random" ? "random" : "sequential",
+                                  },
+                                },
+                              })}
+                              value={program.selectionMode}
+                            >
+                              <option value="sequential">Sequential</option>
+                              <option value="random">Random</option>
+                            </select>
+                          </LabeledField>
+                          <LabeledField label="Delay After Track">
+                            <input
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                musicPrograms: {
+                                  ...selectedProfile.musicPrograms,
+                                  [program.id]: { ...program, delaySeconds: Number(event.target.value) || 0 },
+                                },
+                              })}
+                              type="number"
+                              value={program.delaySeconds}
+                            />
+                          </LabeledField>
+                        </div>
+                        <AudioPathField
+                          addLabel="Add Track"
+                          audioPaths={program.audioPaths}
+                          compact
+                          emptyMessage="No tracks yet."
+                          helperText="Tracks stay in order."
+                          label="Tracks"
+                          onAdd={() => openPickerOrWarn({
+                            currentPath: program.audioPaths.at(-1),
+                            onSelect: (path) => updateProfile({
                               ...selectedProfile,
                               musicPrograms: {
                                 ...selectedProfile.musicPrograms,
-                                [program.id]: { ...program, delaySeconds: Number(event.target.value) || 0 },
+                                [program.id]: { ...program, audioPaths: appendAudioPath(program.audioPaths, path) },
                               },
-                            })}
-                            type="number"
-                            value={program.delaySeconds}
-                          />
-                        </LabeledField>
-                      </div>
-                      <AudioPathField
-                        addLabel="Add Track"
-                        audioPaths={program.audioPaths}
-                        emptyMessage="No tracks yet."
-                        helperText="Tracks stay in authored playback order."
-                        label="Tracks"
-                        onAdd={() => openPickerOrWarn({
-                          currentPath: program.audioPaths.at(-1),
-                          onSelect: (path) => updateProfile({
+                            }),
+                          })}
+                          onMove={(index, direction) => updateProfile({
                             ...selectedProfile,
                             musicPrograms: {
                               ...selectedProfile.musicPrograms,
-                              [program.id]: { ...program, audioPaths: appendAudioPath(program.audioPaths, path) },
+                              [program.id]: { ...program, audioPaths: moveAudioPath(program.audioPaths, index, direction) },
                             },
-                          }),
-                        })}
-                        onMove={(index, direction) => updateProfile({
-                          ...selectedProfile,
-                          musicPrograms: {
-                            ...selectedProfile.musicPrograms,
-                            [program.id]: { ...program, audioPaths: moveAudioPath(program.audioPaths, index, direction) },
-                          },
-                        })}
-                        onRemove={(index) => updateProfile({
-                          ...selectedProfile,
-                          musicPrograms: {
-                            ...selectedProfile.musicPrograms,
-                            [program.id]: { ...program, audioPaths: removeAudioPath(program.audioPaths, index) },
-                          },
-                        })}
-                      />
-                    </CompactEntityCard>
-                  ))}
-                </div>
+                          })}
+                          onRemove={(index) => updateProfile({
+                            ...selectedProfile,
+                            musicPrograms: {
+                              ...selectedProfile.musicPrograms,
+                              [program.id]: { ...program, audioPaths: removeAudioPath(program.audioPaths, index) },
+                            },
+                          })}
+                        />
+                      </CompactEntityCard>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {musicSummary.previewPrograms.map((program) => (
+                        <div className="fth-soundscape-card rounded-[1rem] px-4 py-3" key={program.id}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="fth-soundscape-text font-fth-cc-body text-[1rem] font-semibold">{program.name}</div>
+                              <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em]">
+                                {formatMusicProgramSummary(program).join(" · ")}
+                              </div>
+                            </div>
+                            <StatusChip label="Tracks" value={`${program.audioPaths.length}`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusChip label="Programs" tone="accent" value={`${musicSummary.count}`} />
+                      <StatusChip label="Tracks" value={`${musicSummary.trackCount}`} />
+                      {musicSummary.count > musicSummary.previewPrograms.length ? (
+                        <StatusChip label="More" value={`+${musicSummary.count - musicSummary.previewPrograms.length}`} />
+                      ) : null}
+                    </div>
+                    <p className="fth-soundscape-muted font-fth-cc-body text-sm leading-6">
+                      Expand to edit track order and delay.
+                    </p>
+                  </div>
+                )
               ) : (
                 <EmptyPanel message="Add a program to define score playback order and delay." />
               )}
             </StudioCard>
 
             <StudioCard
-              action={selectedProfile ? <StudioInlineButton label="Add Layer" onClick={addAmbienceLayer} /> : null}
-              description="Layers handle loops and randomized environmental sound beds."
+              action={selectedProfile ? (
+                <div className="flex flex-wrap gap-2">
+                  <StudioInlineButton label="Add Layer" onClick={addAmbienceLayer} />
+                  <StudioInlineButton
+                    label={isAtmosphereSectionExpanded ? "Collapse" : "Expand"}
+                    onClick={() => setIsAtmosphereSectionExpanded((current) => !current)}
+                  />
+                </div>
+              ) : null}
+              description="Layers stay compact until you need to edit their beds and hits."
               title="Atmosphere"
             >
-              {selectedProfile && Object.keys(selectedProfile.ambienceLayers).length > 0 ? (
-                <div className="space-y-3">
-                  {Object.values(selectedProfile.ambienceLayers).map((layer) => (
-                    <CompactEntityCard
-                      expanded={expandedAmbienceLayerId === layer.id}
-                      iconClass="fa-solid fa-wind"
-                      key={layer.id}
-                      onRemove={() => {
-                        const nextLayers = { ...selectedProfile.ambienceLayers };
-                        delete nextLayers[layer.id];
-                        updateProfile({ ...selectedProfile, ambienceLayers: nextLayers });
-                        setExpandedAmbienceLayerId((current) => current === layer.id ? ensureExpandedEntityId(null, nextLayers) : current);
-                      }}
-                      onToggle={() => setExpandedAmbienceLayerId((current) => current === layer.id ? null : layer.id)}
-                      summaryItems={formatAmbienceLayerSummary(layer)}
-                      title={layer.name}
-                    >
-                      <div className="grid gap-3 md:grid-cols-4">
-                        <LabeledField label="Name">
-                          <input
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
+              {selectedProfile && ambienceSummary && ambienceSummary.count > 0 ? (
+                isAtmosphereSectionExpanded ? (
+                  <div className="space-y-3">
+                    {Object.values(selectedProfile.ambienceLayers).map((layer) => (
+                      <CompactEntityCard
+                        expanded={expandedAmbienceLayerId === layer.id}
+                        iconClass="fa-solid fa-wind"
+                        key={layer.id}
+                        onRemove={() => {
+                          const nextLayers = { ...selectedProfile.ambienceLayers };
+                          delete nextLayers[layer.id];
+                          updateProfile({ ...selectedProfile, ambienceLayers: nextLayers });
+                          setExpandedAmbienceLayerId((current) => current === layer.id ? ensureExpandedEntityId(null, nextLayers) : current);
+                        }}
+                        onToggle={() => setExpandedAmbienceLayerId((current) => current === layer.id ? null : layer.id)}
+                        summaryItems={formatAmbienceLayerSummary(layer)}
+                        title={layer.name}
+                      >
+                        <div className="grid gap-3 md:grid-cols-4">
+                          <LabeledField label="Name">
+                            <input
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                ambienceLayers: {
+                                  ...selectedProfile.ambienceLayers,
+                                  [layer.id]: { ...layer, name: event.target.value },
+                                },
+                              })}
+                              type="text"
+                              value={layer.name}
+                            />
+                          </LabeledField>
+                          <LabeledField label="Mode">
+                            <select
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                ambienceLayers: {
+                                  ...selectedProfile.ambienceLayers,
+                                  [layer.id]: { ...layer, mode: event.target.value === "random" ? "random" : "loop" },
+                                },
+                              })}
+                              value={layer.mode}
+                            >
+                              <option value="loop">Loop</option>
+                              <option value="random">Random</option>
+                            </select>
+                          </LabeledField>
+                          <LabeledField label="Min Delay">
+                            <input
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                ambienceLayers: {
+                                  ...selectedProfile.ambienceLayers,
+                                  [layer.id]: { ...layer, minDelaySeconds: Number(event.target.value) || 0 },
+                                },
+                              })}
+                              type="number"
+                              value={layer.minDelaySeconds}
+                            />
+                          </LabeledField>
+                          <LabeledField label="Max Delay">
+                            <input
+                              className={studioInputClassName()}
+                              onChange={(event) => updateProfile({
+                                ...selectedProfile,
+                                ambienceLayers: {
+                                  ...selectedProfile.ambienceLayers,
+                                  [layer.id]: { ...layer, maxDelaySeconds: Number(event.target.value) || 0 },
+                                },
+                              })}
+                              type="number"
+                              value={layer.maxDelaySeconds}
+                            />
+                          </LabeledField>
+                        </div>
+                        <AudioPathField
+                          addLabel="Add Sound"
+                          audioPaths={layer.audioPaths}
+                          compact
+                          emptyMessage="No sounds yet."
+                          helperText="Beds and hits share one list."
+                          label="Audio"
+                          onAdd={() => openPickerOrWarn({
+                            currentPath: layer.audioPaths.at(-1),
+                            onSelect: (path) => updateProfile({
                               ...selectedProfile,
                               ambienceLayers: {
                                 ...selectedProfile.ambienceLayers,
-                                [layer.id]: { ...layer, name: event.target.value },
+                                [layer.id]: { ...layer, audioPaths: appendAudioPath(layer.audioPaths, path) },
                               },
-                            })}
-                            type="text"
-                            value={layer.name}
-                          />
-                        </LabeledField>
-                        <LabeledField label="Mode">
-                          <select
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
-                              ...selectedProfile,
-                              ambienceLayers: {
-                                ...selectedProfile.ambienceLayers,
-                                [layer.id]: { ...layer, mode: event.target.value === "random" ? "random" : "loop" },
-                              },
-                            })}
-                            value={layer.mode}
-                          >
-                            <option value="loop">Loop</option>
-                            <option value="random">Random</option>
-                          </select>
-                        </LabeledField>
-                        <LabeledField label="Min Delay">
-                          <input
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
-                              ...selectedProfile,
-                              ambienceLayers: {
-                                ...selectedProfile.ambienceLayers,
-                                [layer.id]: { ...layer, minDelaySeconds: Number(event.target.value) || 0 },
-                              },
-                            })}
-                            type="number"
-                            value={layer.minDelaySeconds}
-                          />
-                        </LabeledField>
-                        <LabeledField label="Max Delay">
-                          <input
-                            className={studioInputClassName()}
-                            onChange={(event) => updateProfile({
-                              ...selectedProfile,
-                              ambienceLayers: {
-                                ...selectedProfile.ambienceLayers,
-                                [layer.id]: { ...layer, maxDelaySeconds: Number(event.target.value) || 0 },
-                              },
-                            })}
-                            type="number"
-                            value={layer.maxDelaySeconds}
-                          />
-                        </LabeledField>
-                      </div>
-                      <AudioPathField
-                        addLabel="Add Sound"
-                        audioPaths={layer.audioPaths}
-                        emptyMessage="No sounds yet."
-                        helperText="Loop beds and random hits share the same authored list."
-                        label="Audio"
-                        onAdd={() => openPickerOrWarn({
-                          currentPath: layer.audioPaths.at(-1),
-                          onSelect: (path) => updateProfile({
+                            }),
+                          })}
+                          onMove={(index, direction) => updateProfile({
                             ...selectedProfile,
                             ambienceLayers: {
                               ...selectedProfile.ambienceLayers,
-                              [layer.id]: { ...layer, audioPaths: appendAudioPath(layer.audioPaths, path) },
+                              [layer.id]: { ...layer, audioPaths: moveAudioPath(layer.audioPaths, index, direction) },
                             },
-                          }),
-                        })}
-                        onMove={(index, direction) => updateProfile({
-                          ...selectedProfile,
-                          ambienceLayers: {
-                            ...selectedProfile.ambienceLayers,
-                            [layer.id]: { ...layer, audioPaths: moveAudioPath(layer.audioPaths, index, direction) },
-                          },
-                        })}
-                        onRemove={(index) => updateProfile({
-                          ...selectedProfile,
-                          ambienceLayers: {
-                            ...selectedProfile.ambienceLayers,
-                            [layer.id]: { ...layer, audioPaths: removeAudioPath(layer.audioPaths, index) },
-                          },
-                        })}
-                      />
-                    </CompactEntityCard>
-                  ))}
-                </div>
+                          })}
+                          onRemove={(index) => updateProfile({
+                            ...selectedProfile,
+                            ambienceLayers: {
+                              ...selectedProfile.ambienceLayers,
+                              [layer.id]: { ...layer, audioPaths: removeAudioPath(layer.audioPaths, index) },
+                            },
+                          })}
+                        />
+                      </CompactEntityCard>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {ambienceSummary.previewLayers.map((layer) => (
+                        <div className="fth-soundscape-card rounded-[1rem] px-4 py-3" key={layer.id}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="fth-soundscape-text font-fth-cc-body text-[1rem] font-semibold">{layer.name}</div>
+                              <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em]">
+                                {formatAmbienceLayerSummary(layer).join(" · ")}
+                              </div>
+                            </div>
+                            <StatusChip label="Sounds" value={`${layer.audioPaths.length}`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusChip label="Layers" tone="accent" value={`${ambienceSummary.count}`} />
+                      <StatusChip label="Sounds" value={`${ambienceSummary.soundCount}`} />
+                      {ambienceSummary.count > ambienceSummary.previewLayers.length ? (
+                        <StatusChip label="More" value={`+${ambienceSummary.count - ambienceSummary.previewLayers.length}`} />
+                      ) : null}
+                    </div>
+                    <p className="fth-soundscape-muted font-fth-cc-body text-sm leading-6">
+                      Expand to edit loop mode and delay ranges.
+                    </p>
+                  </div>
+                )
               ) : (
                 <EmptyPanel message="Add a layer to author looping beds or randomized environmental sound." />
               )}
@@ -1072,7 +1199,7 @@ function SoundscapeStudioView(): JSX.Element {
                                     {Object.values(selectedProfile.ambienceLayers).map((layer) => {
                                       const checked = (rule.ambienceLayerIds ?? []).includes(layer.id);
                                       return (
-                                        <label className="flex items-center gap-2 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]" key={layer.id}>
+                                        <label className="fth-soundscape-text flex items-center gap-2 font-fth-cc-body text-sm" key={layer.id}>
                                           <input
                                             checked={checked}
                                             onChange={(event) => updateRule(rule.id, (current) => {
@@ -1130,7 +1257,7 @@ function SoundscapeStudioView(): JSX.Element {
                     <div className="fth-soundscape-card rounded-[1.05rem] p-3" key={scene.id}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="font-fth-cc-body text-sm font-semibold text-[color:var(--ss-text-primary)]">{scene.name}</div>
+                          <div className="fth-soundscape-text font-fth-cc-body text-sm font-semibold">{scene.name}</div>
                           <div className="fth-soundscape-subtle mt-1 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.18em]">
                             {scene.active ? "Active Scene" : "Scene"}
                           </div>
@@ -1231,7 +1358,7 @@ function SoundscapeStudioView(): JSX.Element {
               title="Validation"
             >
               <div className="fth-soundscape-card rounded-[1.05rem] p-3">
-                <div className="font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{status}</div>
+                <div className="fth-soundscape-text font-fth-cc-body text-sm">{status}</div>
                 {messages.length > 0 ? (
                   <ul className="mt-3 space-y-2">
                     {messages.map((message, index) => (
@@ -1278,7 +1405,7 @@ function PreviewValue({ label, children }: { label: string; children: string }):
   return (
     <div className="fth-soundscape-card rounded-[0.95rem] px-3 py-2.5">
       <div className="fth-soundscape-kicker font-fth-cc-ui text-[0.54rem] uppercase tracking-[0.16em]">{label}</div>
-      <div className="mt-1 font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{children}</div>
+      <div className="fth-soundscape-text mt-1 font-fth-cc-body text-sm">{children}</div>
     </div>
   );
 }
@@ -1295,10 +1422,10 @@ function StudioCard({
   description?: string;
 }): JSX.Element {
   return (
-    <section className="fth-soundscape-panel rounded-[1.35rem] p-4 shadow-[var(--ss-shadow-card)]">
+    <section className="fth-soundscape-panel fth-soundscape-panel--raised rounded-[1.35rem] p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
-          <div className="font-fth-cc-display text-[1.22rem] text-[color:var(--ss-text-primary)]">{title}</div>
+          <div className="fth-soundscape-title font-fth-cc-display text-[1.22rem]">{title}</div>
           {description ? (
             <p className="fth-soundscape-muted mt-1 font-fth-cc-body text-sm leading-6">{description}</p>
           ) : null}
@@ -1322,7 +1449,7 @@ function EntityCard({
   return (
     <div className="fth-soundscape-card rounded-[1.1rem] p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-fth-cc-body text-[1rem] font-semibold text-[color:var(--ss-text-primary)]">{title}</div>
+        <div className="fth-soundscape-text font-fth-cc-body text-[1rem] font-semibold">{title}</div>
         {onRemove ? <StudioInlineButton label="Remove" onClick={onRemove} tone="danger" /> : null}
       </div>
       <div className="mt-4 space-y-4">{children}</div>
@@ -1359,13 +1486,13 @@ function CompactEntityCard({
           onClick={onToggle}
           type="button"
         >
-          <div className="fth-soundscape-card flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[color:var(--ss-text-primary)]">
+          <div className="fth-soundscape-card fth-soundscape-text flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
             <i aria-hidden="true" className={iconClass} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="font-fth-cc-body text-[1rem] font-semibold text-[color:var(--ss-text-primary)]">{title}</div>
-              <i aria-hidden="true" className="fth-soundscape-caret fa-solid fa-chevron-right text-[0.72rem] text-[color:var(--ss-text-muted)]" />
+              <div className="fth-soundscape-text font-fth-cc-body text-[1rem] font-semibold">{title}</div>
+              <i aria-hidden="true" className="fth-soundscape-caret fth-soundscape-text-muted fa-solid fa-chevron-right text-[0.72rem]" />
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {summaryItems.map((item) => (
@@ -1392,6 +1519,7 @@ function AudioPathField({
   addLabel,
   emptyMessage,
   helperText,
+  compact = false,
   onAdd,
   onMove,
   onRemove,
@@ -1401,15 +1529,19 @@ function AudioPathField({
   addLabel: string;
   emptyMessage: string;
   helperText: string;
+  compact?: boolean;
   onAdd: () => void;
   onMove: (index: number, direction: "up" | "down") => void;
   onRemove: (index: number) => void;
 }): JSX.Element {
   return (
     <LabeledField label={label}>
-      <div className="fth-soundscape-card rounded-[1rem] p-3">
+      <div className={cn("fth-soundscape-card rounded-[1rem]", compact ? "p-2.5" : "p-3")}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="fth-soundscape-muted font-fth-cc-body text-sm">
+          <div className={cn(
+            "fth-soundscape-muted font-fth-cc-body",
+            compact ? "text-[0.78rem] leading-5" : "text-sm",
+          )}>
             {helperText}
           </div>
           <StudioInlineButton label={addLabel} onClick={onAdd} />
@@ -1419,27 +1551,32 @@ function AudioPathField({
           <div className="space-y-2">
             {audioPaths.map((audioPath, index) => (
               <div
-                className="fth-soundscape-card rounded-[0.95rem] px-3 py-3 md:flex md:items-start md:justify-between"
+                className={cn(
+                  "fth-soundscape-card rounded-[0.95rem] md:flex md:items-start md:justify-between",
+                  compact ? "px-3 py-2" : "px-3 py-3",
+                )}
                 key={`${audioPath}-${index}`}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="font-fth-cc-body text-sm font-semibold text-[color:var(--ss-text-primary)]">{formatAudioPathLabel(audioPath)}</div>
+                  <div className="fth-soundscape-text font-fth-cc-body text-sm font-semibold">{formatAudioPathLabel(audioPath)}</div>
                   <div className="fth-soundscape-subtle mt-1 break-all font-fth-cc-ui text-[0.58rem] tracking-[0.08em]">
                     {audioPath}
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2 md:mt-0 md:justify-end">
+                <div className={cn("mt-3 flex flex-wrap gap-2 md:mt-0 md:justify-end", compact && "gap-1.5")}>
                   <PathActionButton
                     disabled={index === 0}
                     label="Up"
                     onClick={() => onMove(index, "up")}
+                    compact={compact}
                   />
                   <PathActionButton
                     disabled={index === audioPaths.length - 1}
                     label="Down"
                     onClick={() => onMove(index, "down")}
+                    compact={compact}
                   />
-                  <PathActionButton label="Remove" onClick={() => onRemove(index)} tone="danger" />
+                  <PathActionButton label="Remove" onClick={() => onRemove(index)} tone="danger" compact={compact} />
                 </div>
               </div>
             ))}
@@ -1486,7 +1623,7 @@ function ToggleField({
 }): JSX.Element {
   return (
     <label className="fth-soundscape-card flex items-center justify-between rounded-[0.95rem] px-3 py-2.5">
-      <span className="font-fth-cc-body text-sm text-[color:var(--ss-text-primary)]">{label}</span>
+      <span className="fth-soundscape-text font-fth-cc-body text-sm">{label}</span>
       <input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
     </label>
   );
@@ -1518,15 +1655,21 @@ function StudioButton({
   onClick,
   disabled,
   tone = "default",
+  ariaControls,
+  ariaExpanded,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
   tone?: "default" | "gold" | "danger";
+  ariaControls?: string;
+  ariaExpanded?: boolean;
 }): JSX.Element {
   return (
     <button
       className={studioButtonClassName(tone, !!disabled)}
+      aria-controls={ariaControls}
+      aria-expanded={ariaExpanded}
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -1561,15 +1704,17 @@ function PathActionButton({
   onClick,
   disabled = false,
   tone = "default",
+  compact = false,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
   tone?: "default" | "danger";
+  compact?: boolean;
 }): JSX.Element {
   return (
     <button
-      className={studioButtonClassName(tone, disabled, "px-3 py-1.5 text-[0.54rem]")}
+      className={studioButtonClassName(tone, disabled, compact ? "px-2.5 py-1.5 text-[0.5rem]" : "px-3 py-1.5 text-[0.54rem]")}
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -1709,4 +1854,8 @@ export const __soundscapeStudioAppInternals = {
   removeAudioPath,
   moveAudioPath,
   openAudioPathPicker,
+  summarizeSoundscapeMusicPrograms,
+  summarizeSoundscapeAmbienceLayers,
+  PROFILE_MANAGER_PANEL_ID,
+  SoundscapeStudioView,
 };

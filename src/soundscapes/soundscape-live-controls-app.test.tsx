@@ -364,6 +364,9 @@ describe("SoundscapeLiveControlsApp", () => {
     expect(markup).toContain("Begin Scene");
     expect(markup).toContain("Stop Current Soundscape");
     expect(markup).toContain("sting · 2 sounds");
+    expect(markup).toContain("fth-soundscape-panel--raised");
+    expect(markup).toContain("fth-soundscape-title");
+    expect(markup).toContain("fth-soundscape-text");
   });
 
   it("starts the current resolved scene soundscape through the live-controls helper", async () => {

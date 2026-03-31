@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -7,11 +8,14 @@ const {
   loadTemplatesMock,
   isGMMock,
   getUIMock,
+  getGameMock,
   getFoundryReactMountMock,
   foundryReactRenderMock,
   foundryReactUnmountMock,
   ensureNativeWindowResizeHandleMock,
   ensureWindowSizeConstraintsMock,
+  getSoundscapeLibrarySnapshotMock,
+  getSoundscapeWorldDefaultProfileIdMock,
 } = vi.hoisted(() => ({
   logWarnMock: vi.fn(),
   logDebugMock: vi.fn(),
@@ -19,11 +23,14 @@ const {
   loadTemplatesMock: vi.fn(),
   isGMMock: vi.fn(() => true),
   getUIMock: vi.fn(),
+  getGameMock: vi.fn(),
   getFoundryReactMountMock: vi.fn(),
   foundryReactRenderMock: vi.fn(),
   foundryReactUnmountMock: vi.fn(),
   ensureNativeWindowResizeHandleMock: vi.fn(),
   ensureWindowSizeConstraintsMock: vi.fn(),
+  getSoundscapeLibrarySnapshotMock: vi.fn(),
+  getSoundscapeWorldDefaultProfileIdMock: vi.fn(),
 }));
 
 vi.mock("../logger", () => ({
@@ -36,6 +43,7 @@ vi.mock("../logger", () => ({
 
 vi.mock("../types", () => ({
   getHooks: getHooksMock,
+  getGame: getGameMock,
   getUI: getUIMock,
   isGM: isGMMock,
   loadTemplates: loadTemplatesMock,
@@ -55,6 +63,16 @@ vi.mock("../ui/foundry/application-v2/window-resize-handle", () => ({
 
 vi.mock("../ui/foundry/application-v2/window-size-constraints", () => ({
   ensureWindowSizeConstraints: ensureWindowSizeConstraintsMock,
+}));
+
+vi.mock("./soundscape-accessors", () => ({
+  getSoundscapeLibrarySnapshot: getSoundscapeLibrarySnapshotMock,
+  getSoundscapeWorldDefaultProfileId: getSoundscapeWorldDefaultProfileIdMock,
+  getSceneSoundscapeAssignment: vi.fn(() => null),
+  getSoundscapeSceneById: vi.fn(() => null),
+  setSceneSoundscapeAssignment: vi.fn(async () => {}),
+  setSoundscapeLibrarySnapshot: vi.fn(async () => {}),
+  setSoundscapeWorldDefaultProfileId: vi.fn(async () => {}),
 }));
 
 class FakeElement {
@@ -117,6 +135,26 @@ beforeEach(() => {
   getUIMock.mockReturnValue({ notifications: { warn: vi.fn() } });
   getFoundryReactMountMock.mockImplementation((root: FakeElement | null | undefined) => {
     return root?.querySelector("[data-fth-react-root]") as HTMLElement | null;
+  });
+  getSoundscapeWorldDefaultProfileIdMock.mockReturnValue(null);
+  getSoundscapeLibrarySnapshotMock.mockReturnValue({
+    formatVersion: 2,
+    savedAt: "2026-03-30T00:00:00.000Z",
+    profiles: {
+      "test-soundscape": {
+        id: "test-soundscape",
+        name: "Test Soundscape",
+        musicPrograms: {},
+        ambienceLayers: {},
+        soundMoments: {},
+        rules: [
+          {
+            id: "base",
+            trigger: { type: "base" },
+          },
+        ],
+      },
+    },
   });
 });
 
@@ -282,5 +320,132 @@ describe("SoundscapeStudioApp", () => {
     }]);
     expect(onSelect).toHaveBeenCalledWith("sounds/forest/wind.ogg");
     expect(render).toHaveBeenCalledWith(true);
+  });
+
+  it("renders the manager toggle in the header without making profile management a persistent rail", async () => {
+    const mod = await modPromise;
+    const SoundscapeStudioView = mod.__soundscapeStudioAppInternals.SoundscapeStudioView;
+
+    const markup = renderToStaticMarkup(<SoundscapeStudioView />);
+
+    expect(markup).toContain("Manage Profiles");
+    expect(markup).toContain('aria-controls="fth-soundscape-profile-manager"');
+    expect(markup).toContain('aria-expanded="false"');
+    expect(markup).not.toContain('id="fth-soundscape-profile-manager"');
+    expect(markup).not.toContain('aria-label="Profile manager"');
+    expect(markup).not.toContain("fth-soundscape-manager-grid");
+  });
+
+  it("marks the profile manager tray as a disclosure region when opened", async () => {
+    const mod = await modPromise;
+    const SoundscapeStudioView = mod.__soundscapeStudioAppInternals.SoundscapeStudioView;
+    const markup = renderToStaticMarkup(<SoundscapeStudioView initialProfileManagerOpen />);
+
+    expect(markup).toContain("Hide Profiles");
+    expect(markup).toContain('aria-controls="fth-soundscape-profile-manager"');
+    expect(markup).toContain('aria-expanded="true"');
+    expect(markup).toContain('id="fth-soundscape-profile-manager"');
+    expect(markup).toContain('aria-label="Profile manager"');
+    expect(markup).toContain("Profiles");
+    expect(markup).toContain("Test Soundscape");
+  });
+
+  it("renders the shared Soundscapes theme utility classes in the studio surface", async () => {
+    const mod = await modPromise;
+    const SoundscapeStudioView = mod.__soundscapeStudioAppInternals.SoundscapeStudioView;
+
+    getGameMock.mockReturnValue({
+      scenes: [
+        {
+          id: "scene-1",
+          name: "Active Scene",
+          active: true,
+        },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(<SoundscapeStudioView />);
+
+    expect(markup).toContain("fth-soundscape-panel--raised");
+    expect(markup).toContain("fth-soundscape-title");
+    expect(markup).toContain("fth-soundscape-text");
+  });
+
+  it("summarizes compact music and atmosphere sections with preview counts", async () => {
+    const mod = await modPromise;
+
+    const profile = {
+      id: "soundscape-1",
+      name: "Soundscape 1",
+      musicPrograms: {
+        alpha: {
+          id: "alpha",
+          name: "Alpha",
+          audioPaths: ["music/a.ogg", "music/b.ogg"],
+          selectionMode: "sequential",
+          delaySeconds: 4,
+        },
+        beta: {
+          id: "beta",
+          name: "Beta",
+          audioPaths: ["music/c.ogg"],
+          selectionMode: "random",
+          delaySeconds: 0,
+        },
+        gamma: {
+          id: "gamma",
+          name: "Gamma",
+          audioPaths: [],
+          selectionMode: "sequential",
+          delaySeconds: 1,
+        },
+      },
+      ambienceLayers: {
+        drift: {
+          id: "drift",
+          name: "Drift",
+          mode: "loop",
+          audioPaths: ["ambience/drift.ogg"],
+          minDelaySeconds: 0,
+          maxDelaySeconds: 0,
+        },
+        rain: {
+          id: "rain",
+          name: "Rain",
+          mode: "random",
+          audioPaths: ["ambience/rain-1.ogg", "ambience/rain-2.ogg"],
+          minDelaySeconds: 2,
+          maxDelaySeconds: 6,
+        },
+        wind: {
+          id: "wind",
+          name: "Wind",
+          mode: "loop",
+          audioPaths: ["ambience/wind.ogg"],
+          minDelaySeconds: 0,
+          maxDelaySeconds: 0,
+        },
+      },
+      soundMoments: {},
+      rules: [],
+    };
+
+    expect(mod.__soundscapeStudioAppInternals.summarizeSoundscapeMusicPrograms(profile as never)).toEqual({
+      count: 3,
+      trackCount: 3,
+      previewPrograms: [
+        profile.musicPrograms.alpha,
+        profile.musicPrograms.beta,
+      ],
+    });
+
+    expect(mod.__soundscapeStudioAppInternals.summarizeSoundscapeAmbienceLayers(profile as never)).toEqual({
+      count: 3,
+      soundCount: 4,
+      previewLayers: [
+        profile.ambienceLayers.drift,
+        profile.ambienceLayers.rain,
+      ],
+    });
   });
 });
