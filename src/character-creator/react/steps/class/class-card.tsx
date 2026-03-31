@@ -137,14 +137,14 @@ export function ClassCard({
         onClick={() => void onSelect(entry)}
         type="button"
       >
-        <div className="pointer-events-none absolute inset-[0.2rem] rounded-[0.78rem] border border-fth-border shadow-[inset_0_1px_0_rgba(255,240,219,0.14)]" />
-        <div className="pointer-events-none absolute inset-x-[0.42rem] top-[0.32rem] h-6 rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_84%,transparent),transparent)]" />
+        <div className="pointer-events-none absolute inset-[0.2rem] rounded-[0.78rem] border border-fth-border shadow-[var(--cc-class-card-frame-shadow)]" />
+        <div className="pointer-events-none absolute inset-x-[0.42rem] top-[0.32rem] h-6 rounded-full bg-[image:var(--cc-class-card-top-sheen)]" />
         <div
-          className="relative overflow-hidden rounded-[1.06rem] border bg-[color:var(--cc-bg-surface)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--cc-border-subtle)_18%,transparent),inset_0_-16px_24px_color-mix(in_srgb,var(--cc-bg-base)_22%,transparent)]"
+          className="relative overflow-hidden rounded-[1.06rem] border bg-[color:var(--cc-bg-surface)] shadow-[var(--cc-class-card-shell-shadow)]"
           style={{
             borderColor: theme.frame,
             boxShadow: selected
-              ? `inset 0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 22%, transparent), inset 0 -16px 24px color-mix(in srgb, var(--cc-bg-base) 18%, transparent), 0 0 34px ${theme.glow}`
+              ? `var(--cc-class-card-shell-shadow), 0 0 34px ${theme.glow}`
               : undefined,
           }}
         >
@@ -157,7 +157,7 @@ export function ClassCard({
               variants={CARD_ART_VARIANTS}
             />
           </div>
-          <div className="pointer-events-none absolute inset-0 rounded-[1.06rem] bg-[image:var(--cc-class-card-inner)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,white_12%,transparent)]" />
+          <div className="pointer-events-none absolute inset-0 rounded-[1.06rem] bg-[image:var(--cc-class-card-inner)] shadow-[var(--cc-class-card-frame-shadow)]" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[image:var(--fth-theme-card-top-fade)]" />
           <div className="absolute inset-x-4 top-4 z-10 flex items-start justify-between gap-4">
             <div>
@@ -171,7 +171,7 @@ export function ClassCard({
                 {entry.name}
               </div>
             </div>
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--cc-border-accent)_38%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_74%,white_26%)] text-[color:var(--cc-text-kicker)] backdrop-blur-sm shadow-[0_12px_18px_color-mix(in_srgb,var(--cc-bg-base)_16%,transparent)]">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--cc-class-card-icon-border)] bg-[color:var(--cc-class-card-icon-bg)] text-[color:var(--cc-text-kicker)] backdrop-blur-sm shadow-[var(--cc-class-card-icon-shadow)]">
               <i className={theme.crest} aria-hidden="true" />
             </span>
           </div>
@@ -181,11 +181,11 @@ export function ClassCard({
             <InfoChip value={entry.savingThrowBadgeText} icon="fa-solid fa-shield" />
           </div>
           {selected ? (
-            <div className="pointer-events-none absolute right-4 top-16 flex items-center gap-2 rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] backdrop-blur-sm shadow-[0_0_16px_color-mix(in_srgb,var(--cc-surface-accent-soft)_52%,transparent)]"
+            <div className="pointer-events-none absolute right-4 top-16 flex items-center gap-2 rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] backdrop-blur-sm shadow-[var(--cc-class-card-selected-glow)]"
               style={{
-                borderColor: "color-mix(in srgb, var(--cc-border-accent) 48%, transparent)",
-                backgroundColor: "color-mix(in srgb, var(--cc-surface-accent-soft) 82%, white 18%)",
-                color: "var(--cc-class-stepper-label-text)",
+                borderColor: "var(--cc-class-card-selected-border)",
+                backgroundColor: "var(--cc-class-card-selected-bg)",
+                color: "var(--cc-class-card-selected-text)",
               }}
             >
               <i className="fa-solid fa-sparkles text-[0.72rem]" aria-hidden="true" />
@@ -202,15 +202,15 @@ function InfoChip({ icon, value }: { icon: string; value: string }) {
   if (!value) return null;
 
   return (
-    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border px-2.5 py-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em] shadow-[0_8px_16px_rgba(0,0,0,0.16)] backdrop-blur-md"
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border px-2.5 py-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em] shadow-[var(--cc-class-card-chip-shadow)] backdrop-blur-md"
       style={{
-        borderColor: "color-mix(in srgb, var(--cc-border-subtle) 92%, transparent)",
+        borderColor: "var(--cc-class-card-chip-border)",
         backgroundColor: "var(--cc-class-card-chip-bg)",
         boxShadow: "var(--cc-class-card-chip-shadow)",
-        color: "var(--cc-class-stepper-label-text)",
+        color: "var(--cc-class-card-chip-text)",
       }}
     >
-      <i className={cn(icon, "shrink-0 text-[0.7rem]")} style={{ color: "var(--cc-text-kicker)" }} aria-hidden="true" />
+      <i className={cn(icon, "shrink-0 text-[0.7rem]")} style={{ color: "var(--cc-class-card-chip-icon)" }} aria-hidden="true" />
       <span className="min-w-0 truncate">{value}</span>
     </span>
   );

@@ -78,11 +78,13 @@ describe("AbilityScoresStepScreen", () => {
     expect(markup).toContain("15");
     expect(markup).toContain("Base score only");
     expect(markup).toContain("Point Cost Reference");
-    expect(markup).toContain("cc-theme-header--hero");
-    expect(markup).toContain("cc-theme-panel--soft");
+    expect(markup).toContain("background-image:var(--cc-build-hero-image)");
+    expect(markup).toContain("background-image:var(--cc-build-panel-soft-image)");
+    expect(markup).toContain("background-image:var(--cc-build-panel-image)");
     expect(markup).toContain("cc-method-tabs");
-    expect(markup).toContain("cc-method-panel");
-    expect(markup).not.toContain("bg-black/20");
+    expect(markup).not.toContain("cc-theme-header--hero");
+    expect(markup).not.toContain("cc-theme-panel--soft");
+    expect(markup).not.toContain("cc-method-panel");
     expect(markup).not.toContain("overflow-y-auto");
   });
 

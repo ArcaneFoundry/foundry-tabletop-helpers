@@ -83,10 +83,10 @@ export function OriginFlowRouteHost(
   }, [controller, shellModel.currentPane, state]);
 
   return (
-    <section className="flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
+    <section className="cc-origin-flow-shell flex flex-col px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="cc-theme-shell relative flex flex-col rounded-[1.75rem] p-[0.35rem]"
+        className="cc-theme-shell cc-origin-flow-shell__frame relative flex flex-col rounded-[1.75rem] p-[0.35rem]"
         initial={false}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -97,8 +97,8 @@ export function OriginFlowRouteHost(
             initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
             transition={{ delay: 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="cc-theme-header cc-theme-header--hero relative overflow-hidden rounded-[1.15rem] border px-4 py-3 md:px-5">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--cc-surface-accent-soft)_18%,transparent),transparent_38%)]" />
+            <div className="cc-theme-header cc-theme-header--hero cc-origin-flow-shell__header relative overflow-hidden rounded-[1.15rem] border px-4 py-3 md:px-5">
+              <div className="pointer-events-none absolute inset-0 cc-theme-hero-shell opacity-80" />
               <div className="relative z-10 flex items-center justify-center gap-3">
                 <HeaderFlourish side="left" />
                 <div className="min-w-0 flex-1 text-center" style={{ containerType: "inline-size" }}>
@@ -106,10 +106,7 @@ export function OriginFlowRouteHost(
                     Origins
                   </div>
                   <h2
-                    className="m-0 mt-1 font-fth-cc-display uppercase tracking-[0.12em] text-[clamp(1.075rem,8cqi,2.15rem)] leading-none"
-                    style={{
-                      textShadow: "0 2px 10px color-mix(in_srgb,var(--cc-bg-base)_55%,transparent)",
-                    }}
+                    className="cc-theme-title m-0 mt-1 font-fth-cc-display uppercase tracking-[0.12em] text-[clamp(1.075rem,8cqi,2.15rem)] leading-none"
                   >
                     {shellModel.title}
                   </h2>

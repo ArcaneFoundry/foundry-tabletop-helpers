@@ -75,6 +75,12 @@ describe("buildClassFlowShellModel", () => {
     expect(model.title).toBe("Choose Your Class");
     expect(model.headerTone).toBe("default");
     expect(model.selectedClassIdentifier).toBeNull();
+    expect(model.hero).toMatchObject({
+      title: "Choose Your Class",
+      description: "Choose the class that sets your hero on the first steps of the build.",
+      primaryBadgeLabel: "Class Flow",
+      secondaryBadgeLabel: "Choose your class",
+    });
   });
 
   it("switches into the accent tone once a class is selected", () => {
@@ -89,6 +95,7 @@ describe("buildClassFlowShellModel", () => {
     expect(model.headerTone).toBe("accent");
     expect(model.selectedClassIdentifier).toBe("rogue");
     expect(model.aggregateStepper.milestones[0]).toMatchObject({ id: "class", status: "selection-active" });
+    expect(model.hero.title).toBe("Choose Your Class");
   });
 
   it("maps the expertise pane into the mounted class shell", () => {
@@ -109,6 +116,11 @@ describe("buildClassFlowShellModel", () => {
     expect(model.headerTone).toBe("accent");
     expect(model.aggregateStepper.milestones[0]).toMatchObject({ id: "class", status: "in-progress" });
     expect(model.aggregateStepper.showSubsteps).toBe(true);
+    expect(model.hero).toMatchObject({
+      title: "Choose Your Expertise",
+      primaryBadgeLabel: "Class Flow",
+      secondaryBadgeLabel: "Choose your expertise",
+    });
   });
 
   it("keeps the mounted shell active through the class summary pane", () => {
@@ -132,5 +144,6 @@ describe("buildClassFlowShellModel", () => {
     expect(model.headerTone).toBe("accent");
     expect(model.aggregateStepper.milestones[1]).toMatchObject({ id: "species", status: "selection-active" });
     expect(model.aggregateStepper.showSubsteps).toBe(false);
+    expect(model.hero.title).toBe("Class Summary");
   });
 });

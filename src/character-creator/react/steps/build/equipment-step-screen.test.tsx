@@ -137,6 +137,12 @@ describe("EquipmentStepScreen", () => {
     expect(markup).toContain("Bottle of Ink");
     expect(markup).toContain("Parchment");
     expect(markup).toContain("Shop unlocks if gold remains");
+    expect(markup).toContain("background-image:var(--cc-build-hero-image)");
+    expect(markup).toContain("background-image:var(--cc-build-panel-image)");
+    expect(markup).toContain("background-image:var(--cc-build-panel-soft-image)");
+    expect(markup).not.toContain("cc-theme-header--hero");
+    expect(markup).not.toContain("cc-theme-panel--accent");
+    expect(markup).not.toContain("cc-theme-panel--soft");
   });
 
   it("renders an explicit unsupported state when a source has no resolvable options", () => {

@@ -13,33 +13,20 @@ import {
   type ClassAggregatePresentationStatus,
   type ClassAggregateSubstepNode,
 } from "../../progress/build-class-aggregate-stepper-model";
+import { buildClassFlowShellModel } from "./build-class-flow-shell-model";
 import {
   shouldShowClassStepperSubsteps,
   type ClassStepperLayoutMode,
   useClassStepperLayoutMode,
 } from "./class-stepper-layout";
+import { ClassFlowHeroHeader } from "./class-flow-hero-header";
+import { getClassTheme } from "./class-presentation";
 import { ClassSelectionGalleryPane } from "./class-selection-gallery-pane";
 import { buildClassSelectionFromEntry, getClassStepViewModel } from "../../../steps/step-class-model";
-import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 
 type ClassStepViewModel = Awaited<ReturnType<typeof getClassStepViewModel>>;
 type ClassEntryViewModel = ClassStepViewModel["entries"][number];
-
-const CLASS_THEMES: Record<string, { ribbon: string; frame: string; glow: string; crest: string }> = {
-  barbarian: { ribbon: "from-[#714126] to-[#382015]", frame: "#b57d4d", glow: "rgba(201,124,58,0.35)", crest: "fa-solid fa-fire" },
-  bard: { ribbon: "from-[#6e4934] to-[#302018]", frame: "#be9361", glow: "rgba(216,165,103,0.3)", crest: "fa-solid fa-music" },
-  cleric: { ribbon: "from-[#665b3b] to-[#2f2819]", frame: "#bca26e", glow: "rgba(212,185,104,0.3)", crest: "fa-solid fa-sun" },
-  druid: { ribbon: "from-[#46562f] to-[#202715]", frame: "#96a663", glow: "rgba(123,156,82,0.34)", crest: "fa-solid fa-leaf" },
-  fighter: { ribbon: "from-[#5f4431] to-[#2a1c14]", frame: "#b48959", glow: "rgba(196,145,89,0.32)", crest: "fa-solid fa-swords" },
-  monk: { ribbon: "from-[#74543a] to-[#352316]", frame: "#c89f6d", glow: "rgba(215,164,104,0.34)", crest: "fa-solid fa-hand-fist" },
-  paladin: { ribbon: "from-[#625342] to-[#2a221a]", frame: "#d3b27b", glow: "rgba(220,190,121,0.32)", crest: "fa-solid fa-shield-halved" },
-  ranger: { ribbon: "from-[#4f5f2f] to-[#233015]", frame: "#a8b95f", glow: "rgba(155,189,88,0.36)", crest: "fa-solid fa-bow-arrow" },
-  rogue: { ribbon: "from-[#4f4447] to-[#241d1f]", frame: "#b08995", glow: "rgba(174,127,146,0.32)", crest: "fa-solid fa-mask" },
-  sorcerer: { ribbon: "from-[#74413c] to-[#341b17]", frame: "#c18377", glow: "rgba(210,125,112,0.34)", crest: "fa-solid fa-wand-sparkles" },
-  warlock: { ribbon: "from-[#5c3d5f] to-[#29182a]", frame: "#b285bb", glow: "rgba(173,118,186,0.34)", crest: "fa-solid fa-book-open" },
-  wizard: { ribbon: "from-[#3f506a] to-[#1a2230]", frame: "#7ea3d5", glow: "rgba(111,154,215,0.34)", crest: "fa-solid fa-hat-wizard" },
-};
 
 const CC_TEXT_HERO = "text-[color:var(--cc-text-hero)]";
 const CC_TEXT_PRIMARY = "text-[color:var(--cc-text-primary)]";
@@ -69,8 +56,8 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
   }, [state]);
 
   const selectedUuid = (state.selections.class as ClassSelection | undefined)?.uuid ?? null;
-  const aggregateStepper = useMemo(
-    () => buildClassAggregateStepperModel(state, shellContext.steps, shellContext.currentStepId),
+  const shellModel = useMemo(
+    () => buildClassFlowShellModel(state, shellContext.steps, shellContext.currentStepId),
     [shellContext.currentStepId, shellContext.steps, state],
   );
   const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
@@ -89,72 +76,21 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-        className="cc-theme-shell relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#e9c176]/25 bg-[linear-gradient(180deg,rgba(25,25,30,0.96),rgba(15,15,19,0.99))] p-[0.35rem] shadow-[0_30px_80px_rgba(0,0,0,0.38)]"
+        className="cc-theme-shell relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] p-[0.35rem]"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.985 }}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="absolute inset-[0.35rem] rounded-[1.45rem] bg-[radial-gradient(circle_at_top,rgba(211,190,235,0.12),transparent_28%),linear-gradient(180deg,rgba(29,29,35,0.98),rgba(15,15,19,0.98))]" />
+        <div className="cc-theme-hero-shell absolute inset-[0.35rem] rounded-[1.45rem]" />
 
-        <div className="cc-theme-shell-inner relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(27,27,32,0.96),rgba(16,16,20,0.99))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-          <motion.header
-            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-            className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
-            initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
-            transition={{ delay: 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <motion.div
-              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-              className="relative overflow-hidden rounded-[1.35rem] border border-[#d3b277]/55 bg-[linear-gradient(180deg,rgba(251,245,233,0.98),rgba(237,223,193,0.96))] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_18px_34px_rgba(84,60,30,0.14)]"
-              data-class-hero-banner="true"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: -12, scale: 0.988 }}
-              transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <motion.img
-                alt=""
-                animate={prefersReducedMotion ? undefined : { scale: 1 }}
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.16] mix-blend-multiply saturate-[0.86]"
-                initial={prefersReducedMotion ? false : { scale: 1.02 }}
-                src={classStepHeaderBackground}
-                transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(214,177,111,0.1))]" />
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_32%),radial-gradient(circle_at_82%_16%,rgba(214,177,111,0.22),transparent_28%)]" />
-              <motion.div
-                animate={prefersReducedMotion ? undefined : { opacity: [0.48, 0.72, 0.48] }}
-                className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.88),rgba(214,177,111,0))]"
-                transition={{ duration: 5.8, ease: "easeInOut", repeat: Infinity }}
-              />
-              <div className="relative z-10 flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5 lg:flex-row lg:items-end lg:justify-between">
-                <div className="min-w-0 max-w-3xl">
-                  <div className="font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.3em] text-[#8b6437]">
-                    Character Creation
-                  </div>
-                  <h2
-                    className="mt-2 font-fth-cc-display text-[clamp(1.6rem,3.2vw,2.55rem)] leading-[0.96] text-[#4a311a]"
-                    style={{
-                      textShadow: "0 1px 0 rgba(255,255,255,0.66), 0 8px 18px rgba(121,87,37,0.12)",
-                    }}
-                  >
-                    Choose Your Class
-                  </h2>
-                  <p className="mt-3 max-w-2xl font-fth-cc-body text-[0.96rem] leading-7 text-[#5a4630]">
-                    Select the class that defines your first steps and unlocks the rest of the build.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#d3b277]/60 bg-[rgba(255,255,255,0.72)] px-3 py-1.5 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.2em] text-[#8a6438]">
-                    Step 1
-                  </span>
-                  <span className="inline-flex rounded-full border border-[#c9a768]/45 bg-[rgba(247,236,217,0.92)] px-3 py-1.5 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em] text-[#6f4f2e]">
-                    Class Selection
-                  </span>
-                </div>
-              </div>
-              <div className="pointer-events-none absolute inset-x-4 bottom-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.92),rgba(214,177,111,0))]" />
-            </motion.div>
-          </motion.header>
+        <div className="cc-theme-shell-inner relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.45rem] border">
+          <ClassFlowHeroHeader
+            description={shellModel.hero.description}
+            headerTone={shellModel.headerTone}
+            prefersReducedMotion={prefersReducedMotion}
+            primaryBadgeLabel={shellModel.hero.primaryBadgeLabel}
+            secondaryBadgeLabel={selectedUuid ? "Class selected" : shellModel.hero.secondaryBadgeLabel}
+            title={shellModel.hero.title}
+          />
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
             <img
@@ -167,7 +103,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
             <div ref={setStepperContainer} className="relative z-10 w-full">
               <ClassAggregateStepper
                 layoutMode={layoutMode}
-                model={aggregateStepper}
+                model={shellModel.aggregateStepper}
                 prefersReducedMotion={prefersReducedMotion}
               />
             </div>
@@ -632,8 +568,4 @@ function EmptyState({ message, prefersReducedMotion }: { message: string; prefer
       </motion.div>
     </div>
   );
-}
-
-function getClassTheme(name: string) {
-  return CLASS_THEMES[name.trim().toLowerCase()] ?? CLASS_THEMES.fighter;
 }

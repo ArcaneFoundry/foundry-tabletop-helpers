@@ -4,9 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildOriginDuplicateDisambiguator,
+  HeaderFlourish,
   DetailCard,
   handleOriginGalleryCornerActionClick,
   OriginGalleryCard,
+  SummaryListCard,
 } from "./origin-pane-primitives";
 
 describe("origin-pane-primitives", () => {
@@ -52,6 +54,28 @@ describe("origin-pane-primitives", () => {
     expect(markup).toContain("cc-theme-media-frame");
   });
 
+  it("uses shared flourish tokens instead of raw gold-on-dark gradients", () => {
+    const markup = renderToStaticMarkup(createElement(HeaderFlourish, { side: "left" }));
+
+    expect(markup).toContain("--cc-origin-flourish-line");
+    expect(markup).toContain("--cc-origin-flourish-gem-shell");
+    expect(markup).toContain("--cc-origin-flourish-gem-core");
+    expect(markup).not.toContain("rgba(214,177,111");
+    expect(markup).not.toContain("#d6b16f");
+  });
+
+  it("renders summary empty states with the shared muted theme treatment", () => {
+    const markup = renderToStaticMarkup(createElement(SummaryListCard, {
+      emptyLabel: "No claimed entries yet.",
+      entries: [],
+      iconClass: "fa-solid fa-scroll",
+      title: "Fixed Background Skills",
+    }));
+
+    expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
+    expect(markup).not.toContain("#6b5040");
+  });
+
   it("promotes duplicate-entry disambiguation into the gallery header", () => {
     const markup = renderToStaticMarkup(createElement(OriginGalleryCard, {
       eyebrow: "Species",
@@ -68,6 +92,23 @@ describe("origin-pane-primitives", () => {
     expect(markup).toContain("data-origin-disambiguator=\"true\"");
     expect(markup).toContain("Draconic Ancestry + Draconic Flight");
     expect(markup).toContain("Character Origins");
+  });
+
+  it("keeps the selected origin gallery affordance token-backed", () => {
+    const markup = renderToStaticMarkup(createElement(OriginGalleryCard, {
+      eyebrow: "Background",
+      fallbackIcon: "fa-solid fa-scroll",
+      media: undefined,
+      onSelect: vi.fn(),
+      prefersReducedMotion: true,
+      selected: true,
+      title: "Acolyte",
+    }));
+
+    expect(markup).toContain("--cc-origin-flourish-gem-core");
+    expect(markup).toContain("shadow-[var(--cc-shadow-button)]");
+    expect(markup).not.toContain("rgba(0,0,0,0.24)");
+    expect(markup).not.toContain("text-white");
   });
 
   it("builds a duplicate disambiguator from unique trait summaries before pack labels", () => {

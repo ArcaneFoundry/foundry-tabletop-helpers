@@ -27,6 +27,54 @@ import { BackgroundAsiPane, __backgroundAsiPaneInternals } from "./background-as
 
 describe("BackgroundAsiPane", () => {
   it("renders the simplified allocator with budget-aware option copy", () => {
+    const currentAssignments = {
+      int: 1,
+      wis: 1,
+      cha: 1,
+    };
+    const rewrittenAssignments = __backgroundAsiPaneInternals.buildBackgroundAsiQuickPickAssignments(
+      [
+        {
+          key: "int",
+          label: "Intelligence",
+          backgroundSuggested: true,
+          classRecommended: true,
+          emphasized: true,
+          options: [
+            { value: 0, label: "Reset", selected: false },
+            { value: 1, label: "+1", selected: true },
+            { value: 2, label: "+2", selected: false },
+          ],
+        },
+        {
+          key: "wis",
+          label: "Wisdom",
+          backgroundSuggested: false,
+          classRecommended: false,
+          emphasized: false,
+          options: [
+            { value: 0, label: "Reset", selected: false },
+            { value: 1, label: "+1", selected: true },
+            { value: 2, label: "+2", selected: false },
+          ],
+        },
+        {
+          key: "cha",
+          label: "Charisma",
+          backgroundSuggested: false,
+          classRecommended: true,
+          emphasized: true,
+          options: [
+            { value: 0, label: "Reset", selected: false },
+            { value: 1, label: "+1", selected: true },
+            { value: 2, label: "+2", selected: false },
+          ],
+        },
+      ],
+      3,
+      "class",
+    );
+
     const markup = renderToStaticMarkup(createElement(BackgroundAsiPane, {
       controller: {
         refresh: vi.fn(),
@@ -38,6 +86,7 @@ describe("BackgroundAsiPane", () => {
           backgroundImg: "sage.webp",
           asiPoints: 3,
           asiPointsUsed: 3,
+          hasClassRecommendations: true,
           asiAbilities: [
             {
               key: "int",
@@ -83,11 +132,7 @@ describe("BackgroundAsiPane", () => {
           background: {
             name: "Sage",
             asi: {
-              assignments: {
-                int: 1,
-                wis: 1,
-                cha: 1,
-              },
+              assignments: currentAssignments,
             },
             grants: {
               asiPoints: 3,
@@ -104,12 +149,24 @@ describe("BackgroundAsiPane", () => {
     expect(markup).toContain("Background-aligned");
     expect(markup).toContain("Class synergy");
     expect(markup).toContain("Pick");
+    expect(markup).toContain("Apply Background Suggestions");
+    expect(markup).toContain("Apply Class Synergy");
+    expect(markup).toContain("<button class=");
+    expect(markup.match(/Apply Background Suggestions<\/button>/)?.[0]).not.toContain("disabled");
+    expect(markup.match(/Apply Class Synergy<\/button>/)?.[0]).not.toContain("disabled");
     expect(markup).toContain("min-[420px]:grid-cols-3");
     expect(markup).toContain("xl:grid-cols-3");
     expect(markup).not.toContain("Current Spread");
     expect(markup).not.toContain("Points Spent");
     expect(markup).not.toContain("Points Remaining");
     expect(markup).toContain("Not enough points left");
+    expect(Object.values(currentAssignments).reduce((sum, value) => sum + value, 0)).toBe(3);
+    expect(rewrittenAssignments).toMatchObject({
+      int: 1,
+      wis: 1,
+      cha: 1,
+    });
+    expect(rewrittenAssignments).not.toBe(currentAssignments);
   });
 
   it("renders the aptitude content without a dedicated pane scroll owner", () => {

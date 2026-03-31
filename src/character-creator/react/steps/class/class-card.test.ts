@@ -63,7 +63,14 @@ describe("ClassCard", () => {
     expect(markup).toContain("STR / CON");
     expect(markup).toContain("bg-[image:var(--cc-class-card-outer)]");
     expect(markup).toContain("bg-[image:var(--cc-class-card-inner)]");
-    expect(markup).toContain("color-mix(in srgb, var(--cc-text-kicker) 84%, transparent)");
+    expect(markup).toContain("var(--cc-class-card-chip-bg)");
+    expect(markup).toContain("var(--cc-class-card-chip-border)");
+    expect(markup).toContain("var(--cc-class-card-chip-text)");
+    expect(markup).toContain("var(--cc-class-card-chip-icon)");
+    expect(markup).not.toContain("shadow-[inset_0_1px_0_rgba(255,240,219,0.14)]");
+    expect(markup).not.toContain("bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_84%,transparent),transparent)]");
+    expect(markup).not.toContain("shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--cc-border-subtle)_18%,transparent),inset_0_-16px_24px_color-mix(in_srgb,var(--cc-bg-base)_22%,transparent)]");
+    expect(markup).not.toContain("shadow-[0_8px_16px_rgba(0,0,0,0.16)]");
   });
 
   it("uses motion-driven lift behavior without CSS hover transform classes", () => {
@@ -92,8 +99,11 @@ describe("ClassCard", () => {
     }));
 
     expect(markup).toContain("Selected Class");
-    expect(markup).toContain("var(--cc-class-stepper-label-text)");
+    expect(markup).toContain("var(--cc-class-card-selected-bg)");
+    expect(markup).toContain("var(--cc-class-card-selected-border)");
+    expect(markup).toContain("var(--cc-class-card-selected-text)");
     expect(markup).toContain("var(--cc-class-card-chip-bg)");
     expect(markup).toContain("var(--cc-class-card-chip-shadow)");
+    expect(markup).not.toContain("shadow-[0_0_16px_color-mix(in_srgb,var(--cc-surface-accent-soft)_52%,transparent)]");
   });
 });

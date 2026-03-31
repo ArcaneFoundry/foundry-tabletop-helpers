@@ -1,4 +1,10 @@
-import type { ReactWizardStepProps, WizardStepDefinition, WizardStepRenderController } from "../../../character-creator-types";
+import type { CSSProperties } from "react";
+
+import type {
+  ReactWizardStepProps,
+  WizardStepDefinition,
+  WizardStepRenderController,
+} from "../../../character-creator-types";
 import { LegacyStepHost } from "../../components/legacy-step-host";
 import { ReactStepHost } from "../../components/react-step-host";
 
@@ -23,6 +29,17 @@ type BuildFlowStepViewModel = {
     selectedClassOption?: { label?: string } | null;
     selectedBackgroundOption?: { label?: string } | null;
   };
+};
+
+const BUILD_SHELL_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-shell-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
+const BUILD_PANEL_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
 };
 
 interface LegacyBuildStepController extends WizardStepRenderController {
@@ -80,7 +97,7 @@ function BuildFlowFallbackScreen({ shellContext }: ReactWizardStepProps) {
 
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
-      <div className="cc-theme-panel cc-theme-panel--soft mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-[1.5rem] p-5">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-[1.5rem] border p-5" style={BUILD_SHELL_STYLE}>
         <div className="space-y-2">
           <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em]">
             Build
@@ -116,7 +133,7 @@ function BuildFlowFallbackScreen({ shellContext }: ReactWizardStepProps) {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="cc-theme-card cc-theme-card--soft rounded-[1.15rem] px-4 py-3">
+    <div className="rounded-[1.15rem] border px-4 py-3" style={BUILD_PANEL_STYLE}>
       <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]">
         {label}
       </div>

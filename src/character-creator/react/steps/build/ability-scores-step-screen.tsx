@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 
 import type {
   AbilityKey,
@@ -103,6 +103,31 @@ const METHOD_COPY: Record<AbilityScoreMethod, {
 };
 
 const DEFAULT_ABILITY_PRIORITY: AbilityKey[] = ["str", "dex", "con", "wis", "int", "cha"];
+const BUILD_HERO_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-hero-image)",
+  borderColor: "var(--cc-build-hero-border)",
+  boxShadow: "var(--cc-build-hero-shadow)",
+};
+const BUILD_PANEL_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
+const BUILD_PANEL_SOFT_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-soft-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
+const BUILD_CALLOUT_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-callout-image)",
+  borderColor: "var(--cc-build-callout-border)",
+  boxShadow: "var(--cc-build-callout-shadow)",
+};
+const BUILD_SUMMARY_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-summary-image)",
+  borderColor: "var(--cc-build-summary-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
 
 export function AbilityScoresStepScreen({
   shellContext,
@@ -192,7 +217,7 @@ export function AbilityScoresStepScreen({
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="cc-abilities mx-auto flex w-full max-w-5xl flex-col gap-4">
-        <header className="cc-theme-header cc-theme-header--hero rounded-[1.5rem] px-5 py-5 md:px-6 md:py-6">
+        <header className="rounded-[1.5rem] border px-5 py-5 md:px-6 md:py-6" style={BUILD_HERO_STYLE}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-2">
               <div className="cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em]">
@@ -206,7 +231,7 @@ export function AbilityScoresStepScreen({
               </p>
             </div>
 
-            <div className="cc-theme-panel cc-theme-panel--soft min-w-[14rem] rounded-[1.1rem] px-4 py-3">
+            <div className="min-w-[14rem] rounded-[1.1rem] border px-4 py-3" style={BUILD_PANEL_SOFT_STYLE}>
               <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                 Active Method
               </div>
@@ -245,7 +270,7 @@ export function AbilityScoresStepScreen({
         </div>
 
         <div className="flex flex-col">
-          <section className="cc-method-panel w-full">
+          <section className="w-full rounded-[1.35rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-2xl space-y-2">
                 <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
@@ -260,17 +285,25 @@ export function AbilityScoresStepScreen({
               </div>
 
               {viewModel.isPointBuy ? (
-                <div className={`cc-point-budget cc-point-budget--${viewModel.budgetClass}`}>
-                  <span className="cc-point-budget__label">Remaining</span>
-                  <span className="cc-point-budget__value">{viewModel.pointsRemaining}</span>
-                  <span className="cc-point-budget__of">of {viewModel.pointsBudget}</span>
+                <div className="rounded-[1rem] border px-4 py-3" style={BUILD_SUMMARY_STYLE}>
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
+                      Remaining
+                    </span>
+                    <span className="font-fth-cc-display text-[2rem] leading-none text-[color:var(--cc-text-primary)]">
+                      {viewModel.pointsRemaining}
+                    </span>
+                    <span className="cc-theme-body-muted font-fth-cc-body text-[0.92rem] leading-6">
+                      of {viewModel.pointsBudget}
+                    </span>
+                  </div>
                 </div>
               ) : null}
             </div>
 
             {viewModel.isRoll ? (
-              <div className="cc-roll-controls">
-                <div className="cc-roll-controls__copy">
+              <div className="grid gap-3 rounded-[1rem] border p-4" style={BUILD_CALLOUT_STYLE}>
+                <div className="space-y-1">
                   <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                     Dice Ritual
                   </div>
@@ -280,14 +313,14 @@ export function AbilityScoresStepScreen({
                       : "Roll the full array to reveal the six values before you assign them."}
                   </p>
                 </div>
-                <div className="cc-roll-controls__actions">
-                  <button className="cc-roll-btn" onClick={handleRoll} type="button">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button className="cc-theme-toggle inline-flex items-center gap-2 rounded-full border px-4 py-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em]" onClick={handleRoll} type="button">
                     <i className="fa-solid fa-dice" aria-hidden="true" />
                     <span>{viewModel.hasRolled ? "Reroll All" : "Roll Abilities"}</span>
                   </button>
                   {isAssignmentMode && canQuickAssign ? (
                     <button
-                      className="cc-roll-btn"
+                      className="cc-theme-toggle inline-flex items-center gap-2 rounded-full border px-4 py-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em]"
                       onClick={handleQuickAssign}
                       type="button"
                     >
@@ -318,8 +351,8 @@ export function AbilityScoresStepScreen({
             ) : null}
 
             {viewModel.isStandardArray ? (
-              <div className="cc-roll-controls">
-                <div className="cc-roll-controls__copy">
+              <div className="grid gap-3 rounded-[1rem] border p-4" style={BUILD_CALLOUT_STYLE}>
+                <div className="space-y-1">
                   <div className="cc-theme-kicker font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em]">
                     Fixed Allocation
                   </div>
@@ -327,14 +360,14 @@ export function AbilityScoresStepScreen({
                     Assign the full array of 15, 14, 13, 12, 10, and 8 to keep the build disciplined and predictable.
                   </p>
                 </div>
-                <div className="cc-roll-controls__actions">
+                <div className="flex flex-wrap items-center gap-3">
                   {isAssignmentMode && canQuickAssign ? (
-                    <button className="cc-roll-btn" onClick={handleQuickAssign} type="button">
+                    <button className="cc-theme-toggle inline-flex items-center gap-2 rounded-full border px-4 py-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.18em]" onClick={handleQuickAssign} type="button">
                       <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
                       <span>Quick Assign</span>
                     </button>
                   ) : null}
-                  <span className="cc-roll-controls__state">
+                  <span className="cc-theme-badge cc-theme-badge--muted rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]">
                     {canQuickAssign
                       ? `Quick assigns ${getQuickAssignPriorityText(state)} first`
                       : openCount > 0

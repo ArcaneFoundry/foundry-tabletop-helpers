@@ -17,12 +17,20 @@ export type ClassFlowPaneId =
   | "classSummary";
 export type ClassFlowHeaderTone = "default" | "accent";
 
+export interface ClassFlowHeroCopy {
+  title: string;
+  description: string;
+  primaryBadgeLabel: string;
+  secondaryBadgeLabel: string;
+}
+
 export interface ClassFlowShellModel {
   currentPane: ClassFlowPaneId;
   title: string;
   headerTone: ClassFlowHeaderTone;
   selectedClassIdentifier: string | null;
   aggregateStepper: ClassAggregateStepperModel;
+  hero: ClassFlowHeroCopy;
 }
 
 function getStepStatus(
@@ -72,6 +80,67 @@ function getPaneTitle(currentPane: ClassFlowPaneId): string {
   }
 }
 
+function getPaneHeroCopy(currentPane: ClassFlowPaneId): ClassFlowHeroCopy {
+  switch (currentPane) {
+    case "classChoices":
+      return {
+        title: "Choose Your Skills",
+        description: "Select the class skills that best support your build.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your skills",
+      };
+    case "classExpertise":
+      return {
+        title: "Choose Your Expertise",
+        description: "Choose the class expertise options that sharpen your training.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your expertise",
+      };
+    case "classLanguages":
+      return {
+        title: "Choose Your Languages",
+        description: "Select the languages granted by your class features.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your languages",
+      };
+    case "classTools":
+      return {
+        title: "Choose Your Tools",
+        description: "Pick the tool proficiencies your class hands you at the start.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your tools",
+      };
+    case "weaponMasteries":
+      return {
+        title: "Choose Your Weapon Masteries",
+        description: "Select the weapon masteries your class training unlocks.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your masteries",
+      };
+    case "classItemChoices":
+      return {
+        title: "Choose Your Class Options",
+        description: "Choose the feature options granted by your class at this level.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your class options",
+      };
+    case "classSummary":
+      return {
+        title: "Class Summary",
+        description: "Review the class details and feature choices before moving on.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Review class choices",
+      };
+    default:
+      return {
+        title: "Choose Your Class",
+        description: "Choose the class that sets your hero on the first steps of the build.",
+        primaryBadgeLabel: "Class Flow",
+        secondaryBadgeLabel: "Choose your class",
+      };
+  }
+}
+
 export function buildClassFlowShellModel(
   state: WizardState,
   steps: Array<{ id: string; label: string; icon: string; status: StepStatus; active: boolean }>,
@@ -102,5 +171,6 @@ export function buildClassFlowShellModel(
     headerTone,
     selectedClassIdentifier: classSelection?.identifier ?? null,
     aggregateStepper,
+    hero: getPaneHeroCopy(currentPane),
   };
 }

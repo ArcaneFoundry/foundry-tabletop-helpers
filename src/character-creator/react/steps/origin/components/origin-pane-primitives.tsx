@@ -477,7 +477,7 @@ export function OriginGalleryCard({
       {selected ? (
         <motion.div
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="pointer-events-none absolute bottom-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--cc-border-accent)_72%,transparent)] bg-[radial-gradient(circle_at_35%_35%,color-mix(in_srgb,var(--cc-surface-accent-soft)_92%,white_8%),color-mix(in_srgb,var(--cc-action-primary)_88%,var(--cc-accent-bronze)_12%))] text-white shadow-[0_6px_12px_rgba(0,0,0,0.24)]"
+          className="pointer-events-none absolute bottom-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--cc-border-accent)_72%,transparent)] bg-[image:var(--cc-origin-flourish-gem-core)] text-[color:var(--cc-text-primary)] shadow-[var(--cc-shadow-button)]"
           initial={{ opacity: 0, scale: 0.72, y: 6 }}
           transition={{ type: "spring", stiffness: 460, damping: 24, mass: 0.75 }}
         >
@@ -554,7 +554,7 @@ export function SummaryListCard({
           ))}
         </div>
       ) : (
-        <div className="mt-3 font-fth-cc-body text-[0.94rem] leading-6 text-[#6b5040]">{emptyLabel}</div>
+        <div className="mt-3 font-fth-cc-body text-[0.94rem] leading-6 text-[color:var(--cc-text-secondary)]">{emptyLabel}</div>
       )}
     </section>
   );
@@ -595,35 +595,44 @@ export function HeaderFlourish({ side }: { side: "left" | "right" }) {
     side === "left"
       ? "mr-2 flex min-w-0 flex-1 items-center justify-end gap-1.5 md:mr-4 md:gap-2"
       : "ml-2 flex min-w-0 flex-1 items-center justify-start gap-1.5 md:ml-4 md:gap-2";
-  const lineClasses =
-    side === "left"
-      ? "bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.88),rgba(255,233,188,0.42))]"
-      : "bg-[linear-gradient(90deg,rgba(255,233,188,0.42),rgba(214,177,111,0.88),rgba(214,177,111,0))]";
+  const lineStyle = {
+    backgroundImage: "var(--cc-origin-flourish-line)",
+  };
+  const lineAccentStyle = {
+    backgroundImage: "var(--cc-origin-flourish-line-accent)",
+  };
 
   return (
     <span aria-hidden="true" className={containerClasses}>
       {side === "right" ? <FlourishGem /> : null}
       <span className="relative block h-4 w-full max-w-[4.25rem] md:max-w-[10.5rem]">
-        <span className={cn("absolute inset-x-0 top-1/2 h-px -translate-y-1/2", lineClasses)} />
+        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2" style={lineStyle} />
         <span
           className={cn(
             "absolute top-1/2 h-px w-full -translate-y-1/2 opacity-65",
-            side === "left"
-              ? "left-0 scale-x-[0.72] bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(247,218,160,0.55),rgba(214,177,111,0.2))]"
-              : "right-0 scale-x-[0.72] bg-[linear-gradient(90deg,rgba(214,177,111,0.2),rgba(247,218,160,0.55),rgba(214,177,111,0))]",
+            side === "left" ? "left-0 scale-x-[0.72]" : "right-0 scale-x-[0.72]",
           )}
+          style={lineAccentStyle}
         />
         <span
           className={cn(
-            "absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border border-[#d6b16f]/85 bg-[rgba(214,177,111,0.14)] shadow-[0_0_6px_rgba(242,216,157,0.14)]",
+            "absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border shadow-[var(--cc-origin-flourish-gem-shadow)]",
             side === "left" ? "right-1.5 md:right-3" : "left-1.5 md:left-3",
           )}
+          style={{
+            borderColor: "color-mix(in srgb, var(--cc-border-accent) 82%, transparent)",
+            backgroundImage: "var(--cc-origin-flourish-gem-shell)",
+          }}
         />
         <span
           className={cn(
-            "absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rotate-45 border border-[#f0d39e]/70 bg-[rgba(255,233,188,0.16)]",
+            "absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rotate-45 border",
             side === "left" ? "right-0 md:right-0.5" : "left-0 md:left-0.5",
           )}
+          style={{
+            borderColor: "color-mix(in srgb, var(--cc-border-accent) 54%, transparent)",
+            backgroundImage: "var(--cc-origin-flourish-gem-core)",
+          }}
         />
       </span>
       {side === "left" ? <FlourishGem /> : null}
@@ -634,8 +643,19 @@ export function HeaderFlourish({ side }: { side: "left" | "right" }) {
 export function FlourishGem() {
   return (
     <span className="relative block h-3.5 w-3.5 md:h-4.5 md:w-4.5">
-      <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[0.15rem] border border-[#d6b16f]/85 bg-[linear-gradient(180deg,rgba(121,87,37,0.35),rgba(214,177,111,0.18))] shadow-[0_0_8px_rgba(242,216,157,0.14)] md:h-3.5 md:w-3.5" />
-      <span className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#f4ddb1]/85 md:h-1.5 md:w-1.5" />
+      <span
+        className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[0.15rem] border shadow-[var(--cc-origin-flourish-gem-shadow)] md:h-3.5 md:w-3.5"
+        style={{
+          borderColor: "color-mix(in srgb, var(--cc-border-accent) 82%, transparent)",
+          backgroundImage: "var(--cc-origin-flourish-gem-shell)",
+        }}
+      />
+      <span
+        className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rotate-45 md:h-1.5 md:w-1.5"
+        style={{
+          backgroundImage: "var(--cc-origin-flourish-gem-core)",
+        }}
+      />
     </span>
   );
 }

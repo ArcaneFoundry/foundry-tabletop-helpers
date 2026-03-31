@@ -11,6 +11,7 @@ import { cn } from "../../../../ui/lib/cn";
 import { ClassAggregateStepper } from "./class-step-screen";
 import { useClassStepperLayoutMode } from "./class-stepper-layout";
 import { buildClassFlowShellModel } from "./build-class-flow-shell-model";
+import { ClassFlowHeroHeader } from "./class-flow-hero-header";
 import { ClassCard } from "./class-card";
 import { ClassSelectionGalleryPane } from "./class-selection-gallery-pane";
 import { ClassSummaryStepScreen } from "./class-summary-step-screen";
@@ -19,7 +20,6 @@ import {
   getClassStepViewModel,
 } from "../../../steps/step-class-model";
 import { applyLegalClassSkillSelections } from "../../../steps/origin-flow-utils";
-import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 import { ensureCharacterCreatorIndexesReady } from "../../../character-creator-index-cache";
 import { buildEmptyClassAdvancementSelections } from "../../../steps/class-advancement-utils";
@@ -207,10 +207,6 @@ export function ClassFlowRouteHost(
   );
   const [layoutMode, setStepperContainer] = useClassStepperLayoutMode();
   const theme = getClassTheme(shellModel.selectedClassIdentifier ?? "fighter");
-  const titleStyle = getClassFlowTitleStyle(shellModel.headerTone, theme);
-  const headerFrameStyle = getClassFlowHeaderFrameStyle(shellModel.headerTone, theme);
-  const headerDescription = (shellModel as typeof shellModel & { headerDescription?: string }).headerDescription;
-  const currentStepLabel = (shellModel as typeof shellModel & { currentStepLabel?: string }).currentStepLabel ?? shellModel.title;
 
   useEffect(() => {
     if (!["class", "classChoices", "classExpertise", "classLanguages", "classTools", "classItemChoices"].includes(shellModel.currentPane)) return;
@@ -232,71 +228,14 @@ export function ClassFlowRouteHost(
         <div className="cc-theme-hero-shell absolute inset-[0.35rem] rounded-[1.45rem]" />
 
         <div className="cc-theme-shell-inner relative flex min-h-0 flex-1 flex-col rounded-[1.45rem] border">
-          <motion.header
-            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-            className="mx-2 mt-2 px-4 pb-3 pt-3 md:px-6"
-            initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
-            transition={{ delay: 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div
-              className="relative isolate overflow-hidden rounded-[1.35rem] border bg-[linear-gradient(180deg,rgba(251,245,233,0.98),rgba(236,223,199,0.95))]"
-              data-class-hero-banner="true"
-              style={headerFrameStyle}
-            >
-              <div className="pointer-events-none absolute inset-[0.35rem] rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-border-accent)_22%,transparent)]" />
-              <img
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.15] mix-blend-multiply saturate-[0.86]"
-                src={classStepHeaderBackground}
-                style={{ opacity: "0.15" }}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(214,177,111,0.1))]" />
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_32%),radial-gradient(circle_at_82%_16%,rgba(214,177,111,0.22),transparent_28%)]" />
-              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.88),rgba(214,177,111,0))]" />
-              <div className="relative z-10 flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5 lg:flex-row lg:items-end lg:justify-between">
-                <div className="min-w-0 max-w-3xl">
-                  <div className="font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.3em] text-[#8b6437]">
-                    Character Creation
-                  </div>
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.h2
-                      key={shellModel.title}
-                      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                      className="m-0 font-fth-cc-display uppercase tracking-[0.12em]"
-                      exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}
-                      initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                      style={{
-                        ...titleStyle,
-                        fontSize: "clamp(1.075rem, 8cqi, 2.15rem)",
-                        lineHeight: 1.05,
-                      }}
-                    >
-                      {shellModel.title}
-                    </motion.h2>
-                  </AnimatePresence>
-                  <p className="mt-3 max-w-2xl font-fth-cc-body text-[0.96rem] leading-7 text-[#5a4630]">
-                    {headerDescription ?? "Choose the class that sets your hero on the first steps of the build."}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#d3b277]/60 bg-[rgba(255,255,255,0.72)] px-3 py-1.5 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.2em] text-[#8a6438]">
-                    Class Flow
-                  </span>
-                  <span className="inline-flex rounded-full border border-[#c9a768]/45 bg-[rgba(247,236,217,0.92)] px-3 py-1.5 font-fth-cc-ui text-[0.6rem] uppercase tracking-[0.18em] text-[#6f4f2e]">
-                    {shellModel.currentPane === "class" ? "Choose your class" : currentStepLabel}
-                  </span>
-                </div>
-              </div>
-              <div className="pointer-events-none absolute inset-x-4 bottom-0 h-px bg-[linear-gradient(90deg,rgba(214,177,111,0),rgba(214,177,111,0.92),rgba(214,177,111,0))]" />
-              <div className="relative z-10 flex items-center justify-center px-4 py-3">
-                <HeaderFlourish side="left" />
-                <HeaderFlourish side="right" />
-              </div>
-            </div>
-          </motion.header>
+          <ClassFlowHeroHeader
+            description={shellModel.hero.description}
+            headerTone={shellModel.headerTone}
+            prefersReducedMotion={prefersReducedMotion}
+            primaryBadgeLabel={shellModel.hero.primaryBadgeLabel}
+            secondaryBadgeLabel={shellModel.hero.secondaryBadgeLabel}
+            title={shellModel.hero.title}
+          />
 
           <div className="cc-class-flow-chapter relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
             <div className="relative flex flex-col px-3 pb-4 pt-3 md:px-6">
@@ -456,39 +395,6 @@ function WeaponMasteriesLoadingPane(
 
 function getRequiredWeaponMasteryCount(state: ReactWizardStepProps["state"]): number {
   return state.selections.class?.weaponMasteryCount ?? 0;
-}
-
-function getClassFlowTitleStyle(
-  headerTone: "default" | "accent",
-  theme: ReturnType<typeof getClassTheme>,
-) {
-  if (headerTone === "accent") {
-    return {
-      color: "#4a311a",
-      textShadow: `0 1px 0 rgba(255,255,255,0.68), 0 0 12px ${theme.glow}, 0 8px 18px rgba(118,84,43,0.12)`,
-    };
-  }
-
-  return {
-    color: "#4a311a",
-    textShadow: "0 1px 0 rgba(255,255,255,0.68), 0 8px 18px rgba(118,84,43,0.12)",
-  };
-}
-
-function getClassFlowHeaderFrameStyle(
-  headerTone: "default" | "accent",
-  theme: ReturnType<typeof getClassTheme>,
-) {
-  if (headerTone === "accent") {
-    return {
-      borderColor: `${theme.frame}88`,
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.7), 0 18px 34px rgba(84,60,30,0.14), 0 0 18px ${theme.glow}`,
-    };
-  }
-
-  return {
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7), 0 18px 34px rgba(84,60,30,0.14)",
-  };
 }
 
 function ClassSelectionPane({ state, controller }: Pick<ReactWizardStepProps, "state" | "controller">) {
@@ -1117,7 +1023,6 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
           glow={theme.glow}
           maxCount={totalRequired}
           selectedCount={totalSelected}
-          title="Selection Summary"
           compact
         />
         <ClassAdvancementSelectedCard
@@ -1127,58 +1032,6 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
         />
       </aside>
     </div>
-  );
-}
-
-function HeaderFlourish({ side }: { side: "left" | "right" }) {
-  const containerClasses =
-    side === "left"
-      ? "mr-2 flex min-w-0 flex-1 items-center justify-end gap-1.5 md:mr-4 md:gap-2"
-      : "ml-2 flex min-w-0 flex-1 items-center justify-start gap-1.5 md:ml-4 md:gap-2";
-  const lineClasses =
-    side === "left"
-      ? "bg-[linear-gradient(90deg,rgba(179,131,70,0),rgba(179,131,70,0.9),rgba(246,227,183,0.48))]"
-      : "bg-[linear-gradient(90deg,rgba(246,227,183,0.48),rgba(179,131,70,0.9),rgba(179,131,70,0))]";
-
-  return (
-    <span aria-hidden="true" className={containerClasses}>
-      {side === "right" ? <FlourishGem /> : null}
-      <span className="relative block h-4 w-full max-w-[4.25rem] md:max-w-[10.5rem]">
-        <span className={cn("absolute inset-x-0 top-1/2 h-px -translate-y-1/2", lineClasses)} />
-        <span
-          className={cn(
-            "absolute top-1/2 h-px w-full -translate-y-1/2 opacity-65",
-            side === "left"
-              ? "left-0 scale-x-[0.72] bg-[linear-gradient(90deg,rgba(246,227,183,0),rgba(214,177,111,0.9),rgba(179,131,70,0.22))]"
-              : "right-0 scale-x-[0.72] bg-[linear-gradient(90deg,rgba(179,131,70,0.22),rgba(214,177,111,0.9),rgba(246,227,183,0))]",
-          )}
-        />
-        <span
-          className={cn(
-            "absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border border-[#d1a05c]/82 bg-[linear-gradient(180deg,rgba(255,249,239,0.54),rgba(214,177,111,0.24))] shadow-[0_0_6px_rgba(234,205,142,0.18)]",
-            side === "left" ? "right-1.5 md:right-3" : "left-1.5 md:left-3",
-          )}
-        />
-        <span
-          className={cn(
-            "absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rotate-45 border border-[#d1a05c]/74 bg-[#fff7ea]/92",
-            side === "left" ? "right-0 md:right-0.5" : "left-0 md:left-0.5",
-          )}
-        />
-      </span>
-      {side === "left" ? <FlourishGem /> : null}
-    </span>
-  );
-}
-
-function FlourishGem() {
-  return (
-    <span className="relative block h-3.5 w-3.5 md:h-4.5 md:w-4.5">
-      <span
-        className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[0.15rem] border border-[#d1a05c]/82 bg-[linear-gradient(180deg,rgba(255,249,239,0.54),rgba(214,177,111,0.24))] shadow-[0_0_8px_rgba(234,205,142,0.18)] md:h-3.5 md:w-3.5"
-      />
-      <span className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#fff7ea]/92 md:h-1.5 md:w-1.5" />
-    </span>
   );
 }
 
@@ -1313,7 +1166,7 @@ function SelectionSummaryCard({
         className="cc-theme-panel overflow-hidden rounded-[1.3rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
         style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
       >
-      <div className={cn("cc-theme-shell-inner rounded-[1.02rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-3", CC_TEXT_PRIMARY)}>
+        <div className={cn("cc-theme-shell-inner rounded-[1.02rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-3", CC_TEXT_PRIMARY)}>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>{title}</div>
@@ -1364,7 +1217,10 @@ function SelectionSummaryCard({
               width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
               background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
             }}
-          />
+            />
+          </div>
+        <div className={cn("cc-theme-body-muted mt-3 font-fth-cc-body text-[0.88rem] leading-6", CC_TEXT_SECONDARY)}>
+          {selectedCount} of {maxCount} selected
         </div>
       </div>
     </section>
