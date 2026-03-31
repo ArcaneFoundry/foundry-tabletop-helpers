@@ -1,11 +1,15 @@
 /* ── Party Summary Panel ───────────────────────────────────── */
 /*
  * GM-facing horizontal card grid showing PC combat stats.
- * Dark arcane theme matching the combat panel suite.
+ * Shared parchment/abyssal theme tokens matching the combat panel suite.
  */
 
 /* ── Panel shell ──────────────────────────────────────────── */
 .fth-party-summary {
+  --fth-ps-font-title: "Roboto Slab", serif;
+  --fth-ps-font-body: "Roboto", sans-serif;
+  --fth-ps-font-ui: "Roboto", sans-serif;
+  --fth-ps-font-compact: "Roboto Condensed", "Roboto", sans-serif;
   --fth-ps-surface: var(--fth-color-canvas);
   --fth-ps-surface-alt: var(--fth-color-surface);
   --fth-ps-glass: var(--fth-color-surface-glass);
@@ -28,7 +32,7 @@
   border: 1px solid var(--fth-ps-border);
   border-radius: 10px;
   box-shadow: var(--fth-ps-shadow);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--fth-ps-font-body);
   user-select: none;
   overflow: hidden;
 }
@@ -44,7 +48,7 @@
 }
 
 .ps-title {
-  font-family: "Roboto Slab", serif;
+  font-family: var(--fth-ps-font-title);
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--fth-ps-accent);
@@ -160,7 +164,7 @@
   border: none;
   padding: 0;
   margin: 0;
-  font-family: "Roboto Slab", serif;
+  font-family: var(--fth-ps-font-title);
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--fth-ps-accent);
@@ -179,7 +183,7 @@
 }
 
 .ps-card-name:active {
-  color: color-mix(in srgb, var(--fth-ps-accent-strong) 72%, white 28%);
+  color: color-mix(in srgb, var(--fth-ps-accent-strong) 72%, var(--fth-ps-surface) 28%);
 }
 
 .ps-card-class {
@@ -211,7 +215,7 @@
 }
 
 .ps-core-val {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-ps-font-compact);
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--fth-ps-text);
@@ -226,7 +230,7 @@
   display: flex;
   align-items: baseline;
   gap: 1px;
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-ps-font-compact);
   font-size: 0.68rem;
   font-weight: 700;
   line-height: 1;
@@ -264,10 +268,10 @@
 
 /* Spell DC */
 .ps-spell-dc {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-ps-font-compact);
   font-size: 0.62rem;
   font-weight: 700;
-  color: color-mix(in srgb, var(--fth-ps-arcane) 74%, white 26%);
+  color: color-mix(in srgb, var(--fth-ps-arcane) 74%, var(--fth-ps-surface) 26%);
   background: color-mix(in srgb, var(--fth-ps-arcane) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--fth-ps-arcane) 28%, transparent);
   border-radius: 4px;
@@ -277,7 +281,7 @@
 
 .ps-dc-label {
   font-size: 0.5rem;
-  color: color-mix(in srgb, var(--fth-ps-arcane) 62%, white 20%);
+  color: color-mix(in srgb, var(--fth-ps-arcane) 62%, var(--fth-ps-surface) 20%);
   margin-right: 1px;
 }
 
@@ -336,7 +340,7 @@
 }
 
 .ps-save-mod {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-ps-font-compact);
   font-size: 0.68rem;
   font-weight: 700;
   color: var(--fth-ps-text);
@@ -351,7 +355,7 @@
 }
 
 .ps-passive {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-ps-font-compact);
   font-size: 0.6rem;
   font-weight: 600;
   color: var(--fth-ps-text-muted);
@@ -383,7 +387,7 @@
 
 .ps-badge-conc {
   background: color-mix(in srgb, var(--fth-ps-arcane) 18%, transparent);
-  color: color-mix(in srgb, var(--fth-ps-arcane) 74%, white 26%);
+  color: color-mix(in srgb, var(--fth-ps-arcane) 74%, var(--fth-ps-surface) 26%);
   border: 1px solid color-mix(in srgb, var(--fth-ps-arcane) 30%, transparent);
 }
 

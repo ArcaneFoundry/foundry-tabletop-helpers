@@ -1,8 +1,7 @@
 /* ── Batch Initiative Dialog ─────────────────────────────────── */
 /*
  * Styles for the compact advantage/disadvantage/normal initiative dialog.
- * Dark-fantasy design language matching initiative-dialog.css
- * (deep navy background, gold accents, touch-friendly).
+ * Shared parchment/abyssal theme tokens matching the combat panel suite.
  *
  * The class `.batch-initiative-dialog` is added via Dialog `classes` option
  * and lands on the outermost `.app.window-app.dialog` element.
@@ -10,6 +9,9 @@
 
 /* ── Window shell ─────────────────────────────────────────────── */
 .batch-initiative-dialog.window-app {
+  --fth-bi-font-title: "Roboto Slab", serif;
+  --fth-bi-font-body: "Roboto", sans-serif;
+  --fth-bi-font-ui: "Roboto", sans-serif;
   --fth-bi-surface: var(--fth-color-canvas);
   --fth-bi-surface-alt: var(--fth-color-surface);
   --fth-bi-glass: var(--fth-color-surface-glass);
@@ -47,7 +49,7 @@
 }
 
 .batch-initiative-dialog .window-title {
-  font-family: "Roboto Slab", serif;
+  font-family: var(--fth-bi-font-title);
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--fth-bi-accent);
@@ -103,7 +105,7 @@
   margin: 0;
   padding: 4px 0;
   text-align: center;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--fth-bi-font-body);
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--fth-bi-text-muted);
@@ -131,7 +133,7 @@
   border: 1px solid var(--fth-bi-border-soft);
   border-radius: 8px;
   color: var(--fth-bi-text-muted);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--fth-bi-font-ui);
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.07em;
@@ -172,9 +174,9 @@
 .batch-initiative-dialog .dialog-button.advantage:hover {
   background: color-mix(in srgb, var(--fth-bi-success) 18%, transparent);
   border-color: color-mix(in srgb, var(--fth-bi-success) 72%, var(--fth-bi-border));
-  color: color-mix(in srgb, var(--fth-bi-success) 78%, white 22%);
+  color: color-mix(in srgb, var(--fth-bi-success) 78%, var(--fth-bi-surface) 22%);
 }
-.batch-initiative-dialog .dialog-button.advantage:hover i { color: color-mix(in srgb, var(--fth-bi-success) 78%, white 22%); }
+.batch-initiative-dialog .dialog-button.advantage:hover i { color: color-mix(in srgb, var(--fth-bi-success) 78%, var(--fth-bi-surface) 22%); }
 
 /* ── Touch feedback ───────────────────────────────────────────── */
 .batch-initiative-dialog .dialog-button,

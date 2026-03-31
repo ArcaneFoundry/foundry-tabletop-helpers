@@ -1,11 +1,15 @@
 /* ── Quick Damage Panel ─────────────────────────────────────── */
 /*
  * Persistent draggable panel for fast damage/heal/condition application.
- * Dark-fantasy design language matching the batch initiative dialog.
+ * Shared parchment/abyssal theme tokens matching the combat panel suite.
  */
 
 /* ── Panel shell ─────────────────────────────────────────────── */
 .fth-damage-panel {
+  --fth-dwf-font-title: "Roboto Slab", serif;
+  --fth-dwf-font-body: "Roboto", sans-serif;
+  --fth-dwf-font-ui: "Roboto", sans-serif;
+  --fth-dwf-font-compact: "Roboto Condensed", "Roboto", sans-serif;
   --fth-dwf-surface: var(--fth-color-canvas);
   --fth-dwf-surface-alt: var(--fth-color-surface);
   --fth-dwf-glass: var(--fth-color-surface-glass);
@@ -30,7 +34,7 @@
   border-radius: 10px;
   box-shadow: var(--fth-dwf-shadow);
   overflow: hidden;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--fth-dwf-font-body);
   user-select: none;
 }
 
@@ -45,7 +49,7 @@
 }
 
 .dwf-title {
-  font-family: "Roboto Slab", serif;
+  font-family: var(--fth-dwf-font-title);
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--fth-dwf-accent);
@@ -118,7 +122,7 @@
   border: 1px solid var(--fth-dwf-border-soft);
   border-radius: 6px;
   color: var(--fth-dwf-text);
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-dwf-font-compact);
   font-size: 1.25rem;
   font-weight: 700;
   text-align: center;
@@ -132,7 +136,7 @@
 .dwf-amount-input:focus {
   outline: none;
   border-color: var(--fth-dwf-focus);
-  background: color-mix(in srgb, var(--fth-dwf-glass-strong) 82%, white 18%);
+  background: color-mix(in srgb, var(--fth-dwf-glass-strong) 82%, var(--fth-dwf-surface) 18%);
 }
 
 .dwf-amount-input::placeholder {
@@ -164,7 +168,7 @@
   min-height: 40px;
   border: 1px solid transparent;
   border-radius: 6px;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--fth-dwf-font-ui);
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -381,7 +385,7 @@
   border: 1px solid var(--fth-dwf-border-soft);
   border-radius: 5px;
   color: var(--fth-dwf-text);
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--fth-dwf-font-compact);
   font-size: 0.8rem;
   font-weight: 600;
   padding: 4px 6px;
@@ -395,7 +399,7 @@
 .dwf-save-input:focus {
   outline: none;
   border-color: var(--fth-dwf-border);
-  background: color-mix(in srgb, var(--fth-dwf-glass-strong) 88%, white 12%);
+  background: color-mix(in srgb, var(--fth-dwf-glass-strong) 88%, var(--fth-dwf-surface) 12%);
 }
 
 /* ── Condition fields ────────────────────────────────────────── */
@@ -418,9 +422,14 @@ select.dwf-save-input {
   cursor: pointer;
   text-align: left;
   padding-right: 20px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a7864'/%3E%3C/svg%3E");
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--fth-dwf-text-subtle) 50%),
+    linear-gradient(135deg, var(--fth-dwf-text-subtle) 50%, transparent 50%);
   background-repeat: no-repeat;
-  background-position: right 6px center;
+  background-position:
+    right 10px center,
+    right 5px center;
+  background-size: 5px 5px;
 }
 
 /* Hide number spinners */
@@ -455,7 +464,7 @@ select.dwf-save-input {
 /* ══════════════════════════════════════════════════════════════ */
 
 .fth-workflow-result {
-  font-family: "Roboto", sans-serif;
+  font-family: var(--fth-dwf-font-body);
   font-size: 0.8rem;
   color: var(--fth-dwf-text);
 }
@@ -494,7 +503,7 @@ select.dwf-save-input {
 
 .fth-wf-save {
   text-align: center;
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: var(--fth-dwf-font-compact);
   font-weight: 700;
 }
 
@@ -517,7 +526,7 @@ select.dwf-save-input {
 
 .fth-wf-effect {
   text-align: right;
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: var(--fth-dwf-font-compact);
   font-weight: 700;
 }
 
@@ -526,7 +535,7 @@ select.dwf-save-input {
 
 .fth-wf-hp {
   text-align: right;
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: var(--fth-dwf-font-compact);
   font-size: 0.7rem;
   color: var(--fth-dwf-text-muted);
 }
@@ -545,7 +554,7 @@ select.dwf-save-input {
 .fth-wf-cond-applied { color: var(--fth-dwf-arcane); }
 .fth-wf-cond-badge {
   background: color-mix(in srgb, var(--fth-dwf-arcane) 18%, transparent) !important;
-  color: color-mix(in srgb, var(--fth-dwf-arcane) 70%, white 30%) !important;
+  color: color-mix(in srgb, var(--fth-dwf-arcane) 70%, var(--fth-dwf-surface) 30%) !important;
 }
 
 .fth-wf-cond-resisted {
@@ -575,7 +584,7 @@ select.dwf-save-input {
 .fth-wf-conc-header {
   font-size: 0.65rem;
   font-weight: 700;
-  color: color-mix(in srgb, var(--fth-dwf-arcane) 72%, white 28%);
+  color: color-mix(in srgb, var(--fth-dwf-arcane) 72%, var(--fth-dwf-surface) 28%);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 4px;
@@ -588,6 +597,6 @@ select.dwf-save-input {
 
 .fth-wf-conc-lost {
   background: color-mix(in srgb, var(--fth-dwf-arcane) 22%, transparent) !important;
-  color: color-mix(in srgb, var(--fth-dwf-arcane) 36%, white 64%) !important;
+  color: color-mix(in srgb, var(--fth-dwf-arcane) 36%, var(--fth-dwf-surface) 64%) !important;
   font-weight: 800;
 }
