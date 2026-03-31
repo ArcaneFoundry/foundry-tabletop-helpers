@@ -61,6 +61,8 @@
   --am-status-success: var(--am-success);
   --am-status-warning: var(--am-warning);
   --am-status-danger: var(--am-danger);
+  --am-status-online: color-mix(in srgb, var(--am-warning) 82%, var(--am-bg-base));
+  --am-status-offline: color-mix(in srgb, var(--am-danger) 92%, var(--am-bg-base));
 
   --am-thumb-size: 120px;
 }
@@ -881,13 +883,13 @@
 }
 
 .am-server-dot.am-server-online {
-  color: color-mix(in srgb, var(--am-warning) 82%, #8a4b00);
+  color: var(--am-status-online);
   text-shadow: 0 0 8px color-mix(in srgb, var(--am-warning) 42%, transparent);
   filter: drop-shadow(0 0 4px color-mix(in srgb, var(--am-warning) 24%, transparent));
 }
 
 .am-server-dot.am-server-offline {
-  color: color-mix(in srgb, var(--am-danger) 92%, #ff3b30);
+  color: var(--am-status-offline);
   text-shadow: 0 0 8px color-mix(in srgb, var(--am-danger) 44%, transparent);
   filter: drop-shadow(0 0 4px color-mix(in srgb, var(--am-danger) 28%, transparent));
 }
