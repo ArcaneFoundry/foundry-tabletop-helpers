@@ -275,6 +275,9 @@ describe("step spells", () => {
     expect(viewModel).toMatchObject({
       className: "Wizard",
       usingClassFilter: true,
+      hideStepIndicator: true,
+      hideShellHeader: true,
+      shellContentClass: "cc-step-content--build-flow",
       maxSpellLevel: 3,
       cantripCount: 0,
       spellCount: 0,
@@ -644,5 +647,79 @@ describe("step spells", () => {
 
     expect(step.isComplete(completeState)).toBe(true);
     expect(getStatusHint(completeState)).toBe("");
+  });
+
+  it("does not require paladin cantrips when the class exposes none at level 1", async () => {
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+    const getStatusHint = step.getStatusHint;
+    if (!getStatusHint) throw new Error("Expected getStatusHint to be defined");
+
+    const paladinState = makeState({
+      config: {
+        ...makeState().config,
+        startingLevel: 1,
+      },
+      selections: {
+        class: {
+          uuid: "Compendium.class.paladin",
+          name: "Paladin",
+          img: "paladin.png",
+          identifier: "paladin",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "cha",
+          spellcastingProgression: "half",
+        },
+        spells: {
+          cantrips: [],
+          spells: ["s1", "s2"],
+          preparedSpells: ["s1", "s2"],
+          maxCantrips: 0,
+          maxPreparedSpells: 2,
+        },
+      },
+    });
+
+    expect(step.isComplete(paladinState)).toBe(true);
+    expect(getStatusHint(paladinState)).toBe("");
+  });
+
+  it("keeps ranger level 1 preparation targets internally consistent", async () => {
+    const { createSpellsStep } = await import("./step-spells");
+    const step = createSpellsStep();
+    const getStatusHint = step.getStatusHint;
+    if (!getStatusHint) throw new Error("Expected getStatusHint to be defined");
+
+    const rangerState = makeState({
+      config: {
+        ...makeState().config,
+        startingLevel: 1,
+      },
+      selections: {
+        class: {
+          uuid: "Compendium.class.ranger",
+          name: "Ranger",
+          img: "ranger.png",
+          identifier: "ranger",
+          skillPool: [],
+          skillCount: 2,
+          isSpellcaster: true,
+          spellcastingAbility: "wis",
+          spellcastingProgression: "half",
+        },
+        spells: {
+          cantrips: [],
+          spells: [],
+          preparedSpells: [],
+          maxCantrips: 0,
+          maxPreparedSpells: 2,
+        },
+      },
+    });
+
+    expect(step.isComplete(rangerState)).toBe(false);
+    expect(getStatusHint(rangerState)).toBe("choose 2 more spells and choose 2 more prepared spells");
   });
 });

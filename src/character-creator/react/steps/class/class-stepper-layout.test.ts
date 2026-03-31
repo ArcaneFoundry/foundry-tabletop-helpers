@@ -87,6 +87,8 @@ describe("class stepper layout", () => {
     }));
 
     expect(markup).toContain('data-layout-mode="wide"');
+    expect(markup).toContain('data-class-stepper="true"');
+    expect(markup).toContain('data-class-stepper-substeps="true"');
     expect(markup).not.toContain("fth-class-stepper__compact-row");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Expertise");

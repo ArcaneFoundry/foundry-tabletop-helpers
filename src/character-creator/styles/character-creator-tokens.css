@@ -50,6 +50,19 @@
   --cc-border-subtle: var(--fth-color-border);
   --cc-border-accent: var(--fth-color-border-strong);
   --cc-border-glow: color-mix(in srgb, var(--fth-color-accent) 48%, transparent);
+  --cc-badge-bg: color-mix(in srgb, var(--cc-surface-accent-soft) 72%, var(--cc-bg-surface) 28%);
+  --cc-badge-border: color-mix(in srgb, var(--cc-border-accent) 74%, transparent);
+  --cc-badge-text: color-mix(in srgb, var(--cc-text-kicker) 84%, var(--cc-text-primary) 16%);
+  --cc-badge-muted-bg: color-mix(in srgb, var(--cc-bg-surface) 84%, white 16%);
+  --cc-badge-muted-border: color-mix(in srgb, var(--cc-border-subtle) 100%, transparent);
+  --cc-badge-muted-text: color-mix(in srgb, var(--cc-text-secondary) 86%, var(--cc-text-primary) 14%);
+  --cc-pill-bg: color-mix(in srgb, var(--cc-surface-accent-soft) 64%, var(--cc-bg-surface) 36%);
+  --cc-pill-border: color-mix(in srgb, var(--cc-border-accent) 68%, transparent);
+  --cc-pill-muted-bg: color-mix(in srgb, var(--cc-bg-surface) 78%, white 22%);
+  --cc-pill-muted-border: color-mix(in srgb, var(--cc-border-subtle) 96%, transparent);
+  --cc-empty-bg: color-mix(in srgb, var(--cc-bg-surface) 82%, white 18%);
+  --cc-empty-border: color-mix(in srgb, var(--cc-border-accent) 38%, transparent);
+  --cc-progress-track-bg: color-mix(in srgb, var(--cc-bg-base) 18%, var(--cc-bg-surface) 82%);
 
   /* Type Scale */
   --cc-text-2xs: 0.65rem;
@@ -218,6 +231,90 @@
     color-mix(in srgb, var(--cc-action-primary-bright) 58%, transparent)
   );
   --cc-origin-flourish-gem-shadow: 0 0 8px color-mix(in srgb, var(--cc-surface-accent-soft) 28%, transparent);
+  --cc-choice-group-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 84%, var(--cc-surface-accent-soft) 16%),
+    color-mix(in srgb, var(--cc-bg-elevated) 78%, var(--cc-bg-base) 22%)
+  );
+  --cc-choice-group-border: color-mix(in srgb, var(--cc-border-accent) 42%, transparent);
+  --cc-choice-group-arcane-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 82%, var(--cc-surface-arcane-soft) 18%),
+    color-mix(in srgb, var(--cc-bg-elevated) 78%, var(--cc-bg-base) 22%)
+  );
+  --cc-choice-group-arcane-border: color-mix(in srgb, var(--cc-surface-arcane-strong) 44%, var(--cc-border-subtle) 56%);
+  --cc-choice-group-divider: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cc-border-accent) 0%, transparent),
+    color-mix(in srgb, var(--cc-border-accent) 76%, transparent),
+    color-mix(in srgb, var(--cc-border-accent) 0%, transparent)
+  );
+  --cc-mounted-panel-border: color-mix(in srgb, var(--cc-border-subtle) 96%, transparent);
+  --cc-mounted-panel-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 92%, transparent),
+    color-mix(in srgb, var(--cc-bg-elevated) 88%, transparent)
+  );
+  --cc-mounted-frame-border: color-mix(in srgb, var(--cc-border-subtle) 88%, transparent);
+  --cc-mounted-frame-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 88%, transparent),
+    color-mix(in srgb, var(--cc-bg-elevated) 84%, transparent)
+  );
+  --cc-mounted-card-border: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent);
+  --cc-mounted-card-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 74%, transparent),
+    color-mix(in srgb, var(--cc-bg-elevated) 68%, transparent)
+  );
+  --cc-mounted-card-selected-border: color-mix(in srgb, var(--cc-border-accent) 56%, transparent);
+  --cc-mounted-card-selected-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-surface-accent-soft) 72%, transparent),
+    color-mix(in srgb, var(--cc-bg-surface) 84%, var(--cc-bg-base) 16%)
+  );
+  --cc-mounted-badge-border: color-mix(in srgb, var(--cc-border-accent) 48%, transparent);
+  --cc-mounted-badge-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-surface-accent-soft) 56%, transparent),
+    color-mix(in srgb, var(--cc-bg-surface) 90%, transparent)
+  );
+  --cc-mounted-muted-badge-border: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent);
+  --cc-mounted-muted-badge-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 82%, transparent),
+    color-mix(in srgb, var(--cc-bg-elevated) 78%, transparent)
+  );
+  --cc-mounted-progress-track: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-base) 16%, white 84%),
+    color-mix(in srgb, var(--cc-bg-base) 10%, var(--cc-bg-surface) 90%)
+  );
+  --cc-mounted-icon-active-border: color-mix(in srgb, var(--cc-border-accent) 60%, transparent);
+  --cc-mounted-icon-active-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-action-primary-bright) 72%, white 28%),
+    color-mix(in srgb, var(--cc-action-primary) 88%, var(--cc-bg-base) 12%)
+  );
+  --cc-mounted-sigil-border: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent);
+  --cc-mounted-sigil-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 80%, transparent),
+    color-mix(in srgb, var(--cc-bg-elevated) 76%, transparent)
+  );
+  --cc-mounted-sigil-active-border: color-mix(in srgb, var(--cc-border-accent) 54%, transparent);
+  --cc-mounted-sigil-active-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-surface-accent-soft) 62%, transparent),
+    color-mix(in srgb, var(--cc-bg-surface) 86%, var(--cc-bg-base) 14%)
+  );
+  --cc-mounted-image-frame-border: color-mix(in srgb, var(--cc-border-accent) 32%, transparent);
+  --cc-mounted-image-scrim: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 18%, transparent),
+    color-mix(in srgb, var(--cc-bg-base) 22%, transparent)
+  );
+  --cc-mounted-emboss: color-mix(in srgb, white 18%, transparent);
 
   /* Spacing */
   --cc-space-2xs: 2px;
@@ -253,6 +350,80 @@
   color: var(--cc-text-primary);
   font-size: var(--cc-text-base);
   font-family: var(--cc-font-body);
+}
+
+:where([data-fth-theme="light"] .fth-character-creator, .fth-character-creator[data-fth-theme="light"]) {
+  --cc-bg-glass: rgb(255 255 255 / 0.78);
+  --cc-bg-glass-hover: rgb(255 255 255 / 0.9);
+  --cc-bg-glass-active: color-mix(in srgb, white 78%, var(--fth-color-accent) 22%);
+  --cc-surface-accent-soft: color-mix(in srgb, var(--fth-color-accent) 22%, transparent);
+  --cc-surface-accent-strong: color-mix(in srgb, var(--fth-color-accent) 34%, transparent);
+  --cc-surface-arcane-soft: color-mix(in srgb, var(--fth-color-arcane) 16%, transparent);
+  --cc-surface-arcane-strong: color-mix(in srgb, var(--fth-color-arcane) 24%, transparent);
+  --cc-surface-danger-soft: color-mix(in srgb, var(--fth-color-danger) 18%, transparent);
+  --cc-surface-hero: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--fth-color-surface) 92%, white 8%),
+    color-mix(in srgb, var(--fth-color-surface-elevated) 78%, var(--fth-color-surface-inset) 22%)
+  );
+  --cc-surface-panel: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--fth-color-surface) 90%, white 10%),
+    color-mix(in srgb, var(--fth-color-surface-elevated) 82%, var(--fth-color-surface-inset) 18%)
+  );
+  --cc-surface-panel-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.5), transparent 28%);
+  --cc-surface-hero-sheen: linear-gradient(90deg, rgb(255 255 255 / 0.54), transparent 18%, transparent 82%, rgb(255 255 255 / 0.2));
+  --cc-text-hero: color-mix(in srgb, var(--fth-color-text) 96%, var(--fth-color-accent-soft) 4%);
+  --cc-text-hero-muted: color-mix(in srgb, var(--fth-color-text) 82%, var(--fth-color-accent-soft) 18%);
+  --cc-text-kicker: color-mix(in srgb, var(--fth-color-accent-soft) 58%, var(--fth-color-text) 42%);
+  --cc-class-stepper-node-idle-text: color-mix(in srgb, var(--cc-text-primary) 68%, var(--cc-bg-base) 32%);
+  --cc-class-stepper-label-muted: color-mix(in srgb, var(--cc-text-secondary) 96%, var(--cc-bg-base) 4%);
+  --cc-class-card-frame-shadow: inset 0 1px 0 rgb(255 255 255 / 0.78);
+  --cc-class-card-shell-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 32%, transparent), inset 0 -16px 24px color-mix(in srgb, var(--cc-bg-base) 12%, transparent);
+  --cc-class-card-selected-glow: 0 0 20px color-mix(in srgb, var(--cc-surface-accent-soft) 46%, transparent);
+  --cc-shadow-button: 0 6px 14px color-mix(in srgb, var(--cc-bg-base) 18%, transparent);
+  --cc-glow-soft: 0 14px 28px color-mix(in srgb, var(--cc-bg-base) 18%, transparent);
+  --cc-glow-hero: 0 20px 40px color-mix(in srgb, var(--cc-bg-base) 18%, transparent);
+}
+
+.fth-character-creator.fth-theme-root[data-fth-theme="light"],
+.fth-theme-root[data-fth-theme="light"] .fth-character-creator,
+[data-fth-theme="light"] .fth-character-creator,
+.fth-character-creator[data-fth-theme="light"] {
+  --fth-theme-shadow-panel: 0 20px 46px rgb(96 71 35 / 0.16);
+  --fth-theme-shadow-elevated: 0 24px 54px rgb(96 71 35 / 0.2);
+  --fth-theme-shadow-selected: 0 0 0 1px rgb(168 121 47 / 0.82), 0 0 0 4px rgb(168 121 47 / 0.2);
+
+  --fth-color-border: rgb(138 103 52 / 0.28);
+  --fth-color-border-strong: rgb(138 103 52 / 0.46);
+  --fth-color-text-muted: #4d4134;
+  --fth-color-text-subtle: #6c5a47;
+  --fth-color-accent: #a8792f;
+  --fth-color-accent-strong: #cb9847;
+
+  --fth-theme-panel-image: linear-gradient(180deg, rgb(252 247 239 / 0.97), rgb(235 218 190 / 0.99));
+  --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(255 251 244 / 0.95), rgb(234 216 186 / 0.99));
+  --fth-theme-panel-image-header: linear-gradient(180deg, rgb(255 252 247 / 0.98), rgb(238 220 190 / 0.99));
+  --fth-theme-status-image: linear-gradient(180deg, rgb(168 121 47 / 0.24), rgb(168 121 47 / 0.12));
+  --fth-theme-accent-line: linear-gradient(90deg, rgb(168 121 47 / 0), rgb(168 121 47 / 0.74), rgb(168 121 47 / 0));
+  --fth-theme-icon-surface: rgb(168 121 47 / 0.18);
+  --fth-theme-icon-ring: rgb(168 121 47 / 0.42);
+  --fth-theme-step-divider-image: linear-gradient(90deg, rgb(168 121 47 / 0), rgb(168 121 47 / 0.42), rgb(168 121 47 / 0));
+  --fth-theme-card-shell-image: linear-gradient(180deg, rgb(255 251 245 / 0.98), rgb(237 220 191 / 0.98));
+  --fth-theme-card-inner-image: linear-gradient(180deg, rgb(255 255 255 / 0.38) 0%, transparent 20%, rgb(168 121 47 / 0.08) 44%, rgb(73 48 25 / 0.26) 100%);
+  --fth-theme-card-chip-bg: rgb(244 232 211 / 0.88);
+  --fth-theme-card-chip-border: rgb(168 121 47 / 0.34);
+  --fth-theme-card-chip-text: #3f2e1d;
+  --fth-theme-card-chip-icon: #8d642a;
+  --fth-theme-card-selected-bg: rgb(168 121 47 / 0.22);
+  --fth-theme-card-selected-border: rgb(168 121 47 / 0.5);
+  --fth-theme-card-selected-text: #392717;
+
+  --cc-surface-accent-soft: color-mix(in srgb, var(--fth-color-accent) 18%, transparent);
+  --cc-surface-accent-strong: color-mix(in srgb, var(--fth-color-accent) 30%, transparent);
+  --cc-surface-arcane-soft: color-mix(in srgb, var(--fth-color-arcane) 14%, transparent);
+  --cc-text-hero-muted: color-mix(in srgb, var(--fth-color-text) 84%, transparent);
+  --cc-text-kicker: color-mix(in srgb, var(--fth-color-accent) 62%, var(--fth-color-text) 38%);
 }
 
 @media (prefers-reduced-motion: reduce) {

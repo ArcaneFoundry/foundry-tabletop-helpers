@@ -53,6 +53,7 @@ export function getKnownSkillKeys(state: WizardState): string[] {
     ...(state.selections.species?.skillGrants ?? []),
     ...(state.selections.speciesChoices?.chosenSkills ?? []),
     ...(state.selections.skills?.chosen ?? []),
+    ...(state.selections.classChoices?.chosenSkills ?? []),
   ];
 }
 

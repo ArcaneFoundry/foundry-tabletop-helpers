@@ -11,10 +11,10 @@ describe("step registry ordering", () => {
     const ordered = getOrderedSteps().map((step) => step.id);
 
     const classIndex = ordered.indexOf("class");
+    const classChoicesIndex = ordered.indexOf("classChoices");
+    const classExpertiseIndex = ordered.indexOf("classExpertise");
     const speciesIndex = ordered.indexOf("species");
     const backgroundIndex = ordered.indexOf("background");
-    const originSummaryIndex = ordered.indexOf("originSummary");
-    const classChoicesIndex = ordered.indexOf("classChoices");
     const abilitiesIndex = ordered.indexOf("abilities");
     const featsIndex = ordered.indexOf("feats");
     const spellsIndex = ordered.indexOf("spells");
@@ -24,10 +24,10 @@ describe("step registry ordering", () => {
     const reviewIndex = ordered.indexOf("review");
 
     expect(classIndex).toBeGreaterThanOrEqual(0);
+    expect(classChoicesIndex).toBeGreaterThan(classIndex);
+    expect(classExpertiseIndex).toBeGreaterThan(classChoicesIndex);
     expect(speciesIndex).toBeGreaterThan(classIndex);
     expect(backgroundIndex).toBeGreaterThan(speciesIndex);
-    expect(originSummaryIndex).toBeGreaterThan(backgroundIndex);
-    expect(classChoicesIndex).toBeGreaterThan(originSummaryIndex);
     expect(abilitiesIndex).toBeGreaterThan(classChoicesIndex);
     expect(featsIndex).toBeGreaterThan(abilitiesIndex);
     expect(spellsIndex).toBeGreaterThan(featsIndex);

@@ -17,7 +17,7 @@ export const DEPENDENCY_CASCADE: Record<string, string[]> = {
   originChoices: ["originSummary", "classChoices", "review"],
   originSummary: ["classChoices", "review"],
   class: ["classChoices", "classExpertise", "classLanguages", "classTools", "weaponMasteries", "classItemChoices", "classSummary", "subclass", "spells", "equipment", "equipmentShop", "review"],
-  classChoices: ["review"],
+  classChoices: ["classExpertise", "classSummary", "review"],
   classExpertise: [],
   classLanguages: [],
   classTools: [],

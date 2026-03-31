@@ -144,6 +144,9 @@ export function WizardShell({
     0,
   );
   const currentStepNumber = currentStepIndex + 1;
+  const usesCompactFooter = !shellContext.isReviewStep
+    && shellContext.hideStepIndicator
+    && shellContext.hideShellHeader;
   const displayProgress = shellContext.localProgress
     ? {
       ...shellContext.localProgress,
@@ -188,6 +191,7 @@ export function WizardShell({
       data-motion-profile={shellContext.motionProfile ?? "ceremonial"}
       data-panel-style={shellContext.panelStyleVariant ?? "artifact"}
       data-scene-key={shellContext.chapterSceneKey ?? shellContext.chapterKey ?? "lore"}
+      data-shell-layout={usesCompactFooter ? "mounted-flow" : "standard"}
       data-status-hint-style={shellContext.statusHintStyle ?? "progress"}
     >
       <div className="pointer-events-none absolute inset-0">
@@ -198,29 +202,30 @@ export function WizardShell({
       {!shellContext.hideStepIndicator ? (
         <nav
           aria-label="Wizard Steps"
-          className="fth-theme-panel relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-4 py-4 backdrop-blur-xl md:mx-5"
+          className="fth-theme-panel relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-4 py-4 backdrop-blur-xl md:mx-5 [@media(max-height:900px)]:mt-3 [@media(max-height:900px)]:px-3 [@media(max-height:900px)]:py-3"
+          data-wizard-steps="true"
         >
-          <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="mb-4 flex items-center justify-between gap-4 [@media(max-height:900px)]:mb-3 [@media(max-height:900px)]:gap-3">
             <div className="min-w-0">
               <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.28em] text-fth-accent">
                 Character Creation
               </div>
-              <div className="mt-2 font-fth-cc-display text-[1.6rem] leading-none text-fth-text">
+              <div className="mt-2 font-fth-cc-display text-[1.6rem] leading-none text-fth-text" data-wizard-steps-title="true">
                 {chapterLabel}
               </div>
               {displayProgress ? (
-                <div className="mt-3 max-w-md">
+                <div className="mt-3 max-w-md" data-wizard-steps-progress="true">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
                       {displayProgress.label}
                     </div>
                     {displayProgress.detail ? (
-                      <span className="font-fth-cc-body text-[0.88rem] leading-6 text-fth-text-muted">
+                      <span className="font-fth-cc-body text-[0.88rem] leading-6 text-fth-text-muted [@media(max-height:900px)]:hidden" data-wizard-steps-detail="true">
                         {displayProgress.detail}
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--fth-color-border)]">
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--fth-color-border)] [@media(max-height:900px)]:hidden" data-wizard-steps-progress-bar="true">
                     <div
                       className="fth-theme-panel-accent-line h-full rounded-full"
                       style={{ width: `${displayProgress.percent}%` }}
@@ -230,21 +235,23 @@ export function WizardShell({
               ) : null}
             </div>
             {shellContext.statusHint ? (
-              <div className="fth-theme-status-pill max-w-xs rounded-full px-3 py-2 text-right font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em]">
+              <div className="fth-theme-status-pill max-w-xs rounded-full px-3 py-2 text-right font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.2em] [@media(max-height:900px)]:px-2.5 [@media(max-height:900px)]:py-1.5">
                 {shellContext.statusHint}
               </div>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto pb-1">
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 [@media(max-height:900px)]:gap-2">
             {displaySteps.map((step, index) => (
               <div className="contents" key={step.id}>
                 <button
                   className={cn(
                     "group relative inline-flex min-w-[7rem] shrink-0 items-center gap-3 rounded-[1.35rem] border px-3 py-3 text-left transition",
+                    "[@media(max-height:900px)]:min-w-[6rem] [@media(max-height:900px)]:gap-2 [@media(max-height:900px)]:px-2.5 [@media(max-height:900px)]:py-2",
                     "border-fth-border bg-[color:var(--fth-color-surface-glass)]",
                     shellContext.isReviewStep ? "cursor-pointer hover:border-fth-border-strong hover:-translate-y-0.5" : "cursor-default",
                   )}
+                  data-wizard-step-button="true"
                   disabled={!shellContext.isReviewStep}
                   onClick={() => onJumpToStep(step.id)}
                   style={{
@@ -266,9 +273,10 @@ export function WizardShell({
                 >
                   <span
                     className={cn(
-                      "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-sm transition",
+                      "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-sm transition [@media(max-height:900px)]:h-9 [@media(max-height:900px)]:w-9 [@media(max-height:900px)]:text-[0.82rem]",
                       "border-fth-border bg-[color:var(--fth-color-surface-glass)] text-fth-text",
                     )}
+                    data-wizard-step-icon="true"
                     style={{
                       backgroundImage: step.active
                         ? "var(--fth-theme-step-icon-image)"
@@ -291,16 +299,16 @@ export function WizardShell({
                     <i className={step.icon} aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-fth-text-subtle">
+                    <span className="block truncate font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.22em] text-fth-text-subtle [@media(max-height:900px)]:text-[0.56rem]">
                       {index + 1}
                     </span>
-                    <span className="mt-1 block truncate font-fth-cc-display text-[1.02rem] leading-none text-fth-text">
+                    <span className="mt-1 block truncate font-fth-cc-display text-[1.02rem] leading-none text-fth-text [@media(max-height:900px)]:text-[0.92rem]">
                       {step.label}
                     </span>
                   </span>
                 </button>
                 {index < shellContext.steps.length - 1 ? (
-                  <div className="relative h-px min-w-6 flex-1 overflow-hidden rounded-full bg-[color:var(--fth-color-border)]">
+                  <div className="relative h-px min-w-6 flex-1 overflow-hidden rounded-full bg-[color:var(--fth-color-border)] [@media(max-height:900px)]:min-w-4">
                     <div
                       className={cn(
                         "fth-theme-panel-accent-line absolute inset-y-0 left-0 w-full opacity-45",
@@ -316,14 +324,14 @@ export function WizardShell({
       ) : null}
 
       {!shellContext.hideShellHeader ? (
-        <header className="fth-theme-panel fth-theme-panel--header relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-6 py-5 backdrop-blur-lg md:mx-5">
+        <header className="fth-theme-panel fth-theme-panel--header relative z-10 mx-4 mt-4 overflow-hidden rounded-[1.75rem] px-6 py-5 backdrop-blur-lg md:mx-5 [@media(max-height:900px)]:mt-3 [@media(max-height:900px)]:px-4 [@media(max-height:900px)]:py-3.5" data-wizard-shell-header="true">
           <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-6 top-0 h-px" />
           <div className="fth-theme-header-glow pointer-events-none absolute inset-0" />
           {shellContext.headerTitle ? (
             <div className="relative z-10">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 [@media(max-height:900px)]:gap-3">
                 {shellContext.headerIcon ? (
-                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-fth-border-strong bg-[color:var(--fth-theme-icon-surface)] text-fth-accent shadow-[0_0_18px_color-mix(in_srgb,var(--fth-color-accent)_14%,transparent)]">
+                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-fth-border-strong bg-[color:var(--fth-theme-icon-surface)] text-fth-accent shadow-[0_0_18px_color-mix(in_srgb,var(--fth-color-accent)_14%,transparent)] [@media(max-height:900px)]:h-10 [@media(max-height:900px)]:w-10">
                     <i className={cn(shellContext.headerIcon, "text-lg")} aria-hidden="true" />
                   </div>
                 ) : null}
@@ -335,7 +343,7 @@ export function WizardShell({
                     {shellContext.headerTitle}
                   </h2>
                   {shellContext.headerDescription ? (
-                    <p className="mt-4 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-fth-text-muted">
+                    <p className="mt-4 max-w-3xl font-fth-cc-body text-[1rem] leading-7 text-fth-text-muted [@media(max-height:900px)]:hidden" data-wizard-shell-header-description="true">
                       {shellContext.headerDescription}
                     </p>
                   ) : null}
@@ -343,8 +351,8 @@ export function WizardShell({
               </div>
             </div>
           ) : (
-            <div className="relative z-10 flex items-center gap-4">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-fth-border-strong bg-[color:var(--fth-theme-icon-surface)] text-fth-accent shadow-[0_0_18px_color-mix(in_srgb,var(--fth-color-accent)_14%,transparent)]">
+            <div className="relative z-10 flex items-center gap-4 [@media(max-height:900px)]:gap-3">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-fth-border-strong bg-[color:var(--fth-theme-icon-surface)] text-fth-accent shadow-[0_0_18px_color-mix(in_srgb,var(--fth-color-accent)_14%,transparent)] [@media(max-height:900px)]:h-10 [@media(max-height:900px)]:w-10">
                 <i className={cn(shellContext.currentStepIcon, "text-lg")} aria-hidden="true" />
               </div>
               <div className="min-w-0">
@@ -367,7 +375,12 @@ export function WizardShell({
 
       <motion.footer
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-        className="cc-theme-panel relative z-10 mx-4 mb-4 mt-auto overflow-hidden rounded-[1.75rem] border px-4 py-4 backdrop-blur-xl md:mx-5 md:px-5"
+        className={cn(
+          "cc-theme-panel relative z-10 mx-4 mb-4 mt-auto overflow-hidden rounded-[1.75rem] border backdrop-blur-xl md:mx-5",
+          usesCompactFooter ? "px-3 py-3 md:px-4" : "px-4 py-4 md:px-5",
+        )}
+        data-footer-density={usesCompactFooter ? "compact" : "full"}
+        data-wizard-shell-footer="true"
         style={{
           backgroundImage: "var(--cc-shell-footer-panel)",
         }}
@@ -378,9 +391,14 @@ export function WizardShell({
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[image:var(--cc-shell-footer-button-primary)] opacity-35" />
         <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-8 top-0 h-px opacity-75" />
         <div className="pointer-events-none absolute inset-x-6 bottom-0 h-px bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-border-accent)_0%,transparent),color-mix(in_srgb,var(--cc-border-accent)_48%,transparent),color-mix(in_srgb,var(--cc-border-accent)_0%,transparent))] opacity-60" />
-        <div className="relative z-10 grid gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4">
+        <div className={cn(
+          "relative z-10 grid gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center",
+          usesCompactFooter ? "md:gap-3" : "md:gap-4",
+        )}
+        >
           <div className="order-2 md:order-1">
             <ActionButton
+              compact={usesCompactFooter}
               disabled={!shellContext.canGoBack}
               label="Back"
               onClick={onBack}
@@ -393,13 +411,21 @@ export function WizardShell({
             data-wizard-footer-summary="true"
           >
             <div
-              className="cc-theme-card cc-theme-card--raised relative overflow-hidden rounded-[1.35rem] border px-4 py-4 md:px-5"
+              className={cn(
+                "cc-theme-card cc-theme-card--raised relative overflow-hidden rounded-[1.35rem] border",
+                usesCompactFooter ? "px-3 py-3 md:px-4" : "px-4 py-4 md:px-5",
+              )}
+              data-wizard-footer-summary-card="true"
               style={{
                 backgroundImage: "var(--cc-shell-footer-summary)",
               }}
             >
               <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_58%,transparent),transparent)] opacity-75" />
-              <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
+              <div className={cn(
+                "relative z-10 flex flex-wrap justify-between gap-3",
+                usesCompactFooter ? "items-center" : "items-start",
+              )}
+              >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
@@ -408,24 +434,33 @@ export function WizardShell({
                     <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.22em] text-[color:var(--cc-text-secondary)]">
                       Step {currentStepNumber} of {displaySteps.length}
                     </div>
+                    {usesCompactFooter && shellContext.statusHint ? (
+                      <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                        {shellContext.statusHint}
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="mt-3 font-fth-cc-display text-[1.08rem] leading-none text-[color:var(--cc-text-primary)]">
+                  <div className={cn(
+                    "font-fth-cc-display leading-none text-[color:var(--cc-text-primary)]",
+                    usesCompactFooter ? "mt-2 text-[1rem]" : "mt-3 text-[1.08rem]",
+                  )}
+                  >
                     {shellContext.currentStepLabel}
                   </div>
-                  {displayProgress?.detail ? (
-                    <div className="mt-2 max-w-2xl font-fth-cc-body text-[0.88rem] leading-6 text-[color:var(--cc-text-secondary)]">
+                  {!usesCompactFooter && displayProgress?.detail ? (
+                    <div className="mt-2 max-w-2xl font-fth-cc-body text-[0.88rem] leading-6 text-[color:var(--cc-text-secondary)]" data-wizard-footer-detail="true">
                       {displayProgress.detail}
                     </div>
                   ) : null}
                 </div>
-                {shellContext.statusHint ? (
+                {!usesCompactFooter && shellContext.statusHint ? (
                   <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
                     {shellContext.statusHint}
                   </div>
                 ) : null}
               </div>
-              {displayProgress ? (
-                <div className="relative z-10 mt-4 h-1.5 overflow-hidden rounded-full bg-[color:color-mix(in_srgb,var(--cc-border-subtle)_82%,transparent)]">
+              {!usesCompactFooter && displayProgress ? (
+                <div className="relative z-10 mt-4 h-1.5 overflow-hidden rounded-full bg-[color:color-mix(in_srgb,var(--cc-border-subtle)_82%,transparent)]" data-wizard-footer-progress="true">
                   <div
                     className="h-full rounded-full bg-[image:var(--cc-shell-footer-button-primary)]"
                     style={{ width: `${displayProgress.percent}%` }}
@@ -438,6 +473,7 @@ export function WizardShell({
           <div className="order-3 md:justify-self-end">
             {shellContext.isReviewStep ? (
               <ActionButton
+                compact={usesCompactFooter}
                 disabled={isCreating}
                 label={isCreating ? "Binding..." : "Forge Character"}
                 onClick={() => void handleCreateCharacter()}
@@ -445,6 +481,7 @@ export function WizardShell({
               />
             ) : (
               <ActionButton
+                compact={usesCompactFooter}
                 disabled={!shellContext.canGoNext}
                 label={shellContext.nextButtonLabel ?? "Next"}
                 onClick={onNext}
@@ -469,11 +506,13 @@ function ActionButton({
   label,
   onClick,
   disabled,
+  compact = false,
   variant,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  compact?: boolean;
   variant: "primary" | "secondary";
 }) {
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -481,10 +520,19 @@ function ActionButton({
   return (
     <motion.button
       className={cn(
-        "cc-shell-footer-btn inline-flex min-w-36 items-center justify-center rounded-[1rem] border px-6 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition shadow-[var(--cc-shadow-button)]",
+        "cc-shell-footer-btn inline-flex items-center justify-center rounded-[1rem] border font-fth-cc-ui uppercase tracking-[0.18em] transition shadow-[var(--cc-shadow-button)]",
+        compact
+          ? "min-w-28 px-4 py-2.5 text-[0.68rem]"
+          : "min-w-36 px-6 py-3 text-[0.74rem]",
         variant === "primary"
-          ? "min-w-40 border-[color:color-mix(in_srgb,var(--cc-border-accent)_58%,transparent)] bg-[image:var(--cc-shell-footer-button-primary)] text-[color:var(--cc-text-ink-900)]"
-          : "min-w-32 border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-shell-footer-button-secondary)] text-[color:var(--cc-text-primary)] hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_42%,transparent)]",
+          ? cn(
+            "border-[color:color-mix(in_srgb,var(--cc-border-accent)_58%,transparent)] bg-[image:var(--cc-shell-footer-button-primary)] text-[color:var(--cc-text-ink-900)]",
+            compact ? "min-w-32" : "min-w-40",
+          )
+          : cn(
+            "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-shell-footer-button-secondary)] text-[color:var(--cc-text-primary)] hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_42%,transparent)]",
+            compact ? "min-w-28" : "min-w-32",
+          ),
         disabled && "cursor-not-allowed opacity-40",
       )}
       disabled={disabled}

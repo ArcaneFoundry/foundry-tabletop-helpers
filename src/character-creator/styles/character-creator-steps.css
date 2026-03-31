@@ -148,7 +148,7 @@
   background:
     var(--cc-surface-panel-sheen),
     linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-elevated) 90%, var(--cc-bg-base) 10%), color-mix(in srgb, var(--cc-bg-base) 92%, var(--cc-bg-surface) 8%)) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 22%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 28%, transparent) !important;
 }
 
 .cc-theme-header {
@@ -167,7 +167,7 @@
 }
 
 .cc-theme-panel {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 96%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 100%, transparent) !important;
   background:
     var(--cc-surface-panel-sheen),
     var(--cc-surface-panel) !important;
@@ -189,13 +189,13 @@
 }
 
 .cc-theme-card {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 82%, transparent) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 16%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 100%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 88%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 22%, transparent) !important;
 }
 
 .cc-theme-card--soft {
-  background: color-mix(in srgb, var(--cc-bg-surface) 72%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 80%, transparent) !important;
 }
 
 .cc-theme-card--raised {
@@ -205,17 +205,17 @@
 }
 
 .cc-theme-card--interactive:hover {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 52%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 90%, var(--cc-surface-accent-soft) 10%) !important;
+  border-color: color-mix(in srgb, var(--cc-border-accent) 60%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 86%, var(--cc-surface-accent-soft) 14%) !important;
 }
 
 .cc-theme-card--selected {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 74%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-accent) 82%, transparent) !important;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cc-surface-accent-soft) 88%, transparent), transparent 34%),
-    color-mix(in srgb, var(--cc-bg-surface) 88%, var(--cc-bg-base) 12%) !important;
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-surface-accent-soft) 92%, transparent), transparent 34%),
+    color-mix(in srgb, var(--cc-bg-surface) 84%, var(--cc-bg-base) 16%) !important;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 34%, transparent),
     var(--cc-shadow-panel) !important;
 }
 
@@ -240,37 +240,37 @@
 }
 
 .cc-theme-badge {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 42%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-surface-accent-soft) 92%, transparent) !important;
-  color: var(--cc-text-kicker) !important;
+  border-color: var(--cc-badge-border) !important;
+  background: var(--cc-badge-bg) !important;
+  color: var(--cc-badge-text) !important;
 }
 
 .cc-theme-badge--muted {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 96%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 76%, transparent) !important;
-  color: var(--cc-text-secondary) !important;
+  border-color: var(--cc-badge-muted-border) !important;
+  background: var(--cc-badge-muted-bg) !important;
+  color: var(--cc-badge-muted-text) !important;
 }
 
 .cc-theme-pill {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 36%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-surface-accent-soft) 80%, transparent) !important;
-  color: var(--cc-text-kicker) !important;
+  border-color: var(--cc-pill-border) !important;
+  background: var(--cc-pill-bg) !important;
+  color: var(--cc-badge-text) !important;
 }
 
 .cc-theme-pill--muted {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 72%, transparent) !important;
-  color: var(--cc-text-secondary) !important;
+  border-color: var(--cc-pill-muted-border) !important;
+  background: var(--cc-pill-muted-bg) !important;
+  color: var(--cc-badge-muted-text) !important;
 }
 
 .cc-theme-empty {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 26%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 76%, transparent) !important;
+  border-color: var(--cc-empty-border) !important;
+  background: var(--cc-empty-bg) !important;
   color: var(--cc-text-secondary) !important;
 }
 
 .cc-theme-progress-track {
-  background: color-mix(in srgb, var(--cc-bg-base) 70%, var(--cc-bg-surface) 30%);
+  background: var(--cc-progress-track-bg);
 }
 
 .cc-theme-progress-fill {
@@ -376,49 +376,67 @@
 }
 
 .cc-theme-toggle {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 78%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 100%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 84%, transparent) !important;
   color: var(--cc-text-primary) !important;
 }
 
 .cc-theme-toggle:hover {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 48%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 84%, var(--cc-surface-accent-soft) 16%) !important;
+  border-color: color-mix(in srgb, var(--cc-border-accent) 58%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 80%, var(--cc-surface-accent-soft) 20%) !important;
 }
 
 .cc-theme-toggle--active {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 74%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-accent) 82%, transparent) !important;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cc-surface-accent-soft) 86%, transparent), transparent 44%),
-    color-mix(in srgb, var(--cc-bg-surface) 82%, var(--cc-surface-accent-soft) 18%) !important;
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-surface-accent-soft) 92%, transparent), transparent 44%),
+    color-mix(in srgb, var(--cc-bg-surface) 78%, var(--cc-surface-accent-soft) 22%) !important;
   color: var(--cc-text-primary) !important;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--cc-border-accent) 32%, transparent),
     var(--cc-shadow-panel) !important;
 }
 
 .cc-theme-icon-chip {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 72%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 100%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 80%, transparent) !important;
   color: var(--cc-text-kicker) !important;
 }
 
 .cc-theme-icon-chip--active {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 56%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-surface-accent-soft) 84%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-accent) 68%, transparent) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-action-primary-bright) 42%, var(--cc-bg-surface) 58%), color-mix(in srgb, var(--cc-action-primary) 86%, var(--cc-bg-base) 14%)) !important;
   color: color-mix(in srgb, var(--cc-text-primary) 72%, var(--cc-bg-base) 28%) !important;
 }
 
 .cc-theme-sigil {
-  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-bg-surface) 72%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 100%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-bg-surface) 80%, transparent) !important;
   color: var(--cc-text-secondary) !important;
 }
 
 .cc-theme-sigil--selected {
-  border-color: color-mix(in srgb, var(--cc-border-accent) 58%, transparent) !important;
-  background: color-mix(in srgb, var(--cc-surface-accent-soft) 82%, transparent) !important;
+  border-color: color-mix(in srgb, var(--cc-border-accent) 68%, transparent) !important;
+  background: color-mix(in srgb, var(--cc-surface-accent-soft) 88%, transparent) !important;
   color: var(--cc-text-kicker) !important;
+}
+
+.cc-theme-choice-group {
+  border-color: var(--cc-choice-group-border) !important;
+  background: var(--cc-choice-group-bg) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cc-text-primary) 8%, transparent),
+    var(--cc-shadow-panel) !important;
+}
+
+.cc-theme-choice-group[data-tone="martial"] {
+  border-color: var(--cc-choice-group-arcane-border) !important;
+  background: var(--cc-choice-group-arcane-bg) !important;
+}
+
+.cc-theme-choice-divider {
+  background: var(--cc-choice-group-divider);
 }
 
 @container cc-class-chapter (min-width: 700px) {

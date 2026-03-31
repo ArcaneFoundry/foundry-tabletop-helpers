@@ -110,6 +110,29 @@ describe("wizard state machine", () => {
     expect(machine.state.stepStatus.get("review")).toBe("pending");
   });
 
+  it("invalidates expertise and class summary when class skills change", () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("class", { isComplete: (state) => !!state.selections.class }),
+      makeStep("classChoices", { isComplete: (state) => !!state.selections.classChoices }),
+      makeStep("classExpertise", { isComplete: (state) => !!state.selections.classExpertise }),
+      makeStep("classSummary", { isComplete: (state) => !!state.selections.classSummary }),
+      makeStep("review", { isComplete: () => true }),
+    ]);
+
+    machine.updateSelection("class", { uuid: "class-1" });
+    machine.updateSelection("classChoices", { chosenSkills: ["acr", "ste"] });
+    machine.updateSelection("classExpertise", { chosenSkills: ["ste"] });
+    machine.updateSelection("classSummary", { ready: true });
+    machine.markComplete("review");
+
+    const invalidated = machine.updateSelection("classChoices", { chosenSkills: ["acr", "prc"] });
+
+    expect([...invalidated].sort()).toEqual(["classExpertise", "classSummary", "review"]);
+    expect(machine.state.selections.classExpertise).toBeUndefined();
+    expect(machine.state.selections.classSummary).toBeUndefined();
+    expect(machine.state.stepStatus.get("review")).toBe("pending");
+  });
+
   it("only allows next navigation when the current step is complete", () => {
     const machine = new WizardStateMachine(makeConfig(), [
       makeStep("species", { isComplete: (state) => !!state.selections.species }),

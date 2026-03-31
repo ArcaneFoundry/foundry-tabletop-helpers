@@ -131,6 +131,10 @@ describe("WizardShell", () => {
     }));
 
     expect(markup).toContain('data-wizard-footer-summary="true"');
+    expect(markup).toContain('data-wizard-shell-footer="true"');
+    expect(markup).toContain('data-wizard-footer-summary-card="true"');
+    expect(markup).toContain('data-wizard-footer-detail="true"');
+    expect(markup).toContain('data-wizard-footer-progress="true"');
     expect(markup).toContain("cc-theme-card--raised");
     expect(markup).toContain("cc-shell-footer-btn");
     expect(markup).toContain("Class");
@@ -138,6 +142,96 @@ describe("WizardShell", () => {
     expect(markup).toContain("Choose Your Class");
     expect(markup).toContain("Choose the class that will shape the rest of the build.");
     expect(markup).toContain("Ready");
+  });
+
+  it("uses the compact footer layout for mounted-flow steps that already hide shell chrome", () => {
+    const shellContext = {
+      steps: [
+        { id: "classChoices", label: "Skills", icon: "fa-solid fa-hand-sparkles", status: "pending", active: true, index: 0 },
+        { id: "weaponMasteries", label: "Masteries", icon: "fa-solid fa-swords", status: "pending", active: false, index: 1 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "classChoices",
+      currentStepLabel: "Class Skills",
+      currentStepIcon: "fa-solid fa-hand-sparkles",
+      canGoBack: true,
+      canGoNext: true,
+      isReviewStep: false,
+      statusHint: "Choose 2 skills",
+      atmosphereClass: "cc-atmosphere--nature",
+      chapterKey: "skills",
+      hideStepIndicator: true,
+      hideShellHeader: true,
+      localProgress: {
+        current: 2,
+        total: 8,
+        label: "Step 2 of 8",
+        detail: "Choose the class skills your character starts with.",
+        percent: 25,
+      },
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain('data-shell-layout="mounted-flow"');
+    expect(markup).toContain('data-footer-density="compact"');
+    expect(markup).toContain("Choose 2 skills");
+    expect(markup).not.toContain('data-wizard-footer-detail="true"');
+    expect(markup).not.toContain('data-wizard-footer-progress="true"');
+    expect(markup).toContain("min-w-32");
+  });
+
+  it("compacts the shared footer when a mounted flow already owns the shell chrome", () => {
+    const shellContext = {
+      steps: [
+        { id: "class", label: "Class", icon: "fa-solid fa-shield", status: "complete", active: true, index: 0 },
+        { id: "classChoices", label: "Skills", icon: "fa-solid fa-list-check", status: "pending", active: false, index: 1 },
+        { id: "weaponMasteries", label: "Masteries", icon: "fa-solid fa-swords", status: "pending", active: false, index: 2 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "class",
+      currentStepLabel: "Choose Your Class",
+      currentStepIcon: "fa-solid fa-shield",
+      canGoBack: false,
+      canGoNext: true,
+      isReviewStep: false,
+      statusHint: "Ready",
+      atmosphereClass: "cc-atmosphere--forge",
+      chapterKey: "class",
+      hideStepIndicator: true,
+      hideShellHeader: true,
+      localProgress: {
+        current: 1,
+        total: 3,
+        label: "Step 1 of 3",
+        detail: "Choose the class that will shape the rest of the build.",
+        percent: 33,
+      },
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain('data-shell-layout="mounted-flow"');
+    expect(markup).toContain('data-footer-density="compact"');
+    expect(markup).toContain("Choose Your Class");
+    expect(markup).toContain("Step 1 of 2");
+    expect(markup).toContain("Ready");
+    expect(markup).not.toContain('data-wizard-footer-progress="true"');
+    expect(markup).not.toContain("Choose the class that will shape the rest of the build.");
   });
 
   it("renders the Lore chapter label for the final step", () => {
@@ -170,6 +264,95 @@ describe("WizardShell", () => {
 
     expect(markup).toContain("Lore");
     expect(markup).toContain('data-scene-key="binding"');
+  });
+
+  it("keeps the full footer layout on review even when shell chrome is otherwise hidden", () => {
+    const shellContext = {
+      steps: [
+        { id: "portrait", label: "Portrait", icon: "fa-solid fa-image", status: "complete", active: false, index: 0 },
+        { id: "review", label: "Review", icon: "fa-solid fa-stars", status: "pending", active: true, index: 1 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "review",
+      currentStepLabel: "Review & Create",
+      currentStepIcon: "fa-solid fa-stars",
+      canGoBack: true,
+      canGoNext: true,
+      isReviewStep: true,
+      statusHint: "Final pass",
+      atmosphereClass: "cc-atmosphere--gold",
+      chapterKey: "lore",
+      chapterSceneKey: "binding",
+      hideStepIndicator: true,
+      hideShellHeader: true,
+      localProgress: {
+        current: 8,
+        total: 8,
+        label: "Step 8 of 8",
+        detail: "Review the character before forging it.",
+        percent: 100,
+      },
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain('data-shell-layout="standard"');
+    expect(markup).toContain('data-footer-density="full"');
+    expect(markup).toContain('data-wizard-footer-detail="true"');
+    expect(markup).toContain('data-wizard-footer-progress="true"');
+    expect(markup).toContain("Forge Character");
+    expect(markup).toContain("Final pass");
+  });
+
+  it("renders compact-height hooks for the step rail and shell header chrome", () => {
+    const shellContext = {
+      steps: [
+        { id: "species", label: "Species", icon: "fa-solid fa-feather", status: "complete", active: true, index: 0 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "species",
+      currentStepLabel: "Species",
+      currentStepIcon: "fa-solid fa-feather",
+      canGoBack: true,
+      canGoNext: true,
+      isReviewStep: false,
+      statusHint: "Ready",
+      atmosphereClass: "cc-atmosphere--gold",
+      chapterKey: "species",
+      headerTitle: "Choose Your Species",
+      headerDescription: "Pick the lineage that anchors the rest of the character.",
+      localProgress: {
+        current: 2,
+        total: 8,
+        label: "Step 2 of 8",
+        detail: "Choose a species.",
+        percent: 25,
+      },
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain('data-wizard-steps="true"');
+    expect(markup).toContain('data-wizard-steps-title="true"');
+    expect(markup).toContain('data-wizard-steps-detail="true"');
+    expect(markup).toContain('data-wizard-step-button="true"');
+    expect(markup).toContain('data-wizard-step-icon="true"');
+    expect(markup).toContain('data-wizard-shell-header="true"');
+    expect(markup).toContain('data-wizard-shell-header-description="true"');
   });
 
   it("aggregates granular steps into the requested major-step sequence for shell progress", () => {

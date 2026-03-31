@@ -73,7 +73,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
   };
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2 md:px-5 md:pb-5 [@media(max-height:900px)]:px-2 [@media(max-height:900px)]:pb-2 [@media(max-height:900px)]:pt-1">
       <motion.div
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
         className="cc-theme-shell relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] p-[0.35rem]"
@@ -92,7 +92,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
             title={shellModel.hero.title}
           />
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 md:px-6 [@media(max-height:900px)]:px-2 [@media(max-height:900px)]:pb-3 [@media(max-height:900px)]:pt-2">
             <img
               alt=""
               aria-hidden="true"
@@ -108,7 +108,7 @@ export function ClassStepScreen({ shellContext, state, controller }: ReactWizard
               />
             </div>
 
-            <div className="relative z-10 mt-3 flex min-h-0 flex-1 flex-col">
+            <div className="relative z-10 mt-3 flex min-h-0 flex-1 flex-col [@media(max-height:900px)]:mt-2">
               <ClassSelectionGalleryPane
                 emptyState={<EmptyState message={emptyMessage} prefersReducedMotion={prefersReducedMotion} />}
                 entries={entries}
@@ -156,9 +156,10 @@ export function ClassAggregateStepper({
       className={cn(
         "fth-class-stepper relative mx-auto flex w-full flex-col border-b border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] text-[color:var(--cc-class-stepper-label-muted)]",
         isCompactLayout
-          ? "fth-class-stepper--compact max-w-4xl gap-3 pb-4"
-          : "fth-class-stepper--wide max-w-5xl gap-3 pb-4",
+          ? "fth-class-stepper--compact max-w-4xl gap-3 pb-4 [@media(max-height:900px)]:gap-2 [@media(max-height:900px)]:pb-2"
+          : "fth-class-stepper--wide max-w-5xl gap-3 pb-4 [@media(max-height:900px)]:gap-2 [@media(max-height:900px)]:pb-2",
       )}
+      data-class-stepper="true"
       data-layout-mode={layoutMode}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
       transition={{ delay: 0.14, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
@@ -185,7 +186,7 @@ export function ClassAggregateStepper({
           })}
         </div>
       ) : (
-        <div className="relative z-10 flex items-center justify-center gap-3">
+        <div className="relative z-10 flex items-center justify-center gap-3 [@media(max-height:900px)]:gap-2">
           <RailEndcap side="left" />
           {model.milestones.map((milestone, index) => (
             <div className="flex items-center gap-3" key={milestone.id}>
@@ -199,7 +200,8 @@ export function ClassAggregateStepper({
       {shouldRenderSubsteps ? (
         <motion.div
           animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-          className="relative z-10 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 pt-1"
+          className="relative z-10 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 pt-1 [@media(max-height:900px)]:hidden"
+          data-class-stepper-substeps="true"
           initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
           transition={{ delay: 0.2, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -233,7 +235,9 @@ function MilestoneNode({
       <span
         className={cn(
           "relative inline-flex items-center justify-center overflow-hidden rounded-full border shadow-[inset_0_1px_0_rgba(255,245,226,0.75),0_10px_18px_rgba(76,53,36,0.14)]",
-          compact ? "h-11 w-11 shrink-0 text-[0.9rem]" : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base",
+          compact
+            ? "h-11 w-11 shrink-0 text-[0.9rem] [@media(max-height:900px)]:h-10 [@media(max-height:900px)]:w-10"
+            : "h-10 w-10 text-sm md:h-12 md:w-12 md:text-base [@media(max-height:900px)]:h-9 [@media(max-height:900px)]:w-9 [@media(max-height:900px)]:text-[0.82rem]",
           getMilestoneClassName(milestone.status),
         )}
         title={milestone.label}
@@ -261,7 +265,9 @@ function MilestoneNode({
         <span
           className={cn(
             "relative z-10 inline-flex min-w-0 items-center rounded-full border px-2.5 py-1 shadow-[0_10px_22px_rgba(0,0,0,0.16)] backdrop-blur-sm",
-            compact ? "min-h-[2.85rem] w-full justify-center px-3.5 py-1.5 text-center leading-tight" : "min-h-[2.1rem] items-center",
+            compact
+              ? "min-h-[2.85rem] w-full justify-center px-3.5 py-1.5 text-center leading-tight [@media(max-height:900px)]:min-h-[2.4rem]"
+              : "min-h-[2.1rem] items-center [@media(max-height:900px)]:min-h-[1.85rem] [@media(max-height:900px)]:px-2 [@media(max-height:900px)]:py-0.5",
             getMilestoneLabelSurfaceClassName(milestone.status),
           )}
         >

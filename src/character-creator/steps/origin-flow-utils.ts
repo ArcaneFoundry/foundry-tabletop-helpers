@@ -27,6 +27,13 @@ function getClassSkillPoolKeys(state: WizardState): string[] {
   return dedupeSkillKeys(state.selections.class?.skillPool ?? []);
 }
 
+function getStoredClassSkillKeys(state: WizardState): string[] {
+  return dedupeSkillKeys([
+    ...(state.selections.skills?.chosen ?? []),
+    ...(state.selections.classChoices?.chosenSkills ?? []),
+  ]);
+}
+
 export function getOriginGrantedSkillKeys(state: WizardState): Set<string> {
   return new Set([
     ...(state.selections.background?.grants.skillProficiencies ?? []),
@@ -46,13 +53,14 @@ export function getAvailableClassSkillKeys(state: WizardState): string[] {
 
 export function getLegalClassSkillKeys(state: WizardState): string[] {
   const available = new Set(getAvailableClassSkillKeys(state));
-  return dedupeSkillKeys((state.selections.skills?.chosen ?? []).filter((skill) => available.has(skill)));
+  return dedupeSkillKeys(getStoredClassSkillKeys(state).filter((skill) => available.has(skill)));
 }
 
 export function applyLegalClassSkillSelections(state: WizardState, selectedSkills: string[]): string[] {
   const available = new Set(getAvailableClassSkillKeys(state));
   const nextChosenSkills = dedupeSkillKeys(selectedSkills.filter((skill) => available.has(skill)));
   state.selections.skills = { chosen: nextChosenSkills };
+  state.selections.classChoices = { chosenSkills: nextChosenSkills };
   return nextChosenSkills;
 }
 
@@ -111,7 +119,7 @@ export function getKnownOriginSkillKeys(state: WizardState): Set<string> {
 
 export function getBackgroundSkillConflictKeys(state: WizardState): string[] {
   const legalClassSkills = new Set(getAvailableClassSkillKeys(state));
-  return (state.selections.skills?.chosen ?? []).filter((skill) => !legalClassSkills.has(skill));
+  return getStoredClassSkillKeys(state).filter((skill) => !legalClassSkills.has(skill));
 }
 
 export function getRetainedClassSkillKeys(state: WizardState): string[] {

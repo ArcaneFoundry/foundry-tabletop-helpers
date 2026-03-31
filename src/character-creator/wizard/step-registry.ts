@@ -43,6 +43,7 @@ import { createReviewStep } from "../steps/step-review";
 /** Canonical step order. Steps not in this list sort to the end. */
 const STEP_ORDER = [
   "class",
+  "classChoices",
   "classExpertise",
   "classLanguages",
   "classTools",
@@ -60,7 +61,6 @@ const STEP_ORDER = [
   "backgroundLanguages",
   "originChoices",
   "originSummary",
-  "classChoices",
   "abilities",
   "feats",
   "spells",
@@ -183,6 +183,7 @@ export function createPlaceholderStep(
  */
 export function registerAllSteps(): void {
   registerStep(createClassStep());
+  registerStep(createClassChoicesStep());
   registerStep(createClassExpertiseStep());
   registerStep(createClassLanguagesStep());
   registerStep(createClassToolsStep());
@@ -199,7 +200,6 @@ export function registerAllSteps(): void {
   registerStep(createBackgroundLanguagesStep());
   registerStep(createOriginChoicesStep());
   registerStep(createOriginSummaryStep());
-  registerStep(createClassChoicesStep());
   registerStep(createWeaponMasteriesStep());
   registerStep(createAbilitiesStep());
   registerStep(createFeatsStep());

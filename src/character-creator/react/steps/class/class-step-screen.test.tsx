@@ -90,6 +90,11 @@ describe("ClassStepScreen", () => {
     );
 
     expect(markup).toContain('data-class-hero-banner="true"');
+    expect(markup).toContain('data-class-flow-hero="true"');
+    expect(markup).toContain('data-class-flow-hero-body="true"');
+    expect(markup).toContain('data-class-flow-hero-description="true"');
+    expect(markup).toContain('data-class-flow-hero-flourish="true"');
+    expect(markup).toContain('data-class-stepper="true"');
     expect(markup).toContain('data-tone="default"');
     expect(markup).toContain("cc-class-flow-hero-banner");
     expect(markup).toContain("Character Creation");
@@ -97,5 +102,8 @@ describe("ClassStepScreen", () => {
     expect(markup).toContain("Class Flow");
     expect(markup).toContain("Choose your class");
     expect(markup).toContain("Choose the class that sets your hero on the first steps of the build.");
+    expect(markup).toContain('data-class-flow-hero-description="true"');
+    expect(markup).toContain('[@media(max-height:900px)]:hidden');
+    expect(markup).toContain("fth-class-stepper--wide");
   });
 });

@@ -91,17 +91,13 @@ const SPELLCASTING_RULES: Record<string, SpellcastingRule> = {
   ranger: {
     id: "ranger",
     label: "Ranger",
-    mode: "known",
+    mode: "prepared",
     progression: "half",
     listIdentifier: "ranger",
-    replacementsPerLevel: 1,
+    replacementsPerLevel: 0,
     cantripsKnown: {
       1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 3,
       11: 3, 12: 3, 13: 3, 14: 3, 15: 3, 16: 3, 17: 3, 18: 3, 19: 3, 20: 3,
-    },
-    spellsKnown: {
-      1: 0, 2: 2, 3: 3, 4: 3, 5: 4, 6: 4, 7: 5, 8: 5, 9: 6, 10: 6,
-      11: 7, 12: 7, 13: 8, 14: 8, 15: 9, 16: 9, 17: 10, 18: 10, 19: 11, 20: 11,
     },
   },
   wizard: {
@@ -151,7 +147,9 @@ const SPELLCASTING_RULES: Record<string, SpellcastingRule> = {
     progression: "half",
     listIdentifier: "paladin",
     replacementsPerLevel: 0,
-    cantripsKnown: {},
+    cantripsKnown: {
+      1: 0,
+    },
   },
   artificer: {
     id: "artificer",

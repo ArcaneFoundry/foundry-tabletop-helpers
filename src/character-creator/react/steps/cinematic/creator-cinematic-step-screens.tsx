@@ -378,102 +378,117 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
 
   return (
     <ArcaneStepFrame scene="grimoire">
-      <ArcaneHero
-        eyebrow={viewModel.className}
-        title="Open the Grimoire"
-        description="Choose the invocations, rites, and prepared workings your character carries into their first venture."
-      />
-
-      <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.14fr)_minmax(21rem,0.86fr)]">
-        <ArcaneScrollPanel className="min-h-0">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <MicroLabel>Selection State</MicroLabel>
-            <ValueBadge>{viewModel.selectionSummary}</ValueBadge>
-          </div>
-          <p className="mt-4 font-fth-cc-body text-[0.95rem] leading-7 text-[#d4ccc6]">
-            {viewModel.sourceContextLabel ?? `Filtered to the ${viewModel.className} spell list.`}
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <MicroLabel>{viewModel.className}</MicroLabel>
+          <h2 className="cc-theme-title mt-2 font-fth-cc-display text-[clamp(1.8rem,3vw,2.7rem)] leading-[0.94]">
+            Choose Your Spells
+          </h2>
+          <p className="cc-theme-copy mt-2 max-w-3xl font-fth-cc-body text-[0.95rem] leading-6">
+            Expose the spell list first, then shape the exact cantrips, spells, and prepared workings your character carries.
           </p>
-          {viewModel.hasPreparationNotice ? (
-            <div className="mt-4 rounded-[1.2rem] border border-[#e9c176]/20 bg-[rgba(125,86,153,0.12)] px-4 py-3 font-fth-cc-body text-[0.98rem] leading-7 text-[#ded5eb]">
-              {viewModel.preparationNotice}
+        </div>
+        <div className="shrink-0">
+          <ValueBadge>{viewModel.selectionSummary}</ValueBadge>
+        </div>
+      </div>
+
+      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.14fr)_minmax(20rem,0.86fr)]">
+        <ArcaneScrollPanel className="flex min-h-0 flex-col overflow-hidden">
+          <div className="shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <MicroLabel>Selection State</MicroLabel>
+              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#b5abc7]">
+                {viewModel.cantripCount} cantrips • {viewModel.spellCount} spells
+              </div>
             </div>
-          ) : null}
-          <div className="mt-5 grid gap-3 rounded-[1.25rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4 md:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="flex items-center gap-3 rounded-full border border-white/10 bg-[rgba(0,0,0,0.18)] px-4 py-3 text-[#d8d0c7]">
-              <i className="fa-solid fa-magnifying-glass text-[0.8rem] text-[#e9c176]" />
-              <input
-                className="w-full bg-transparent font-fth-cc-body text-[0.96rem] outline-none placeholder:text-[#998fa8]"
-                onChange={(event) => setSearchText(event.target.value)}
-                placeholder={`Search the ${viewModel.spellListLabel ?? viewModel.className} list`}
-                type="text"
-                value={searchText}
-              />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <ModeToggleButton active={schoolFilter === ""} label="All Schools" onClick={() => setSchoolFilter("")} />
-              {(viewModel.schoolFilters ?? []).map((filter) => (
-                <ModeToggleButton
-                  active={schoolFilter === filter.value}
-                  key={filter.value}
-                  label={filter.label}
-                  onClick={() => setSchoolFilter(filter.value)}
+            <p className="mt-3 font-fth-cc-body text-[0.95rem] leading-7 text-[#d4ccc6]">
+              {viewModel.sourceContextLabel ?? `Filtered to the ${viewModel.className} spell list.`}
+            </p>
+            {viewModel.hasPreparationNotice ? (
+              <div className="mt-3 rounded-[1.2rem] border border-[#e9c176]/20 bg-[rgba(125,86,153,0.12)] px-4 py-3 font-fth-cc-body text-[0.98rem] leading-7 text-[#ded5eb]">
+                {viewModel.preparationNotice}
+              </div>
+            ) : null}
+            <div className="mt-4 grid gap-3 rounded-[1.25rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4 md:grid-cols-[minmax(0,1fr)_auto]">
+              <label className="flex items-center gap-3 rounded-full border border-white/10 bg-[rgba(0,0,0,0.18)] px-4 py-3 text-[#d8d0c7]">
+                <i className="fa-solid fa-magnifying-glass text-[0.8rem] text-[#e9c176]" />
+                <input
+                  className="w-full bg-transparent font-fth-cc-body text-[0.96rem] outline-none placeholder:text-[#998fa8]"
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder={`Search the ${viewModel.spellListLabel ?? viewModel.className} list`}
+                  type="text"
+                  value={searchText}
                 />
-              ))}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <ModeToggleButton active={schoolFilter === ""} label="All Schools" onClick={() => setSchoolFilter("")} />
+                {(viewModel.schoolFilters ?? []).map((filter) => (
+                  <ModeToggleButton
+                    active={schoolFilter === filter.value}
+                    key={filter.value}
+                    label={filter.label}
+                    onClick={() => setSchoolFilter(filter.value)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 
-          <SpellGroupSection
-            emptyMessage={normalizedQuery || schoolFilter
-              ? `No cantrips match the current filters for ${viewModel.className}.`
-              : `No cantrips are available for ${viewModel.className} from the enabled spell data right now.`}
-            entries={filteredCantrips}
-            onToggle={toggleCantrip}
-            onPreview={setPreviewUuid}
-            prefersReducedMotion={prefersReducedMotion}
-            selectedIds={new Set(selection.cantrips)}
-            subtitle={viewModel.maxCantrips !== null ? `${selection.cantrips.length} / ${viewModel.maxCantrips} chosen` : `${selection.cantrips.length} chosen`}
-            title="Cantrips"
-          />
+          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1" data-spell-chooser-scroll="true">
+            <SpellGroupSection
+              emptyMessage={normalizedQuery || schoolFilter
+                ? `No cantrips match the current filters for ${viewModel.className}.`
+                : `No cantrips are available for ${viewModel.className} from the enabled spell data right now.`}
+              entries={filteredCantrips}
+              onToggle={toggleCantrip}
+              onPreview={setPreviewUuid}
+              prefersReducedMotion={prefersReducedMotion}
+              selectedIds={new Set(selection.cantrips)}
+              subtitle={viewModel.maxCantrips !== null ? `${selection.cantrips.length} / ${viewModel.maxCantrips} chosen` : `${selection.cantrips.length} chosen`}
+              title="Cantrips"
+            />
 
-          <div className="mt-6 space-y-5">
-            {filteredSpellGroups.length > 0 ? filteredSpellGroups.map((group) => (
-              <SpellGroupSection
-                entries={group.spells}
-                key={group.level}
-                onToggle={toggleSpell}
-                onTogglePrepared={usesPreparedPicker ? togglePrepared : undefined}
-                onPreview={setPreviewUuid}
-                preparedIds={new Set(selection.preparedSpells ?? [])}
-                prefersReducedMotion={prefersReducedMotion}
-                selectedIds={new Set(selection.spells)}
-                subtitle={usesPreparedPicker
-                  ? `${group.spells.filter((spell) => selection.preparedSpells?.includes(spell.uuid)).length} prepared`
-                  : `${group.spells.filter((spell) => selection.spells.includes(spell.uuid)).length} selected`}
-                title={group.label}
-              />
-            )) : (
-              <section>
-                <div className="flex items-center justify-between gap-3">
-                  <MicroLabel>Leveled Spells</MicroLabel>
-                  <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
-                    {normalizedQuery || schoolFilter ? "No filtered entries" : "No valid entries"}
+            <div className="mt-6 space-y-5">
+              {filteredSpellGroups.length > 0 ? filteredSpellGroups.map((group) => (
+                <SpellGroupSection
+                  entries={group.spells}
+                  key={group.level}
+                  onToggle={toggleSpell}
+                  onTogglePrepared={usesPreparedPicker ? togglePrepared : undefined}
+                  onPreview={setPreviewUuid}
+                  preparedIds={new Set(selection.preparedSpells ?? [])}
+                  prefersReducedMotion={prefersReducedMotion}
+                  selectedIds={new Set(selection.spells)}
+                  subtitle={usesPreparedPicker
+                    ? `${group.spells.filter((spell) => selection.preparedSpells?.includes(spell.uuid)).length} prepared`
+                    : `${group.spells.filter((spell) => selection.spells.includes(spell.uuid)).length} selected`}
+                  title={group.label}
+                />
+              )) : (
+                <section>
+                  <div className="flex items-center justify-between gap-3">
+                    <MicroLabel>Leveled Spells</MicroLabel>
+                    <div className="font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em] text-[#a89fbe]">
+                      {normalizedQuery || schoolFilter ? "No filtered entries" : "No valid entries"}
+                    </div>
                   </div>
-                </div>
-                <div className="mt-4">
-                  <ArcaneEmptyState
-                    compact
-                    message={normalizedQuery || schoolFilter
-                      ? `No leveled spells match the current filters for ${viewModel.className}.`
-                      : `No leveled spells are available for ${viewModel.className} from the enabled spell data right now.`}
-                  />
-                </div>
-              </section>
-            )}
+                  <div className="mt-4">
+                    <ArcaneEmptyState
+                      compact
+                      message={normalizedQuery || schoolFilter
+                        ? `No leveled spells match the current filters for ${viewModel.className}.`
+                        : `No leveled spells are available for ${viewModel.className} from the enabled spell data right now.`}
+                    />
+                  </div>
+                </section>
+              )}
+            </div>
           </div>
         </ArcaneScrollPanel>
 
-        <ArcaneInspectorPanel title="Prepared Workings" eyebrow={viewModel.className}>
-          <div className="space-y-4">
+        <ArcaneInspectorPanel className="flex min-h-0 flex-col overflow-hidden" title="Prepared Workings" eyebrow={viewModel.className}>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             <ValueBadge>{selection.cantrips.length} cantrips • {selection.spells.length} spells</ValueBadge>
             <div className="rounded-[1.2rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4">
               <MicroLabel>Spell Preview</MicroLabel>
@@ -1216,7 +1231,7 @@ function ArcaneStepFrame({
 }) {
   return (
     <section
-      className="arcane-step-frame flex flex-col px-4 pb-4 pt-3 md:px-6 md:pb-6"
+      className="arcane-step-frame flex min-h-full flex-col px-4 pb-4 pt-3 md:px-6 md:pb-6"
       data-scene={scene}
     >
       {children}
@@ -1274,13 +1289,19 @@ function ArcaneInspectorPanel({
   eyebrow,
   title,
   children,
+  className,
 }: {
   eyebrow?: string;
   title: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <aside className="cc-theme-panel cc-theme-panel--soft rounded-[1.7rem] border p-5 backdrop-blur-xl">
+    <aside className={cn(
+      "cc-theme-panel cc-theme-panel--soft rounded-[1.7rem] border p-5 backdrop-blur-xl",
+      className,
+    )}
+    >
       {eyebrow ? <MicroLabel>{eyebrow}</MicroLabel> : null}
       <div className="cc-theme-title mt-3 font-fth-cc-display text-[1.7rem] leading-tight">{title}</div>
       <div className="mt-5">{children}</div>

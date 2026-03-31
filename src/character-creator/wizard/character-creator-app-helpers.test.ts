@@ -155,6 +155,26 @@ describe("character creator app helpers", () => {
     expect(context.chapterAccentToken).toBe(expectedAccent);
   });
 
+  it("defaults mounted class-flow steps to hidden shell chrome", async () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("class", {
+        label: "Class",
+        icon: "fa-solid fa-shield",
+        renderMode: "react",
+      }),
+    ]);
+
+    const context = await buildWizardShellContext(
+      machine,
+      machine.currentStepDef,
+      async (_path, data) => `<div>${String(data.stepTitle ?? "")}</div>`,
+      () => "cc-atmosphere--forge",
+    );
+
+    expect(context.hideStepIndicator).toBe(true);
+    expect(context.hideShellHeader).toBe(true);
+  });
+
   it("patches nav and step indicator state", () => {
     const machine = new WizardStateMachine(makeConfig(), [
       makeStep("species", {

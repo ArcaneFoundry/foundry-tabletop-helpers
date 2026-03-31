@@ -307,6 +307,9 @@ export function createSpellsStep(): WizardStepDefinition {
       const usingClassFilter = cachedSpellUuids !== null;
 
       return {
+        hideStepIndicator: true,
+        hideShellHeader: true,
+        shellContentClass: "cc-step-content--build-flow",
         cantrips,
         cantripCount: data.cantrips.length,
         maxCantrips: entitlements.maxCantrips,

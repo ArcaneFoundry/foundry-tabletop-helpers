@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import type {
@@ -182,6 +182,70 @@ const CC_TEXT_HERO = "text-[color:var(--cc-text-hero)]";
 const CC_TEXT_PRIMARY = "text-[color:var(--cc-text-primary)]";
 const CC_TEXT_SECONDARY = "text-[color:var(--cc-text-secondary)]";
 const CC_TEXT_KICKER = "text-[color:var(--cc-text-kicker)]";
+const CC_MOUNTED_PANEL_STYLE: CSSProperties = {
+  borderColor: "var(--cc-mounted-panel-border)",
+  backgroundImage: "var(--cc-mounted-panel-image)",
+};
+const CC_MOUNTED_FRAME_STYLE: CSSProperties = {
+  borderColor: "var(--cc-mounted-frame-border)",
+  backgroundImage: "var(--cc-mounted-frame-image)",
+};
+const CC_MOUNTED_BADGE_STYLE: CSSProperties = {
+  borderColor: "var(--cc-mounted-badge-border)",
+  backgroundImage: "var(--cc-mounted-badge-image)",
+};
+const CC_MOUNTED_MUTED_BADGE_STYLE: CSSProperties = {
+  borderColor: "var(--cc-mounted-muted-badge-border)",
+  backgroundImage: "var(--cc-mounted-muted-badge-image)",
+};
+const CC_MOUNTED_PROGRESS_TRACK_STYLE: CSSProperties = {
+  background: "var(--cc-mounted-progress-track)",
+};
+const CC_MOUNTED_IMAGE_FRAME_STYLE: CSSProperties = {
+  borderColor: "var(--cc-mounted-image-frame-border)",
+};
+const CC_MOUNTED_IMAGE_SCRIM_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-mounted-image-scrim)",
+};
+const CC_MOUNTED_EMBOSS_STYLE: CSSProperties = {
+  boxShadow: "inset 0 1px 0 var(--cc-mounted-emboss)",
+};
+
+function getMountedCardSurfaceStyle(selected = false): CSSProperties {
+  return selected
+    ? {
+      borderColor: "var(--cc-mounted-card-selected-border)",
+      backgroundImage: "var(--cc-mounted-card-selected-image)",
+    }
+    : {
+      borderColor: "var(--cc-mounted-card-border)",
+      backgroundImage: "var(--cc-mounted-card-image)",
+    };
+}
+
+function getMountedIconSurfaceStyle(selected = false): CSSProperties {
+  return selected
+    ? {
+      borderColor: "var(--cc-mounted-icon-active-border)",
+      backgroundImage: "var(--cc-mounted-icon-active-image)",
+    }
+    : {
+      borderColor: "var(--cc-mounted-card-border)",
+      backgroundImage: "var(--cc-mounted-card-image)",
+    };
+}
+
+function getMountedSigilSurfaceStyle(selected = false): CSSProperties {
+  return selected
+    ? {
+      borderColor: "var(--cc-mounted-sigil-active-border)",
+      backgroundImage: "var(--cc-mounted-sigil-active-image)",
+    }
+    : {
+      borderColor: "var(--cc-mounted-sigil-border)",
+      backgroundImage: "var(--cc-mounted-sigil-image)",
+    };
+}
 
 function sameKeys(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((entry, index) => entry === right[index]);
@@ -628,13 +692,13 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   const masteryGroupStyles = [
     {
       label: "Simple Weapons",
-      pillClass: `border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] ${CC_TEXT_HERO}`,
-      panelClass: "border-[#8c6a47]/30 bg-[linear-gradient(180deg,rgba(75,49,34,0.28),rgba(28,22,17,0.14))]",
+      pillClass: `cc-theme-badge ${CC_TEXT_HERO}`,
+      panelTone: "simple",
     },
     {
       label: "Martial Weapons",
-      pillClass: `border-[#4f6478]/75 bg-[linear-gradient(180deg,#36424f_0%,#1f2832_100%)] ${CC_TEXT_SECONDARY}`,
-      panelClass: "border-[#4f6478]/28 bg-[linear-gradient(180deg,rgba(40,53,67,0.26),rgba(20,26,34,0.14))]",
+      pillClass: `cc-theme-badge cc-theme-badge--muted ${CC_TEXT_PRIMARY}`,
+      panelTone: "martial",
     },
   ] as const;
 
@@ -719,8 +783,9 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   return (
     <div className="cc-class-choice-layout cc-class-choice-layout--weapon-masteries">
       <section
-        className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]"
+        className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border p-4 shadow-[0_24px_44px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
         data-weapon-mastery-options-panel="true"
+        style={CC_MOUNTED_PANEL_STYLE}
       >
         {viewModel.weaponMasterySection.hasChoices ? (
           <div className="cc-class-choice-layout__content-scroll flex flex-col px-1 pb-3 pt-2 pr-2">
@@ -728,10 +793,10 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
               className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1"
               data-weapon-mastery-progress="true"
             >
-              <div className={cn("inline-flex items-center rounded-full border border-[#8c6a47]/55 bg-[linear-gradient(180deg,rgba(91,61,43,0.38),rgba(48,33,24,0.24))] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] shadow-[0_10px_18px_rgba(47,29,18,0.14)]", CC_TEXT_SECONDARY)}>
+              <div className={cn("inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em] shadow-[0_10px_18px_color-mix(in_srgb,var(--cc-bg-base)_12%,transparent)]", CC_TEXT_SECONDARY)} style={CC_MOUNTED_BADGE_STYLE}>
                 Simple first, Martial second
               </div>
-              <div className={cn("inline-flex items-center gap-2 rounded-full border border-[#e9c176]/20 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 shadow-[0_10px_18px_rgba(0,0,0,0.14)]", CC_TEXT_HERO)}>
+              <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-[0_10px_18px_color-mix(in_srgb,var(--cc-bg-base)_12%,transparent)]", CC_TEXT_HERO)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
                 <span className={cn("font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]", CC_TEXT_SECONDARY)}>Progress</span>
                 <span className={cn("font-fth-cc-display text-[1rem] uppercase tracking-[0.08em]", CC_TEXT_HERO)}>
                   {selectedEntries.length} / {maxCount}
@@ -742,21 +807,23 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
             <div className="mt-4 grid gap-4">
               {groupedOptions.map((group, groupIndex) => (
                 <section
-                  className={cn("grid gap-2.5 rounded-[1.35rem] border p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]", masteryGroupStyles.find((pill) => pill.label === group.label)?.panelClass)}
+                  className="cc-theme-choice-group grid gap-2.5 rounded-[1.35rem] border p-3"
                   data-weapon-mastery-group={group.label}
+                  data-tone={masteryGroupStyles.find((pill) => pill.label === group.label)?.panelTone}
                   key={group.label}
                 >
                   <div className="flex items-center gap-3 px-1">
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] shadow-[0_10px_18px_rgba(47,29,18,0.14)]",
+                        "inline-flex items-center rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em]",
                         masteryGroupStyles.find((pill) => pill.label === group.label)?.pillClass,
                       )}
+                      style={group.label === "Martial Weapons" ? CC_MOUNTED_MUTED_BADGE_STYLE : CC_MOUNTED_BADGE_STYLE}
                     >
                       {group.label}
                     </span>
-                    <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(202,173,125,0.5),rgba(202,173,125,0.12))]" />
-                    <span className={cn("inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)}>
+                    <span className="cc-theme-choice-divider h-px flex-1" />
+                    <span className={cn("cc-theme-badge cc-theme-badge--muted inline-flex items-center rounded-full px-2.5 py-1 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
                       {group.entries.length} options
                     </span>
                   </div>
@@ -776,7 +843,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
             </div>
           </div>
         ) : (
-          <div className={cn("mt-4 rounded-[1.1rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-5 font-fth-cc-body", CC_TEXT_SECONDARY)}>
+          <div className={cn("mt-4 rounded-[1.1rem] border border-dashed px-4 py-5 font-fth-cc-body", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
             {viewModel.weaponMasterySection.emptyMessage}
           </div>
         )}
@@ -836,13 +903,13 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
 
   return (
     <div className="cc-class-choice-layout">
-      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
-        <div className="border-b border-white/10 pb-4">
+      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border p-4 shadow-[0_24px_44px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
+        <div className="border-b pb-4" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className={cn("inline-flex items-center rounded-full border border-[#8c6a47]/75 bg-[linear-gradient(180deg,#5b3d2b_0%,#3a271b_100%)] px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] shadow-[0_10px_18px_rgba(47,29,18,0.14)]", CC_TEXT_HERO)}>
+            <span className={cn("inline-flex items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] shadow-[0_10px_18px_color-mix(in_srgb,var(--cc-bg-base)_12%,transparent)]", CC_TEXT_HERO)} style={CC_MOUNTED_BADGE_STYLE}>
               {paneCopy.eyebrow}
             </span>
-            <span className={cn("rounded-full border border-[#e9c176]/18 bg-[rgba(233,193,118,0.08)] px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.16em]", CC_TEXT_SECONDARY)}>
+            <span className={cn("rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.65rem] uppercase tracking-[0.16em]", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
               {paneCopy.statusLabel}
             </span>
           </div>
@@ -855,7 +922,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
                 {viewModel.description}
               </p>
             </div>
-            <div className="rounded-[1rem] border border-[#e9c176]/18 bg-[rgba(233,193,118,0.08)] px-4 py-3 text-right shadow-[0_14px_24px_rgba(0,0,0,0.12)]">
+            <div className="rounded-[1rem] border px-4 py-3 text-right shadow-[0_14px_24px_color-mix(in_srgb,var(--cc-bg-base)_10%,transparent)]" style={CC_MOUNTED_BADGE_STYLE}>
               <div className={cn("font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.2em]", CC_TEXT_SECONDARY)}>
                 {paneCopy.summaryLabel}
               </div>
@@ -961,7 +1028,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
 
   return (
     <div className="cc-class-choice-layout">
-      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,32,39,0.94),rgba(18,18,24,0.98))] p-4 shadow-[0_24px_44px_rgba(0,0,0,0.22)]">
+      <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border p-4 shadow-[0_24px_44px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
         <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-4">
             {viewModel.requirements.map((requirement, groupIndex) => {
@@ -974,11 +1041,12 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
               const selectedCount = selectedSet.size;
               return (
                 <section
-                  className="cc-class-item-choice-group rounded-[1.35rem] border border-[#e9c176]/[0.14] bg-[linear-gradient(180deg,rgba(31,26,24,0.98),rgba(18,15,15,0.99))] p-4 shadow-[inset_0_1px_0_rgba(255,240,219,0.03),0_18px_34px_rgba(0,0,0,0.18)]"
+                  className="cc-class-item-choice-group cc-theme-choice-group rounded-[1.35rem] border p-4 shadow-[0_18px_34px_color-mix(in_srgb,var(--cc-bg-base)_14%,transparent)]"
                   data-class-item-choice-group={requirement.id}
                   key={requirement.id}
+                  style={{ ...CC_MOUNTED_FRAME_STYLE, ...CC_MOUNTED_EMBOSS_STYLE }}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#e9c176]/[0.12] pb-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
                     <div className="min-w-0 max-w-3xl">
                       <div className={cn("font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.26em]", CC_TEXT_SECONDARY)}>
                         Group {groupIndex + 1}
@@ -992,7 +1060,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
                     </div>
 
                     <div className="flex shrink-0 flex-col items-end gap-2">
-                      <div className={cn("inline-flex whitespace-nowrap rounded-full border border-[#e9c176]/[0.16] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em]", CC_TEXT_HERO)}>
+                      <div className={cn("inline-flex whitespace-nowrap rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.63rem] uppercase tracking-[0.22em]", CC_TEXT_HERO)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
                         {selectedCount >= requirement.requiredCount
                           ? "Ready"
                           : `${selectedCount} / ${requirement.requiredCount}`}
@@ -1076,7 +1144,7 @@ function SkillOptionRow({
           option.checked && "cc-theme-icon-chip--active",
         )}
       >
-        <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border" style={{ borderColor: "var(--cc-mounted-frame-border)" }} />
         <i className={cn("fa-solid", option.iconClass)} aria-hidden="true" />
       </span>
       <span className="min-w-0">
@@ -1091,7 +1159,7 @@ function SkillOptionRow({
           option.checked && "cc-theme-sigil--selected",
         )}
       >
-        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border" style={{ borderColor: "var(--cc-mounted-frame-border)" }} />
         {option.checked ? <span>{PROFICIENCY_BONUS}</span> : <i className="fa-solid fa-hexagon" aria-hidden="true" />}
       </span>
     </motion.button>
@@ -1115,10 +1183,11 @@ function AdvancementSummaryCard({
 }) {
   return (
     <section
-      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
-      style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
+      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
+      data-choice-summary-card="true"
+      style={{ ...CC_MOUNTED_PANEL_STYLE, boxShadow: `0 22px 40px color-mix(in srgb, var(--cc-bg-base) 18%, transparent), 0 0 22px ${glow}` }}
     >
-      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4", CC_TEXT_PRIMARY)}>
+      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>{title}</div>
@@ -1128,16 +1197,16 @@ function AdvancementSummaryCard({
             </div>
             <div className={cn("cc-theme-body mt-2 font-fth-cc-body text-[1rem]", CC_TEXT_SECONDARY)}>{label}</div>
           </div>
-          <div className={cn("cc-theme-badge cc-theme-badge--muted inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]", CC_TEXT_HERO)}>
+          <div className={cn("cc-theme-badge cc-theme-badge--muted inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]", CC_TEXT_HERO)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
             {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
           </div>
         </div>
-        <div className="cc-theme-progress-track mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+        <div className="cc-theme-progress-track mt-3 h-2 overflow-hidden rounded-full" style={CC_MOUNTED_PROGRESS_TRACK_STYLE}>
           <div
             className="cc-theme-progress-fill h-full rounded-full"
             style={{
               width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
-              background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
+              background: `linear-gradient(90deg, color-mix(in srgb, var(--cc-action-primary-bright) 88%, white 12%), ${glow})`,
             }}
           />
         </div>
@@ -1163,10 +1232,11 @@ function SelectionSummaryCard({
   if (compact) {
     return (
       <section
-        className="cc-theme-panel overflow-hidden rounded-[1.3rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
-        style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
+        className="cc-theme-panel overflow-hidden rounded-[1.3rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
+        data-choice-summary-card="true"
+        style={{ ...CC_MOUNTED_PANEL_STYLE, boxShadow: `0 22px 40px color-mix(in srgb, var(--cc-bg-base) 18%, transparent), 0 0 22px ${glow}` }}
       >
-        <div className={cn("cc-theme-shell-inner rounded-[1.02rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-3", CC_TEXT_PRIMARY)}>
+        <div className={cn("cc-theme-shell-inner rounded-[1.02rem] border px-4 py-3", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>{title}</div>
@@ -1178,12 +1248,12 @@ function SelectionSummaryCard({
               {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
             </div>
           </div>
-          <div className="cc-theme-progress-track mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+          <div className="cc-theme-progress-track mt-3 h-1.5 overflow-hidden rounded-full" style={CC_MOUNTED_PROGRESS_TRACK_STYLE}>
             <div
               className="cc-theme-progress-fill h-full rounded-full"
               style={{
                 width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
-                background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
+                background: `linear-gradient(90deg, color-mix(in srgb, var(--cc-action-primary-bright) 88%, white 12%), ${glow})`,
               }}
             />
           </div>
@@ -1194,10 +1264,11 @@ function SelectionSummaryCard({
 
   return (
     <section
-      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]"
-      style={{ boxShadow: `0 22px 40px rgba(0,0,0,0.28), 0 0 22px ${glow}` }}
+      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
+      data-choice-summary-card="true"
+      style={{ ...CC_MOUNTED_PANEL_STYLE, boxShadow: `0 22px 40px color-mix(in srgb, var(--cc-bg-base) 18%, transparent), 0 0 22px ${glow}` }}
     >
-      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4", CC_TEXT_PRIMARY)}>
+      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>{title}</div>
@@ -1206,16 +1277,16 @@ function SelectionSummaryCard({
               <span className="ml-1 text-[1rem] opacity-75">/ {maxCount}</span>
             </div>
           </div>
-          <div className={cn("cc-theme-badge cc-theme-badge--muted inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]", CC_TEXT_HERO)}>
+          <div className={cn("cc-theme-badge cc-theme-badge--muted inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.62rem] uppercase tracking-[0.18em]", CC_TEXT_HERO)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
             {selectedCount >= maxCount ? "Ready" : `${Math.max(0, maxCount - selectedCount)} left`}
           </div>
         </div>
-        <div className="cc-theme-progress-track mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+        <div className="cc-theme-progress-track mt-3 h-2 overflow-hidden rounded-full" style={CC_MOUNTED_PROGRESS_TRACK_STYLE}>
           <div
             className="cc-theme-progress-fill h-full rounded-full"
             style={{
               width: `${maxCount > 0 ? (selectedCount / maxCount) * 100 : 0}%`,
-              background: `linear-gradient(90deg, rgba(247,214,145,0.92), ${glow})`,
+              background: `linear-gradient(90deg, color-mix(in srgb, var(--cc-action-primary-bright) 88%, white 12%), ${glow})`,
             }}
             />
           </div>
@@ -1244,9 +1315,6 @@ function ClassAdvancementOptionRow({
       aria-pressed={option.checked}
       className={cn(
         "group relative grid w-full grid-cols-[3rem_minmax(0,1fr)_4.75rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-3 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition",
-        option.checked
-          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.64),rgba(36,31,24,0.96))]"
-          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]",
         "cc-theme-card cc-theme-card--interactive",
         option.checked && "cc-theme-card--selected",
         option.disabled && !option.checked && "opacity-60",
@@ -1256,6 +1324,7 @@ function ClassAdvancementOptionRow({
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.id)}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      style={getMountedCardSurfaceStyle(option.checked)}
       type="button"
       whileHover={
         prefersReducedMotion || (option.disabled && !option.checked)
@@ -1267,12 +1336,13 @@ function ClassAdvancementOptionRow({
       <span
         className={cn(
           "relative flex h-11 w-11 items-center justify-center rounded-[0.85rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-          option.checked ? `border-[#e9c176]/52 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)] ${CC_TEXT_HERO}` : `border-white/12 bg-[rgba(255,255,255,0.04)] ${CC_TEXT_HERO}`,
+          CC_TEXT_HERO,
           "cc-theme-icon-chip",
           option.checked && "cc-theme-icon-chip--active",
         )}
+        style={getMountedIconSurfaceStyle(option.checked)}
       >
-        <span className="pointer-events-none absolute inset-[2px] rounded-[0.7rem] border border-white/20" />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.7rem] border" style={{ borderColor: "var(--cc-mounted-frame-border)" }} />
         <i className={cn(option.iconClass ?? "fa-solid fa-sparkles", "relative z-10 text-base")} aria-hidden="true" />
       </span>
       <span className="min-w-0">
@@ -1288,14 +1358,13 @@ function ClassAdvancementOptionRow({
       <span
         className={cn(
           "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border px-3 font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.12em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-          option.checked
-            ? `border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] ${CC_TEXT_HERO}`
-            : `border-white/10 bg-[rgba(255,255,255,0.03)] ${CC_TEXT_SECONDARY}`,
+          option.checked ? CC_TEXT_HERO : CC_TEXT_SECONDARY,
           "cc-theme-sigil",
           option.checked && "cc-theme-sigil--selected",
         )}
+        style={getMountedSigilSurfaceStyle(option.checked)}
       >
-        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border" style={{ borderColor: "var(--cc-mounted-frame-border)" }} />
         {option.checked ? (
           <i className="fa-solid fa-check" aria-hidden="true" />
         ) : (
@@ -1316,18 +1385,19 @@ function ClassAdvancementSelectedCard({
   emptyMessage: string;
 }) {
   return (
-    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4", CC_TEXT_PRIMARY)}>
-        <div className="border-b border-white/10 pb-3 text-center">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
+      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
+        <div className="border-b pb-3 text-center" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
           <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>{title}</div>
         </div>
         <div className="mt-4 grid gap-2.5">
           {entries.length > 0 ? entries.map((entry) => (
             <div
-              className="cc-theme-card flex flex-wrap items-center gap-2 rounded-[0.95rem] border border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-3"
+              className="cc-theme-card flex flex-wrap items-center gap-2 rounded-[0.95rem] border px-3 py-3"
               key={entry.id ?? entry.key ?? entry.label}
+              style={getMountedCardSurfaceStyle()}
             >
-              <span className={cn("cc-theme-icon-chip cc-theme-icon-chip--active inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[linear-gradient(180deg,#f0ca81_0%,#8f6427_100%)]", CC_TEXT_HERO)}>
+              <span className={cn("cc-theme-icon-chip cc-theme-icon-chip--active inline-flex h-10 w-10 items-center justify-center rounded-full border", CC_TEXT_HERO)} style={getMountedIconSurfaceStyle(true)}>
                 <i className={cn(entry.iconClass ?? "fa-solid fa-sparkles", "text-sm")} aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
@@ -1338,7 +1408,7 @@ function ClassAdvancementSelectedCard({
               </span>
             </div>
           )) : (
-            <div className={cn("cc-theme-empty rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm", CC_TEXT_SECONDARY)}>
+            <div className={cn("cc-theme-empty rounded-[0.95rem] border border-dashed px-3 py-4 text-center font-fth-cc-body text-sm", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
               {emptyMessage}
             </div>
           )}
@@ -1397,9 +1467,6 @@ function WeaponMasteryRow({
       aria-pressed={option.checked}
       className={cn(
         "group relative grid w-full grid-cols-[4.15rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition md:px-4",
-        option.checked
-          ? "border-[#e9c176]/42 bg-[linear-gradient(180deg,rgba(77,62,38,0.72),rgba(36,31,24,0.98))] shadow-[0_16px_28px_rgba(0,0,0,0.24)]"
-          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))]",
         "cc-theme-card cc-theme-card--interactive",
         option.checked && "cc-theme-card--selected",
         option.disabled && !option.checked && "opacity-60",
@@ -1409,6 +1476,7 @@ function WeaponMasteryRow({
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.id)}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      style={getMountedCardSurfaceStyle(option.checked)}
       type="button"
       whileHover={
         prefersReducedMotion || (option.disabled && !option.checked)
@@ -1420,22 +1488,22 @@ function WeaponMasteryRow({
       <span
         className={cn(
           "relative flex h-12 w-12 overflow-hidden rounded-[0.8rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-          option.checked ? "border-[#e9c176]/52" : "border-white/12",
         )}
+        style={CC_MOUNTED_IMAGE_FRAME_STYLE}
       >
         <img alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" src={option.img} />
-        <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,236,0.12),rgba(16,10,7,0.22))]" />
-        <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border border-white/10" />
+        <span className="pointer-events-none absolute inset-0" style={CC_MOUNTED_IMAGE_SCRIM_STYLE} />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.65rem] border" style={{ borderColor: "var(--cc-mounted-frame-border)" }} />
       </span>
       <span className="min-w-0">
         <span className={cn("cc-theme-body block truncate font-fth-cc-body text-[1.02rem] font-semibold leading-6", CC_TEXT_PRIMARY)}>
           {option.name}
         </span>
         <span className="mt-0.5 flex flex-wrap gap-1.5">
-        <span className={cn("cc-theme-pill--muted inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)}>
+        <span className={cn("cc-theme-pill--muted inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
             {formatWeaponTypeBadge(option.weaponType)}
           </span>
-        <span className={cn("cc-theme-pill inline-flex items-center rounded-full border border-[#e9c176]/20 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_HERO)}>
+        <span className={cn("cc-theme-pill inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_HERO)} style={CC_MOUNTED_BADGE_STYLE}>
             {option.mastery}
           </span>
         </span>
@@ -1443,14 +1511,13 @@ function WeaponMasteryRow({
       <span
         className={cn(
           "relative flex h-10 w-12 items-center justify-center rounded-[0.75rem] border font-fth-cc-ui text-[0.88rem] uppercase tracking-[0.08em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-          option.checked
-            ? `border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)] ${CC_TEXT_HERO}`
-            : `border-white/10 bg-[rgba(255,255,255,0.03)] ${CC_TEXT_SECONDARY}`,
+          option.checked ? CC_TEXT_HERO : CC_TEXT_SECONDARY,
           "cc-theme-sigil",
           option.checked && "cc-theme-sigil--selected",
         )}
+        style={getMountedSigilSurfaceStyle(option.checked)}
       >
-        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border border-white/10" />
+        <span className="pointer-events-none absolute inset-[2px] rounded-[0.6rem] border" style={{ borderColor: "var(--cc-mounted-frame-border)" }} />
         {option.checked ? <i className="fa-solid fa-check" aria-hidden="true" /> : <i className="fa-solid fa-hexagon" aria-hidden="true" />}
       </span>
     </motion.button>
@@ -1459,9 +1526,9 @@ function WeaponMasteryRow({
 
 function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMasteryChoiceOption[] }) {
   return (
-    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4", CC_TEXT_PRIMARY)}>
-        <div className="border-b border-white/10 pb-3 text-center">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
+      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
+        <div className="border-b pb-3 text-center" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
           <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>Chosen Weapons</div>
           <div className={cn("cc-theme-body-muted mt-2 font-fth-cc-body text-[0.82rem] leading-5", CC_TEXT_SECONDARY)}>
             Weapons you have already mastered in this class path.
@@ -1470,22 +1537,23 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
         <div className="mt-4 grid gap-2.5">
           {selectedEntries.length > 0 ? selectedEntries.map((entry) => (
             <div
-              className="cc-theme-card grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] px-2.5 py-2.5 shadow-[0_10px_18px_rgba(0,0,0,0.1)]"
+              className="cc-theme-card grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[1rem] border px-2.5 py-2.5 shadow-[0_10px_18px_color-mix(in_srgb,var(--cc-bg-base)_10%,transparent)]"
               key={entry.id}
+              style={getMountedCardSurfaceStyle()}
             >
-              <span className="overflow-hidden rounded-[0.8rem] border border-[#e9c176]/20">
+              <span className="overflow-hidden rounded-[0.8rem] border" style={CC_MOUNTED_IMAGE_FRAME_STYLE}>
                 <img alt="" aria-hidden="true" className="h-10 w-10 object-cover" loading="lazy" src={entry.img} />
               </span>
               <span className="min-w-0">
                 <span className={cn("cc-theme-body block truncate font-fth-cc-body text-[1rem] font-semibold", CC_TEXT_PRIMARY)}>{entry.name}</span>
                 <span className={cn("cc-theme-kicker font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)}>{entry.mastery}</span>
               </span>
-              <span className={cn("cc-theme-sigil cc-theme-sigil--selected inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#e9c176]/42 bg-[rgba(233,193,118,0.14)]", CC_TEXT_HERO)}>
+              <span className={cn("cc-theme-sigil cc-theme-sigil--selected inline-flex h-8 w-8 items-center justify-center rounded-full border", CC_TEXT_HERO)} style={getMountedSigilSurfaceStyle(true)}>
                 <i className="fa-solid fa-check" aria-hidden="true" />
               </span>
             </div>
           )) : (
-            <div className={cn("cc-theme-empty rounded-[0.95rem] border border-dashed border-white/10 bg-[rgba(255,255,255,0.03)] px-3 py-4 text-center font-fth-cc-body text-sm", CC_TEXT_SECONDARY)}>
+            <div className={cn("cc-theme-empty rounded-[0.95rem] border border-dashed px-3 py-4 text-center font-fth-cc-body text-sm", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
               No weapon masteries chosen yet.
             </div>
           )}
@@ -1497,9 +1565,9 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
 
 function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] }) {
   return (
-    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border border-[#e9c176]/18 bg-[linear-gradient(180deg,rgba(38,34,42,0.98),rgba(17,17,22,0.99))] p-[0.28rem] shadow-[0_22px_40px_rgba(0,0,0,0.28)]">
-      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border border-white/10 bg-[linear-gradient(180deg,rgba(33,30,37,0.98),rgba(15,15,20,0.98))] px-4 py-4", CC_TEXT_PRIMARY)}>
-        <div className="border-b border-white/10 pb-3 text-center">
+    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
+      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
+        <div className="border-b pb-3 text-center" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
           <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>Mastery Techniques</div>
           <div className={cn("cc-theme-body-muted mt-2 font-fth-cc-body text-[0.82rem] leading-5", CC_TEXT_SECONDARY)}>
             Reference the technique each selected weapon unlocks.
@@ -1510,21 +1578,20 @@ function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] })
             <div
               className={cn(
                 "grid grid-cols-[2.1rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 rounded-[1rem] border px-3 py-3",
-                entry.sourceWeapons.length > 0
-                  ? "border-[#e9c176]/22 bg-[rgba(233,193,118,0.07)]"
-                  : "border-transparent bg-transparent",
+                entry.sourceWeapons.length > 0 ? "cc-theme-card" : "border-transparent bg-transparent",
                 entry.sourceWeapons.length > 0 && "cc-theme-card",
               )}
               key={entry.mastery}
+              style={entry.sourceWeapons.length > 0 ? getMountedCardSurfaceStyle(true) : undefined}
             >
-              <span className={cn("cc-theme-icon-chip inline-flex h-8 w-8 items-center justify-center self-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.04)]", CC_TEXT_HERO)}>
+              <span className={cn("cc-theme-icon-chip inline-flex h-8 w-8 items-center justify-center self-center rounded-full border", CC_TEXT_HERO)} style={getMountedIconSurfaceStyle(entry.sourceWeapons.length > 0)}>
                 <i className={entry.iconClass} aria-hidden="true" />
               </span>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("cc-theme-body block font-fth-cc-body text-[1rem] font-semibold", CC_TEXT_PRIMARY)}>{entry.mastery}</span>
                   {entry.sourceWeapons.length > 0 ? (
-                    <span className={cn("cc-theme-pill inline-flex items-center rounded-full border border-[#e9c176]/28 bg-[rgba(233,193,118,0.08)] px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em]", CC_TEXT_HERO)}>
+                    <span className={cn("cc-theme-pill inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em]", CC_TEXT_HERO)} style={CC_MOUNTED_BADGE_STYLE}>
                       Known via weapon mastery
                     </span>
                   ) : null}

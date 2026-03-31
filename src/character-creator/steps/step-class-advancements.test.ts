@@ -220,4 +220,27 @@ describe("class advancement steps", () => {
     expect(toolsStep.getStatusHint?.(state)).toBe("Choose 2 more tool proficiencies");
     expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 2 more class choices");
   });
+
+  it("builds the expertise pool from persisted class step skill picks", async () => {
+    const state = makeState();
+    delete state.selections.skills;
+    state.selections.classChoices = {
+      chosenSkills: ["acr", "prc", "ste", "inv"],
+    };
+
+    const expertiseStep = createClassExpertiseStep();
+    const viewModel = await expertiseStep.buildViewModel(state);
+
+    expect(viewModel).toMatchObject({
+      stepId: "classExpertise",
+      selectedCount: 0,
+      requiredCount: 2,
+      options: expect.arrayContaining([
+        expect.objectContaining({ id: "acr", label: "Acrobatics" }),
+        expect.objectContaining({ id: "inv", label: "Investigation" }),
+        expect.objectContaining({ id: "prc", label: "Perception" }),
+        expect.objectContaining({ id: "ste", label: "Stealth" }),
+      ]),
+    });
+  });
 });

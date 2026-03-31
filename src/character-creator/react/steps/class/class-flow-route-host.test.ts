@@ -373,6 +373,8 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("text-[color:var(--cc-text-primary)]");
     expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
     expect(markup).toContain("text-[color:var(--cc-text-hero)]");
+    expect(markup).toContain("var(--cc-mounted-panel-image)");
+    expect(markup).toContain("var(--cc-mounted-muted-badge-image)");
     expect(optionsPanelIndex).toBeGreaterThanOrEqual(0);
     expect(railIndex).toBeGreaterThan(optionsPanelIndex);
     expect(simpleIndex).toBeGreaterThanOrEqual(0);
@@ -485,6 +487,9 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("Selected Features");
     expect(markup).toContain('data-choice-state="selected"');
     expect(markup).toContain('data-choice-state="available"');
+    expect(markup).toContain('data-choice-summary-card="true"');
+    expect(markup).toContain("var(--cc-mounted-panel-image)");
+    expect(markup).toContain("var(--cc-mounted-card-selected-image)");
     expect(markup).toContain("text-[color:var(--cc-text-primary)]");
     expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
     expect(markup).toContain("text-[color:var(--cc-text-hero)]");
@@ -514,6 +519,9 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain(statusLabel);
     expect(markup).toContain(summaryLabel);
     expect(markup).toContain(selectedTitle);
+    expect(markup).toContain('data-choice-summary-card="true"');
+    expect(markup).toContain("var(--cc-mounted-panel-image)");
+    expect(markup).toContain("var(--cc-mounted-progress-track)");
     expect(markup).toContain("text-[color:var(--cc-text-primary)]");
     expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
     expect(markup).toContain("text-[color:var(--cc-text-hero)]");

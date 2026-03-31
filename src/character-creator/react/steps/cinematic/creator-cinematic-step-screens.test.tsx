@@ -177,7 +177,7 @@ describe("SpellsStepScreen", () => {
       } as never),
     );
 
-    expect(markup).toContain("Open the Grimoire");
+    expect(markup).toContain("Choose Your Spells");
     expect(markup).toContain("Selection State");
     expect(markup).toContain("1 / 4 cantrips, 1 / 6 spells");
     expect(markup).toContain("Cantrips");
@@ -187,6 +187,8 @@ describe("SpellsStepScreen", () => {
     expect(markup).toContain("Prepared Workings");
     expect(markup).toContain("Prepared Now");
     expect(markup).toContain("Chosen Spells");
+    expect(markup).toContain("data-spell-chooser-scroll=\"true\"");
+    expect(markup).toContain("min-h-0 flex-1 space-y-4 overflow-y-auto pr-1");
   });
 
   it("renders prepared-caster controls and prepared summaries for explicit prepared pickers", () => {

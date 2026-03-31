@@ -164,25 +164,25 @@
 .fth-theme-root[data-fth-theme="light"],
 [data-fth-theme="light"] {
   color-scheme: light;
-  --fth-theme-shadow-panel: 0 20px 46px rgb(96 71 35 / 0.12);
-  --fth-theme-shadow-elevated: 0 24px 54px rgb(96 71 35 / 0.16);
+  --fth-theme-shadow-panel: 0 22px 48px rgb(96 71 35 / 0.18);
+  --fth-theme-shadow-elevated: 0 26px 58px rgb(96 71 35 / 0.22);
   --fth-theme-shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.65);
-  --fth-theme-shadow-selected: 0 0 0 1px rgb(199 155 74 / 0.72), 0 0 0 4px rgb(199 155 74 / 0.16);
+  --fth-theme-shadow-selected: 0 0 0 1px rgb(199 155 74 / 0.86), 0 0 0 4px rgb(199 155 74 / 0.22);
 
   --fth-color-canvas: #fdfbf7;
-  --fth-color-surface: #f6efe4;
-  --fth-color-surface-elevated: #efe4d2;
+  --fth-color-surface: #f4ecde;
+  --fth-color-surface-elevated: #eadcc4;
   --fth-color-surface-glass: rgb(255 255 255 / 0.68);
   --fth-color-surface-glass-strong: rgb(255 255 255 / 0.82);
-  --fth-color-surface-inset: #eadbc5;
-  --fth-color-border: rgb(167 131 72 / 0.18);
-  --fth-color-border-strong: rgb(167 131 72 / 0.34);
+  --fth-color-surface-inset: #e0ccab;
+  --fth-color-border: rgb(144 104 43 / 0.26);
+  --fth-color-border-strong: rgb(144 104 43 / 0.44);
   --fth-color-text: #241d16;
-  --fth-color-text-muted: #5e5040;
-  --fth-color-text-subtle: #8a7864;
-  --fth-color-accent: #bb8e45;
-  --fth-color-accent-strong: #d8b16a;
-  --fth-color-accent-soft: #8c6a36;
+  --fth-color-text-muted: #4f4133;
+  --fth-color-text-subtle: #74624f;
+  --fth-color-accent: #a97937;
+  --fth-color-accent-strong: #c99950;
+  --fth-color-accent-soft: #775528;
   --fth-color-accent-contrast: #fffaf0;
   --fth-color-focus: #d6a651;
   --fth-color-success: #5f8663;
@@ -190,40 +190,40 @@
   --fth-color-danger: #a06257;
 
   --fth-theme-backdrop-image:
-    radial-gradient(circle at top, rgb(215 170 91 / 0.1), transparent 26%),
-    radial-gradient(circle at bottom left, rgb(136 115 190 / 0.08), transparent 30%),
-    linear-gradient(180deg, rgb(253 251 247 / 1), rgb(244 236 225 / 1));
+    radial-gradient(circle at top, rgb(169 121 55 / 0.12), transparent 28%),
+    radial-gradient(circle at bottom left, rgb(136 115 190 / 0.1), transparent 30%),
+    linear-gradient(180deg, rgb(253 251 247 / 1), rgb(239 228 208 / 1));
   --fth-theme-sheen-image:
-    linear-gradient(135deg, rgb(255 255 255 / 0.66), transparent 34%, rgb(255 250 241 / 0.3) 62%, transparent);
-  --fth-theme-panel-image: linear-gradient(180deg, rgb(250 246 238 / 0.94), rgb(242 233 220 / 0.98));
-  --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(255 251 244 / 0.92), rgb(243 234 220 / 0.98));
+    linear-gradient(135deg, rgb(255 255 255 / 0.72), transparent 34%, rgb(255 247 233 / 0.42) 62%, transparent);
+  --fth-theme-panel-image: linear-gradient(180deg, rgb(251 246 238 / 0.97), rgb(237 225 204 / 0.99));
+  --fth-theme-panel-image-alt: linear-gradient(180deg, rgb(255 251 244 / 0.95), rgb(238 226 204 / 0.99));
   --fth-theme-panel-image-header:
-    linear-gradient(180deg, rgb(255 252 247 / 0.97), rgb(243 232 215 / 0.98));
-  --fth-theme-status-image: linear-gradient(180deg, rgb(187 142 69 / 0.16), rgb(187 142 69 / 0.08));
-  --fth-theme-accent-line: linear-gradient(90deg, rgb(187 142 69 / 0), rgb(187 142 69 / 0.62), rgb(187 142 69 / 0));
-  --fth-theme-icon-surface: rgb(187 142 69 / 0.12);
-  --fth-theme-icon-ring: rgb(187 142 69 / 0.28);
+    linear-gradient(180deg, rgb(255 252 247 / 0.98), rgb(239 225 200 / 0.99));
+  --fth-theme-status-image: linear-gradient(180deg, rgb(169 121 55 / 0.24), rgb(169 121 55 / 0.14));
+  --fth-theme-accent-line: linear-gradient(90deg, rgb(169 121 55 / 0), rgb(169 121 55 / 0.74), rgb(169 121 55 / 0));
+  --fth-theme-icon-surface: rgb(169 121 55 / 0.16);
+  --fth-theme-icon-ring: rgb(169 121 55 / 0.38);
   --fth-theme-header-glow:
-    radial-gradient(circle at top left, rgb(187 142 69 / 0.16), transparent 38%),
-    radial-gradient(circle at right center, rgb(136 115 190 / 0.08), transparent 42%),
-    linear-gradient(180deg, rgb(255 255 255 / 0.72), transparent 58%);
-  --fth-theme-step-active-image: linear-gradient(180deg, rgb(187 142 69 / 0.18), rgb(136 115 190 / 0.06));
-  --fth-theme-step-complete-image: linear-gradient(180deg, rgb(95 134 99 / 0.18), rgb(255 255 255 / 0.34));
-  --fth-theme-step-invalid-image: linear-gradient(180deg, rgb(160 98 87 / 0.16), rgb(255 255 255 / 0.34));
-  --fth-theme-step-icon-image: radial-gradient(circle at 35% 35%, #f5dca6, #bf9041);
+    radial-gradient(circle at top left, rgb(169 121 55 / 0.22), transparent 40%),
+    radial-gradient(circle at right center, rgb(136 115 190 / 0.12), transparent 42%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.74), transparent 58%);
+  --fth-theme-step-active-image: linear-gradient(180deg, rgb(169 121 55 / 0.22), rgb(136 115 190 / 0.08));
+  --fth-theme-step-complete-image: linear-gradient(180deg, rgb(95 134 99 / 0.2), rgb(255 255 255 / 0.28));
+  --fth-theme-step-invalid-image: linear-gradient(180deg, rgb(160 98 87 / 0.18), rgb(255 255 255 / 0.26));
+  --fth-theme-step-icon-image: radial-gradient(circle at 35% 35%, #f3d89d, #af7a33);
   --fth-theme-step-icon-complete-image: radial-gradient(circle at 35% 35%, #e7efd7, #7f9f6a);
   --fth-theme-step-icon-complete-color: #27411f;
-  --fth-theme-step-divider-image: linear-gradient(90deg, rgb(187 142 69 / 0), rgb(187 142 69 / 0.28), rgb(187 142 69 / 0));
-  --fth-theme-card-shell-image: linear-gradient(180deg, rgb(255 251 245 / 0.98), rgb(244 231 209 / 0.94));
-  --fth-theme-card-inner-image: linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, transparent 22%, rgb(168 128 74 / 0.04) 42%, rgb(73 48 25 / 0.18) 100%);
+  --fth-theme-step-divider-image: linear-gradient(90deg, rgb(169 121 55 / 0), rgb(169 121 55 / 0.42), rgb(169 121 55 / 0));
+  --fth-theme-card-shell-image: linear-gradient(180deg, rgb(255 251 244 / 0.99), rgb(238 223 198 / 0.97));
+  --fth-theme-card-inner-image: linear-gradient(180deg, rgb(255 255 255 / 0.5) 0%, transparent 22%, rgb(168 128 74 / 0.08) 42%, rgb(73 48 25 / 0.24) 100%);
   --fth-theme-card-top-fade: linear-gradient(180deg, rgb(255 250 244 / 0.8), rgb(255 250 244 / 0));
-  --fth-theme-card-chip-bg: rgb(255 255 255 / 0.62);
-  --fth-theme-card-chip-border: rgb(187 142 69 / 0.24);
-  --fth-theme-card-chip-text: #4b3723;
-  --fth-theme-card-chip-icon: #9b7237;
-  --fth-theme-card-selected-bg: rgb(187 142 69 / 0.14);
-  --fth-theme-card-selected-border: rgb(187 142 69 / 0.38);
-  --fth-theme-card-selected-text: #49321b;
+  --fth-theme-card-chip-bg: rgb(255 250 242 / 0.92);
+  --fth-theme-card-chip-border: rgb(169 121 55 / 0.34);
+  --fth-theme-card-chip-text: #3d2d1e;
+  --fth-theme-card-chip-icon: #835d26;
+  --fth-theme-card-selected-bg: rgb(169 121 55 / 0.22);
+  --fth-theme-card-selected-border: rgb(169 121 55 / 0.5);
+  --fth-theme-card-selected-text: #3e2914;
 }
 
 @keyframes fth-cc-fade-in {
