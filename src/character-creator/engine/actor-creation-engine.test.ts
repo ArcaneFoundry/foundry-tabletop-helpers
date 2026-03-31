@@ -1016,6 +1016,58 @@ describe("actor creation engine", () => {
     });
   });
 
+  it("persists lore fields and custom token art when creating the actor", async () => {
+    const upload = vi.fn(async (_scope: string, folder: string, file: File) => ({
+      path: `${folder}/${file.name}`,
+    }));
+    (globalThis as Record<string, unknown>).FilePicker = { upload };
+
+    const { createCharacterFromWizard } = await import("./actor-creation-engine");
+    const state = createWizardState();
+    state.selections.review = {
+      characterName: "Arannis Vale",
+      alignment: "Neutral Good",
+      backgroundStory: "Raised by a cloister of archivists.",
+    };
+    state.selections.portrait = {
+      portraitDataUrl: "data:image/webp;base64,ZmFrZS1wb3J0cmFpdA==",
+      tokenDataUrl: "data:image/webp;base64,ZmFrZS10b2tlbg==",
+      tokenArtMode: "custom",
+      source: "generated",
+    };
+
+    await createCharacterFromWizard(state as never);
+
+    expect(upload).toHaveBeenNthCalledWith(
+      1,
+      "data",
+      "portraits",
+      expect.objectContaining({ name: "arannis-vale-portrait.webp" }),
+      {},
+    );
+    expect(upload).toHaveBeenNthCalledWith(
+      2,
+      "data",
+      "tokens",
+      expect.objectContaining({ name: "arannis-vale-token.webp" }),
+      {},
+    );
+    expect(createActorInstance.update).toHaveBeenCalledWith(expect.objectContaining({
+      "system.details.alignment": "Neutral Good",
+      "system.details.biography.value": "Raised by a cloister of archivists.",
+    }));
+    expect(createActorInstance.update).toHaveBeenCalledWith({
+      img: "portraits/arannis-vale-portrait.webp",
+      "prototypeToken.texture.src": "tokens/arannis-vale-token.webp",
+    });
+    expect(createActorInstance.system.details).toMatchObject({
+      alignment: "Neutral Good",
+      biography: {
+        value: "Raised by a cloister of archivists.",
+      },
+    });
+  });
+
   it("falls back to recommended starting gold when equipment packs are selected", async () => {
     const { createCharacterFromWizard } = await import("./actor-creation-engine");
     const state = createWizardState();

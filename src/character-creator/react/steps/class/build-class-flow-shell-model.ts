@@ -84,13 +84,13 @@ export function buildClassFlowShellModel(
   const anySelectionComplete = selectionStepStatuses.some((status) => status === "complete");
   const hasSelectedClass = Boolean(classSelection?.uuid);
   const classMilestone = aggregateStepper.milestones.find((milestone) => milestone.id === "class");
-  const selectionsMilestone = aggregateStepper.milestones.find((milestone) => milestone.id === "selections");
+  const skillsMilestone = aggregateStepper.milestones.find((milestone) => milestone.id === "skills");
 
   let headerTone: ClassFlowHeaderTone = "default";
   if (
     hasSelectedClass
     && (isAccentStatus(classMilestone?.status ?? "pending")
-      || isAccentStatus(selectionsMilestone?.status ?? "pending")
+      || isAccentStatus(skillsMilestone?.status ?? "pending")
       || anySelectionComplete)
   ) {
     headerTone = "accent";

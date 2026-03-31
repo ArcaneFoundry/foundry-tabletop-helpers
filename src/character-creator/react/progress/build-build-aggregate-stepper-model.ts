@@ -3,14 +3,13 @@ import type {
   ClassAggregatePresentationStatus,
   ClassAggregateStepperModel,
 } from "./build-class-aggregate-stepper-model";
-import { getClassPresentation } from "../steps/class/class-presentation";
 
 const BUILD_STEP_IDS = [
   "abilities",
   "feats",
+  "spells",
   "equipment",
   "equipmentShop",
-  "spells",
 ] as const;
 
 const BUILD_GROUP_STEP_IDS = new Set(BUILD_STEP_IDS);
@@ -41,55 +40,66 @@ function getStepStatus(
 }
 
 export function buildBuildAggregateStepperModel(
-  state: WizardState,
+  _state: WizardState,
   steps: Array<{ id: string; label: string; icon: string; status: StepStatus; active: boolean }>,
   currentStepId: string,
 ): ClassAggregateStepperModel {
-  const classPresentation = getClassPresentation(state.selections.class?.identifier, state.selections.class?.name);
   const buildSteps = steps.filter((step) => isBuildStepId(step.id));
   const onBuildStep = isBuildStepId(currentStepId);
   const buildComplete = buildSteps.length > 0 && buildSteps.every((step) => step.status === "complete");
-  const originsComplete = getStepStatus(steps, "originSummary") === "complete";
-  const finalizeActive = currentStepId === "portrait" || currentStepId === "review";
-  const finalizeReady = buildComplete || getStepStatus(steps, "spells") === "complete";
+  const abilitiesComplete = getStepStatus(steps, "abilities") === "complete";
+  const spellsComplete = getStepStatus(steps, "spells") === "complete";
+  const equipmentComplete = getStepStatus(steps, "equipment") === "complete" || getStepStatus(steps, "equipmentShop") === "complete";
+  const loreActive = currentStepId === "portrait" || currentStepId === "review";
+  const loreReady = buildComplete || equipmentComplete || spellsComplete;
 
   return {
     milestones: [
       {
-        id: "class",
-        label: classPresentation.label,
-        icon: classPresentation.icon,
-        active: false,
-        status: "complete",
-      },
-      {
-        id: "origins",
-        label: "Origins",
-        icon: "fa-solid fa-scroll",
-        active: false,
-        status: originsComplete || onBuildStep || finalizeActive ? "complete" : "pending",
-      },
-      {
-        id: "build",
-        label: "Build",
-        icon: "fa-solid fa-hammer",
-        active: onBuildStep,
-        status: onBuildStep
+        id: "abilities",
+        label: "Abilities",
+        icon: "fa-solid fa-dice-d20",
+        active: currentStepId === "abilities",
+        status: currentStepId === "abilities"
           ? "in-progress"
-          : buildComplete
+          : abilitiesComplete
             ? "complete"
-            : originsComplete
+            : "selection-active",
+      },
+      {
+        id: "spells",
+        label: "Spells",
+        icon: "fa-solid fa-wand-sparkles",
+        active: currentStepId === "spells",
+        status: currentStepId === "spells"
+          ? "in-progress"
+          : spellsComplete
+            ? "complete"
+            : abilitiesComplete
               ? "selection-active"
               : "pending",
       },
       {
-        id: "finalize",
-        label: "Finalize",
-        icon: "fa-solid fa-stars",
-        active: finalizeActive,
-        status: finalizeActive
+        id: "equipment",
+        label: "Equipment",
+        icon: "fa-solid fa-sack",
+        active: currentStepId === "equipment" || currentStepId === "equipmentShop",
+        status: (currentStepId === "equipment" || currentStepId === "equipmentShop")
           ? "in-progress"
-          : finalizeReady
+          : equipmentComplete
+            ? "complete"
+            : spellsComplete
+              ? "selection-active"
+              : "pending",
+      },
+      {
+        id: "lore",
+        label: "Lore",
+        icon: "fa-solid fa-stars",
+        active: loreActive,
+        status: loreActive
+          ? "in-progress"
+          : loreReady
             ? "selection-active"
             : "pending",
       },

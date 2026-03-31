@@ -80,7 +80,9 @@ export function buildClassAggregateStepperModel(
   const onSelectionStep = isSelectionStep(currentStepId);
   const classPresentation = getClassPresentation(state.selections.class?.identifier, state.selections.class?.name);
   const classSummaryComplete = getStepStatus(steps, "classSummary") === "complete";
-  const originSummaryComplete = getStepStatus(steps, "originSummary") === "complete";
+  const classChoicesComplete = getStepStatus(steps, "classChoices") === "complete";
+  const speciesSelected = Boolean(state.selections.species?.uuid);
+  const backgroundSelected = Boolean(state.selections.background?.uuid);
 
   const milestones: ClassAggregateMilestoneNode[] = [
     {
@@ -97,31 +99,37 @@ export function buildClassAggregateStepperModel(
           : "complete",
     },
     {
-      id: "origins",
-      label: "Origins",
+      id: "species",
+      label: "Species",
+      icon: "fa-solid fa-dna",
+      active: false,
+      status: speciesSelected
+        ? "complete"
+        : classSummaryComplete || selectionComplete
+          ? "selection-active"
+          : "pending",
+    },
+    {
+      id: "background",
+      label: "Background",
       icon: "fa-solid fa-scroll",
       active: false,
-      status: !hasSelectedClass
-        ? "pending"
-        : classSummaryComplete
-            ? "selection-active"
-            : selectionComplete
-              ? "selection-active"
-              : "pending",
+      status: backgroundSelected
+        ? "complete"
+        : speciesSelected
+          ? "selection-active"
+          : "pending",
     },
     {
-      id: "build",
-      label: "Build",
-      icon: "fa-solid fa-hammer",
-      active: false,
-      status: originSummaryComplete ? "selection-active" : "pending",
-    },
-    {
-      id: "finalize",
-      label: "Finalize",
-      icon: "fa-solid fa-stars",
-      active: false,
-      status: "pending",
+      id: "skills",
+      label: "Skills",
+      icon: "fa-solid fa-hand-sparkles",
+      active: currentStepId === "classChoices",
+      status: currentStepId === "classChoices"
+        ? "in-progress"
+        : classChoicesComplete
+          ? "complete"
+          : "pending",
     },
   ];
 

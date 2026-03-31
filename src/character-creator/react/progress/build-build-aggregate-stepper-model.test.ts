@@ -42,23 +42,23 @@ function createState(overrides?: Partial<WizardState>): WizardState {
 function createSteps() {
   return [
     { id: "abilities", label: "Ability Scores", icon: "fa-solid fa-dice-d20", status: "pending" as const, active: true },
-    { id: "feats", label: "Feats", icon: "fa-solid fa-star", status: "pending" as const, active: false },
-    { id: "equipment", label: "Equipment", icon: "fa-solid fa-sack", status: "pending" as const, active: false },
+    { id: "feats", label: "Feats & ASI", icon: "fa-solid fa-star", status: "pending" as const, active: false },
     { id: "spells", label: "Spells", icon: "fa-solid fa-wand-sparkles", status: "pending" as const, active: false },
+    { id: "equipment", label: "Equipment", icon: "fa-solid fa-sack", status: "pending" as const, active: false },
   ];
 }
 
 describe("buildBuildAggregateStepperModel", () => {
-  it("shows class and origins locked complete while build is active", () => {
+  it("shows the later major milestones while build is active", () => {
     const model = buildBuildAggregateStepperModel(createState(), createSteps(), "abilities");
 
     expect(model.milestones.map((milestone) => [milestone.id, milestone.status])).toEqual([
-      ["class", "complete"],
-      ["origins", "complete"],
-      ["build", "in-progress"],
-      ["finalize", "pending"],
+      ["abilities", "in-progress"],
+      ["spells", "pending"],
+      ["equipment", "pending"],
+      ["lore", "pending"],
     ]);
-    expect(model.substeps.map((step) => step.id)).toEqual(["abilities", "feats", "equipment", "spells"]);
+    expect(model.substeps.map((step) => step.id)).toEqual(["abilities", "feats", "spells", "equipment"]);
     expect(model.showSubsteps).toBe(true);
   });
 
@@ -66,13 +66,12 @@ describe("buildBuildAggregateStepperModel", () => {
     const model = buildBuildAggregateStepperModel(
       createState(),
       [
-        ...createSteps().slice(0, 3),
+        ...createSteps(),
         { id: "equipmentShop", label: "Shop", icon: "fa-solid fa-store", status: "pending" as const, active: false },
-        createSteps()[3]!,
       ],
       "equipment",
     );
 
-    expect(model.substeps.map((step) => step.id)).toEqual(["abilities", "feats", "equipment", "equipmentShop", "spells"]);
+    expect(model.substeps.map((step) => step.id)).toEqual(["abilities", "feats", "spells", "equipment", "equipmentShop"]);
   });
 });

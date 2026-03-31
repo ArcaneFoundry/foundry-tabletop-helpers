@@ -81,7 +81,6 @@ const CHARACTER_CREATOR_WINDOW_CONSTRAINTS = {
   minWidth: 760,
   maxWidth: 1480,
   minHeight: 560,
-  maxHeight: 1000,
 } satisfies WindowSizeConstraints;
 
 function CharacterCreatorReactView({ controller }: { controller: CharacterCreatorWizardController }) {

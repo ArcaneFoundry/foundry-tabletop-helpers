@@ -635,13 +635,27 @@ export interface SkillSelection {
 }
 
 /** Portrait selection state. */
+export type TokenArtMode = "portrait" | "custom";
+
 export interface PortraitSelection {
   /** Data URL or uploaded path for the portrait image. */
   portraitDataUrl?: string;
   /** Data URL or uploaded path for the token image (square crop). */
   tokenDataUrl?: string;
+  /** Whether the token image should mirror the portrait or use a custom asset. */
+  tokenArtMode?: TokenArtMode;
   /** Whether the portrait was AI-generated or manually uploaded. */
   source: "generated" | "uploaded" | "none";
+}
+
+/** Final lore selection state captured during review. */
+export interface LoreSelection {
+  /** Character name shown on the sheet. */
+  characterName?: string;
+  /** Optional alignment text captured for the final actor. */
+  alignment?: string;
+  /** Optional background story / biography captured for the final actor. */
+  backgroundStory?: string;
 }
 
 /** Callbacks passed to step onActivate for state updates. */
@@ -697,6 +711,7 @@ export interface WizardSelections {
   spells?: SpellSelection;
   equipment?: EquipmentSelection;
   portrait?: PortraitSelection;
+  review?: LoreSelection;
   [key: string]: unknown;
 }
 
@@ -734,6 +749,18 @@ export interface WizardStepDefinition {
 }
 
 /** ViewModel for the wizard shell template. */
+export type WizardChapterKey =
+  | "class"
+  | "species"
+  | "background"
+  | "skills"
+  | "abilities"
+  | "spells"
+  | "equipment"
+  | "lore"
+  | "origins"
+  | "build";
+
 export interface WizardShellContext {
   /** Step indicator entries */
   steps: Array<{
@@ -767,7 +794,7 @@ export interface WizardShellContext {
   };
   /** Atmospheric gradient class for current step */
   atmosphereClass: string;
-  chapterKey?: "class" | "origins" | "build" | "finalize";
+  chapterKey?: WizardChapterKey;
   chapterSceneKey?: string;
   chapterAccentToken?: string;
   panelStyleVariant?: "artifact" | "recessed" | "glass" | "summary";

@@ -34,14 +34,20 @@ export function createPortraitStep(): WizardStepDefinition {
 
       // Auto-generate prompt from wizard selections
       const autoPrompt = buildPortraitPrompt(state);
+      const portraitDataUrl = sel?.portraitDataUrl ?? "";
+      const tokenArtMode = sel?.tokenArtMode ?? "portrait";
+      const tokenDataUrl = tokenArtMode === "custom"
+        ? (sel?.tokenDataUrl ?? "")
+        : portraitDataUrl;
 
       return {
         stepId: "portrait",
         serverAvailable,
         autoPrompt,
-        hasPortrait: !!sel?.portraitDataUrl,
-        portraitDataUrl: sel?.portraitDataUrl ?? "",
-        tokenDataUrl: sel?.tokenDataUrl ?? "",
+        hasPortrait: !!portraitDataUrl,
+        portraitDataUrl,
+        tokenDataUrl,
+        tokenArtMode,
         source: sel?.source ?? "none",
         raceName: state.selections.species?.name ?? "",
         className: state.selections.class?.name ?? "",
@@ -117,9 +123,13 @@ export function createPortraitStep(): WizardStepDefinition {
 
       // Clear button — already manages DOM manually
       clearBtn?.addEventListener("click", () => {
+        const current: PortraitSelection = state.selections.portrait ?? { source: "none" };
+        const keepCustomToken = current.tokenArtMode === "custom";
         callbacks.setDataSilent({
+          ...current,
           portraitDataUrl: undefined,
-          tokenDataUrl: undefined,
+          tokenDataUrl: keepCustomToken ? current.tokenDataUrl : undefined,
+          tokenArtMode: keepCustomToken ? "custom" : undefined,
           source: "none",
         } as PortraitSelection);
         if (preview) {
@@ -163,16 +173,20 @@ function renderGallery(
 
 function selectPortrait(
   dataUrl: string,
-  _state: WizardState,
+  state: WizardState,
   callbacks: StepCallbacks,
   preview: HTMLElement | null,
 ): void {
   const isDataUrl = dataUrl.startsWith("data:");
   const source: PortraitSelection["source"] = isDataUrl ? "generated" : "uploaded";
+  const current: PortraitSelection = state.selections.portrait ?? { source: "none" };
+  const keepCustomToken = current.tokenArtMode === "custom";
 
   callbacks.setDataSilent({
+    ...current,
     portraitDataUrl: dataUrl,
-    tokenDataUrl: dataUrl, // Token uses same image; cropping handled at actor creation
+    tokenDataUrl: keepCustomToken ? current.tokenDataUrl : dataUrl, // Token mirrors portrait unless a custom token is already set
+    tokenArtMode: keepCustomToken ? "custom" : "portrait",
     source,
   } as PortraitSelection);
 

@@ -195,7 +195,6 @@ describe("CharacterCreatorReactApp", () => {
       minWidth: 760,
       maxWidth: 1480,
       minHeight: 560,
-      maxHeight: 1000,
     });
     expect(app._ensureController).toHaveBeenCalledTimes(2);
     expect(foundryReactRenderMock).toHaveBeenCalledTimes(2);

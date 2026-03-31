@@ -12,8 +12,48 @@ type LabeledOption = {
   label: string;
 };
 
+function dedupeSkillKeys(keys: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const key of keys) {
+    if (!(key in SKILLS) || seen.has(key)) continue;
+    seen.add(key);
+    result.push(key);
+  }
+  return result;
+}
+
+function getClassSkillPoolKeys(state: WizardState): string[] {
+  return dedupeSkillKeys(state.selections.class?.skillPool ?? []);
+}
+
+export function getOriginGrantedSkillKeys(state: WizardState): Set<string> {
+  return new Set([
+    ...(state.selections.background?.grants.skillProficiencies ?? []),
+    ...(state.selections.species?.skillGrants ?? []),
+    ...(state.selections.speciesChoices?.chosenSkills ?? []),
+  ].filter((skill): skill is string => typeof skill === "string" && skill in SKILLS));
+}
+
 export function getRequiredClassSkillCount(state: WizardState): number {
-  return Math.min(state.selections.class?.skillCount ?? 0, state.selections.class?.skillPool?.length ?? 0);
+  return Math.min(state.selections.class?.skillCount ?? 0, getAvailableClassSkillKeys(state).length);
+}
+
+export function getAvailableClassSkillKeys(state: WizardState): string[] {
+  const originGranted = getOriginGrantedSkillKeys(state);
+  return getClassSkillPoolKeys(state).filter((skill) => !originGranted.has(skill));
+}
+
+export function getLegalClassSkillKeys(state: WizardState): string[] {
+  const available = new Set(getAvailableClassSkillKeys(state));
+  return dedupeSkillKeys((state.selections.skills?.chosen ?? []).filter((skill) => available.has(skill)));
+}
+
+export function applyLegalClassSkillSelections(state: WizardState, selectedSkills: string[]): string[] {
+  const available = new Set(getAvailableClassSkillKeys(state));
+  const nextChosenSkills = dedupeSkillKeys(selectedSkills.filter((skill) => available.has(skill)));
+  state.selections.skills = { chosen: nextChosenSkills };
+  return nextChosenSkills;
 }
 
 export function getTotalLanguageChoiceCount(state: WizardState): number {
@@ -66,22 +106,16 @@ export function buildEmptySpeciesChoicesState(state: WizardState): SpeciesChoice
 }
 
 export function getKnownOriginSkillKeys(state: WizardState): Set<string> {
-  return new Set([
-    ...(state.selections.background?.grants.skillProficiencies ?? []),
-    ...(state.selections.skills?.chosen ?? []),
-    ...(state.selections.species?.skillGrants ?? []),
-    ...(state.selections.speciesChoices?.chosenSkills ?? []),
-  ]);
+  return getOriginGrantedSkillKeys(state);
 }
 
 export function getBackgroundSkillConflictKeys(state: WizardState): string[] {
-  const backgroundSkills = new Set(state.selections.background?.grants.skillProficiencies ?? []);
-  return (state.selections.skills?.chosen ?? []).filter((skill) => backgroundSkills.has(skill));
+  const legalClassSkills = new Set(getAvailableClassSkillKeys(state));
+  return (state.selections.skills?.chosen ?? []).filter((skill) => !legalClassSkills.has(skill));
 }
 
 export function getRetainedClassSkillKeys(state: WizardState): string[] {
-  const conflictKeys = new Set(getBackgroundSkillConflictKeys(state));
-  return (state.selections.skills?.chosen ?? []).filter((skill) => !conflictKeys.has(skill));
+  return getLegalClassSkillKeys(state);
 }
 
 export function getBackgroundSkillConflictReplacementCount(state: WizardState): number {
@@ -96,17 +130,10 @@ export function getBackgroundSkillConflictOptions(state: WizardState): Array<{
   abilityAbbrev: string;
 }> {
   const retained = new Set(getRetainedClassSkillKeys(state));
-  const backgroundSkills = new Set(state.selections.background?.grants.skillProficiencies ?? []);
-  const otherKnown = new Set([
-    ...(state.selections.species?.skillGrants ?? []),
-    ...(state.selections.speciesChoices?.chosenSkills ?? []),
-  ]);
 
   return dedupeLabeledOptions(
-    (state.selections.class?.skillPool ?? [])
-      .filter((skill) => !backgroundSkills.has(skill))
+    getAvailableClassSkillKeys(state)
       .filter((skill) => !retained.has(skill))
-      .filter((skill) => !otherKnown.has(skill))
       .filter((skill) => skill in SKILLS)
       .map((skill) => ({
         id: skill,
@@ -122,9 +149,7 @@ export function getBackgroundSkillConflictOptions(state: WizardState): Array<{
 
 export function applyBackgroundSkillConflictSelections(state: WizardState, selectedReplacementSkills: string[]): string[] {
   const retainedSkills = getRetainedClassSkillKeys(state);
-  const nextChosenSkills = [...retainedSkills, ...selectedReplacementSkills];
-  state.selections.skills = { chosen: nextChosenSkills };
-  return nextChosenSkills;
+  return applyLegalClassSkillSelections(state, [...retainedSkills, ...selectedReplacementSkills]);
 }
 
 export function getBackgroundLanguageOptions(state: WizardState): LabeledOption[] {
@@ -164,7 +189,7 @@ export function getAvailableSpeciesSkillOptions(state: WizardState): Array<{
   abilityAbbrev: string;
 }> {
   const chosen = new Set(state.selections.speciesChoices?.chosenSkills ?? []);
-  const taken = getKnownOriginSkillKeys(state);
+  const taken = getOriginGrantedSkillKeys(state);
   const requirements = getOriginAdvancementRequirements(state, "species", "skills");
   const pool = requirements.flatMap((requirement) => requirement.pool)
     .map((entry) => entry.replace(/^skills:/u, ""))

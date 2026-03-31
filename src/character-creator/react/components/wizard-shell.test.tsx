@@ -136,4 +136,124 @@ describe("WizardShell", () => {
     expect(markup).toContain("Choose the class that will shape the rest of the build.");
     expect(markup).toContain("Ready");
   });
+
+  it("renders the Lore chapter label for the final step", () => {
+    const shellContext = {
+      steps: [
+        { id: "portrait", label: "Portrait", icon: "fa-solid fa-image", status: "complete", active: true, index: 0 },
+        { id: "review", label: "Review", icon: "fa-solid fa-stars", status: "pending", active: false, index: 1 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "review",
+      currentStepLabel: "Review",
+      currentStepIcon: "fa-solid fa-stars",
+      canGoBack: true,
+      canGoNext: true,
+      isReviewStep: false,
+      statusHint: "",
+      atmosphereClass: "cc-atmosphere--gold",
+      chapterKey: "lore",
+      chapterSceneKey: "binding",
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain("Lore");
+    expect(markup).toContain('data-scene-key="binding"');
+  });
+
+  it("aggregates granular steps into the requested major-step sequence for shell progress", () => {
+    const shellContext = {
+      steps: [
+        { id: "class", label: "Class", icon: "fa-solid fa-shield", status: "complete", active: false, index: 0 },
+        { id: "species", label: "Species", icon: "fa-solid fa-feather", status: "complete", active: false, index: 1 },
+        { id: "background", label: "Background", icon: "fa-solid fa-scroll", status: "complete", active: false, index: 2 },
+        { id: "backgroundAsi", label: "Background Ability Scores", icon: "fa-solid fa-chart-line", status: "complete", active: false, index: 3 },
+        { id: "originSummary", label: "Origin Summary", icon: "fa-solid fa-layer-group", status: "complete", active: false, index: 4 },
+        { id: "classChoices", label: "Class Skills", icon: "fa-solid fa-list-check", status: "complete", active: false, index: 5 },
+        { id: "abilities", label: "Ability Scores", icon: "fa-solid fa-dice-d20", status: "complete", active: false, index: 6 },
+        { id: "spells", label: "Spells", icon: "fa-solid fa-wand-sparkles", status: "complete", active: false, index: 7 },
+        { id: "equipment", label: "Equipment", icon: "fa-solid fa-swords", status: "complete", active: false, index: 8 },
+        { id: "portrait", label: "Portrait", icon: "fa-solid fa-image", status: "pending", active: true, index: 9 },
+        { id: "review", label: "Review & Create", icon: "fa-solid fa-stars", status: "pending", active: false, index: 10 },
+      ],
+      stepContentHtml: "",
+      currentStepId: "portrait",
+      currentStepLabel: "Portrait",
+      currentStepIcon: "fa-solid fa-image",
+      canGoBack: true,
+      canGoNext: true,
+      isReviewStep: false,
+      statusHint: "",
+      atmosphereClass: "cc-atmosphere--gold",
+      chapterKey: "lore",
+      localProgress: {
+        current: 10,
+        total: 11,
+        label: "Step 10 of 11",
+        detail: "Bind a portrait or leave it blank.",
+        percent: 91,
+      },
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain("Lore • Step 8 of 8");
+    expect(markup).toContain("Skills");
+    expect(markup).toContain("Abilities");
+    expect(markup).toContain("Spells");
+    expect(markup).not.toContain("Background Ability Scores");
+    expect(markup).not.toContain("Origin Summary");
+  });
+
+  it.each([
+    ["class", "Class", "class"],
+    ["species", "Species", "species"],
+    ["background", "Background", "background"],
+    ["skills", "Skills", "classChoices"],
+    ["abilities", "Abilities", "abilities"],
+    ["spells", "Spells", "spells"],
+    ["equipment", "Equipment", "equipment"],
+  ] as const)("renders the %s chapter label as %s", (chapterKey, expectedLabel, currentStepId) => {
+    const shellContext = {
+      steps: [
+        { id: currentStepId, label: expectedLabel, icon: "fa-solid fa-star", status: "complete", active: true, index: 0 },
+      ],
+      stepContentHtml: "",
+      currentStepId,
+      currentStepLabel: expectedLabel,
+      currentStepIcon: "fa-solid fa-star",
+      canGoBack: false,
+      canGoNext: false,
+      isReviewStep: false,
+      statusHint: "",
+      atmosphereClass: "cc-atmosphere--gold",
+      chapterKey,
+    } satisfies WizardShellContext;
+
+    const markup = renderToStaticMarkup(createElement(WizardShell, {
+      shellContext,
+      stepContent: createElement("section", null, "Step body"),
+      onBack: vi.fn(),
+      onNext: vi.fn(),
+      onJumpToStep: vi.fn(),
+      onCreateCharacter: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain(expectedLabel);
+  });
 });

@@ -231,6 +231,82 @@ describe("step review", () => {
     expect(speciesItemChoicesSection).toMatchObject({
       summary: "1 / 1 feature choices",
     });
+    expect(sections.map((section) => section.id)).toEqual([
+      "class",
+      "weaponMasteries",
+      "species",
+      "speciesSkills",
+      "speciesLanguages",
+      "speciesItemChoices",
+      "background",
+      "backgroundAsi",
+      "backgroundLanguages",
+      "originChoices",
+      "originSummary",
+      "classChoices",
+      "abilities",
+      "spells",
+      "equipment",
+      "portrait",
+    ]);
+  });
+
+  it("surfaces lore data and portrait binding in the review model", async () => {
+    const { createReviewStep } = await import("./step-review");
+    const step = createReviewStep();
+    const state = makeState();
+    state.selections.review = {
+      characterName: "Arannis Vale",
+      alignment: "Neutral Good",
+      backgroundStory: "Raised by a cloister of archivists.",
+    };
+    state.selections.portrait = {
+      portraitDataUrl: "portrait.webp",
+      tokenDataUrl: "token.webp",
+      tokenArtMode: "custom",
+      source: "uploaded",
+    };
+
+    const viewModel = await step.buildViewModel(state);
+    const sections = viewModel.sections as Array<Record<string, unknown>>;
+    const portraitSection = sections.find((section) => section.id === "portrait");
+
+    expect(viewModel).toMatchObject({
+      characterName: "Arannis Vale",
+      alignment: "Neutral Good",
+      backgroundStory: "Raised by a cloister of archivists.",
+      portraitDataUrl: "portrait.webp",
+      tokenDataUrl: "token.webp",
+      tokenArtMode: "custom",
+      hasPortrait: true,
+      hasTokenArt: true,
+      tokenUsesPortrait: false,
+    });
+    expect(portraitSection).toMatchObject({
+      summary: "Portrait and custom token art bound",
+      detail: "Custom token art is set separately.",
+      img: "portrait.webp",
+    });
+  });
+
+  it("keeps subclass grouped with the class block ahead of species and background summaries", async () => {
+    const { createReviewStep } = await import("./step-review");
+    const step = createReviewStep();
+    const state = makeState();
+    state.applicableSteps = ["class", "subclass", "species", "background", "classChoices", "review"];
+    state.selections.subclass = {
+      uuid: "subclass.evoker",
+      name: "Evoker",
+      img: "evoker.png",
+      classIdentifier: "wizard",
+    };
+
+    const viewModel = await step.buildViewModel(state);
+    const sectionIds = (viewModel.sections as Array<Record<string, unknown>>).map((section) => section.id);
+
+    expect(sectionIds.indexOf("subclass")).toBeGreaterThan(sectionIds.indexOf("class"));
+    expect(sectionIds.indexOf("subclass")).toBeLessThan(sectionIds.indexOf("species"));
+    expect(sectionIds.indexOf("subclass")).toBeLessThan(sectionIds.indexOf("classChoices"));
   });
 
   it("shows prepared counts for other prepared casters once explicit picks are enabled", async () => {

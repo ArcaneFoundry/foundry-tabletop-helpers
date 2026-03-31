@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { WizardState } from "../character-creator-types";
-import { applyBackgroundSkillConflictSelections, getBackgroundSkillConflictOptions } from "./origin-flow-utils";
+import {
+  applyLegalClassSkillSelections,
+  getAvailableClassSkillKeys,
+  getBackgroundSkillConflictOptions,
+  getLegalClassSkillKeys,
+} from "./origin-flow-utils";
 
 function makeState(): WizardState {
   return {
@@ -41,14 +46,20 @@ function makeState(): WizardState {
         asi: { assignments: {} },
         languages: { fixed: [], chosen: [] },
       },
-      skills: {
-        chosen: ["arc", "ste"],
-      },
       species: {
         uuid: "species.elf",
         name: "Elf",
         img: "elf.png",
         skillGrants: ["prc"],
+      },
+      speciesChoices: {
+        hasChoices: true,
+        chosenLanguages: [],
+        chosenSkills: ["ins"],
+        chosenItems: {},
+      },
+      skills: {
+        chosen: ["arc", "ste", "ins"],
       },
     },
     stepStatus: new Map(),
@@ -67,57 +78,31 @@ function makeState(): WizardState {
 }
 
 describe("step background skill conflicts", () => {
-  it("surfaces the conflict step only when background skills overlap class picks", async () => {
+  it("keeps the retired conflict step out of the active flow", async () => {
     const { createBackgroundSkillConflictsStep } = await import("./step-background-skill-conflicts");
     const step = createBackgroundSkillConflictsStep();
     const state = makeState();
 
-    expect(step.isApplicable(state)).toBe(true);
-    expect(step.isComplete(state)).toBe(false);
-
-    const viewModel = await step.buildViewModel(state);
-    expect(viewModel).toMatchObject({
-      backgroundName: "Sage",
-      className: "Rogue",
-      conflictingSkills: ["Arcana"],
-      retainedSkills: ["Stealth"],
-      fixedBackgroundSkills: ["Arcana", "History"],
-      replacementCount: 1,
-    });
-  });
-
-  it("filters replacement options against background, retained, and already-known skills", () => {
-    const options = getBackgroundSkillConflictOptions(makeState());
-    expect(options.map((option) => option.id)).toEqual(["acr", "ath", "ins"]);
-  });
-
-  it("rewrites class skills to a de-duplicated replacement set", async () => {
-    const { createBackgroundSkillConflictsStep } = await import("./step-background-skill-conflicts");
-    const step = createBackgroundSkillConflictsStep();
-    const state = makeState();
-
-    applyBackgroundSkillConflictSelections(state, ["ins"]);
-    state.selections.backgroundSkillConflicts = ["ins"];
-
-    expect(state.selections.skills).toEqual({
-      chosen: ["ste", "ins"],
-    });
     expect(step.isApplicable(state)).toBe(false);
     expect(step.isComplete(state)).toBe(true);
-  });
-
-  it("keeps chosen replacements distinct from retained class skills in the view model", async () => {
-    const { createBackgroundSkillConflictsStep } = await import("./step-background-skill-conflicts");
-    const step = createBackgroundSkillConflictsStep();
-    const state = makeState();
-
-    applyBackgroundSkillConflictSelections(state, ["ins"]);
-    state.selections.backgroundSkillConflicts = ["ins"];
+    expect(step.getStatusHint?.(state)).toBe("");
 
     const viewModel = await step.buildViewModel(state);
     expect(viewModel).toMatchObject({
-      retainedSkills: ["Stealth"],
-      selectedReplacementSkills: ["Insight"],
+      stepId: "backgroundSkillConflicts",
+      retired: true,
+    });
+  });
+
+  it("filters class skills against origin-granted and species-choice skills", () => {
+    const state = makeState();
+
+    expect(getAvailableClassSkillKeys(state)).toEqual(["acr", "ath", "ste"]);
+    expect(getLegalClassSkillKeys(state)).toEqual(["ste"]);
+    expect(getBackgroundSkillConflictOptions(state).map((option) => option.id)).toEqual(["acr", "ath"]);
+    expect(applyLegalClassSkillSelections(state, ["arc", "ste", "ins", "ste"])).toEqual(["ste"]);
+    expect(state.selections.skills).toEqual({
+      chosen: ["ste"],
     });
   });
 });

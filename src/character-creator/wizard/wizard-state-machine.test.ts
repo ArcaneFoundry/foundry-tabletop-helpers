@@ -79,11 +79,35 @@ describe("wizard state machine", () => {
 
     const invalidated = machine.updateSelection("background", { uuid: "bg-1" });
 
-    expect([...invalidated].sort()).toEqual(["abilities", "backgroundAsi", "originChoices", "originSummary"]);
+    expect([...invalidated].sort()).toEqual(["backgroundAsi", "originChoices", "originSummary"]);
     expect(machine.state.stepStatus.get("background")).toBe("complete");
     expect(machine.state.stepStatus.get("originChoices")).toBe("pending");
     expect(machine.state.selections.originChoices).toBeUndefined();
-    expect(machine.state.selections.abilities).toBeUndefined();
+  });
+
+  it("invalidates the reordered class skill and build steps when origin choices change", () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("species", { isComplete: (state) => !!state.selections.species }),
+      makeStep("background", { isComplete: (state) => !!state.selections.background }),
+      makeStep("originSummary", { isComplete: (state) => !!state.selections.originSummary }),
+      makeStep("classChoices", { isComplete: (state) => !!state.selections.classChoices }),
+      makeStep("abilities", { isComplete: (state) => !!state.selections.abilities }),
+      makeStep("review", { isComplete: () => true }),
+    ]);
+
+    machine.updateSelection("species", { uuid: "species-1" });
+    machine.updateSelection("background", { uuid: "background-1" });
+    machine.updateSelection("originSummary", { ready: true });
+    machine.updateSelection("classChoices", { chosenSkills: ["arc", "his"] });
+    machine.updateSelection("abilities", { str: 15 });
+    machine.markComplete("review");
+
+    const invalidated = machine.updateSelection("background", { uuid: "background-2" });
+
+    expect([...invalidated].sort()).toEqual(["classChoices", "originSummary", "review"]);
+    expect(machine.state.selections.classChoices).toBeUndefined();
+    expect(machine.state.selections.abilities).toEqual({ str: 15 });
+    expect(machine.state.stepStatus.get("review")).toBe("pending");
   });
 
   it("only allows next navigation when the current step is complete", () => {

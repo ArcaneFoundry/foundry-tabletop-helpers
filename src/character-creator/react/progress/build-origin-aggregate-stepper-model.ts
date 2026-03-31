@@ -76,13 +76,11 @@ export function buildOriginAggregateStepperModel(
   const speciesComplete = speciesSteps.length > 0 && speciesSteps.every((step) => step.status === "complete");
   const onBackgroundStep = isBackgroundStep(currentStepId);
   const onSpeciesStep = isSpeciesStep(currentStepId);
-  const onOriginStep = onBackgroundStep || onSpeciesStep;
   const hasBackground = Boolean(state.selections.background?.uuid);
   const hasSpecies = Boolean(state.selections.species?.uuid);
-  const originSteps = [...backgroundSteps, ...speciesSteps];
-  const originReady = hasBackground || backgroundComplete || hasSpecies || speciesComplete;
-  const originComplete = backgroundComplete && speciesComplete;
-  const buildReady = getStepStatus(steps, "originSummary") === "complete";
+  const classChoicesComplete = getStepStatus(steps, "classChoices") === "complete";
+  const originSteps = [...speciesSteps, ...backgroundSteps];
+  const originSummaryComplete = getStepStatus(steps, "originSummary") === "complete";
 
   return {
     milestones: [
@@ -94,31 +92,39 @@ export function buildOriginAggregateStepperModel(
         status: "complete",
       },
       {
-        id: "origin",
-        label: "Origins",
-        icon: "fa-solid fa-scroll",
-        active: onOriginStep || currentStepId === "originSummary",
-        status: (onOriginStep || currentStepId === "originSummary")
-          ? (originReady ? "in-progress" : "selection-active")
-          : originComplete
+        id: "species",
+        label: "Species",
+        icon: "fa-solid fa-dna",
+        active: onSpeciesStep,
+        status: onSpeciesStep
+          ? (speciesComplete ? "complete" : "in-progress")
+          : hasSpecies || speciesComplete
             ? "complete"
-            : originReady
+            : "selection-active",
+      },
+      {
+        id: "background",
+        label: "Background",
+        icon: "fa-solid fa-scroll",
+        active: onBackgroundStep,
+        status: onBackgroundStep
+          ? (backgroundComplete ? "complete" : "in-progress")
+          : hasBackground || backgroundComplete
+            ? "complete"
+            : speciesComplete
               ? "selection-active"
               : "pending",
       },
       {
-        id: "build",
-        label: "Build",
-        icon: "fa-solid fa-hammer",
-        active: false,
-        status: buildReady ? "selection-active" : "pending",
-      },
-      {
-        id: "finalize",
-        label: "Finalize",
-        icon: "fa-solid fa-stars",
-        active: false,
-        status: "pending",
+        id: "skills",
+        label: "Skills",
+        icon: "fa-solid fa-hand-sparkles",
+        active: currentStepId === "originSummary",
+        status: currentStepId === "originSummary"
+          ? "selection-active"
+          : classChoicesComplete || originSummaryComplete
+            ? "selection-active"
+            : "pending",
       },
     ],
     substeps: [...originSteps, ...steps.filter((step) => step.id === "originSummary")].map((step) => ({

@@ -130,7 +130,7 @@ describe("buildClassFlowShellModel", () => {
     expect(model.currentPane).toBe("classSummary");
     expect(model.title).toBe("Class Summary");
     expect(model.headerTone).toBe("accent");
-    expect(model.aggregateStepper.milestones[1]).toMatchObject({ id: "origins", status: "selection-active" });
+    expect(model.aggregateStepper.milestones[1]).toMatchObject({ id: "species", status: "selection-active" });
     expect(model.aggregateStepper.showSubsteps).toBe(false);
   });
 });

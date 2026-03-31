@@ -23,6 +23,34 @@ function makeState(): WizardState {
         armorProficiencies: ["Light", "Medium", "Shields"],
         weaponProficiencies: ["Simple", "Martial"],
       },
+      background: {
+        uuid: "background.sailor",
+        name: "Sailor",
+        img: "sailor.png",
+        grants: {
+          skillProficiencies: ["ath"],
+          weaponProficiencies: [],
+          toolProficiency: null,
+          originFeatUuid: null,
+          originFeatName: null,
+          originFeatImg: null,
+          asiPoints: 0,
+          asiCap: 0,
+          asiAllowed: [],
+          asiSuggested: [],
+          languageGrants: [],
+          languageChoiceCount: 0,
+          languageChoicePool: [],
+        },
+        asi: { assignments: {} },
+        languages: { fixed: [], chosen: [] },
+      },
+      species: {
+        uuid: "species.elf",
+        name: "Elf",
+        img: "elf.png",
+        skillGrants: ["sur"],
+      },
     },
     stepStatus: new Map(),
     config: {
@@ -40,7 +68,7 @@ function makeState(): WizardState {
 }
 
 describe("step class choices", () => {
-  it("builds selectable class skills", async () => {
+  it("builds selectable class skills from the legal pool only", async () => {
     const { createClassChoicesStep } = await import("./step-class-choices");
     const step = createClassChoicesStep();
     const vm = await step.buildViewModel(makeState());
@@ -55,24 +83,22 @@ describe("step class choices", () => {
       savingThrows: ["STR", "CON"],
       skillSection: expect.objectContaining({
         hasChoices: true,
-        maxCount: 2,
+        maxCount: 1,
       }),
     });
     expect(step.renderMode).toBe("react");
     expect(step.reactComponent).toBeTypeOf("function");
     expect((vm.skillSection as { options: Array<{ label: string }> }).options.map((skill) => skill.label)).toEqual([
       "Acrobatics",
-      "Athletics",
-      "Survival",
     ]);
   });
 
-  it("treats mirrored skill selections as completion state", async () => {
+  it("treats filtered legal skill selections as completion state", async () => {
     const { createClassChoicesStep } = await import("./step-class-choices");
     const step = createClassChoicesStep();
     const state = makeState();
-    state.selections.skills = { chosen: ["ath", "sur"] };
-    state.selections.classChoices = { chosenSkills: ["ath", "sur"] };
+    state.selections.skills = { chosen: ["ath", "acr"] };
+    state.selections.classChoices = { chosenSkills: ["ath", "acr"] };
 
     expect(step.isComplete(state)).toBe(true);
     expect(step.getStatusHint?.(state)).toBe("");

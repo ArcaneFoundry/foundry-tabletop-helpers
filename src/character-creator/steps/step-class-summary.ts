@@ -17,6 +17,10 @@ import {
   languageLabel,
   toolLabel,
 } from "./class-advancement-utils";
+import {
+  getLegalClassSkillKeys,
+  getRequiredClassSkillCount,
+} from "./origin-flow-utils";
 import { getClassRecommendation } from "./step-class-model";
 import { getRawDescription, getSubtitleFromDescription } from "./step-class-model";
 
@@ -162,8 +166,7 @@ function getLevelAwareFeatureHeading(level: number): string {
 }
 
 function isClassSkillsComplete(state: WizardState): boolean {
-  const requiredClassSkills = Math.min(state.selections.class?.skillCount ?? 0, state.selections.class?.skillPool?.length ?? 0);
-  return (state.selections.skills?.chosen.length ?? 0) >= requiredClassSkills;
+  return getLegalClassSkillKeys(state).length >= getRequiredClassSkillCount(state);
 }
 
 function isWeaponMasteriesComplete(state: WizardState): boolean {
@@ -433,7 +436,7 @@ export function createClassSummaryStep(): WizardStepDefinition {
         featureHeading: getLevelAwareFeatureHeading(state.config.startingLevel),
         hitDie: classSelection?.hitDie ?? "d8",
         featureCount: features.length,
-        chosenSkills: (state.selections.skills?.chosen ?? []).map(skillLabel),
+        chosenSkills: getLegalClassSkillKeys(state).map(skillLabel),
         chosenWeaponMasteries,
         savingThrows,
         armorProficiencies,
@@ -441,7 +444,7 @@ export function createClassSummaryStep(): WizardStepDefinition {
         toolProficiencies,
         selectedGrantGroups,
         features,
-        hasChosenSkills: (state.selections.skills?.chosen?.length ?? 0) > 0,
+        hasChosenSkills: getLegalClassSkillKeys(state).length > 0,
         hasChosenWeaponMasteries: chosenWeaponMasteries.length > 0,
         hasSavingThrows: savingThrows.length > 0,
         hasArmorProficiencies: armorProficiencies.length > 0,

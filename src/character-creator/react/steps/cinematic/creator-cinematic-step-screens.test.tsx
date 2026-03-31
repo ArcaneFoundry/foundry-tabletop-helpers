@@ -320,6 +320,7 @@ describe("PortraitStepScreen", () => {
             hasPortrait: false,
             portraitDataUrl: "",
             tokenDataUrl: "",
+            tokenArtMode: "portrait",
             source: "none",
             raceName: "Elf",
             className: "Wizard",
@@ -335,6 +336,7 @@ describe("PortraitStepScreen", () => {
 
     expect(markup).toContain("Choose the Visage");
     expect(markup).toContain("Portrait Atelier");
+    expect(markup).toContain("Lore");
     expect(markup).toContain("Shape the Likeness");
     expect(markup).toContain("cc-theme-panel--soft");
     expect(markup).toContain("cc-theme-hero-shell");
@@ -348,10 +350,14 @@ describe("PortraitStepScreen", () => {
     expect(markup).toContain("focus-visible:ring-2");
     expect(markup).toContain("Generate Portraits");
     expect(markup).toContain("Upload Portrait");
+    expect(markup).toContain("Upload Token Art");
+    expect(markup).toContain("Use Portrait for Token");
     expect(markup).toContain("Generated Portraits");
     expect(markup).toContain("No portraits have been summoned yet.");
     expect(markup).toContain("Awaiting Likeness");
     expect(markup).toContain("Portrait optional");
+    expect(markup).toContain("Token Art");
+    expect(markup).toContain("Mirrors portrait");
   });
 
   it("renders a bound portrait preview and clear action when a portrait is already selected", () => {
@@ -368,6 +374,7 @@ describe("PortraitStepScreen", () => {
             hasPortrait: true,
             portraitDataUrl: "portrait.webp",
             tokenDataUrl: "portrait.webp",
+            tokenArtMode: "portrait",
             source: "uploaded",
             raceName: "Elf",
             className: "Wizard",
@@ -379,6 +386,7 @@ describe("PortraitStepScreen", () => {
             portrait: {
               portraitDataUrl: "portrait.webp",
               tokenDataUrl: "portrait.webp",
+              tokenArtMode: "portrait",
               source: "uploaded",
             },
           },
@@ -389,10 +397,51 @@ describe("PortraitStepScreen", () => {
 
     expect(markup).toContain("Bound Likeness");
     expect(markup).toContain("Selected portrait");
-    expect(markup).toContain("Clear");
+    expect(markup).toContain("Clear Portrait");
     expect(markup).toContain("Uploaded likeness");
     expect(markup).toContain("Ready for final review");
     expect(markup).toContain("cc-theme-media-frame");
+  });
+
+  it("keeps custom token art separate from the portrait preview", () => {
+    const markup = renderToStaticMarkup(
+      createElement(PortraitStepScreen, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "portrait",
+          stepViewModel: {
+            serverAvailable: true,
+            autoPrompt: "Arcane portrait prompt",
+            hasPortrait: false,
+            portraitDataUrl: "",
+            tokenDataUrl: "token.webp",
+            tokenArtMode: "custom",
+            source: "none",
+            raceName: "Elf",
+            className: "Wizard",
+          },
+          steps: [],
+        },
+        state: {
+          selections: {
+            portrait: {
+              tokenDataUrl: "token.webp",
+              tokenArtMode: "custom",
+              source: "none",
+            },
+          },
+        } as never,
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain("Awaiting Likeness");
+    expect(markup).toContain("Custom token art");
+    expect(markup).toContain("Selected token art");
+    expect(markup).not.toContain("Selected portrait");
+    expect(markup).toContain("Portrait optional");
   });
 });
 
@@ -408,6 +457,14 @@ describe("ReviewStepScreen", () => {
           currentStepId: "review",
           stepViewModel: {
             characterName: "Arannis Vale",
+            alignment: "Neutral Good",
+            backgroundStory: "Raised by a cloister of archivists.",
+            portraitDataUrl: "portrait.webp",
+            tokenDataUrl: "token.webp",
+            tokenArtMode: "custom",
+            hasPortrait: true,
+            hasTokenArt: true,
+            tokenUsesPortrait: false,
             allComplete: false,
             incompleteSectionLabels: ["Equipment", "Spells"],
             startingLevel: 5,
@@ -445,10 +502,20 @@ describe("ReviewStepScreen", () => {
         },
         state: {
           selections: {
-            review: { characterName: "Arannis Vale" },
+            review: {
+              characterName: "Arannis Vale",
+              alignment: "Neutral Good",
+              backgroundStory: "Raised by a cloister of archivists.",
+            },
             class: { name: "Wizard", img: "wizard.webp" },
             background: { name: "Sage", img: "sage.webp" },
             species: { name: "Human", img: "human.webp" },
+            portrait: {
+              portraitDataUrl: "portrait.webp",
+              tokenDataUrl: "token.webp",
+              tokenArtMode: "custom",
+              source: "uploaded",
+            },
           },
         } as never,
         step: {} as never,
@@ -466,6 +533,17 @@ describe("ReviewStepScreen", () => {
     expect(markup).toContain('for="review-character-name"');
     expect(markup).toContain('id="review-character-name"');
     expect(markup).toContain('name="characterName"');
+    expect(markup).toContain("Lore Details");
+    expect(markup).toContain('for="review-alignment"');
+    expect(markup).toContain('name="alignment"');
+    expect(markup).toContain('data-lore-alignment');
+    expect(markup).toContain('for="review-background-story"');
+    expect(markup).toContain('name="backgroundStory"');
+    expect(markup).toContain('data-background-story');
+    expect(markup).toContain("Neutral Good");
+    expect(markup).toContain("Raised by a cloister of archivists.");
+    expect(markup).toContain("Portrait and Token");
+    expect(markup).toContain("Custom token art");
     expect(markup).toContain('autoComplete="off"');
     expect(markup).toContain("focus-visible:ring-2");
     expect(markup).toContain("The final binding uses this name exactly as shown here.");

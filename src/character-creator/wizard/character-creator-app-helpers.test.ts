@@ -92,6 +92,9 @@ describe("character creator app helpers", () => {
       currentStepLabel: "Species",
       currentStepIcon: "fa-solid fa-leaf",
       atmosphereClass: "cc-atmosphere--nature",
+      chapterKey: "species",
+      chapterSceneKey: "archives",
+      chapterAccentToken: "origins",
       headerTitle: "Choose Species",
       headerSubtitle: "Origin",
       headerDescription: "Pick your ancestry",
@@ -99,6 +102,57 @@ describe("character creator app helpers", () => {
       selectedEntry: { name: "Elf", img: "elf.png", packLabel: "PHB" },
       stepContentHtml: "<div>Choose Species</div>",
     });
+  });
+
+  it("maps the final review step into the Lore chapter", async () => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep("review", {
+        label: "Review",
+        icon: "fa-solid fa-stars",
+        buildViewModel: async () => ({
+          stepTitle: "Final Review",
+        }),
+      }),
+    ]);
+
+    const context = await buildWizardShellContext(
+      machine,
+      machine.currentStepDef,
+      async (_path, data) => `<div>${String(data.stepTitle)}</div>`,
+      () => "cc-atmosphere--gold",
+    );
+
+    expect(context.chapterKey).toBe("lore");
+    expect(context.chapterSceneKey).toBe("binding");
+    expect(context.chapterAccentToken).toBe("lore");
+  });
+
+  it.each([
+    ["classChoices", "skills", "ritual", "build"],
+    ["speciesSkills", "species", "archives", "origins"],
+    ["backgroundLanguages", "background", "archives", "origins"],
+    ["feats", "abilities", "ritual", "build"],
+    ["spells", "spells", "grimoire", "build"],
+    ["equipment", "equipment", "arsenal", "build"],
+  ] as const)("maps %s into the %s chapter with the expected scene and accent defaults", async (stepId, expectedChapter, expectedScene, expectedAccent) => {
+    const machine = new WizardStateMachine(makeConfig(), [
+      makeStep(stepId, {
+        label: stepId,
+        icon: "fa-solid fa-circle",
+        buildViewModel: async () => ({ stepTitle: stepId }),
+      }),
+    ]);
+
+    const context = await buildWizardShellContext(
+      machine,
+      machine.currentStepDef,
+      async (_path, data) => `<div>${String(data.stepTitle)}</div>`,
+      () => "cc-atmosphere--nature",
+    );
+
+    expect(context.chapterKey).toBe(expectedChapter);
+    expect(context.chapterSceneKey).toBe(expectedScene);
+    expect(context.chapterAccentToken).toBe(expectedAccent);
   });
 
   it("patches nav and step indicator state", () => {

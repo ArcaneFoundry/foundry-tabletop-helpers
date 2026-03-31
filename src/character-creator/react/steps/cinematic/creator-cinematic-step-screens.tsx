@@ -56,6 +56,7 @@ type PortraitViewModel = {
   hasPortrait: boolean;
   portraitDataUrl: string;
   tokenDataUrl: string;
+  tokenArtMode: "portrait" | "custom";
   source: string;
   raceName: string;
   className: string;
@@ -98,6 +99,14 @@ type ReviewSection = {
 
 type ReviewStepViewModel = {
   characterName: string;
+  alignment: string;
+  backgroundStory: string;
+  portraitDataUrl: string;
+  tokenDataUrl: string;
+  tokenArtMode: "portrait" | "custom";
+  hasPortrait: boolean;
+  hasTokenArt: boolean;
+  tokenUsesPortrait: boolean;
   sections: ReviewSection[];
   allComplete: boolean;
   incompleteSectionLabels: string[];
@@ -514,8 +523,14 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
 
   if (!viewModel) return null;
 
-  const currentPortrait = state.selections.portrait?.portraitDataUrl ?? viewModel.portraitDataUrl;
-  const portraitSource = state.selections.portrait?.source ?? viewModel.source;
+  const portraitSelection = state.selections.portrait ?? undefined;
+  const basePortraitSelection: PortraitSelection = portraitSelection ?? { source: "none" };
+  const currentPortrait = portraitSelection?.portraitDataUrl ?? viewModel.portraitDataUrl;
+  const currentTokenArt = portraitSelection?.tokenArtMode === "custom"
+    ? (portraitSelection.tokenDataUrl ?? viewModel.tokenDataUrl)
+    : (currentPortrait || viewModel.tokenDataUrl);
+  const portraitSource = portraitSelection?.source ?? viewModel.source;
+  const tokenArtMode = portraitSelection?.tokenArtMode ?? viewModel.tokenArtMode;
   const portraitSourceLabel = portraitSource === "generated"
     ? "Generated likeness"
     : portraitSource === "uploaded"
@@ -524,18 +539,50 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
 
   const selectPortrait = (dataUrl: string) => {
     const selection: PortraitSelection = {
+      ...basePortraitSelection,
       portraitDataUrl: dataUrl,
-      tokenDataUrl: dataUrl,
+      tokenDataUrl: tokenArtMode === "custom" ? (portraitSelection?.tokenDataUrl ?? dataUrl) : dataUrl,
+      tokenArtMode: tokenArtMode === "custom" ? "custom" : "portrait",
       source: dataUrl.startsWith("data:") ? "generated" : "uploaded",
+    };
+    controller.updateCurrentStepData(selection, { silent: true });
+  };
+
+  const selectTokenArt = (dataUrl: string) => {
+    const selection: PortraitSelection = {
+      ...basePortraitSelection,
+      tokenDataUrl: dataUrl,
+      tokenArtMode: "custom",
+      source: basePortraitSelection.source,
     };
     controller.updateCurrentStepData(selection, { silent: true });
   };
 
   const clearPortrait = () => {
     controller.updateCurrentStepData({
+      ...basePortraitSelection,
       portraitDataUrl: undefined,
-      tokenDataUrl: undefined,
+      tokenDataUrl: tokenArtMode === "custom" ? portraitSelection?.tokenDataUrl : undefined,
+      tokenArtMode: tokenArtMode === "custom" ? "custom" : undefined,
       source: "none",
+    } satisfies PortraitSelection, { silent: true });
+  };
+
+  const clearTokenArt = () => {
+    controller.updateCurrentStepData({
+      ...basePortraitSelection,
+      tokenDataUrl: undefined,
+      tokenArtMode: undefined,
+      source: basePortraitSelection.source,
+    } satisfies PortraitSelection, { silent: true });
+  };
+
+  const usePortraitForToken = () => {
+    controller.updateCurrentStepData({
+      ...basePortraitSelection,
+      tokenDataUrl: currentPortrait || undefined,
+      tokenArtMode: "portrait",
+      source: basePortraitSelection.source,
     } satisfies PortraitSelection, { silent: true });
   };
 
@@ -546,6 +593,17 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
       type: "image",
       current: "",
       callback: (path) => selectPortrait(path),
+      });
+      picker.render(true);
+  };
+
+  const openTokenUploadPicker = () => {
+    const pickerCtor = (globalThis as { FilePicker?: new (options: { type: string; current: string; callback: (path: string) => void }) => { render: (force: boolean) => void } }).FilePicker;
+    if (!pickerCtor) return;
+    const picker = new pickerCtor({
+      type: "image",
+      current: "",
+      callback: (path) => selectTokenArt(path),
     });
     picker.render(true);
   };
@@ -568,7 +626,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
   return (
     <ArcaneStepFrame scene="visage">
       <ArcaneHero
-        eyebrow="Finalize"
+        eyebrow="Lore"
         title="Choose the Visage"
         description="This chamber is optional. Bind a likeness to the artifact now, or leave the portrait for a later hour."
       />
@@ -632,13 +690,36 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 >
                   Upload Portrait
                 </button>
-                {currentPortrait ? (
+                {viewModel.hasPortrait ? (
                   <button
                     className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-danger)_48%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-danger)_20%,transparent)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-danger)_72%,var(--cc-text-primary)_28%)] transition hover:border-[color:color-mix(in_srgb,var(--cc-danger)_68%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-danger)_28%,transparent)]"
                     onClick={clearPortrait}
                     type="button"
                   >
-                    Clear
+                    Clear Portrait
+                  </button>
+                ) : null}
+                <button
+                  className="cc-theme-card cc-theme-card--soft rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_48%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_84%,var(--cc-surface-accent-soft)_16%)]"
+                  onClick={openTokenUploadPicker}
+                  type="button"
+                >
+                  Upload Token Art
+                </button>
+                <button
+                  className="cc-theme-card cc-theme-card--soft rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_48%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_84%,var(--cc-surface-accent-soft)_16%)]"
+                  onClick={usePortraitForToken}
+                  type="button"
+                >
+                  Use Portrait for Token
+                </button>
+                {tokenArtMode === "custom" ? (
+                  <button
+                    className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-danger)_48%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-danger)_18%,transparent)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-danger)_72%,var(--cc-text-primary)_28%)] transition hover:border-[color:color-mix(in_srgb,var(--cc-danger)_68%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-danger)_24%,transparent)]"
+                    onClick={clearTokenArt}
+                    type="button"
+                  >
+                    Clear Token Art
                   </button>
                 ) : null}
               </div>
@@ -697,6 +778,22 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
             ) : (
               <ArcaneEmptyState message="No portrait is required. You can proceed without binding a likeness, or generate one here before the ritual closes." compact />
             )}
+            <div className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <MicroLabel>Token Art</MicroLabel>
+                <TokenPill muted>{tokenArtMode === "custom" ? "Custom token art" : "Mirrors portrait"}</TokenPill>
+              </div>
+              <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.95rem] leading-6">
+                The token image defaults to the portrait. Upload a separate square asset only when the tabletop token should differ.
+              </p>
+              {currentTokenArt ? (
+                <div className="cc-theme-media-frame mt-4 overflow-hidden rounded-[1.2rem] border p-3">
+                  <img alt="Selected token art" className="aspect-square w-full rounded-[0.9rem] object-cover" src={currentTokenArt} />
+                </div>
+              ) : (
+                <ArcaneEmptyState compact message="No token art selected yet. The portrait will be used unless a custom token is uploaded." />
+              )}
+            </div>
           </div>
         </ArcaneInspectorPanel>
       </div>
@@ -704,22 +801,42 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
   );
 }
 
-export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepProps) {
+export function ReviewStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as ReviewStepViewModel | undefined;
   const [characterName, setCharacterName] = useState(viewModel?.characterName ?? "");
+  const [alignment, setAlignment] = useState(viewModel?.alignment ?? "");
+  const [backgroundStory, setBackgroundStory] = useState(viewModel?.backgroundStory ?? "");
   const prefersReducedMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
     setCharacterName(viewModel?.characterName ?? "");
+    setAlignment(viewModel?.alignment ?? "");
+    setBackgroundStory(viewModel?.backgroundStory ?? "");
   }, [viewModel?.characterName]);
+  useEffect(() => {
+    setAlignment(viewModel?.alignment ?? "");
+  }, [viewModel?.alignment]);
+  useEffect(() => {
+    setBackgroundStory(viewModel?.backgroundStory ?? "");
+  }, [viewModel?.backgroundStory]);
 
   if (!viewModel) return null;
+
+  const reviewSelection = state.selections.review ?? {};
+  const currentPortrait = viewModel.portraitDataUrl;
+  const currentTokenArt = viewModel.tokenUsesPortrait
+    ? (currentPortrait || viewModel.tokenDataUrl)
+    : (viewModel.tokenDataUrl || currentPortrait);
+  const commitLorePatch = (patch: Partial<{ characterName: string; alignment: string; backgroundStory: string }>) => {
+    controller.updateCurrentStepData({ ...reviewSelection, ...patch }, { silent: true });
+  };
 
   const heroSection = viewModel.sections.find((section) => section.id === "class");
   const originSection = viewModel.sections.find((section) => section.id === "background");
   const speciesSection = viewModel.sections.find((section) => section.id === "species");
   const abilitiesSection = viewModel.sections.find((section) => section.id === "abilities");
   const originSummarySection = viewModel.sections.find((section) => section.id === "originSummary");
+  const portraitSection = viewModel.sections.find((section) => section.id === "portrait");
   const recapSections = viewModel.sections.filter((section) => !["class", "background", "species", "abilities", "originSummary", "portrait"].includes(section.id));
   const buildSections = viewModel.sections.filter((section) => ["feats", "equipment", "spells", "portrait"].includes(section.id));
   const completeSections = viewModel.sections.filter((section) => section.complete).length;
@@ -749,7 +866,7 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                 <img
                   alt={characterName || "Character portrait"}
                   className="h-full w-full object-cover"
-                  src={viewModel.sections.find((section) => section.id === "portrait")?.img ?? speciesSection?.img ?? heroSection?.img ?? ""}
+                  src={portraitSection?.img ?? currentPortrait ?? speciesSection?.img ?? heroSection?.img ?? ""}
                 />
                 <div className="cc-theme-media-frame__fade absolute inset-0" />
                 <div className="absolute inset-x-6 bottom-6">
@@ -761,10 +878,11 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                     {[speciesSection?.summary, heroSection?.summary, originSection?.summary].filter(Boolean).map((entry) => (
                       <TokenPill key={String(entry)}>{String(entry)}</TokenPill>
                     ))}
+                    {alignment ? <TokenPill>{alignment}</TokenPill> : null}
                   </div>
                   <p className="cc-theme-copy mt-4 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6">
                     This is the name that will appear on the character sheet and in the world. Keep it clear, bold, and easy to
-                    recognize when the ritual closes.
+                    recognize when the ritual closes. Add alignment and backstory here before finalizing the binding.
                   </p>
                 </div>
               </div>
@@ -781,17 +899,94 @@ export function ReviewStepScreen({ shellContext, controller }: ReactWizardStepPr
                   <input
                     autoComplete="off"
                     aria-describedby="review-character-name-guidance"
+                    data-character-name
                     className="cc-theme-card cc-theme-card--raised mt-4 w-full rounded-[1rem] px-4 py-3 font-fth-cc-display text-[1.35rem] text-[color:var(--cc-text-primary)] outline-none transition focus-visible:border-[#e9c176]/55 focus-visible:ring-2 focus-visible:ring-[#e9c176]/35 focus-visible:ring-offset-0"
                     onChange={(event) => {
                       const value = event.target.value;
                       setCharacterName(value);
-                      controller.updateCurrentStepData({ characterName: value }, { silent: true });
+                      commitLorePatch({ characterName: value });
                     }}
                     id="review-character-name"
                     name="characterName"
                     placeholder="Enter character name..."
                     value={characterName}
                   />
+                </section>
+
+                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                  <MicroLabel>Lore Details</MicroLabel>
+                  <div className="mt-4 grid gap-4">
+                    <div>
+                      <label className="cc-theme-kicker block font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em]" htmlFor="review-alignment">
+                        Alignment
+                      </label>
+                      <input
+                        autoComplete="off"
+                        className="cc-theme-card cc-theme-card--raised mt-3 w-full rounded-[1rem] px-4 py-3 font-fth-cc-body text-[1rem] text-[color:var(--cc-text-primary)] outline-none transition focus-visible:border-[#e9c176]/55 focus-visible:ring-2 focus-visible:ring-[#e9c176]/35 focus-visible:ring-offset-0"
+                        id="review-alignment"
+                        name="alignment"
+                        data-lore-alignment
+                        placeholder="Neutral Good, chaotic, lawful, or custom..."
+                        value={alignment}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setAlignment(value);
+                          commitLorePatch({ alignment: value });
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="cc-theme-kicker block font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em]" htmlFor="review-background-story">
+                        Background Story
+                      </label>
+                      <textarea
+                        autoComplete="off"
+                        className="cc-theme-card cc-theme-card--raised mt-3 min-h-36 w-full rounded-[1rem] px-4 py-3 font-fth-cc-body text-[1rem] leading-7 text-[color:var(--cc-text-primary)] outline-none transition placeholder:text-[color:var(--cc-text-secondary)] focus-visible:border-[#e9c176]/55 focus-visible:ring-2 focus-visible:ring-[#e9c176]/35 focus-visible:ring-offset-0"
+                        id="review-background-story"
+                        name="backgroundStory"
+                        data-background-story
+                        placeholder="Write a short origin, goals, or personality note..."
+                        value={backgroundStory}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setBackgroundStory(value);
+                          commitLorePatch({ backgroundStory: value });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <MicroLabel>Portrait and Token</MicroLabel>
+                    <TokenPill muted>{viewModel.tokenUsesPortrait ? "Token follows portrait" : "Custom token art"}</TokenPill>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(12rem,0.56fr)]">
+                    <div className="space-y-3">
+                      <div className="cc-theme-body-muted font-fth-cc-body text-[0.95rem] leading-6">
+                        {viewModel.hasPortrait
+                          ? "The portrait is already bound and will be used on the final actor."
+                          : "No portrait is required. The character can still be created with just the name, alignment, and story."}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <TokenPill muted>{viewModel.hasPortrait ? "Portrait set" : "Portrait optional"}</TokenPill>
+                        <TokenPill muted>{viewModel.hasTokenArt ? "Token art set" : "Token art uses portrait"}</TokenPill>
+                      </div>
+                    </div>
+                    <div className="cc-theme-media-frame overflow-hidden rounded-[1.2rem] border p-3">
+                      {currentTokenArt ? (
+                        <img
+                          alt="Selected token art"
+                          className="aspect-square w-full rounded-[0.9rem] object-cover"
+                          src={currentTokenArt}
+                        />
+                      ) : (
+                        <ArcaneEmptyState compact message="No token art is bound yet. The portrait will stand in unless a custom token is uploaded later." />
+                      )}
+                    </div>
+                  </div>
                 </section>
 
                 {Array.isArray(abilitiesSection?.summary) ? (

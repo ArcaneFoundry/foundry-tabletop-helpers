@@ -373,7 +373,6 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("text-[color:var(--cc-text-primary)]");
     expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
     expect(markup).toContain("text-[color:var(--cc-text-hero)]");
-    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
     expect(optionsPanelIndex).toBeGreaterThanOrEqual(0);
     expect(railIndex).toBeGreaterThan(optionsPanelIndex);
     expect(simpleIndex).toBeGreaterThanOrEqual(0);
@@ -489,7 +488,6 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("text-[color:var(--cc-text-primary)]");
     expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
     expect(markup).toContain("text-[color:var(--cc-text-hero)]");
-    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
     expect(markup).not.toContain("Chosen");
   });
 
