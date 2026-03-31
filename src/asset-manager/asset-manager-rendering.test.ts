@@ -134,6 +134,8 @@ describe("asset manager rendering", () => {
 
     expect(preview).toContain("am-preview-heading");
     expect(preview).toContain("am-preview-eyebrow");
+    expect(queue).toContain("am-uq-leading");
+    expect(queue).toContain("am-uq-status");
     expect(queue).toContain("am-uq-heading");
     expect(queue).toContain("am-uq-eyebrow");
     expect(queue).toContain("am-uq-note");
@@ -192,6 +194,7 @@ describe("asset manager rendering", () => {
 
     expect(capturedContent).toContain("am-upload-dialog");
     expect(capturedContent).toContain("am-ud-eyebrow");
+    expect(capturedContent).toContain("am-ud-global-bar");
     expect(capturedContent).toContain("am-ud-row-main");
     expect(capturedContent).toContain("am-ud-row-actions");
     expect(capturedContent).toContain("Destination <code>art/monsters</code>");

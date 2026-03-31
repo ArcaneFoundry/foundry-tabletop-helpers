@@ -61,6 +61,8 @@ describe("asset manager upload helpers", () => {
     ]);
 
     expect(html).toContain("Upload queue");
+    expect(html).toContain("am-uq-leading");
+    expect(html).toContain("am-uq-status");
     expect(html).toContain("Skipped optimizer server");
     expect(html).toContain("am-uq-note");
   });

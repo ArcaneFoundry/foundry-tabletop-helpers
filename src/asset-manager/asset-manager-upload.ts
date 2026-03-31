@@ -530,6 +530,15 @@ export function buildUploadQueueHTML(queue: UploadQueueItem[]): string {
   if (queue.length === 0) return "";
 
   const items = queue.map((item) => {
+    const statusLabel = item.status === "done"
+      ? "Complete"
+      : item.status === "error"
+        ? "Error"
+        : item.status === "optimizing"
+          ? "Optimizing"
+          : item.status === "uploading"
+            ? "Uploading"
+            : "Queued";
     const statusIcon = item.status === "done"
       ? `<i class="fa-solid fa-circle-check am-uq-icon-done"></i>`
       : item.status === "error"
@@ -553,8 +562,13 @@ export function buildUploadQueueHTML(queue: UploadQueueItem[]): string {
 
     return `
       <div class="am-uq-item" data-status="${item.status}">
-        ${statusIcon}
-        <span class="am-uq-name" title="${item.originalName}">${item.outputName}</span>
+        <div class="am-uq-leading">
+          ${statusIcon}
+          <div class="am-uq-copy">
+            <span class="am-uq-name" title="${item.originalName}">${item.outputName}</span>
+            <span class="am-uq-status">${statusLabel}</span>
+          </div>
+        </div>
         ${savings}
         ${errorMsg}
         ${noteMsg}
