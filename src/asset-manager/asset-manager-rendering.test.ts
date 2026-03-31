@@ -139,6 +139,20 @@ describe("asset manager rendering", () => {
     expect(queue).toContain("am-uq-note");
   });
 
+  it("omits the filter bar entirely when there are no active chips", () => {
+    const state = {
+      ...buildState(),
+      collection: "all" as const,
+      filters: [],
+    };
+
+    const shell = buildShellHTML(state, { esc });
+    const html = buildHTML(state, { esc });
+
+    expect(shell).not.toContain("am-filter-bar");
+    expect(html).not.toContain("am-filter-bar");
+  });
+
   it("formats 413 upload failures with a specific Foundry limit message", () => {
     const file = new File(["map"], "world-map.webp", { type: "image/webp" });
     Object.defineProperty(file, "size", { value: 180_000_000 });

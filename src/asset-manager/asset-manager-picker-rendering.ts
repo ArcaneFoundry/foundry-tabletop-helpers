@@ -100,9 +100,7 @@ export function buildShellHTML(state: AssetManagerRenderState, options: HtmlOpti
             </div>
           </div>
         </div>
-        <div class="am-filter-bar">
-          ${filterChips}
-        </div>
+        ${filterChips}
         <div class="am-breadcrumbs">
           <span class="am-breadcrumbs-label">Path</span>
           <div class="am-breadcrumbs-track">${breadcrumbs}</div>
@@ -266,9 +264,7 @@ export function buildHTML(state: AssetManagerRenderState, options: HtmlOptions):
             </div>
           </div>
         </div>
-        <div class="am-filter-bar">
-          ${filterChips}
-        </div>
+        ${filterChips}
         <div class="am-breadcrumbs">
           <span class="am-breadcrumbs-label">Path</span>
           <div class="am-breadcrumbs-track">${breadcrumbs}</div>
