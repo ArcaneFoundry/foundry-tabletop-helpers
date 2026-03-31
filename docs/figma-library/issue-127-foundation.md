@@ -4,6 +4,21 @@
 
 Blocked from completing the actual Figma library in this session because the available Figma connector only exposes inspection and generation helpers. There is no write-capable Figma canvas/file tool and no Figma file key or node id supplied in the task context.
 
+Verified tool surface in this session:
+
+- `get_design_context`
+- `get_metadata`
+- `get_screenshot`
+- `get_code_connect_map`
+- `add_code_connect_map`
+- `generate_diagram`
+- `generate_asset`
+- `generate_deck`
+- `whoami`
+- `create_design_system_rules`
+
+None of those tools can create or modify a Figma library file or publish Figma variables/components directly. The only write-oriented helpers available here are for adjacent artifacts such as diagrams, decks, assets, or Code Connect metadata.
+
 This document is the concrete handoff for the library build. It translates the shipped codebase tokens and component language into a Figma library plan, without redesigning the system.
 
 ## Source Of Truth
@@ -202,4 +217,3 @@ If the next pass has a Figma file key and a write-capable canvas tool, the first
 - Build the panel and status primitives
 - Build the class card component set
 - Add usage notes that point back to the shipped code paths above
-
