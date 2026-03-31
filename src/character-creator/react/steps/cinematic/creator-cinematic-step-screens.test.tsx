@@ -178,16 +178,25 @@ describe("SpellsStepScreen", () => {
     );
 
     expect(markup).toContain("Choose Your Spells");
-    expect(markup).toContain("Selection State");
-    expect(markup).toContain("1 / 4 cantrips, 1 / 6 spells");
+    expect(markup).toContain("Wizard Spellbook");
+    expect(markup).toContain("1 / 4 cantrips");
+    expect(markup).toContain("1 / 6 spells");
+    expect(markup).toContain("1 / 4 prepared");
+    expect(markup).toContain("Spell Source");
+    expect(markup).toContain("Preparation Rules");
+    expect(markup).toContain("Search by name or narrow the Wizard list by school.");
     expect(markup).toContain("Cantrips");
     expect(markup).toContain("Level 1");
     expect(markup).toContain("Light");
     expect(markup).toContain("Magic Missile");
-    expect(markup).toContain("Prepared Workings");
+    expect(markup).toContain("Preview &amp; Loadout");
+    expect(markup).toContain("Current Loadout");
     expect(markup).toContain("Prepared Now");
     expect(markup).toContain("Chosen Spells");
+    expect(markup).toContain("data-spell-command-bar=\"true\"");
+    expect(markup).toContain("data-spell-school-filters=\"true\"");
     expect(markup).toContain("data-spell-chooser-scroll=\"true\"");
+    expect(markup).toContain("data-spell-selection-rail=\"true\"");
     expect(markup).toContain("min-h-0 flex-1 space-y-4 overflow-y-auto pr-1");
   });
 
@@ -259,6 +268,7 @@ describe("SpellsStepScreen", () => {
 
     expect(markup).toContain("Cleric");
     expect(markup).toContain("Choose which 1 leveled spell start prepared for this Cleric.");
+    expect(markup).toContain("Current Loadout");
     expect(markup).toContain("Bless");
     expect(markup).toContain("Guiding Bolt");
     expect(markup).toContain("Prepared");

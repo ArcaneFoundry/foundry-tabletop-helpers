@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import type {
@@ -372,70 +372,116 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
   const previewDescription = previewEntry
     ? previewDescriptions[previewEntry.uuid] ?? previewEntry.description ?? ""
     : "";
+  const selectedCantripIds = new Set(selection.cantrips);
+  const selectedSpellIds = new Set(selection.spells);
+  const preparedSpellIds = new Set(selection.preparedSpells ?? []);
   const selectedCantripEntries = viewModel.cantrips.filter((entry) => selection.cantrips.includes(entry.uuid));
   const selectedSpellEntries = viewModel.spellsByLevel.flatMap((group) => group.spells).filter((entry) => selection.spells.includes(entry.uuid));
   const preparedSpellEntries = selectedSpellEntries.filter((entry) => selection.preparedSpells?.includes(entry.uuid));
+  const spellListName = (() => {
+    const label = viewModel.spellListLabel?.trim();
+    if (!label) return `${viewModel.className} list`;
+    return /\blist\b/i.test(label) ? label : `${label} list`;
+  })();
+  const sourceContext = viewModel.sourceContextLabel ?? `Filtered to the ${viewModel.className} spell list.`;
+  const selectionModelLabel = usesPreparedPicker
+    ? `Choose spells from the ${spellListName}, then mark what starts prepared.`
+    : `Choose the spells your ${viewModel.className} begins with from the ${spellListName}.`;
+  const searchPlaceholder = `Search the ${spellListName}`;
+  const selectedSchoolFilter = (viewModel.schoolFilters ?? []).find((filter) => filter.value === schoolFilter)?.label ?? null;
+  const filterSummary = normalizedQuery || schoolFilter
+    ? [
+      normalizedQuery ? `Matching "${deferredSearchText.trim()}"` : null,
+      selectedSchoolFilter ? `in ${selectedSchoolFilter}` : null,
+    ].filter(Boolean).join(" ")
+    : `Search by name or narrow the ${spellListName} by school.`;
+  const cantripSummaryLabel = viewModel.maxCantrips !== null
+    ? `${selection.cantrips.length} / ${viewModel.maxCantrips} cantrips`
+    : `${selection.cantrips.length} cantrips`;
+  const spellSummaryLabel = viewModel.maxSpells !== null
+    ? `${selection.spells.length} / ${viewModel.maxSpells} spells`
+    : `${selection.spells.length} spells chosen`;
+  const preparedSummaryLabel = usesPreparedPicker
+    ? `${preparedSpellEntries.length} / ${preparedLimit ?? 0} prepared`
+    : null;
 
   return (
     <ArcaneStepFrame scene="grimoire">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <MicroLabel>{viewModel.className}</MicroLabel>
-          <h2 className="cc-theme-title mt-2 font-fth-cc-display text-[clamp(1.8rem,3vw,2.7rem)] leading-[0.94]">
+          <MicroLabel>{viewModel.className} Spellbook</MicroLabel>
+          <h2 className="cc-theme-title mt-2 font-fth-cc-display text-[clamp(1.75rem,3vw,2.55rem)] leading-[0.94]">
             Choose Your Spells
           </h2>
-          <p className="cc-theme-copy mt-2 max-w-3xl font-fth-cc-body text-[0.95rem] leading-6">
-            Expose the spell list first, then shape the exact cantrips, spells, and prepared workings your character carries.
-          </p>
         </div>
-        <div className="shrink-0">
-          <ValueBadge>{viewModel.selectionSummary}</ValueBadge>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <ValueBadge>{cantripSummaryLabel}</ValueBadge>
+          <ValueBadge>{spellSummaryLabel}</ValueBadge>
+          {preparedSummaryLabel ? <ValueBadge>{preparedSummaryLabel}</ValueBadge> : null}
         </div>
       </div>
 
       <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.14fr)_minmax(20rem,0.86fr)]">
         <ArcaneScrollPanel className="flex min-h-0 flex-col overflow-hidden">
-          <div className="shrink-0">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <MicroLabel>Selection State</MicroLabel>
-              <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[#b5abc7]">
-                {viewModel.cantripCount} cantrips • {viewModel.spellCount} spells
-              </div>
+          <div className="cc-theme-panel cc-theme-panel--accent shrink-0 rounded-[1.35rem] border p-4" data-spell-command-bar="true">
+            <div className="grid gap-3 lg:grid-cols-2">
+              <section className="cc-theme-card cc-theme-card--soft rounded-[1.2rem] p-4">
+                <MicroLabel>Spell Source</MicroLabel>
+                <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.95rem] leading-6">
+                  {sourceContext}
+                </p>
+              </section>
+              <section className="cc-theme-card cc-theme-card--soft rounded-[1.2rem] p-4">
+                <MicroLabel>{usesPreparedPicker ? "Preparation Rules" : "Selection Rules"}</MicroLabel>
+                <p className="cc-theme-body-muted mt-3 font-fth-cc-body text-[0.95rem] leading-6">
+                  {selectionModelLabel}
+                </p>
+                {viewModel.hasPreparationNotice ? (
+                  <p className="cc-theme-body mt-3 font-fth-cc-body text-[0.92rem] leading-6">
+                    {viewModel.preparationNotice}
+                  </p>
+                ) : null}
+              </section>
             </div>
-            <p className="mt-3 font-fth-cc-body text-[0.95rem] leading-7 text-[#d4ccc6]">
-              {viewModel.sourceContextLabel ?? `Filtered to the ${viewModel.className} spell list.`}
-            </p>
-            {viewModel.hasPreparationNotice ? (
-              <div className="mt-3 rounded-[1.2rem] border border-[#e9c176]/20 bg-[rgba(125,86,153,0.12)] px-4 py-3 font-fth-cc-body text-[0.98rem] leading-7 text-[#ded5eb]">
-                {viewModel.preparationNotice}
-              </div>
-            ) : null}
-            <div className="mt-4 grid gap-3 rounded-[1.25rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4 md:grid-cols-[minmax(0,1fr)_auto]">
-              <label className="flex items-center gap-3 rounded-full border border-white/10 bg-[rgba(0,0,0,0.18)] px-4 py-3 text-[#d8d0c7]">
-                <i className="fa-solid fa-magnifying-glass text-[0.8rem] text-[#e9c176]" />
+
+            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <label className="cc-theme-card cc-theme-card--soft flex items-center gap-3 rounded-full border px-4 py-3 text-[var(--cc-text-primary)]">
+                <i className="fa-solid fa-magnifying-glass text-[0.8rem] text-[var(--cc-badge-text)]" />
                 <input
-                  className="w-full bg-transparent font-fth-cc-body text-[0.96rem] outline-none placeholder:text-[#998fa8]"
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder={`Search the ${viewModel.spellListLabel ?? viewModel.className} list`}
+                  className="w-full bg-transparent font-fth-cc-body text-[0.96rem] outline-none placeholder:text-[var(--cc-text-secondary)]"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    startTransition(() => setSearchText(value));
+                  }}
+                  placeholder={searchPlaceholder}
                   type="text"
                   value={searchText}
                 />
               </label>
-              <div className="flex flex-wrap gap-2">
-                <ModeToggleButton active={schoolFilter === ""} label="All Schools" onClick={() => setSchoolFilter("")} />
-                {(viewModel.schoolFilters ?? []).map((filter) => (
+              <div className="space-y-2">
+                <p className="cc-theme-body-muted font-fth-cc-body text-[0.83rem] leading-5">
+                  {filterSummary}
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-1" data-spell-school-filters="true">
                   <ModeToggleButton
-                    active={schoolFilter === filter.value}
-                    key={filter.value}
-                    label={filter.label}
-                    onClick={() => setSchoolFilter(filter.value)}
+                    active={schoolFilter === ""}
+                    label="All Schools"
+                    onClick={() => startTransition(() => setSchoolFilter(""))}
                   />
-                ))}
+                  {(viewModel.schoolFilters ?? []).map((filter) => (
+                    <ModeToggleButton
+                      active={schoolFilter === filter.value}
+                      key={filter.value}
+                      label={filter.label}
+                      onClick={() => startTransition(() => setSchoolFilter(filter.value))}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1" data-spell-chooser-scroll="true">
+          <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1" data-spell-chooser-scroll="true">
             <SpellGroupSection
               emptyMessage={normalizedQuery || schoolFilter
                 ? `No cantrips match the current filters for ${viewModel.className}.`
@@ -444,7 +490,7 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
               onToggle={toggleCantrip}
               onPreview={setPreviewUuid}
               prefersReducedMotion={prefersReducedMotion}
-              selectedIds={new Set(selection.cantrips)}
+              selectedIds={selectedCantripIds}
               subtitle={viewModel.maxCantrips !== null ? `${selection.cantrips.length} / ${viewModel.maxCantrips} chosen` : `${selection.cantrips.length} chosen`}
               title="Cantrips"
             />
@@ -457,9 +503,9 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
                   onToggle={toggleSpell}
                   onTogglePrepared={usesPreparedPicker ? togglePrepared : undefined}
                   onPreview={setPreviewUuid}
-                  preparedIds={new Set(selection.preparedSpells ?? [])}
+                  preparedIds={preparedSpellIds}
                   prefersReducedMotion={prefersReducedMotion}
-                  selectedIds={new Set(selection.spells)}
+                  selectedIds={selectedSpellIds}
                   subtitle={usesPreparedPicker
                     ? `${group.spells.filter((spell) => selection.preparedSpells?.includes(spell.uuid)).length} prepared`
                     : `${group.spells.filter((spell) => selection.spells.includes(spell.uuid)).length} selected`}
@@ -487,11 +533,23 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
           </div>
         </ArcaneScrollPanel>
 
-        <ArcaneInspectorPanel className="flex min-h-0 flex-col overflow-hidden" title="Prepared Workings" eyebrow={viewModel.className}>
+        <ArcaneInspectorPanel className="flex min-h-0 flex-col overflow-hidden" title="Preview & Loadout" eyebrow={viewModel.className}>
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-            <ValueBadge>{selection.cantrips.length} cantrips • {selection.spells.length} spells</ValueBadge>
-            <div className="rounded-[1.2rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4">
-              <MicroLabel>Spell Preview</MicroLabel>
+            <div className="flex flex-wrap gap-2" data-spell-selection-rail="true">
+              <ValueBadge>{cantripSummaryLabel}</ValueBadge>
+              <ValueBadge>{spellSummaryLabel}</ValueBadge>
+              {preparedSummaryLabel ? <ValueBadge>{preparedSummaryLabel}</ValueBadge> : null}
+            </div>
+            <div className="cc-theme-card cc-theme-card--soft rounded-[1.2rem] border p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <MicroLabel>Spell Preview</MicroLabel>
+                  <p className="cc-theme-body-muted mt-2 font-fth-cc-body text-[0.92rem] leading-6">
+                    Focus or hover a spell on the left to inspect what it actually does before you commit it.
+                  </p>
+                </div>
+                {previewEntry?.schoolLabel ? <TokenPill muted>{previewEntry.schoolLabel}</TokenPill> : null}
+              </div>
               {previewEntry ? (
                 <div className="mt-3">
                   <div className="flex items-start gap-3">
@@ -524,30 +582,41 @@ export function SpellsStepScreen({ shellContext, state, controller }: ReactWizar
                 </div>
               )}
             </div>
-            {usesPreparedPicker ? (
-              <div className="space-y-3">
-                <MicroLabel>Prepared Now</MicroLabel>
-                <div className="flex flex-wrap gap-2">
-                  {preparedSpellEntries.length > 0
-                    ? preparedSpellEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
-                    : <TokenPill muted>Choose prepared spells</TokenPill>}
+            <div className="cc-theme-card cc-theme-card--soft rounded-[1.2rem] border p-4">
+              <MicroLabel>{usesPreparedPicker ? "Current Loadout" : "Current Selections"}</MicroLabel>
+              <div className="mt-4 space-y-4">
+                {usesPreparedPicker ? (
+                  <div className="space-y-3">
+                    <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[color:var(--cc-text-secondary)]">
+                      Prepared Now
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {preparedSpellEntries.length > 0
+                        ? preparedSpellEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
+                        : <TokenPill muted>Choose prepared spells</TokenPill>}
+                    </div>
+                  </div>
+                ) : null}
+                <div className="space-y-3">
+                  <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[color:var(--cc-text-secondary)]">
+                    Chosen Cantrips
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCantripEntries.length > 0
+                      ? selectedCantripEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
+                      : <TokenPill muted>No cantrips chosen yet</TokenPill>}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            <div className="space-y-3">
-              <MicroLabel>Chosen Cantrips</MicroLabel>
-              <div className="flex flex-wrap gap-2">
-                {selectedCantripEntries.length > 0
-                  ? selectedCantripEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
-                  : <TokenPill muted>No cantrips chosen yet</TokenPill>}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <MicroLabel>Chosen Spells</MicroLabel>
-              <div className="flex flex-wrap gap-2">
-                {selectedSpellEntries.length > 0
-                  ? selectedSpellEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
-                  : <TokenPill muted>No leveled spells chosen yet</TokenPill>}
+                <div className="space-y-3">
+                  <div className="font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.18em] text-[color:var(--cc-text-secondary)]">
+                    Chosen Spells
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSpellEntries.length > 0
+                      ? selectedSpellEntries.map((entry) => <TokenPill key={entry.uuid}>{entry.name}</TokenPill>)
+                      : <TokenPill muted>No leveled spells chosen yet</TokenPill>}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

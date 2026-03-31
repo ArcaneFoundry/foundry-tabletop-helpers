@@ -283,6 +283,9 @@ describe("step spells", () => {
       spellCount: 0,
       maxCantrips: 4,
       maxSpells: 14,
+      schoolFilters: [
+        { value: "evo", label: "Evocation" },
+      ],
     });
 
     const cantrips = (viewModel.cantrips as Array<Record<string, unknown>>).map((s) => s.name);

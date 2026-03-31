@@ -291,6 +291,17 @@ export function createSpellsStep(): WizardStepDefinition {
           schoolLabel: SCHOOL_LABELS[s.school ?? ""] ?? s.school ?? "",
         }));
 
+      const schoolFilters = Array.from(new Set(
+        [...cantrips, ...leveledSpells]
+          .map((spell) => spell.school)
+          .filter((school): school is string => typeof school === "string" && school.length > 0),
+      ))
+        .sort((left, right) => (SCHOOL_LABELS[left] ?? left).localeCompare(SCHOOL_LABELS[right] ?? right))
+        .map((value) => ({
+          value,
+          label: SCHOOL_LABELS[value] ?? value,
+        }));
+
       // Group leveled spells by level
       const spellsByLevel: Array<{ level: number; label: string; spells: typeof leveledSpells }> = [];
       for (let lvl = 1; lvl <= maxLevel; lvl++) {
@@ -336,7 +347,7 @@ export function createSpellsStep(): WizardStepDefinition {
         preparedLimit: entitlements.preparedLimit,
         sourceContextLabel: entitlements.sourceContextLabel,
         spellListLabel: entitlements.listLabel,
-        schoolFilters: Object.entries(SCHOOL_LABELS).map(([value, label]) => ({ value, label })),
+        schoolFilters,
         localProgressDetail: buildSelectionSummary(
           data.cantrips.length,
           data.spells.length,
