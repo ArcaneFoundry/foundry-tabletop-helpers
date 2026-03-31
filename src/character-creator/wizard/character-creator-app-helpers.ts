@@ -5,21 +5,42 @@ import { isBuildFlowStep } from "../react/steps/build/build-flow-route-host";
 import { isClassFlowStep } from "../react/steps/class/class-flow-route-host";
 import { isOriginFlowStep } from "../react/steps/origin/origin-flow-route-host";
 
-function getChapterKey(stepId: string): "class" | "origins" | "build" | "finalize" {
+type ChapterKey = NonNullable<WizardShellContext["chapterKey"]>;
+
+function getChapterKey(stepId: string): ChapterKey {
+  if (stepId === "classChoices") return "skills";
+  if (stepId === "species" || stepId === "speciesSkills" || stepId === "speciesLanguages" || stepId === "speciesItemChoices") return "species";
+  if (stepId === "background" || stepId === "backgroundSkillConflicts" || stepId === "backgroundAsi" || stepId === "backgroundLanguages" || stepId === "originChoices" || stepId === "originSummary") return "background";
+  if (stepId === "abilities" || stepId === "feats") return "abilities";
+  if (stepId === "spells") return "spells";
+  if (stepId === "equipment" || stepId === "equipmentShop") return "equipment";
+  if (stepId === "portrait" || stepId === "review") return "lore";
   if (isClassFlowStep(stepId) || stepId === "subclass") return "class";
-  if (isOriginFlowStep(stepId)) return "origins";
-  if (isBuildFlowStep(stepId) || stepId === "feats" || stepId === "spells") return "build";
-  return "finalize";
+  if (isOriginFlowStep(stepId)) return "background";
+  if (isBuildFlowStep(stepId)) return "abilities";
+  return "lore";
 }
 
-function getDefaultSceneKey(stepId: string, chapterKey: "class" | "origins" | "build" | "finalize"): string {
+function getDefaultAccentToken(chapterKey: ChapterKey): string {
+  if (chapterKey === "class") return "class";
+  if (chapterKey === "species" || chapterKey === "background" || chapterKey === "origins") return "origins";
+  if (chapterKey === "skills" || chapterKey === "abilities" || chapterKey === "spells" || chapterKey === "equipment" || chapterKey === "build") return "build";
+  return "lore";
+}
+
+function getDefaultSceneKey(stepId: string, chapterKey: ChapterKey): string {
   if (stepId === "weaponMasteries" || stepId === "equipment" || stepId === "equipmentShop") return "arsenal";
-  if (stepId === "spells" || stepId === "originChoices") return "grimoire";
+  if (stepId === "spells") return "grimoire";
+  if (stepId === "originChoices") return "grimoire";
   if (stepId === "review") return "binding";
   if (stepId === "portrait") return "visage";
   if (chapterKey === "class") return "forge";
-  if (chapterKey === "origins") return "archives";
-  if (chapterKey === "build") return "ritual";
+  if (chapterKey === "species") return "archives";
+  if (chapterKey === "background" || chapterKey === "origins") return "archives";
+  if (chapterKey === "skills") return "ritual";
+  if (chapterKey === "abilities" || chapterKey === "build") return "ritual";
+  if (chapterKey === "spells") return "grimoire";
+  if (chapterKey === "equipment") return "arsenal";
   return "coronation";
 }
 
@@ -65,7 +86,7 @@ export async function buildWizardShellContext(
   const nextButtonLabel = vmData.nextButtonLabel as string | undefined;
   const chapterKey = (vmData.chapterKey as WizardShellContext["chapterKey"] | undefined) ?? getChapterKey(machine.currentStepId);
   const chapterSceneKey = (vmData.chapterSceneKey as string | undefined) ?? getDefaultSceneKey(machine.currentStepId, chapterKey);
-  const chapterAccentToken = (vmData.chapterAccentToken as string | undefined) ?? chapterKey;
+  const chapterAccentToken = (vmData.chapterAccentToken as string | undefined) ?? getDefaultAccentToken(chapterKey);
   const panelStyleVariant = (vmData.panelStyleVariant as WizardShellContext["panelStyleVariant"] | undefined) ?? "artifact";
   const motionProfile = (vmData.motionProfile as WizardShellContext["motionProfile"] | undefined) ?? "ceremonial";
   const statusHintStyle = (vmData.statusHintStyle as WizardShellContext["statusHintStyle"] | undefined)

@@ -6,6 +6,11 @@ import type {
 } from "../character-creator-types";
 import { ABILITY_ABBREVS, SKILLS } from "../data/dnd5e-constants";
 import { ClassChoicesStepScreen } from "../react/steps/class/class-choices-step-screen";
+import {
+  getAvailableClassSkillKeys,
+  getLegalClassSkillKeys,
+  getRequiredClassSkillCount,
+} from "./origin-flow-utils";
 
 const SKILL_META: Record<string, { icon: string; description: string }> = {
   acr: { icon: "fa-person-running", description: "Balance, tumble, dive, and keep your footing when the battlefield turns treacherous." },
@@ -33,15 +38,7 @@ function skillLabel(key: string): string {
 }
 
 function getChosenSkills(state: WizardState): string[] {
-  return state.selections.skills?.chosen ?? [];
-}
-
-function getAvailableSkillKeys(state: WizardState): string[] {
-  return state.selections.class?.skillPool ?? [];
-}
-
-function getRequiredSkillCount(state: WizardState): number {
-  return Math.min(state.selections.class?.skillCount ?? 0, getAvailableSkillKeys(state).length);
+  return getLegalClassSkillKeys(state);
 }
 
 function abilityLabel(key: AbilityKey): string {
@@ -61,12 +58,12 @@ export function createClassChoicesStep(): WizardStepDefinition {
 
     isComplete(state: WizardState): boolean {
       if (!state.selections.class?.uuid) return false;
-      return getChosenSkills(state).length >= getRequiredSkillCount(state);
+      return getChosenSkills(state).length >= getRequiredClassSkillCount(state);
     },
 
     getStatusHint(state: WizardState): string {
       const chosenSkills = getChosenSkills(state).length;
-      const requiredSkills = getRequiredSkillCount(state);
+      const requiredSkills = getRequiredClassSkillCount(state);
       if (chosenSkills < requiredSkills) {
         const remaining = requiredSkills - chosenSkills;
         return `Choose ${remaining} more class skill${remaining === 1 ? "" : "s"}`;
@@ -77,8 +74,8 @@ export function createClassChoicesStep(): WizardStepDefinition {
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       const classSelection = state.selections.class;
       const chosenSkills = new Set(getChosenSkills(state));
-      const requiredSkillCount = getRequiredSkillCount(state);
-      const skillPool = getAvailableSkillKeys(state).map((key) => ({
+      const requiredSkillCount = getRequiredClassSkillCount(state);
+      const skillPool = getAvailableClassSkillKeys(state).map((key) => ({
         key,
         label: skillLabel(key),
         abilityAbbrev: ABILITY_ABBREVS[SKILLS[key]?.ability ?? "int"],

@@ -21,4 +21,30 @@ describe("step portrait", () => {
     expect(step.renderMode).toBe("react");
     expect(step.reactComponent).toBeTypeOf("function");
   });
+
+  it("defaults token art to the portrait unless a custom token is already stored", async () => {
+    const { createPortraitStep } = await import("./step-portrait");
+    const step = createPortraitStep();
+
+    const viewModel = await step.buildViewModel({
+      selections: {
+        portrait: {
+          portraitDataUrl: "portrait.webp",
+          tokenDataUrl: "token.webp",
+          tokenArtMode: "custom",
+          source: "uploaded",
+        },
+        species: { name: "Elf" },
+        class: { name: "Wizard" },
+      },
+    } as never);
+
+    expect(viewModel).toMatchObject({
+      hasPortrait: true,
+      portraitDataUrl: "portrait.webp",
+      tokenDataUrl: "token.webp",
+      tokenArtMode: "custom",
+      source: "uploaded",
+    });
+  });
 });

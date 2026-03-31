@@ -22,7 +22,7 @@ function makeState(): WizardState {
         name: "Fighter",
         img: "fighter.png",
         identifier: "fighter",
-        skillPool: [],
+        skillPool: ["ath", "sur", "acr"],
         skillCount: 2,
         isSpellcaster: false,
         spellcastingAbility: "",
@@ -84,6 +84,28 @@ function makeState(): WizardState {
           },
         ],
       },
+      background: {
+        uuid: "background.sailor",
+        name: "Sailor",
+        img: "sailor.png",
+        grants: {
+          skillProficiencies: ["sur"],
+          weaponProficiencies: [],
+          toolProficiency: null,
+          originFeatUuid: null,
+          originFeatName: null,
+          originFeatImg: null,
+          asiPoints: 0,
+          asiCap: 0,
+          asiAllowed: [],
+          asiSuggested: [],
+          languageGrants: [],
+          languageChoiceCount: 0,
+          languageChoicePool: [],
+        },
+        asi: { assignments: {} },
+        languages: { fixed: [], chosen: [] },
+      },
       classChoices: {
         chosenSkills: ["ath", "sur"],
       },
@@ -94,7 +116,7 @@ function makeState(): WizardState {
           { id: "shortbow", label: "Shortbow", mastery: "Vex" },
         ],
       },
-      skills: { chosen: ["ath", "sur"] },
+      skills: { chosen: ["ath", "acr"] },
       classAdvancements: {
         expertiseSkills: ["ath", "sur"],
         chosenLanguages: ["draconic"],
@@ -215,11 +237,13 @@ describe("step class summary", () => {
   it("builds a compact class summary with advancement-backed proficiencies and feature descriptions", async () => {
     const { createClassSummaryStep } = await import("./step-class-summary");
     const step = createClassSummaryStep();
+    const state = makeState();
+    state.selections.skills = { chosen: ["ath", "sur"] };
 
     expect(step.renderMode).toBe("react");
     expect(step.reactComponent).toBeDefined();
 
-    const viewModel = await step.buildViewModel(makeState());
+    const viewModel = await step.buildViewModel(state);
 
     expect(fetchDocumentMock).toHaveBeenCalledWith("class.fighter");
     expect(viewModel).toMatchObject({
@@ -231,7 +255,7 @@ describe("step class summary", () => {
       featureHeading: "First-Level Features",
       hitDie: "d10",
       savingThrows: ["STR", "CON"],
-      chosenSkills: ["Athletics", "Survival"],
+      chosenSkills: ["Athletics"],
       chosenWeaponMasteries: ["Longsword (Sap)", "Shortbow (Vex)"],
       armorProficiencies: ["Light", "Medium", "Shields"],
       weaponProficiencies: ["Simple", "Martial"],

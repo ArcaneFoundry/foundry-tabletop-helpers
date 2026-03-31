@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import type { ReactWizardStepProps } from "../../../character-creator-types";
@@ -6,6 +6,7 @@ import { cn } from "../../../../ui/lib/cn";
 import { buildClassAggregateStepperModel } from "../../progress/build-class-aggregate-stepper-model";
 import { ClassAggregateStepper } from "./class-step-screen";
 import { useClassStepperLayoutMode } from "./class-stepper-layout";
+import { applyLegalClassSkillSelections } from "../../../steps/origin-flow-utils";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 
@@ -67,15 +68,32 @@ const CLASS_THEMES: Record<string, { accent: string; glow: string; sigil: string
 const PROFICIENCY_BONUS = "+2";
 const CLASS_SKILL_ABILITY_ORDER = ["STR", "DEX", "CON", "WIS", "INT", "CHA"] as const;
 
+function sameKeys(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
+
 export function ClassChoicesStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as ClassChoicesStepViewModel | undefined;
   const prefersReducedMotion = useReducedMotion() ?? false;
   if (!viewModel) return null;
 
-  const [selectedKeys, setSelectedKeys] = useState<string[]>(
-    viewModel.skillSection.selectedEntries.map((entry) => viewModel.skillSection.options.find((option) => option.label === entry.label)?.key)
-      .filter((value): value is string => Boolean(value)),
+  const legalSelectedKeys = useMemo(
+    () => viewModel.skillSection.options.filter((option) => option.checked).map((option) => option.key),
+    [viewModel.skillSection.options],
   );
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(legalSelectedKeys);
+
+  useEffect(() => {
+    const currentChosen = state.selections.skills?.chosen ?? [];
+    if (!sameKeys(currentChosen, legalSelectedKeys)) {
+      const chosenSkills = applyLegalClassSkillSelections(state, legalSelectedKeys);
+      controller.updateCurrentStepData({ chosenSkills }, { silent: true });
+      setSelectedKeys(chosenSkills);
+      return;
+    }
+
+    setSelectedKeys((current) => sameKeys(current, legalSelectedKeys) ? current : legalSelectedKeys);
+  }, [controller, legalSelectedKeys, state]);
 
   const theme = getClassTheme(viewModel.classIdentifier);
   const selectedSet = useMemo(() => new Set(selectedKeys), [selectedKeys]);
@@ -107,9 +125,9 @@ export function ClassChoicesStepScreen({ shellContext, state, controller }: Reac
     }
 
     const chosenSkills = Array.from(nextSelected);
-    state.selections.skills = { chosen: chosenSkills };
-    controller.updateCurrentStepData({ chosenSkills }, { silent: true });
-    setSelectedKeys(chosenSkills);
+    const legalChosenSkills = applyLegalClassSkillSelections(state, chosenSkills);
+    controller.updateCurrentStepData({ chosenSkills: legalChosenSkills }, { silent: true });
+    setSelectedKeys(legalChosenSkills);
   };
 
   return (

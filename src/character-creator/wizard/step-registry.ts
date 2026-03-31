@@ -43,7 +43,6 @@ import { createReviewStep } from "../steps/step-review";
 /** Canonical step order. Steps not in this list sort to the end. */
 const STEP_ORDER = [
   "class",
-  "classChoices",
   "classExpertise",
   "classLanguages",
   "classTools",
@@ -51,21 +50,22 @@ const STEP_ORDER = [
   "classItemChoices",
   "classSummary",
   "subclass",
+  "species",
+  "speciesSkills",
+  "speciesLanguages",
+  "speciesItemChoices",
   "background",
   "backgroundSkillConflicts",
   "backgroundAsi",
   "backgroundLanguages",
   "originChoices",
-  "species",
-  "speciesSkills",
-  "speciesLanguages",
-  "speciesItemChoices",
   "originSummary",
+  "classChoices",
   "abilities",
   "feats",
+  "spells",
   "equipment",
   "equipmentShop",
-  "spells",
   "portrait",
   "review",
 ];
@@ -183,23 +183,23 @@ export function createPlaceholderStep(
  */
 export function registerAllSteps(): void {
   registerStep(createClassStep());
-  registerStep(createClassChoicesStep());
   registerStep(createClassExpertiseStep());
   registerStep(createClassLanguagesStep());
   registerStep(createClassToolsStep());
   registerStep(createClassItemChoicesStep());
   registerStep(createClassSummaryStep());
   registerStep(createSubclassStep());
+  registerStep(createSpeciesStep());
+  registerStep(createSpeciesSkillsStep());
+  registerStep(createSpeciesLanguagesStep());
+  registerStep(createSpeciesItemChoicesStep());
   registerStep(createBackgroundStep());
   registerStep(createBackgroundSkillConflictsStep());
   registerStep(createBackgroundAsiStep());
   registerStep(createBackgroundLanguagesStep());
   registerStep(createOriginChoicesStep());
-  registerStep(createSpeciesStep());
-  registerStep(createSpeciesSkillsStep());
-  registerStep(createSpeciesLanguagesStep());
-  registerStep(createSpeciesItemChoicesStep());
   registerStep(createOriginSummaryStep());
+  registerStep(createClassChoicesStep());
   registerStep(createWeaponMasteriesStep());
   registerStep(createAbilitiesStep());
   registerStep(createFeatsStep());

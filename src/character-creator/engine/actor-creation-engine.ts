@@ -11,7 +11,7 @@
 import { Log, MOD } from "../../logger";
 import { getGame, getUI, fromUuid } from "../../types";
 import type { FoundryDocument } from "../../types";
-import type { WizardState, PortraitSelection } from "../character-creator-types";
+import type { WizardState, PortraitSelection, LoreSelection } from "../character-creator-types";
 import { ABILITY_KEYS } from "../data/dnd5e-constants";
 import type { AbilityKey } from "../character-creator-types";
 import { buildEmptyClassAdvancementSelections } from "../steps/class-advancement-utils";
@@ -134,9 +134,8 @@ export async function createCharacterFromWizard(
   state: WizardState,
 ): Promise<FoundryDocument | null> {
   const sel = state.selections;
-  const characterName =
-    (sel.review as { characterName?: string } | undefined)?.characterName?.trim() ??
-    "New Character";
+  const review = sel.review as LoreSelection | undefined;
+  const characterName = review?.characterName?.trim() ?? "New Character";
 
   try {
     // 1. Create base Actor
@@ -186,20 +185,23 @@ export async function createCharacterFromWizard(
     // higher-level progression, which can overwrite actor data in live dnd5e.
     await applyFinalCharacterSelections(actor, state);
 
-    // 10. Normalize embedded spell preparation after dnd5e creation/progression
+    // 10. Apply lore details captured in the final review step
+    await applyLoreDetails(actor, review);
+
+    // 11. Normalize embedded spell preparation after dnd5e creation/progression
     // flows have finished mutating actor spell items.
     await normalizeActorSpellPreparation(actor, state);
 
-    // 11. Upload and apply portrait if generated
+    // 12. Upload and apply portrait/token art if provided
     await applyPortrait(actor, sel.portrait, characterName);
 
-    // 12. Set ownership
+    // 13. Set ownership
     await setOwnership(actor);
 
-    // 13. Notify GM via socket
+    // 14. Notify GM via socket
     notifyGMCharacterCreated(characterName, actor.id);
 
-    // 14. Return the created actor
+    // 15. Return the created actor
     return actor;
   } catch (err) {
     Log.error("ActorCreationEngine: Failed to create character", err);
@@ -925,6 +927,30 @@ async function applyFinalCharacterSelections(
   await applyFinalHitPoints(actor, state);
 }
 
+async function applyLoreDetails(
+  actor: FoundryDocument,
+  review: LoreSelection | undefined,
+): Promise<void> {
+  const alignment = review?.alignment?.trim();
+  const backgroundStory = review?.backgroundStory?.trim();
+  const updates: Record<string, unknown> = {};
+
+  if (alignment) {
+    updates["system.details.alignment"] = alignment;
+  }
+  if (backgroundStory) {
+    updates["system.details.biography.value"] = backgroundStory;
+  }
+
+  if (Object.keys(updates).length === 0) return;
+
+  await actor.update(updates);
+  Log.debug("ActorCreationEngine: Applied lore details", {
+    hasAlignment: !!alignment,
+    hasBackgroundStory: !!backgroundStory,
+  });
+}
+
 function toClassLanguageAdvancementKey(value: string): string {
   const normalized = value.trim().toLowerCase();
   const aliases: Record<string, string> = {
@@ -1212,46 +1238,71 @@ async function applyPortrait(
   portrait: PortraitSelection | undefined,
   characterName: string,
 ): Promise<void> {
-  if (!portrait?.portraitDataUrl) return;
+  const portraitSource = portrait?.portraitDataUrl?.trim() ?? "";
+  const tokenUsesPortrait = portrait?.tokenArtMode !== "custom";
+  const tokenSource = tokenUsesPortrait ? portraitSource : (portrait?.tokenDataUrl?.trim() ?? "");
+  if (!portraitSource && !tokenSource) return;
 
-  // If it's already a file path (uploaded via FilePicker), update the actor img
-  if (!portrait.portraitDataUrl.startsWith("data:")) {
-    await actor.update({ img: portrait.portraitDataUrl });
-    if (portrait.tokenDataUrl && !portrait.tokenDataUrl.startsWith("data:")) {
-      await actor.update({ "prototypeToken.texture.src": portrait.tokenDataUrl });
-    }
-    return;
+  const resolvedPortrait = portraitSource
+    ? await resolveStoredImageSource(portraitSource, characterName, "portrait")
+    : undefined;
+  const resolvedToken = tokenUsesPortrait
+    ? resolvedPortrait
+    : tokenSource
+      ? await resolveStoredImageSource(tokenSource, characterName, "token")
+      : undefined;
+
+  const finalPortrait = resolvedPortrait ?? resolvedToken;
+  const finalToken = resolvedToken ?? resolvedPortrait;
+  if (!finalPortrait && !finalToken) return;
+
+  const updates: Record<string, unknown> = {};
+  if (finalPortrait) {
+    updates.img = finalPortrait;
+  }
+  if (finalToken) {
+    updates["prototypeToken.texture.src"] = finalToken;
   }
 
-  // Convert data URL to a File for upload
-  try {
-    const blob = dataUrlToBlob(portrait.portraitDataUrl);
-    if (!blob) return;
+  if (Object.keys(updates).length > 0) {
+    await actor.update(updates);
+  }
+}
 
-    const safeName = characterName.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase();
-    const fileName = `${safeName}-portrait.webp`;
+async function resolveStoredImageSource(
+  source: string,
+  characterName: string,
+  kind: "portrait" | "token",
+): Promise<string | undefined> {
+  if (!source) return undefined;
+  if (!source.startsWith("data:")) return source;
+
+  try {
+    const blob = dataUrlToBlob(source);
+    if (!blob) return undefined;
+
+    const safeName = characterName.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase() || "character";
+    const fileName = `${safeName}-${kind}.webp`;
     const file = new File([blob], fileName, { type: "image/webp" });
 
-    // Upload via Foundry's FilePicker
     const FP = getFilePicker();
     if (!FP?.upload) {
       Log.warn("ActorCreationEngine: FilePicker.upload not available");
-      return;
+      return undefined;
     }
 
-    const result = await FP.upload("data", "portraits", file, {});
+    const folder = kind === "token" ? "tokens" : "portraits";
+    const result = await FP.upload("data", folder, file, {});
     const uploadedPath = result?.path;
     if (uploadedPath) {
-      await actor.update({
-        img: uploadedPath,
-        "prototypeToken.texture.src": uploadedPath,
-      });
-      Log.info(`ActorCreationEngine: Portrait uploaded to ${uploadedPath}`);
+      Log.info(`ActorCreationEngine: ${kind} asset uploaded to ${uploadedPath}`);
+      return uploadedPath;
     }
   } catch (err) {
-    // Not critical — portrait can be set manually later
-    Log.warn("ActorCreationEngine: Failed to upload portrait", err);
+    Log.warn(`ActorCreationEngine: Failed to upload ${kind} asset`, err);
   }
+
+  return undefined;
 }
 
 /* ── Step 9: Set Ownership ───────────────────────────────── */

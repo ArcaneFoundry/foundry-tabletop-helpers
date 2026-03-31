@@ -14,6 +14,8 @@ import type {
   WizardState,
   StepCallbacks,
   AbilityKey,
+  LoreSelection,
+  PortraitSelection,
 } from "../character-creator-types";
 import {
   ABILITY_KEYS,
@@ -112,7 +114,15 @@ export function createReviewStep(): WizardStepDefinition {
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       const sel = state.selections;
-      const reviewData = sel.review as { characterName?: string } | undefined;
+      const reviewData = sel.review as LoreSelection | undefined;
+      const portraitData = sel.portrait as PortraitSelection | undefined;
+      const portraitDataUrl = portraitData?.portraitDataUrl ?? "";
+      const tokenArtMode = portraitData?.tokenArtMode
+        ?? ((portraitData?.tokenDataUrl && portraitData.tokenDataUrl !== portraitDataUrl) ? "custom" : "portrait");
+      const tokenDataUrl = tokenArtMode === "custom"
+        ? (portraitData?.tokenDataUrl ?? "")
+        : portraitDataUrl;
+      const hasPortraitAsset = !!portraitDataUrl || (!!tokenDataUrl && tokenArtMode === "custom");
 
       /* ── 1. Species ──────────────────────────────────────── */
       const speciesSection = {
@@ -268,19 +278,27 @@ export function createReviewStep(): WizardStepDefinition {
         isClassChoices: true,
       };
 
-      /* ── 5. Subclass (conditional) ──────────────────────── */
-      const sections: Record<string, unknown>[] = [
-        classSection,
-        classChoicesSection,
-        backgroundSection,
-        backgroundAsiSection,
-        backgroundLanguagesSection,
-        originChoicesSection,
-        speciesSection,
-        speciesSkillsSection,
-        speciesLanguagesSection,
-        speciesItemChoicesSection,
-      ];
+      const portraitSection = {
+        id: "portrait",
+        label: "Portrait",
+        icon: "fa-solid fa-image-portrait",
+        complete: true,
+        summary: hasPortraitAsset
+          ? (tokenArtMode === "custom"
+            ? (portraitDataUrl ? "Portrait and custom token art bound" : "Custom token art bound")
+            : "Portrait bound")
+          : "Portrait optional",
+        detail: tokenArtMode === "custom"
+          ? (portraitDataUrl
+            ? "Custom token art is set separately."
+            : "Custom token art can stand in for the portrait when no portrait is chosen.")
+          : "Token art follows the portrait by default.",
+        img: portraitDataUrl || undefined,
+        isSimple: true,
+      };
+
+      /* ── 5. Review ordering ─────────────────────────────── */
+      const sections: Record<string, unknown>[] = [classSection];
 
       if (state.applicableSteps.includes("weaponMasteries")) {
         sections.push({
@@ -349,33 +367,16 @@ export function createReviewStep(): WizardStepDefinition {
         });
       }
 
-      /* ── 6. Abilities ───────────────────────────────────── */
-      const bgBonuses = bg?.asi.assignments ?? {};
-      const abilities = ABILITY_KEYS.map((key: AbilityKey) => {
-        const baseScore = sel.abilities?.scores?.[key] ?? 10;
-        const bonus = bgBonuses[key] ?? 0;
-        const totalScore = baseScore + bonus;
-        const mod = abilityModifier(totalScore);
-        return {
-          key,
-          label: ABILITY_LABELS[key],
-          score: totalScore,
-          baseScore,
-          bonus,
-          hasBonus: bonus > 0,
-          modifier: formatModifier(mod),
-          isPositive: mod >= 0,
-        };
-      });
-
-      sections.push({
-        id: "abilities",
-        label: "Ability Scores",
-        icon: "fa-solid fa-dice-d20",
-        complete: !!sel.abilities && Object.values(sel.abilities.scores).every((v) => v > 0),
-        summary: abilities,
-        isAbilities: true,
-      });
+      sections.push(
+        speciesSection,
+        speciesSkillsSection,
+        speciesLanguagesSection,
+        speciesItemChoicesSection,
+        backgroundSection,
+        backgroundAsiSection,
+        backgroundLanguagesSection,
+        originChoicesSection,
+      );
 
       /* ── 7. Skills ──────────────────────────────────────── */
       const backgroundSkills = bg?.grants.skillProficiencies.map(skillName) ?? [];
@@ -405,6 +406,36 @@ export function createReviewStep(): WizardStepDefinition {
         hasSpeciesSkills: speciesSkills.length > 0,
         hasSpeciesItems: speciesItems.length > 0,
         isSkills: true,
+      });
+
+      sections.push(classChoicesSection);
+
+      /* ── 6. Abilities ───────────────────────────────────── */
+      const bgBonuses = bg?.asi.assignments ?? {};
+      const abilities = ABILITY_KEYS.map((key: AbilityKey) => {
+        const baseScore = sel.abilities?.scores?.[key] ?? 10;
+        const bonus = bgBonuses[key] ?? 0;
+        const totalScore = baseScore + bonus;
+        const mod = abilityModifier(totalScore);
+        return {
+          key,
+          label: ABILITY_LABELS[key],
+          score: totalScore,
+          baseScore,
+          bonus,
+          hasBonus: bonus > 0,
+          modifier: formatModifier(mod),
+          isPositive: mod >= 0,
+        };
+      });
+
+      sections.push({
+        id: "abilities",
+        label: "Ability Scores",
+        icon: "fa-solid fa-dice-d20",
+        complete: !!sel.abilities && Object.values(sel.abilities.scores).every((v) => v > 0),
+        summary: abilities,
+        isAbilities: true,
       });
 
       /* ── 8. Feats (conditional) ─────────────────────────── */
@@ -487,11 +518,21 @@ export function createReviewStep(): WizardStepDefinition {
         isSimple: true,
       });
 
+      sections.push(portraitSection);
+
       const incompleteSections = sections.filter((section) => !section.complete);
       const allComplete = incompleteSections.length === 0;
 
       return {
         characterName: reviewData?.characterName ?? "",
+        alignment: reviewData?.alignment ?? "",
+        backgroundStory: reviewData?.backgroundStory ?? "",
+        portraitDataUrl,
+        tokenDataUrl,
+        tokenArtMode,
+        hasPortrait: !!portraitDataUrl,
+        hasTokenArt: !!tokenDataUrl,
+        tokenUsesPortrait: tokenArtMode !== "custom",
         sections,
         allComplete,
         incompleteSectionLabels: incompleteSections.map((section) => section.label),
@@ -503,10 +544,24 @@ export function createReviewStep(): WizardStepDefinition {
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
       // Character name input — save silently on keystroke (no re-render needed)
       const nameInput = el.querySelector("[data-character-name]") as HTMLInputElement | null;
+      const alignmentInput = el.querySelector("[data-lore-alignment]") as HTMLInputElement | null;
+      const storyInput = el.querySelector("[data-background-story]") as HTMLTextAreaElement | null;
       if (nameInput) {
         nameInput.addEventListener("input", () => {
           const current = (state.selections.review as Record<string, unknown>) ?? {};
           callbacks.setDataSilent({ ...current, characterName: nameInput.value });
+        });
+      }
+      if (alignmentInput) {
+        alignmentInput.addEventListener("input", () => {
+          const current = (state.selections.review as Record<string, unknown>) ?? {};
+          callbacks.setDataSilent({ ...current, alignment: alignmentInput.value });
+        });
+      }
+      if (storyInput) {
+        storyInput.addEventListener("input", () => {
+          const current = (state.selections.review as Record<string, unknown>) ?? {};
+          callbacks.setDataSilent({ ...current, backgroundStory: storyInput.value });
         });
       }
 

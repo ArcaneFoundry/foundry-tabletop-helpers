@@ -6,7 +6,7 @@ import { buildOriginAggregateStepperModel } from "./build-origin-aggregate-stepp
 function createState(overrides?: Partial<WizardState>): WizardState {
   return {
     currentStep: 0,
-    applicableSteps: ["background", "backgroundSkillConflicts", "backgroundAsi", "backgroundLanguages", "originChoices", "species", "speciesSkills", "speciesLanguages", "speciesItemChoices", "originSummary", "review"],
+    applicableSteps: ["species", "speciesSkills", "speciesLanguages", "speciesItemChoices", "background", "backgroundSkillConflicts", "backgroundAsi", "backgroundLanguages", "originChoices", "originSummary", "review"],
     selections: {
       class: {
         uuid: "Compendium.test.classes.Item.rogue",
@@ -41,15 +41,15 @@ function createState(overrides?: Partial<WizardState>): WizardState {
 
 function createSteps() {
   return [
+    { id: "species", label: "Species", icon: "fa-solid fa-dna", status: "pending" as const, active: false },
+    { id: "speciesSkills", label: "Species Skills", icon: "fa-solid fa-list-check", status: "pending" as const, active: false },
+    { id: "speciesLanguages", label: "Species Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
+    { id: "speciesItemChoices", label: "Species Gifts", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
     { id: "background", label: "Background", icon: "fa-solid fa-scroll", status: "pending" as const, active: true },
     { id: "backgroundSkillConflicts", label: "Skill Conflicts", icon: "fa-solid fa-shuffle", status: "pending" as const, active: false },
     { id: "backgroundAsi", label: "Background Ability Scores", icon: "fa-solid fa-chart-line", status: "pending" as const, active: false },
     { id: "backgroundLanguages", label: "Background Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
     { id: "originChoices", label: "Origin Feat", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
-    { id: "species", label: "Species", icon: "fa-solid fa-dna", status: "pending" as const, active: false },
-    { id: "speciesSkills", label: "Species Skills", icon: "fa-solid fa-list-check", status: "pending" as const, active: false },
-    { id: "speciesLanguages", label: "Species Languages", icon: "fa-solid fa-language", status: "pending" as const, active: false },
-    { id: "speciesItemChoices", label: "Species Gifts", icon: "fa-solid fa-hand-sparkles", status: "pending" as const, active: false },
     { id: "originSummary", label: "Origin Summary", icon: "fa-solid fa-layer-group", status: "pending" as const, active: false },
   ];
 }
@@ -66,7 +66,7 @@ describe("buildOriginAggregateStepperModel", () => {
     });
   });
 
-  it("shows origins as the active second milestone with the full origin subrail", () => {
+  it("shows species and background as the active origin milestones with the full origin subrail", () => {
     const model = buildOriginAggregateStepperModel(
       createState({
         selections: {
@@ -99,24 +99,28 @@ describe("buildOriginAggregateStepperModel", () => {
       "backgroundLanguages",
     );
 
-    expect(model.milestones[1]).toMatchObject({ id: "origin", active: true, status: "in-progress" });
-    expect(model.milestones[2]).toMatchObject({ id: "build", status: "pending" });
+    expect(model.milestones.map((milestone) => [milestone.id, milestone.status])).toEqual([
+      ["class", "complete"],
+      ["species", "selection-active"],
+      ["background", "in-progress"],
+      ["skills", "pending"],
+    ]);
     expect(model.showSubsteps).toBe(true);
     expect(model.substeps.map((step) => step.id)).toEqual([
+      "species",
+      "speciesSkills",
+      "speciesLanguages",
+      "speciesItemChoices",
       "background",
       "backgroundSkillConflicts",
       "backgroundAsi",
       "backgroundLanguages",
       "originChoices",
-      "species",
-      "speciesSkills",
-      "speciesLanguages",
-      "speciesItemChoices",
       "originSummary",
     ]);
   });
 
-  it("keeps origin as a single active milestone through species steps", () => {
+  it("keeps the origin sequence stable through species steps", () => {
     const steps = createSteps().map((step) =>
       ["background", "backgroundSkillConflicts", "backgroundAsi", "backgroundLanguages", "originChoices"].includes(step.id)
         ? { ...step, status: "complete" as const, active: false }
@@ -162,18 +166,22 @@ describe("buildOriginAggregateStepperModel", () => {
       "speciesSkills",
     );
 
-    expect(model.milestones[1]).toMatchObject({ id: "origin", active: true, status: "in-progress" });
-    expect(model.milestones[2]).toMatchObject({ id: "build", status: "pending" });
+    expect(model.milestones.map((milestone) => [milestone.id, milestone.status])).toEqual([
+      ["class", "complete"],
+      ["species", "in-progress"],
+      ["background", "complete"],
+      ["skills", "pending"],
+    ]);
     expect(model.substeps.map((step) => step.id)).toEqual([
+      "species",
+      "speciesSkills",
+      "speciesLanguages",
+      "speciesItemChoices",
       "background",
       "backgroundSkillConflicts",
       "backgroundAsi",
       "backgroundLanguages",
       "originChoices",
-      "species",
-      "speciesSkills",
-      "speciesLanguages",
-      "speciesItemChoices",
       "originSummary",
     ]);
   });
@@ -183,14 +191,14 @@ describe("buildOriginAggregateStepperModel", () => {
     const model = buildOriginAggregateStepperModel(createState(), steps, "background");
 
     expect(model.substeps.map((step) => step.id)).toEqual([
-      "background",
-      "backgroundAsi",
-      "backgroundLanguages",
-      "originChoices",
       "species",
       "speciesSkills",
       "speciesLanguages",
       "speciesItemChoices",
+      "background",
+      "backgroundAsi",
+      "backgroundLanguages",
+      "originChoices",
       "originSummary",
     ]);
   });

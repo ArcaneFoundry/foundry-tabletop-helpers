@@ -18,6 +18,7 @@ import {
   buildClassSelectionFromEntry,
   getClassStepViewModel,
 } from "../../../steps/step-class-model";
+import { applyLegalClassSkillSelections } from "../../../steps/origin-flow-utils";
 import classStepHeaderBackground from "../../../assets/class-step-header-bg.webp";
 import classStepFieldBackground from "../../../assets/class-step-field-bg.webp";
 import { ensureCharacterCreatorIndexesReady } from "../../../character-creator-index-cache";
@@ -181,6 +182,10 @@ const CC_TEXT_HERO = "text-[color:var(--cc-text-hero)]";
 const CC_TEXT_PRIMARY = "text-[color:var(--cc-text-primary)]";
 const CC_TEXT_SECONDARY = "text-[color:var(--cc-text-secondary)]";
 const CC_TEXT_KICKER = "text-[color:var(--cc-text-kicker)]";
+
+function sameKeys(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
 
 export function isClassFlowStep(stepId: string | undefined): boolean {
   return Boolean(stepId && CLASS_FLOW_STEP_IDS.has(stepId));
@@ -548,18 +553,23 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
   const prefersReducedMotion = useReducedMotion() ?? false;
   if (!viewModel) return null;
 
-  const [selectedKeys, setSelectedKeys] = useState<string[]>(
-    viewModel.skillSection.selectedEntries.map((entry) => viewModel.skillSection.options.find((option) => option.label === entry.label)?.key)
-      .filter((value): value is string => Boolean(value)),
+  const legalSelectedKeys = useMemo(
+    () => viewModel.skillSection.options.filter((option) => option.checked).map((option) => option.key),
+    [viewModel.skillSection.options],
   );
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(legalSelectedKeys);
 
   useEffect(() => {
-    setSelectedKeys(
-      viewModel.skillSection.selectedEntries
-        .map((entry) => viewModel.skillSection.options.find((option) => option.label === entry.label)?.key)
-        .filter((value): value is string => Boolean(value)),
-    );
-  }, [viewModel]);
+    const currentChosen = state.selections.skills?.chosen ?? [];
+    if (!sameKeys(currentChosen, legalSelectedKeys)) {
+      const chosenSkills = applyLegalClassSkillSelections(state, legalSelectedKeys);
+      controller.updateCurrentStepData({ chosenSkills }, { silent: true });
+      setSelectedKeys(chosenSkills);
+      return;
+    }
+
+    setSelectedKeys((current) => sameKeys(current, legalSelectedKeys) ? current : legalSelectedKeys);
+  }, [controller, legalSelectedKeys, state]);
 
   const theme = getClassTheme(viewModel.classIdentifier);
   const selectedSet = useMemo(() => new Set(selectedKeys), [selectedKeys]);
@@ -599,9 +609,9 @@ function ClassSkillsPane({ shellContext, state, controller }: Pick<ReactWizardSt
     }
 
     const chosenSkills = Array.from(nextSelected);
-    state.selections.skills = { chosen: chosenSkills };
-    controller.updateCurrentStepData({ chosenSkills }, { silent: true });
-    setSelectedKeys(chosenSkills);
+    const legalChosenSkills = applyLegalClassSkillSelections(state, chosenSkills);
+    controller.updateCurrentStepData({ chosenSkills: legalChosenSkills }, { silent: true });
+    setSelectedKeys(legalChosenSkills);
   };
 
   return (

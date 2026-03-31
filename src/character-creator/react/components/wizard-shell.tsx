@@ -16,10 +16,84 @@ interface WizardShellProps {
 
 const CHAPTER_LABELS: Record<string, string> = {
   class: "Class",
-  origins: "Origins",
+  species: "Species",
+  background: "Background",
+  skills: "Skills",
+  abilities: "Abilities",
+  spells: "Spells",
+  equipment: "Equipment",
+  lore: "Lore",
+  origins: "Background",
   build: "Build",
-  finalize: "Finalize",
+  finalize: "Lore",
 };
+
+const DISPLAY_CHAPTER_ORDER = [
+  "class",
+  "species",
+  "background",
+  "skills",
+  "abilities",
+  "spells",
+  "equipment",
+  "lore",
+] as const;
+
+type DisplayChapterKey = (typeof DISPLAY_CHAPTER_ORDER)[number];
+
+type WizardDisplayStep = WizardShellContext["steps"][number];
+
+function getDisplayChapterKey(stepId: string): DisplayChapterKey {
+  if (stepId === "origins") return "background";
+  if (stepId === "build") return "abilities";
+  if (stepId === "finalize") return "lore";
+  if (stepId === "classChoices") return "skills";
+  if (stepId === "species" || stepId === "speciesSkills" || stepId === "speciesLanguages" || stepId === "speciesItemChoices") return "species";
+  if (stepId === "background" || stepId === "backgroundSkillConflicts" || stepId === "backgroundAsi" || stepId === "backgroundLanguages" || stepId === "originChoices" || stepId === "originSummary") return "background";
+  if (stepId === "abilities" || stepId === "feats") return "abilities";
+  if (stepId === "spells") return "spells";
+  if (stepId === "equipment" || stepId === "equipmentShop") return "equipment";
+  if (stepId === "portrait" || stepId === "review") return "lore";
+  return "class";
+}
+
+function mergeDisplayStepStatus(statuses: Array<WizardDisplayStep["status"]>): WizardDisplayStep["status"] {
+  if (statuses.includes("invalid")) return "invalid";
+  if (statuses.every((status) => status === "complete")) return "complete";
+  return "pending";
+}
+
+function buildDisplaySteps(
+  steps: WizardShellContext["steps"],
+  currentStepId: string,
+): WizardDisplayStep[] {
+  const groups = new Map<DisplayChapterKey, WizardDisplayStep[]>();
+  for (const step of steps) {
+    const chapterKey = getDisplayChapterKey(step.id);
+    const existing = groups.get(chapterKey) ?? [];
+    existing.push(step);
+    groups.set(chapterKey, existing);
+  }
+
+  const activeChapter = getDisplayChapterKey(currentStepId);
+
+  return DISPLAY_CHAPTER_ORDER.flatMap((chapterKey) => {
+    const groupedSteps = groups.get(chapterKey);
+    if (!groupedSteps?.length) return [];
+
+    const representativeStep = groupedSteps[0];
+    return [{
+      ...representativeStep,
+      label: CHAPTER_LABELS[chapterKey],
+      status: mergeDisplayStepStatus(groupedSteps.map((step) => step.status)),
+      active: chapterKey === activeChapter,
+      index: 0,
+    }];
+  }).map((step, index) => ({
+    ...step,
+    index,
+  }));
+}
 
 function shouldResetWizardScroll(previousStepId: string | undefined, currentStepId: string | undefined): boolean {
   return previousStepId !== currentStepId;
@@ -63,12 +137,22 @@ export function WizardShell({
   const prefersReducedMotion = useReducedMotion() ?? false;
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const previousStepIdRef = useRef<string | undefined>(shellContext.currentStepId);
-  const chapterLabel = CHAPTER_LABELS[shellContext.chapterKey ?? "finalize"] ?? shellContext.currentStepLabel;
+  const chapterLabel = CHAPTER_LABELS[shellContext.chapterKey ?? "lore"] ?? shellContext.currentStepLabel;
+  const displaySteps = buildDisplaySteps(shellContext.steps, shellContext.currentStepId);
   const currentStepIndex = Math.max(
-    shellContext.steps.findIndex((step) => step.id === shellContext.currentStepId),
+    displaySteps.findIndex((step) => step.active),
     0,
   );
   const currentStepNumber = currentStepIndex + 1;
+  const displayProgress = shellContext.localProgress
+    ? {
+      ...shellContext.localProgress,
+      current: currentStepNumber,
+      total: displaySteps.length,
+      percent: displaySteps.length > 0 ? Math.round((currentStepNumber / displaySteps.length) * 100) : 0,
+      label: `Step ${currentStepNumber} of ${displaySteps.length}`,
+    }
+    : undefined;
 
   const handleCreateCharacter = async () => {
     if (isCreating) return;
@@ -99,11 +183,11 @@ export function WizardShell({
         "cc-wizard-shell fth-react-app-shell flex h-full min-h-0 flex-col overflow-hidden bg-fth-canvas text-fth-text",
         shellContext.atmosphereClass,
       )}
-      data-accent-token={shellContext.chapterAccentToken ?? shellContext.chapterKey ?? "finalize"}
+      data-accent-token={shellContext.chapterAccentToken ?? shellContext.chapterKey ?? "lore"}
       data-current-step={shellContext.currentStepId}
       data-motion-profile={shellContext.motionProfile ?? "ceremonial"}
       data-panel-style={shellContext.panelStyleVariant ?? "artifact"}
-      data-scene-key={shellContext.chapterSceneKey ?? shellContext.chapterKey ?? "finalize"}
+      data-scene-key={shellContext.chapterSceneKey ?? shellContext.chapterKey ?? "lore"}
       data-status-hint-style={shellContext.statusHintStyle ?? "progress"}
     >
       <div className="pointer-events-none absolute inset-0">
@@ -124,22 +208,22 @@ export function WizardShell({
               <div className="mt-2 font-fth-cc-display text-[1.6rem] leading-none text-fth-text">
                 {chapterLabel}
               </div>
-              {shellContext.localProgress ? (
+              {displayProgress ? (
                 <div className="mt-3 max-w-md">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
-                      {shellContext.localProgress.label}
+                      {displayProgress.label}
                     </div>
-                    {shellContext.localProgress.detail ? (
+                    {displayProgress.detail ? (
                       <span className="font-fth-cc-body text-[0.88rem] leading-6 text-fth-text-muted">
-                        {shellContext.localProgress.detail}
+                        {displayProgress.detail}
                       </span>
                     ) : null}
                   </div>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--fth-color-border)]">
                     <div
                       className="fth-theme-panel-accent-line h-full rounded-full"
-                      style={{ width: `${shellContext.localProgress.percent}%` }}
+                      style={{ width: `${displayProgress.percent}%` }}
                     />
                   </div>
                 </div>
@@ -153,7 +237,7 @@ export function WizardShell({
           </div>
 
           <div className="flex items-center gap-3 overflow-x-auto pb-1">
-            {shellContext.steps.map((step, index) => (
+            {displaySteps.map((step, index) => (
               <div className="contents" key={step.id}>
                 <button
                   className={cn(
@@ -309,14 +393,14 @@ export function WizardShell({
               <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.22em] text-[color:var(--cc-text-secondary)]">
-                    {chapterLabel} • Step {currentStepNumber} of {shellContext.steps.length}
+                    {chapterLabel} • Step {currentStepNumber} of {displaySteps.length}
                   </div>
                   <div className="mt-2 font-fth-cc-display text-[1.05rem] leading-none text-[color:var(--cc-text-primary)]">
                     {shellContext.currentStepLabel}
                   </div>
-                  {shellContext.localProgress?.detail ? (
+                  {displayProgress?.detail ? (
                     <div className="mt-2 font-fth-cc-body text-[0.86rem] leading-6 text-[color:var(--cc-text-secondary)]">
-                      {shellContext.localProgress.detail}
+                      {displayProgress.detail}
                     </div>
                   ) : null}
                 </div>
@@ -326,11 +410,11 @@ export function WizardShell({
                   </div>
                 ) : null}
               </div>
-              {shellContext.localProgress ? (
+              {displayProgress ? (
                 <div className="relative z-10 mt-3 h-1.5 overflow-hidden rounded-full bg-[color:color-mix(in_srgb,var(--cc-border-subtle)_82%,transparent)]">
                   <div
                     className="h-full rounded-full bg-[image:var(--cc-class-footer-button-primary)]"
-                    style={{ width: `${shellContext.localProgress.percent}%` }}
+                    style={{ width: `${displayProgress.percent}%` }}
                   />
                 </div>
               ) : null}
@@ -362,6 +446,7 @@ export function WizardShell({
 
 export const __wizardShellInternals = {
   applyWizardScrollReset,
+  buildDisplaySteps,
   queueWizardScrollReset,
   shouldResetWizardScroll,
 };

@@ -38,9 +38,9 @@ function createAggregateStepperModel() {
   return {
     milestones: [
       { id: "class", label: "Class", icon: "fa-solid fa-shield-halved", active: true, status: "selection-active" as const },
-      { id: "origins", label: "Origins", icon: "fa-solid fa-scroll", active: false, status: "pending" as const },
-      { id: "build", label: "Build", icon: "fa-solid fa-hammer", active: false, status: "pending" as const },
-      { id: "finalize", label: "Finalize", icon: "fa-solid fa-stars", active: false, status: "pending" as const },
+      { id: "species", label: "Species", icon: "fa-solid fa-dna", active: false, status: "pending" as const },
+      { id: "background", label: "Background", icon: "fa-solid fa-scroll", active: false, status: "pending" as const },
+      { id: "skills", label: "Skills", icon: "fa-solid fa-hand-sparkles", active: false, status: "pending" as const },
     ],
     substeps: [
       { id: "classChoices", label: "Skills", icon: "fa-solid fa-hand-sparkles", active: true, status: "selection-active" as const },
@@ -75,10 +75,7 @@ describe("class stepper layout", () => {
     expect(markup).toContain('data-layout-mode="compact"');
     expect(markup.match(/fth-class-stepper__compact-row/g)).toHaveLength(2);
     expect(markup).toContain("fth-class-stepper__connector");
-    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
-    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
-    expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
-    expect(markup).not.toContain("Skills");
+    expect(markup).toContain("Skills");
     expect(markup).not.toContain("Expertise");
   });
 
@@ -93,8 +90,6 @@ describe("class stepper layout", () => {
     expect(markup).not.toContain("fth-class-stepper__compact-row");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Expertise");
-    expect(markup).not.toContain("text-[color:var(--cc-text-ink-900)]");
-    expect(markup).toContain("text-[color:var(--cc-text-primary)]");
   });
 
   it("measures immediately and responds to resize events", () => {
