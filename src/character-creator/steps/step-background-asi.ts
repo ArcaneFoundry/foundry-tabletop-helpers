@@ -51,7 +51,7 @@ export function createBackgroundAsiStep(): WizardStepDefinition {
 
     getStatusHint(state: WizardState): string {
       const bg = state.selections.background;
-      if (!bg?.grants) return "Select a background first";
+      if (!bg?.grants) return "Choose a Background first";
       const total = Object.values(bg.asi.assignments).reduce((sum, value) => sum + (value ?? 0), 0);
       const remaining = Math.max(0, (bg.grants.asiPoints ?? 0) - total);
       return remaining > 0 ? `Assign ${remaining} more ability score point${remaining === 1 ? "" : "s"}` : "";

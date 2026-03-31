@@ -348,7 +348,7 @@ describe("PortraitStepScreen", () => {
 
     expect(markup).toContain("Choose the Visage");
     expect(markup).toContain("Portrait Atelier");
-    expect(markup).toContain("Lore");
+    expect(markup).toContain("Finalize");
     expect(markup).toContain("Shape the Likeness");
     expect(markup).toContain("cc-theme-panel--soft");
     expect(markup).toContain("cc-theme-hero-shell");
@@ -556,7 +556,7 @@ describe("ReviewStepScreen", () => {
     expect(markup).toContain('for="review-character-name"');
     expect(markup).toContain('id="review-character-name"');
     expect(markup).toContain('name="characterName"');
-    expect(markup).toContain("Lore Details");
+    expect(markup).toContain("Character Details");
     expect(markup).toContain('for="review-alignment"');
     expect(markup).toContain('name="alignment"');
     expect(markup).toContain('data-lore-alignment');

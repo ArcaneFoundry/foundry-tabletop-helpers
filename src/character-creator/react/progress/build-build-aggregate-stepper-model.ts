@@ -94,7 +94,7 @@ export function buildBuildAggregateStepperModel(
       },
       {
         id: "lore",
-        label: "Lore",
+        label: "Finalize",
         icon: "fa-solid fa-stars",
         active: loreActive,
         status: loreActive

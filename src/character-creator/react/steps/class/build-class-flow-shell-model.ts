@@ -72,7 +72,7 @@ function getPaneTitle(currentPane: ClassFlowPaneId): string {
     case "weaponMasteries":
       return "Choose Your Weapon Masteries";
     case "classItemChoices":
-      return "Choose Your Class Options";
+      return "Choose Your Class Features";
     case "classSummary":
       return "Class Summary";
     default:
@@ -119,17 +119,17 @@ function getPaneHeroCopy(currentPane: ClassFlowPaneId): ClassFlowHeroCopy {
       };
     case "classItemChoices":
       return {
-        title: "Choose Your Class Options",
+        title: "Choose Your Class Features",
         description: "Choose the feature options granted by your class at this level.",
         primaryBadgeLabel: "Class Flow",
-        secondaryBadgeLabel: "Choose your class options",
+        secondaryBadgeLabel: "Choose your class features",
       };
     case "classSummary":
       return {
         title: "Class Summary",
         description: "Review the class details and feature choices before moving on.",
         primaryBadgeLabel: "Class Flow",
-        secondaryBadgeLabel: "Review class choices",
+        secondaryBadgeLabel: "Review class features",
       };
     default:
       return {

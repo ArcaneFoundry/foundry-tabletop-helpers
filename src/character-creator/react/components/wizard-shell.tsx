@@ -22,10 +22,10 @@ const CHAPTER_LABELS: Record<string, string> = {
   abilities: "Abilities",
   spells: "Spells",
   equipment: "Equipment",
-  lore: "Lore",
-  origins: "Background",
+  lore: "Finalize",
+  origins: "Origins",
   build: "Build",
-  finalize: "Lore",
+  finalize: "Finalize",
 };
 
 const DISPLAY_CHAPTER_ORDER = [

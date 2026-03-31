@@ -28,7 +28,7 @@ async function buildEquipmentViewModel(state: WizardState): Promise<Record<strin
 
   return {
     stepId: "equipment",
-    stepTitle: "Build:",
+    stepTitle: "Build",
     stepLabel: "Equipment",
     stepIcon: "fa-solid fa-sack",
     hideStepIndicator: true,
@@ -49,7 +49,7 @@ async function buildEquipmentShopViewModel(state: WizardState): Promise<Record<s
 
   return {
     stepId: "equipmentShop",
-    stepTitle: "Build:",
+    stepTitle: "Build",
     stepLabel: "Shop",
     stepIcon: "fa-solid fa-store",
     hideStepIndicator: true,

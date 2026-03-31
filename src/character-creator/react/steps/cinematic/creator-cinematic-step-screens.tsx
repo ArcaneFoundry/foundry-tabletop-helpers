@@ -738,7 +738,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
   return (
     <ArcaneStepFrame scene="visage">
       <ArcaneHero
-        eyebrow="Lore"
+        eyebrow="Finalize"
         title="Choose the Visage"
         description="This chamber is optional. Bind a likeness to the artifact now, or leave the portrait for a later hour."
       />
@@ -1035,7 +1035,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                 </section>
 
                 <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
-                  <MicroLabel>Lore Details</MicroLabel>
+                  <MicroLabel>Character Details</MicroLabel>
                   <div className="mt-4 grid gap-4">
                     <div>
                       <label className="cc-theme-kicker block font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em]" htmlFor="review-alignment">

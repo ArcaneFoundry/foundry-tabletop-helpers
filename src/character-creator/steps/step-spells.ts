@@ -146,31 +146,44 @@ function buildStatusHint(
   const spellCount = data?.spells.length ?? 0;
   const maxCantrips = data?.maxCantrips;
   const maxSpells = data?.maxSpells;
-  const parts: string[] = [];
+  const chooseTargets: string[] = [];
+  const reduceTargets: string[] = [];
 
   if (maxCantrips !== undefined && cantripCount !== maxCantrips) {
     const remaining = maxCantrips - cantripCount;
-    parts.push(remaining > 0 ? `choose ${remaining} more cantrip${remaining === 1 ? "" : "s"}` : "reduce cantrips");
+    if (remaining > 0) chooseTargets.push(`${remaining} more cantrip${remaining === 1 ? "" : "s"}`);
+    else reduceTargets.push("cantrips");
   } else if (maxCantrips === undefined && cantripCount === 0) {
-    parts.push("select cantrips");
+    chooseTargets.push("cantrips");
   }
 
   const requiredSpellCount = getRequiredSpellSelectionCount(maxSpells, usesPreparedPicker, preparedLimit);
   if (requiredSpellCount !== undefined && spellCount !== requiredSpellCount) {
     const remaining = requiredSpellCount - spellCount;
-    parts.push(remaining > 0 ? `choose ${remaining} more spells` : "reduce spells");
+    if (remaining > 0) chooseTargets.push(`${remaining} more spells`);
+    else reduceTargets.push("spells");
   } else if (requiredSpellCount === undefined && spellCount === 0) {
-    parts.push("select spells");
+    chooseTargets.push("spells");
   }
 
   const preparedTarget = getPreparedSelectionTarget(spellCount, preparedLimit, usesPreparedPicker);
   const preparedCount = sanitizePreparedSpellSelection(data?.spells ?? [], data?.preparedSpells, preparedLimit).length;
   if (usesPreparedPicker && preparedTarget !== undefined && preparedCount !== preparedTarget) {
     const remaining = preparedTarget - preparedCount;
-    parts.push(remaining > 0 ? `choose ${remaining} more prepared spells` : "reduce prepared spells");
+    if (remaining > 0) chooseTargets.push(`${remaining} more prepared spells`);
+    else reduceTargets.push("prepared spells");
   }
 
-  return parts.length > 0 ? parts.join(" and ") : "";
+  const parts: string[] = [];
+  if (chooseTargets.length > 0) parts.push(`Choose ${joinHintParts(chooseTargets)}`);
+  if (reduceTargets.length > 0) parts.push(`Reduce ${joinHintParts(reduceTargets)}`);
+  return parts.join(" ");
+}
+
+function joinHintParts(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? "";
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+  return `${parts.slice(0, -1).join(", ")}, and ${parts.at(-1)}`;
 }
 
 /* ── Step Definition ─────────────────────────────────────── */

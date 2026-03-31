@@ -177,7 +177,7 @@ describe("class advancement steps", () => {
 
     expect(languagesStep.getStatusHint?.(state)).toBe("Choose 1 more language");
     expect(toolsStep.getStatusHint?.(state)).toBe("Choose 1 more tool proficiency");
-    expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 1 more class choice");
+    expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 1 more class feature");
 
     state.selections.class!.classAdvancementRequirements = [
       {
@@ -218,7 +218,7 @@ describe("class advancement steps", () => {
 
     expect(languagesStep.getStatusHint?.(state)).toBe("Choose 2 more languages");
     expect(toolsStep.getStatusHint?.(state)).toBe("Choose 2 more tool proficiencies");
-    expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 2 more class choices");
+    expect(itemChoicesStep.getStatusHint?.(state)).toBe("Choose 2 more class features");
   });
 
   it("builds the expertise pool from persisted class step skill picks", async () => {

@@ -347,7 +347,7 @@ export function createReviewStep(): WizardStepDefinition {
       if (state.applicableSteps.includes("classItemChoices")) {
         sections.push({
           id: "classItemChoices",
-          label: "Class Options",
+          label: "Class Features",
           icon: "fa-solid fa-hand-sparkles",
           complete: classItemNames.length >= requiredClassItems,
           summary: classItemNames.join(", ") || "Not selected",

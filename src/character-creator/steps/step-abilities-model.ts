@@ -150,8 +150,8 @@ export function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
 
   return {
     stepId: "abilities",
-    stepTitle: "Build:",
-    stepLabel: "Abilities",
+    stepTitle: "Build",
+    stepLabel: "Choose Your Ability Scores",
     stepIcon: "fa-solid fa-dice-d20",
     hideStepIndicator: true,
     hideShellHeader: true,

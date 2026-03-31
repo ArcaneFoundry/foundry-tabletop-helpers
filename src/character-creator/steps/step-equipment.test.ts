@@ -33,48 +33,56 @@ vi.mock("./equipment-flow-utils", () => ({
 }));
 
 function makeState(overrides?: Record<string, unknown>) {
+  const selectionOverrides = (overrides?.selections as Record<string, unknown> | undefined) ?? {};
+  const configOverrides = (overrides?.config as Record<string, unknown> | undefined) ?? {};
+  const baseSelections = {
+    class: {
+      uuid: "class.wizard",
+      identifier: "wizard",
+      name: "Wizard",
+    },
+    background: {
+      uuid: "background.sage",
+      name: "Sage",
+    },
+    equipment: {
+      purchases: {},
+      sales: {},
+      shopMode: "buy",
+      ...((selectionOverrides.equipment as Record<string, unknown> | undefined) ?? {}),
+    },
+  };
+  const baseConfig = {
+    packSources: {
+      classes: [],
+      subclasses: [],
+      races: [],
+      backgrounds: [],
+      feats: [],
+      spells: [],
+      items: [],
+    },
+    disabledUUIDs: new Set<string>(),
+    allowedAbilityMethods: ["4d6"],
+    maxRerolls: 0,
+    startingLevel: 1,
+    allowMulticlass: false,
+    equipmentMethod: "both",
+    level1HpMethod: "max",
+    allowCustomBackgrounds: false,
+    ...configOverrides,
+  };
+
   return {
     currentStep: 0,
     applicableSteps: ["class", "background", "equipment", "equipmentShop"],
     stepStatus: new Map(),
-    selections: {
-      class: {
-        uuid: "class.wizard",
-        identifier: "wizard",
-        name: "Wizard",
-      },
-      background: {
-        uuid: "background.sage",
-        name: "Sage",
-      },
-      equipment: {
-        purchases: {},
-        sales: {},
-        shopMode: "buy",
-        ...((overrides?.selections as Record<string, unknown> | undefined)?.equipment ?? {}),
-      },
-      ...((overrides?.selections as Record<string, unknown> | undefined) ?? {}),
-    },
-    config: {
-      packSources: {
-        classes: [],
-        subclasses: [],
-        races: [],
-        backgrounds: [],
-        feats: [],
-        spells: [],
-        items: [],
-      },
-      disabledUUIDs: new Set<string>(),
-      allowedAbilityMethods: ["4d6"],
-      maxRerolls: 0,
-      startingLevel: 1,
-      allowMulticlass: false,
-      equipmentMethod: "both",
-      level1HpMethod: "max",
-      allowCustomBackgrounds: false,
-    },
     ...overrides,
+    selections: {
+      ...baseSelections,
+      ...selectionOverrides,
+    },
+    config: baseConfig,
   };
 }
 
@@ -116,6 +124,8 @@ describe("step equipment", () => {
     expect(resolveEquipmentFlowMock).toHaveBeenCalled();
     expect(viewModel).toMatchObject({
       stepId: "equipment",
+      stepTitle: "Build",
+      stepLabel: "Equipment",
       hideShellHeader: true,
       hideStepIndicator: true,
     });
@@ -124,6 +134,7 @@ describe("step equipment", () => {
   it("requires both class and background choices before the step completes", () => {
     const step = createEquipmentStep();
     expect(step.isComplete(makeState() as never)).toBe(false);
+    expect(step.getStatusHint?.(makeState() as never)).toBe("Choose your class provisions");
     expect(step.isComplete(makeState({
       selections: {
         equipment: {
@@ -135,6 +146,16 @@ describe("step equipment", () => {
         },
       },
     }) as never)).toBe(true);
+    expect(step.getStatusHint?.(makeState({
+      selections: {
+        equipment: {
+          classOptionId: "class-gold",
+          purchases: {},
+          sales: {},
+          shopMode: "buy",
+        },
+      },
+    }) as never)).toBe("Choose your background provisions");
   });
 
   it("shows the shop step only when equipment selections leave spendable funds", () => {

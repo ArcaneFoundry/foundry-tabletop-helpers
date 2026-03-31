@@ -88,7 +88,9 @@ export function BuildFlowRouteHost(props: ReactWizardStepProps) {
 
 function BuildFlowFallbackScreen({ shellContext }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as BuildFlowStepViewModel | undefined;
-  const title = [viewModel?.stepTitle, viewModel?.stepLabel].filter(Boolean).join(" ");
+  const title = viewModel?.stepTitle && viewModel?.stepLabel
+    ? `${viewModel.stepTitle} / ${viewModel.stepLabel}`
+    : [viewModel?.stepTitle, viewModel?.stepLabel].filter(Boolean).join(" ");
   const selectedClassKit = viewModel?.derived?.selectedClassOption?.label;
   const selectedBackgroundKit = viewModel?.derived?.selectedBackgroundOption?.label;
   const remainingGoldCp = viewModel?.derived?.remainingGoldCp ?? viewModel?.selection?.remainingGoldCp ?? 0;

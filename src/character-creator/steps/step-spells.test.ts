@@ -590,7 +590,7 @@ describe("step spells", () => {
     });
 
     expect(step.isComplete(incompleteState)).toBe(false);
-    expect(getStatusHint(incompleteState)).toBe("choose 1 more cantrip and choose 3 more spells and choose 2 more prepared spells");
+    expect(getStatusHint(incompleteState)).toBe("Choose 1 more cantrip, 3 more spells, and 2 more prepared spells");
   });
 
   it("requires prepared casters without known-spell caps to pick enough spells to fill their prepared limit", async () => {
@@ -623,7 +623,7 @@ describe("step spells", () => {
     });
 
     expect(step.isComplete(incompleteState)).toBe(false);
-    expect(getStatusHint(incompleteState)).toBe("choose 2 more spells and choose 4 more prepared spells");
+    expect(getStatusHint(incompleteState)).toBe("Choose 2 more spells and 4 more prepared spells");
 
     const completeState = makeState({
       selections: {
@@ -723,6 +723,6 @@ describe("step spells", () => {
     });
 
     expect(step.isComplete(rangerState)).toBe(false);
-    expect(getStatusHint(rangerState)).toBe("choose 2 more spells and choose 2 more prepared spells");
+    expect(getStatusHint(rangerState)).toBe("Choose 2 more spells and 2 more prepared spells");
   });
 });

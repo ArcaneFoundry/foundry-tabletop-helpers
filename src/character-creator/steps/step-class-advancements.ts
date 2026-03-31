@@ -100,7 +100,7 @@ function getRemainingSelectionLabel(
     case "tools":
       return remaining === 1 ? "tool proficiency" : "tool proficiencies";
     case "itemChoices":
-      return remaining === 1 ? "class choice" : "class choices";
+      return remaining === 1 ? "class feature" : "class features";
     default:
       return "selection";
   }
@@ -247,7 +247,7 @@ export function createClassToolsStep(): WizardStepDefinition {
 }
 
 export function createClassItemChoicesStep(): WizardStepDefinition {
-  return buildStepDefinition("itemChoices", "Class Choices");
+  return buildStepDefinition("itemChoices", "Class Features");
 }
 
 export const __classAdvancementStepInternals = {

@@ -71,7 +71,7 @@ export function createBackgroundStep(): WizardStepDefinition {
     },
 
     getStatusHint(state: WizardState): string {
-      return state.selections.background?.uuid ? "" : "Select a background";
+      return state.selections.background?.uuid ? "" : "Choose a Background";
     },
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
@@ -100,8 +100,8 @@ export function createBackgroundStep(): WizardStepDefinition {
 
       return {
         stepId: "background",
-        stepTitle: "Character Origins:",
-        stepLabel: "Background",
+        stepTitle: "Origins",
+        stepLabel: "Choose Your Background",
         stepIcon: "fa-solid fa-scroll",
         hideStepIndicator: true,
         hideShellHeader: true,

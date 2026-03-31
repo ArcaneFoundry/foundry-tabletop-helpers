@@ -88,7 +88,7 @@ export async function buildSpeciesSelectionFromEntry(
 export function createSpeciesStep(): WizardStepDefinition {
   return {
     id: "species",
-    label: "Character Origins",
+    label: "Species",
     icon: "fa-solid fa-dna",
     renderMode: "react",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
@@ -130,13 +130,13 @@ export function createSpeciesStep(): WizardStepDefinition {
 
       return {
         stepId: "species",
-        stepTitle: "Character Origins:",
-        stepLabel: "Species",
+        stepTitle: "Origins",
+        stepLabel: "Choose Your Species",
         stepIcon: "fa-solid fa-dna",
         hideStepIndicator: true,
         hideShellHeader: true,
         shellContentClass: "cc-step-content--origin-flow",
-        stepDescription: "Choose your character's species.",
+        stepDescription: "Choose the species that shapes your character's lineage, traits, and inherited gifts.",
         entries: sorted.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,

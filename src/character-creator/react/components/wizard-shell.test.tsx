@@ -234,7 +234,7 @@ describe("WizardShell", () => {
     expect(markup).not.toContain("Choose the class that will shape the rest of the build.");
   });
 
-  it("renders the Lore chapter label for the final step", () => {
+  it("renders the Finalize chapter label for the final step", () => {
     const shellContext = {
       steps: [
         { id: "portrait", label: "Portrait", icon: "fa-solid fa-image", status: "complete", active: true, index: 0 },
@@ -262,7 +262,7 @@ describe("WizardShell", () => {
       onCreateCharacter: vi.fn(async () => {}),
     }));
 
-    expect(markup).toContain("Lore");
+    expect(markup).toContain("Finalize");
     expect(markup).toContain('data-scene-key="binding"');
   });
 
@@ -354,7 +354,7 @@ describe("WizardShell", () => {
     expect(markup).toContain('data-shell-density="compact"');
     expect(markup).toContain('data-footer-density="compact"');
     expect(markup).not.toContain('data-wizard-shell-header="true"');
-    expect(markup).toContain("Lore");
+    expect(markup).toContain("Finalize");
     expect(markup).toContain("Portrait optional");
     expect(markup).toContain("Step 1 of 1");
   });
@@ -446,7 +446,7 @@ describe("WizardShell", () => {
       onCreateCharacter: vi.fn(async () => {}),
     }));
 
-    expect(markup).toContain("Lore");
+    expect(markup).toContain("Finalize");
     expect(markup).toContain("Step 8 of 8");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Abilities");
