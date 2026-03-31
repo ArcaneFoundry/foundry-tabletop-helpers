@@ -3,13 +3,14 @@
  * NPC stat block panel with two display modes:
  *   1. Inline — injected into the Combat Tracker sidebar
  *   2. Floating — draggable fixed-position panel (after pop-out)
- * Dark arcane theme matching the damage workflow panel.
+ * Shared light/dark theme treatment matching the combat panel suite.
  */
 
 /* ── Shared base (both modes) ─────────────────────────────── */
 .fth-monster-preview {
   --fth-mp-surface: var(--fth-color-canvas);
   --fth-mp-surface-alt: var(--fth-color-surface);
+  --fth-mp-surface-raise: var(--fth-color-surface-elevated);
   --fth-mp-glass: var(--fth-color-surface-glass);
   --fth-mp-glass-strong: var(--fth-color-surface-glass-strong);
   --fth-mp-border: var(--fth-color-border-strong);
@@ -24,11 +25,18 @@
   --fth-mp-frost: var(--fth-color-frost);
   --fth-mp-focus: var(--fth-color-focus);
   --fth-mp-shadow: var(--fth-theme-shadow-panel);
-  background: var(--fth-mp-surface);
+  --fth-mp-panel-image: var(--fth-theme-panel-image);
+  --fth-mp-panel-image-alt: var(--fth-theme-panel-image-alt);
+  --fth-mp-panel-image-header: var(--fth-theme-panel-image-header);
+  --fth-mp-status-image: var(--fth-theme-status-image);
+  --fth-mp-accent-line: var(--fth-theme-accent-line);
+  --fth-mp-step-divider-image: var(--fth-theme-step-divider-image);
+  background-color: var(--fth-mp-surface);
+  background-image: var(--fth-mp-panel-image-alt);
   border: 1px solid var(--fth-mp-border);
   border-radius: 10px;
   box-shadow: var(--fth-mp-shadow);
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-fth-cc-body);
   user-select: none;
   overflow: visible;
 }
@@ -64,13 +72,14 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: var(--fth-mp-surface-alt);
+  background-color: var(--fth-mp-surface-alt);
+  background-image: var(--fth-mp-panel-image-header);
   border-bottom: 1px solid var(--fth-mp-border-soft);
   flex-shrink: 0;
 }
 
 .mp-title {
-  font-family: "Roboto Slab", serif;
+  font-family: var(--font-fth-cc-display);
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--fth-mp-accent);
@@ -101,6 +110,7 @@
   white-space: nowrap;
   color: var(--fth-mp-text-muted);
   background: var(--fth-mp-glass);
+  background-image: var(--fth-mp-status-image);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fth-mp-text) 8%, transparent);
 }
 
@@ -111,6 +121,7 @@
 .mp-header-cue-pinned {
   color: var(--fth-mp-accent-strong);
   background: color-mix(in srgb, var(--fth-mp-accent) 14%, transparent);
+  background-image: var(--fth-mp-status-image);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fth-mp-accent) 24%, transparent);
 }
 
@@ -130,6 +141,7 @@
   white-space: nowrap;
   color: var(--fth-mp-text);
   background: var(--fth-mp-glass-strong);
+  background-image: var(--fth-mp-status-image);
   animation: mp-header-flash-fade 1.8s ease-out forwards;
 }
 
@@ -336,7 +348,7 @@ button.mp-upnext-row:focus-visible {
 }
 
 .mp-name {
-  font-family: "Roboto Slab", serif;
+  font-family: var(--font-fth-cc-display);
   font-size: 1rem;
   font-weight: 700;
   color: var(--fth-mp-accent);
@@ -364,10 +376,9 @@ button.mp-upnext-row:focus-visible {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   background: color-mix(in srgb, var(--fth-mp-accent) 20%, transparent);
+  background-image: var(--fth-mp-status-image);
   color: var(--fth-mp-accent-strong);
-  box-shadow:
-    0 10px 24px rgb(0 0 0 / 0.18),
-    0 0 0 1px color-mix(in srgb, var(--fth-mp-accent) 28%, transparent);
+  box-shadow: var(--fth-theme-shadow-inset), 0 0 0 1px color-mix(in srgb, var(--fth-mp-accent) 28%, transparent);
 }
 
 .mp-active-turn-pill i {
@@ -429,6 +440,7 @@ button.mp-upnext-row:focus-visible {
   letter-spacing: 0.03em;
   text-transform: uppercase;
   background: var(--fth-mp-glass);
+  background-image: var(--fth-mp-status-image);
   color: var(--fth-mp-text-muted);
 }
 
@@ -493,12 +505,7 @@ button.mp-upnext-row:focus-visible {
 /* ── Dividers ─────────────────────────────────────────────── */
 .mp-divider {
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--fth-mp-accent) 8%, transparent),
-    color-mix(in srgb, var(--fth-mp-accent) 24%, transparent),
-    color-mix(in srgb, var(--fth-mp-accent) 8%, transparent)
-  );
+  background-image: var(--fth-mp-accent-line);
   margin: 8px 0;
 }
 
@@ -531,7 +538,7 @@ button.mp-upnext-row:focus-visible {
 }
 
 .mp-stat-value {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--font-fth-cc-ui);
   font-size: 0.74rem;
 }
 
@@ -559,7 +566,7 @@ button.mp-upnext-row:focus-visible {
 }
 
 .mp-ability-score {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--font-fth-cc-ui);
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--fth-mp-text);
@@ -605,7 +612,7 @@ button.mp-upnext-row:focus-visible {
 }
 
 .mp-section-title {
-  font-family: "Roboto Slab", serif;
+  font-family: var(--font-fth-cc-display);
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--fth-mp-accent);
@@ -647,7 +654,7 @@ button.mp-upnext-row:focus-visible {
 /* ── Up Next section ──────────────────────────────────────── */
 .mp-upnext-divider {
   height: 1px;
-  background: color-mix(in srgb, var(--fth-mp-text) 10%, transparent);
+  background-image: var(--fth-mp-step-divider-image);
   margin: 10px 0 6px;
 }
 
@@ -681,7 +688,7 @@ button.mp-upnext-row:focus-visible {
 }
 
 .mp-upnext-stats {
-  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-family: var(--font-fth-cc-ui);
   font-size: 0.62rem;
   color: var(--fth-mp-text-subtle);
   margin-left: auto;
