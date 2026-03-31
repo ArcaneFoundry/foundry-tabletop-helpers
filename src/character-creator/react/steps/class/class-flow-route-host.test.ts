@@ -278,7 +278,7 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("Hit Die");
   });
 
-  it("renders the mounted weapon masteries pane with ordered groups and readable rails", () => {
+  it("renders the mounted weapon masteries pane with an active preview rail and ordered groups", () => {
     const markup = renderToStaticMarkup(
       createElement(ClassFlowRouteHost, {
         controller: {
@@ -355,7 +355,7 @@ describe("ClassFlowRouteHost", () => {
     const optionsPanelIndex = markup.indexOf('data-weapon-mastery-options-panel="true"');
     const railIndex = markup.indexOf('data-weapon-mastery-rail="true"');
     const chosenWeaponsIndex = markup.indexOf("Chosen Weapons");
-    const masteryTechniquesIndex = markup.indexOf("Mastery Techniques");
+    const previewIndex = markup.indexOf('data-weapon-mastery-preview="true"');
 
     expect(markup).toContain("Weapon Masteries");
     expect(markup).toContain("Simple first, Martial second");
@@ -367,8 +367,12 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).not.toContain("Choose from Simple and Martial weapons in a locked order");
     expect(markup).not.toContain("Masteries Summary");
     expect(markup).not.toContain("1/2 chosen");
+    expect(markup).toContain("Weapon Preview");
+    expect(markup).toContain("Weapon Notes");
+    expect(markup).toContain("Mastery Technique");
+    expect(markup).toContain("A basic club.");
+    expect(markup).toContain("Drive foes back.");
     expect(markup).toContain("Chosen Weapons");
-    expect(markup).toContain("Mastery Techniques");
     expect(markup).toContain("cc-class-choice-layout--weapon-masteries");
     expect(markup).toContain("text-[color:var(--cc-text-primary)]");
     expect(markup).toContain("text-[color:var(--cc-text-secondary)]");
@@ -377,12 +381,106 @@ describe("ClassFlowRouteHost", () => {
     expect(markup).toContain("var(--cc-mounted-muted-badge-image)");
     expect(optionsPanelIndex).toBeGreaterThanOrEqual(0);
     expect(railIndex).toBeGreaterThan(optionsPanelIndex);
+    expect(previewIndex).toBeGreaterThan(railIndex);
     expect(simpleIndex).toBeGreaterThanOrEqual(0);
     expect(martialIndex).toBeGreaterThanOrEqual(0);
-    expect(chosenWeaponsIndex).toBeGreaterThan(simpleIndex);
-    expect(masteryTechniquesIndex).toBeGreaterThan(chosenWeaponsIndex);
+    expect(chosenWeaponsIndex).toBeGreaterThan(previewIndex);
     expect(simpleIndex).toBeLessThan(martialIndex);
     expect(markup).toContain("md:px-4");
+  });
+
+  it("defaults the preview rail to the first visible weapon when nothing is selected", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ClassFlowRouteHost, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "weaponMasteries",
+          steps: createSteps(),
+          stepViewModel: {
+            classIdentifier: "fighter",
+            className: "Fighter",
+            weaponMasterySection: {
+              hasChoices: true,
+              chosenCount: 0,
+              maxCount: 2,
+              selectedEntries: [],
+              options: [
+                {
+                  id: "halberd",
+                  uuid: "Compendium.test.items.Item.halberd",
+                  identifier: "halberd",
+                  name: "Halberd",
+                  img: "halberd.webp",
+                  weaponType: "Martial Melee",
+                  mastery: "Topple",
+                  masteryDescription: "Large sweeping strikes.",
+                  weaponDescription: "A polearm for heavy blows.",
+                  tooltip: "A martial polearm.",
+                  checked: false,
+                  disabled: false,
+                },
+                {
+                  id: "club",
+                  uuid: "Compendium.test.items.Item.club",
+                  identifier: "club",
+                  name: "Club",
+                  img: "club.webp",
+                  weaponType: "Simple Melee",
+                  mastery: "Push",
+                  masteryDescription: "Drive foes back.",
+                  weaponDescription: "A basic club.",
+                  tooltip: "A simple bludgeon.",
+                  checked: false,
+                  disabled: false,
+                },
+              ],
+              emptyMessage: "No weapon masteries available.",
+            },
+          },
+        },
+        state: createState(),
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain('data-weapon-mastery-preview="true"');
+    expect(markup).toContain("Previewing");
+    expect(markup).toContain("A basic club.");
+    expect(markup).not.toContain("A polearm for heavy blows.");
+  });
+
+  it("drops the rail entirely when the weapon mastery step has no choices", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ClassFlowRouteHost, {
+        controller: {
+          updateCurrentStepData: vi.fn(),
+        },
+        shellContext: {
+          currentStepId: "weaponMasteries",
+          steps: createSteps(),
+          stepViewModel: {
+            classIdentifier: "fighter",
+            className: "Fighter",
+            weaponMasterySection: {
+              hasChoices: false,
+              chosenCount: 0,
+              maxCount: 2,
+              selectedEntries: [],
+              options: [],
+              emptyMessage: "No weapon masteries available.",
+            },
+          },
+        },
+        state: createState(),
+        step: {} as never,
+      } as never),
+    );
+
+    expect(markup).toContain("No weapon masteries available.");
+    expect(markup).not.toContain('data-weapon-mastery-rail="true"');
+    expect(markup).not.toContain('data-weapon-mastery-preview="true"');
   });
 
   it("renders class item choices as guided grouped decisions with contextual selection summaries", () => {

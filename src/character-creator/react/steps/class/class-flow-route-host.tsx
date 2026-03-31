@@ -71,13 +71,6 @@ type WeaponMasteryChoiceOption = {
   disabled: boolean;
 };
 
-type MasteryReferenceEntry = {
-  mastery: string;
-  masteryDescription: string;
-  iconClass: string;
-  sourceWeapons: string[];
-};
-
 type WeaponMasteriesStepViewModel = {
   classIdentifier: string;
   className: string;
@@ -684,11 +677,6 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
     [maxCount, selectedSet, viewModel.weaponMasterySection.options],
   );
 
-  const selectedEntries = useMemo(
-    () => options.filter((option) => selectedSet.has(option.id)),
-    [options, selectedSet],
-  );
-
   const masteryGroupStyles = [
     {
       label: "Simple Weapons",
@@ -701,35 +689,6 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
       panelTone: "martial",
     },
   ] as const;
-
-  const masteryReference = useMemo<MasteryReferenceEntry[]>(() => {
-    const masteryMap = new Map<string, MasteryReferenceEntry>();
-    for (const option of options) {
-      const key = option.mastery.toLowerCase();
-      const existing = masteryMap.get(key);
-      const sourceWeapons = selectedSet.has(option.id) ? [option.name] : [];
-      if (existing) {
-        for (const weaponName of sourceWeapons) {
-          if (!existing.sourceWeapons.includes(weaponName)) existing.sourceWeapons.push(weaponName);
-        }
-        continue;
-      }
-
-      masteryMap.set(key, {
-        mastery: option.mastery,
-        masteryDescription: option.masteryDescription,
-        iconClass: getMasteryIcon(option.mastery),
-        sourceWeapons,
-      });
-    }
-
-    return [...masteryMap.values()].sort((left, right) => {
-      const leftSelected = left.sourceWeapons.length > 0 ? 0 : 1;
-      const rightSelected = right.sourceWeapons.length > 0 ? 0 : 1;
-      if (leftSelected !== rightSelected) return leftSelected - rightSelected;
-      return left.mastery.localeCompare(right.mastery);
-    });
-  }, [options, selectedSet]);
 
   const groupedOptions = useMemo(() => {
     const groups = new Map<string, WeaponMasteryChoiceOption[]>();
@@ -744,6 +703,36 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
       .map((group) => ({ label: group.label, entries: groups.get(group.label) ?? [] }))
       .filter((group) => group.entries.length > 0);
   }, [options]);
+  const orderedOptions = useMemo(
+    () => groupedOptions.flatMap((group) => group.entries),
+    [groupedOptions],
+  );
+  const selectedEntries = useMemo(
+    () => orderedOptions.filter((option) => selectedSet.has(option.id)),
+    [orderedOptions, selectedSet],
+  );
+  const previewableOptions = useMemo(
+    () => [
+      ...selectedEntries,
+      ...orderedOptions.filter((option) => !selectedSet.has(option.id)),
+    ],
+    [orderedOptions, selectedEntries, selectedSet],
+  );
+  const [previewId, setPreviewId] = useState<string | null>(previewableOptions[0]?.id ?? null);
+  const previewOption = useMemo(
+    () => options.find((option) => option.id === previewId) ?? previewableOptions[0] ?? null,
+    [options, previewId, previewableOptions],
+  );
+
+  useEffect(() => {
+    if (previewableOptions.length === 0) {
+      if (previewId !== null) setPreviewId(null);
+      return;
+    }
+
+    if (previewId && previewableOptions.some((option) => option.id === previewId)) return;
+    setPreviewId(previewableOptions[0]?.id ?? null);
+  }, [previewId, previewableOptions]);
 
   const onToggleMastery = (weaponId: string) => {
     const option = options.find((candidate) => candidate.id === weaponId);
@@ -778,6 +767,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
       availableWeaponMasteries: options.length,
     }, { silent: true });
     setSelectedIds(chosenWeaponMasteries);
+    setPreviewId(weaponId);
   };
 
   return (
@@ -830,7 +820,9 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
                   <div className="grid gap-2.5">
                     {group.entries.map((option, optionIndex) => (
                       <WeaponMasteryRow
+                        isPreviewed={previewOption?.id === option.id}
                         key={option.id}
+                        onPreview={setPreviewId}
                         onToggle={onToggleMastery}
                         option={option}
                         prefersReducedMotion={prefersReducedMotion}
@@ -849,13 +841,15 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
         )}
       </section>
 
-      <aside
-        className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4"
-        data-weapon-mastery-rail="true"
-      >
-        <SelectedMasteriesCard selectedEntries={selectedEntries} />
-        <MasteryReferenceCard entries={masteryReference} />
-      </aside>
+      {previewOption ? (
+        <aside
+          className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4"
+          data-weapon-mastery-rail="true"
+        >
+          <WeaponMasteryDetailCard option={previewOption} />
+          <SelectedMasteriesCard selectedEntries={selectedEntries} />
+        </aside>
+      ) : null}
     </div>
   );
 }
@@ -1451,12 +1445,16 @@ function getClassAdvancementPaneCopy(type: ClassAdvancementCommonStepViewModel["
 }
 
 function WeaponMasteryRow({
+  isPreviewed,
   option,
+  onPreview,
   onToggle,
   prefersReducedMotion,
   rowIndex,
 }: {
+  isPreviewed: boolean;
   option: WeaponMasteryChoiceOption;
+  onPreview: (weaponId: string) => void;
   onToggle: (weaponId: string) => void;
   prefersReducedMotion: boolean;
   rowIndex: number;
@@ -1469,14 +1467,18 @@ function WeaponMasteryRow({
         "group relative grid w-full grid-cols-[4.15rem_minmax(0,1fr)_3.6rem] items-center gap-3 overflow-hidden rounded-[1rem] border px-3 py-2 text-left shadow-[0_14px_24px_rgba(0,0,0,0.18)] transition md:px-4",
         "cc-theme-card cc-theme-card--interactive",
         option.checked && "cc-theme-card--selected",
+        isPreviewed && !option.checked && "border-[color:var(--cc-mounted-card-selected-border)]",
         option.disabled && !option.checked && "opacity-60",
       )}
+      data-previewed={isPreviewed ? "true" : undefined}
       data-weapon-mastery-row="true"
       disabled={option.disabled && !option.checked}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12, scale: 0.985 }}
       onClick={() => onToggle(option.id)}
+      onFocus={() => onPreview(option.id)}
+      onMouseEnter={() => onPreview(option.id)}
       transition={{ delay: 0.04 + rowIndex * 0.015, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-      style={getMountedCardSurfaceStyle(option.checked)}
+      style={getMountedCardSurfaceStyle(option.checked || isPreviewed)}
       type="button"
       whileHover={
         prefersReducedMotion || (option.disabled && !option.checked)
@@ -1524,6 +1526,60 @@ function WeaponMasteryRow({
   );
 }
 
+function WeaponMasteryDetailCard({ option }: { option: WeaponMasteryChoiceOption }) {
+  const weaponNotes = option.weaponDescription.trim() || option.tooltip.trim() || "Preview this weapon to compare it with the rest of the mastery list.";
+
+  return (
+    <section
+      className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
+      data-weapon-mastery-preview="true"
+      style={CC_MOUNTED_PANEL_STYLE}
+    >
+      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
+        <div className="flex items-start gap-3 border-b pb-3" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
+          <span className="relative flex h-16 w-16 shrink-0 overflow-hidden rounded-[1rem] border" style={CC_MOUNTED_IMAGE_FRAME_STYLE}>
+            <img alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" src={option.img} />
+            <span className="pointer-events-none absolute inset-0" style={CC_MOUNTED_IMAGE_SCRIM_STYLE} />
+          </span>
+          <div className="min-w-0">
+            <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>Weapon Preview</div>
+            <div className={cn("cc-theme-body mt-1 text-[1.2rem] font-semibold leading-6", CC_TEXT_PRIMARY)}>{option.name}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className={cn("cc-theme-pill--muted inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
+                {formatWeaponTypeBadge(option.weaponType)}
+              </span>
+              <span className={cn("cc-theme-pill inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_HERO)} style={CC_MOUNTED_BADGE_STYLE}>
+                {option.mastery}
+              </span>
+              <span className={cn("cc-theme-pill--muted inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", option.checked ? CC_TEXT_HERO : CC_TEXT_SECONDARY)} style={option.checked ? CC_MOUNTED_BADGE_STYLE : CC_MOUNTED_MUTED_BADGE_STYLE}>
+                {option.checked ? "Selected" : "Previewing"}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3">
+          <div className="cc-theme-card rounded-[1rem] border px-3 py-3" style={getMountedCardSurfaceStyle(option.checked)}>
+            <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em]", CC_TEXT_SECONDARY)}>Weapon Notes</div>
+            <div className={cn("cc-theme-body mt-1.5 font-fth-cc-body text-[0.92rem] leading-6", CC_TEXT_PRIMARY)}>{weaponNotes}</div>
+          </div>
+          <div className="cc-theme-card rounded-[1rem] border px-3 py-3" style={getMountedCardSurfaceStyle(true)}>
+            <div className="flex items-center gap-2">
+              <span className={cn("cc-theme-icon-chip inline-flex h-8 w-8 items-center justify-center rounded-full border", CC_TEXT_HERO)} style={getMountedIconSurfaceStyle(true)}>
+                <i className={getMasteryIcon(option.mastery)} aria-hidden="true" />
+              </span>
+              <div>
+                <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.16em]", CC_TEXT_SECONDARY)}>Mastery Technique</div>
+                <div className={cn("cc-theme-body font-fth-cc-body text-[1rem] font-semibold", CC_TEXT_PRIMARY)}>{option.mastery}</div>
+              </div>
+            </div>
+            <div className={cn("cc-theme-body mt-2 font-fth-cc-body text-[0.92rem] leading-6", CC_TEXT_PRIMARY)}>{option.masteryDescription}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMasteryChoiceOption[] }) {
   return (
     <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
@@ -1554,59 +1610,9 @@ function SelectedMasteriesCard({ selectedEntries }: { selectedEntries: WeaponMas
             </div>
           )) : (
             <div className={cn("cc-theme-empty rounded-[0.95rem] border border-dashed px-3 py-4 text-center font-fth-cc-body text-sm", CC_TEXT_SECONDARY)} style={CC_MOUNTED_MUTED_BADGE_STYLE}>
-              No weapon masteries chosen yet.
+              Preview a weapon here, then select the ones you want to lock in.
             </div>
           )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function MasteryReferenceCard({ entries }: { entries: MasteryReferenceEntry[] }) {
-  return (
-    <section className="cc-theme-panel overflow-hidden rounded-[1.45rem] border p-[0.28rem] shadow-[0_22px_40px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
-      <div className={cn("cc-theme-shell-inner rounded-[1.18rem] border px-4 py-4", CC_TEXT_PRIMARY)} style={CC_MOUNTED_FRAME_STYLE}>
-        <div className="border-b pb-3 text-center" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
-          <div className={cn("cc-theme-kicker font-fth-cc-ui text-[0.72rem] uppercase tracking-[0.22em]", CC_TEXT_KICKER)}>Mastery Techniques</div>
-          <div className={cn("cc-theme-body-muted mt-2 font-fth-cc-body text-[0.82rem] leading-5", CC_TEXT_SECONDARY)}>
-            Reference the technique each selected weapon unlocks.
-          </div>
-        </div>
-        <div className="mt-4 grid gap-2.5">
-          {entries.map((entry) => (
-            <div
-              className={cn(
-                "grid grid-cols-[2.1rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 rounded-[1rem] border px-3 py-3",
-                entry.sourceWeapons.length > 0 ? "cc-theme-card" : "border-transparent bg-transparent",
-                entry.sourceWeapons.length > 0 && "cc-theme-card",
-              )}
-              key={entry.mastery}
-              style={entry.sourceWeapons.length > 0 ? getMountedCardSurfaceStyle(true) : undefined}
-            >
-              <span className={cn("cc-theme-icon-chip inline-flex h-8 w-8 items-center justify-center self-center rounded-full border", CC_TEXT_HERO)} style={getMountedIconSurfaceStyle(entry.sourceWeapons.length > 0)}>
-                <i className={entry.iconClass} aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn("cc-theme-body block font-fth-cc-body text-[1rem] font-semibold", CC_TEXT_PRIMARY)}>{entry.mastery}</span>
-                  {entry.sourceWeapons.length > 0 ? (
-                    <span className={cn("cc-theme-pill inline-flex items-center rounded-full border px-2 py-0.5 font-fth-cc-ui text-[0.52rem] uppercase tracking-[0.16em]", CC_TEXT_HERO)} style={CC_MOUNTED_BADGE_STYLE}>
-                      Known via weapon mastery
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="col-span-2 min-w-0">
-                {entry.sourceWeapons.length > 0 ? (
-                  <div className={cn("cc-theme-kicker mb-1.5 font-fth-cc-ui text-[0.56rem] uppercase tracking-[0.14em]", CC_TEXT_SECONDARY)}>
-                    From {entry.sourceWeapons.join(", ")}
-                  </div>
-                ) : null}
-                <span className={cn("cc-theme-body-muted block font-fth-cc-body text-[0.84rem] leading-5", CC_TEXT_SECONDARY)}>{entry.masteryDescription}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>
