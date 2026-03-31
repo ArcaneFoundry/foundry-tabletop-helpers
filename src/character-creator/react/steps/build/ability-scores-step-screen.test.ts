@@ -200,6 +200,42 @@ describe("AbilityScoresStepScreen", () => {
     });
   });
 
+  it("quick assigns the standard array without hiding manual reassignment controls", () => {
+    const nextState = __abilityScoresInternals.buildQuickAssignedAbilityState(
+      {
+        selections: {
+          class: {
+            identifier: "fighter",
+            primaryAbilities: ["str", "dex"],
+          },
+        },
+      } as never,
+      {
+        method: "standardArray",
+        scores: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 },
+        assignments: { str: -1, dex: -1, con: -1, int: -1, wis: -1, cha: -1 },
+      } as never,
+    );
+
+    expect(nextState).not.toBeNull();
+    expect(nextState?.scores).toMatchObject({
+      str: 15,
+      dex: 14,
+      con: 13,
+      wis: 12,
+      int: 10,
+      cha: 8,
+    });
+    expect(nextState?.assignments).toMatchObject({
+      str: 0,
+      dex: 1,
+      con: 2,
+      wis: 3,
+      int: 4,
+      cha: 5,
+    });
+  });
+
   it("renders assignment controls with summary and open states for the standard array path", () => {
     const markup = renderToStaticMarkup(
       createElement(AbilityScoresStepScreen, {
@@ -280,6 +316,8 @@ describe("AbilityScoresStepScreen", () => {
 
     expect(markup).toContain("Disciplined Allocation");
     expect(markup).toContain("Assign each value from the standard array");
+    expect(markup).toContain("Quick Assign");
+    expect(markup).toContain("Quick assigns the class order first");
     expect(markup).toContain("Strength");
     expect(markup).toContain("STR");
     expect(markup).toContain("Assignment Pool");
