@@ -114,21 +114,20 @@
   );
   --cc-class-stepper-label-text: color-mix(in srgb, var(--cc-text-primary) 92%, var(--cc-bg-base) 8%);
   --cc-class-stepper-label-muted: color-mix(in srgb, var(--cc-text-secondary) 90%, var(--cc-bg-base) 10%);
-  --cc-class-card-outer: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--cc-bg-surface) 96%, white 4%),
-    color-mix(in srgb, var(--cc-bg-elevated) 90%, var(--cc-bg-base) 10%)
-  );
-  --cc-class-card-inner: linear-gradient(
-    180deg,
-    color-mix(in srgb, white 36%, transparent) 0%,
-    transparent 24%,
-    color-mix(in srgb, var(--cc-bg-base) 12%, transparent) 54%,
-    color-mix(in srgb, var(--cc-bg-base) 68%, transparent) 100%
-  );
-  --cc-class-card-title-shadow: 0 1px 3px color-mix(in srgb, var(--cc-bg-base) 34%, transparent);
-  --cc-class-card-chip-bg: color-mix(in srgb, var(--cc-bg-surface) 78%, white 22%);
-  --cc-class-card-chip-shadow: 0 10px 18px color-mix(in srgb, var(--cc-bg-base) 18%, transparent);
+  --cc-class-card-outer: var(--fth-theme-card-shell-image);
+  --cc-class-card-inner: var(--fth-theme-card-inner-image);
+  --cc-class-card-title-shadow: 0 1px 3px color-mix(in srgb, var(--cc-text-primary) 18%, transparent);
+  --cc-class-card-chip-bg: var(--fth-theme-card-chip-bg);
+  --cc-class-card-chip-shadow: var(--cc-shadow-panel);
+  --cc-class-card-chip-border: var(--fth-theme-card-chip-border);
+  --cc-class-card-chip-text: var(--fth-theme-card-chip-text);
+  --cc-class-card-chip-icon: var(--fth-theme-card-chip-icon);
+  --cc-class-card-selected-bg: var(--fth-theme-card-selected-bg);
+  --cc-class-card-selected-border: var(--fth-theme-card-selected-border);
+  --cc-class-card-selected-text: var(--fth-theme-card-selected-text);
+  --cc-class-selection-pane-bg: var(--cc-surface-panel);
+  --cc-class-gallery-shell-bg: var(--fth-theme-card-shell-image);
+  --cc-class-gallery-shell-shadow: var(--cc-shadow-panel);
   --cc-class-footer-button-primary: linear-gradient(
     180deg,
     color-mix(in srgb, var(--cc-action-primary-bright) 78%, white 22%),

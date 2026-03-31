@@ -367,14 +367,18 @@ export function WizardShell({
 
       <motion.footer
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-        className="cc-theme-panel cc-theme-panel--soft relative z-10 mx-4 mb-4 mt-auto overflow-hidden rounded-[1.75rem] border px-5 py-4 backdrop-blur-xl md:mx-5"
+        className="cc-theme-panel relative z-10 mx-4 mb-4 mt-auto overflow-hidden rounded-[1.75rem] border px-4 py-4 backdrop-blur-xl md:mx-5 md:px-5"
+        style={{
+          backgroundImage: "var(--cc-shell-footer-panel)",
+        }}
         initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
         transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--cc-surface-accent-soft)_74%,transparent),transparent_48%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--cc-surface-accent-soft)_64%,transparent),transparent_48%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[image:var(--cc-shell-footer-button-primary)] opacity-35" />
         <div className="fth-theme-panel-accent-line pointer-events-none absolute inset-x-8 top-0 h-px opacity-75" />
         <div className="pointer-events-none absolute inset-x-6 bottom-0 h-px bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-border-accent)_0%,transparent),color-mix(in_srgb,var(--cc-border-accent)_48%,transparent),color-mix(in_srgb,var(--cc-border-accent)_0%,transparent))] opacity-60" />
-        <div className="relative z-10 grid gap-4 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
+        <div className="relative z-10 grid gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4">
           <div className="order-2 md:order-1">
             <ActionButton
               disabled={!shellContext.canGoBack}
@@ -388,18 +392,28 @@ export function WizardShell({
             className="order-1 min-w-0 md:order-2"
             data-wizard-footer-summary="true"
           >
-            <div className="cc-theme-card cc-theme-card--soft relative overflow-hidden rounded-[1.25rem] border px-4 py-3">
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_52%,transparent),transparent)] opacity-70" />
+            <div
+              className="cc-theme-card cc-theme-card--raised relative overflow-hidden rounded-[1.35rem] border px-4 py-4 md:px-5"
+              style={{
+                backgroundImage: "var(--cc-shell-footer-summary)",
+              }}
+            >
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--cc-surface-accent-soft)_58%,transparent),transparent)] opacity-75" />
               <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.22em] text-[color:var(--cc-text-secondary)]">
-                    {chapterLabel} • Step {currentStepNumber} of {displaySteps.length}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="fth-theme-status-pill rounded-full px-3 py-1.5 font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.18em]">
+                      {chapterLabel}
+                    </div>
+                    <div className="font-fth-cc-ui text-[0.58rem] uppercase tracking-[0.22em] text-[color:var(--cc-text-secondary)]">
+                      Step {currentStepNumber} of {displaySteps.length}
+                    </div>
                   </div>
-                  <div className="mt-2 font-fth-cc-display text-[1.05rem] leading-none text-[color:var(--cc-text-primary)]">
+                  <div className="mt-3 font-fth-cc-display text-[1.08rem] leading-none text-[color:var(--cc-text-primary)]">
                     {shellContext.currentStepLabel}
                   </div>
                   {displayProgress?.detail ? (
-                    <div className="mt-2 font-fth-cc-body text-[0.86rem] leading-6 text-[color:var(--cc-text-secondary)]">
+                    <div className="mt-2 max-w-2xl font-fth-cc-body text-[0.88rem] leading-6 text-[color:var(--cc-text-secondary)]">
                       {displayProgress.detail}
                     </div>
                   ) : null}
@@ -411,9 +425,9 @@ export function WizardShell({
                 ) : null}
               </div>
               {displayProgress ? (
-                <div className="relative z-10 mt-3 h-1.5 overflow-hidden rounded-full bg-[color:color-mix(in_srgb,var(--cc-border-subtle)_82%,transparent)]">
+                <div className="relative z-10 mt-4 h-1.5 overflow-hidden rounded-full bg-[color:color-mix(in_srgb,var(--cc-border-subtle)_82%,transparent)]">
                   <div
-                    className="h-full rounded-full bg-[image:var(--cc-class-footer-button-primary)]"
+                    className="h-full rounded-full bg-[image:var(--cc-shell-footer-button-primary)]"
                     style={{ width: `${displayProgress.percent}%` }}
                   />
                 </div>
@@ -469,8 +483,8 @@ function ActionButton({
       className={cn(
         "cc-shell-footer-btn inline-flex min-w-36 items-center justify-center rounded-[1rem] border px-6 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition shadow-[var(--cc-shadow-button)]",
         variant === "primary"
-          ? "border-[color:color-mix(in_srgb,var(--cc-border-accent)_58%,transparent)] bg-[image:var(--cc-class-footer-button-primary)] text-[color:var(--cc-text-ink-900)]"
-          : "border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-class-footer-button-secondary)] text-[color:var(--cc-text-primary)] hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_42%,transparent)]",
+          ? "min-w-40 border-[color:color-mix(in_srgb,var(--cc-border-accent)_58%,transparent)] bg-[image:var(--cc-shell-footer-button-primary)] text-[color:var(--cc-text-ink-900)]"
+          : "min-w-32 border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)] bg-[image:var(--cc-shell-footer-button-secondary)] text-[color:var(--cc-text-primary)] hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_42%,transparent)]",
         disabled && "cursor-not-allowed opacity-40",
       )}
       disabled={disabled}

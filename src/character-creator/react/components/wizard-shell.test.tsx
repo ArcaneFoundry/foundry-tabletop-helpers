@@ -131,7 +131,10 @@ describe("WizardShell", () => {
     }));
 
     expect(markup).toContain('data-wizard-footer-summary="true"');
-    expect(markup).toContain("Class • Step 1 of 2");
+    expect(markup).toContain("cc-theme-card--raised");
+    expect(markup).toContain("cc-shell-footer-btn");
+    expect(markup).toContain("Class");
+    expect(markup).toContain("Step 1 of 2");
     expect(markup).toContain("Choose Your Class");
     expect(markup).toContain("Choose the class that will shape the rest of the build.");
     expect(markup).toContain("Ready");
@@ -212,7 +215,8 @@ describe("WizardShell", () => {
       onCreateCharacter: vi.fn(async () => {}),
     }));
 
-    expect(markup).toContain("Lore • Step 8 of 8");
+    expect(markup).toContain("Lore");
+    expect(markup).toContain("Step 8 of 8");
     expect(markup).toContain("Skills");
     expect(markup).toContain("Abilities");
     expect(markup).toContain("Spells");
