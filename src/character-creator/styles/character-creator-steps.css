@@ -283,6 +283,86 @@
     radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--cc-surface-arcane-soft) 80%, transparent), transparent 45%);
 }
 
+.cc-class-flow-hero-banner {
+  border-color: color-mix(in srgb, var(--cc-border-accent) 30%, transparent) !important;
+  background:
+    var(--cc-surface-hero-sheen),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cc-bg-surface) 94%, var(--cc-surface-accent-soft) 6%),
+      color-mix(in srgb, var(--cc-bg-elevated) 80%, var(--cc-bg-base) 20%)
+    ) !important;
+  box-shadow: var(--cc-shadow-hero) !important;
+  color: var(--cc-text-primary) !important;
+}
+
+.cc-class-flow-hero-banner[data-tone="accent"] {
+  border-color: color-mix(in srgb, var(--cc-border-accent) 40%, transparent) !important;
+  background:
+    var(--cc-surface-hero-sheen),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cc-bg-surface) 90%, var(--cc-surface-accent-soft) 10%),
+      color-mix(in srgb, var(--cc-bg-elevated) 76%, var(--cc-bg-base) 24%)
+    ) !important;
+}
+
+.cc-class-flow-hero-banner__sheen {
+  background:
+    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--cc-surface-accent-soft) 28%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--cc-surface-arcane-soft) 20%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-surface) 8%, transparent), transparent 24%);
+  opacity: 0.92;
+}
+
+.cc-class-flow-hero-banner__glow {
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--cc-surface-accent-soft) 20%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--cc-surface-accent-soft) 12%, transparent), transparent 26%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--cc-surface-arcane-soft) 12%, transparent), transparent 32%);
+  opacity: 0.92;
+}
+
+.cc-class-flow-hero-banner__frame {
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 86%, transparent) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-border-subtle) 20%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--cc-text-primary) 10%, transparent);
+}
+
+.cc-class-flow-hero-banner__badge {
+  border-color: color-mix(in srgb, var(--cc-border-accent) 44%, transparent) !important;
+  box-shadow: var(--cc-shadow-panel) !important;
+}
+
+.cc-class-flow-hero-banner__badge--muted {
+  border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
+}
+
+.cc-class-flow-hero-banner__rule {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cc-border-accent) 0%, transparent),
+    color-mix(in srgb, var(--cc-border-accent) 90%, transparent),
+    color-mix(in srgb, var(--cc-border-accent) 0%, transparent)
+  );
+}
+
+.cc-class-flow-hero-banner__flourish {
+  color: color-mix(in srgb, var(--cc-border-accent) 76%, transparent);
+}
+
+.cc-class-flow-hero-banner__flourish-line {
+  background: var(--cc-origin-flourish-line);
+  opacity: 0.78;
+}
+
+.cc-class-flow-hero-banner__flourish-gem {
+  border-color: color-mix(in srgb, var(--cc-border-accent) 42%, transparent) !important;
+  background: var(--cc-origin-flourish-gem-shell);
+  box-shadow: var(--cc-origin-flourish-gem-shadow);
+}
+
 .cc-theme-media-frame {
   border-color: color-mix(in srgb, var(--cc-border-subtle) 92%, transparent) !important;
   background: linear-gradient(180deg, color-mix(in srgb, var(--cc-bg-elevated) 42%, transparent), color-mix(in srgb, var(--cc-bg-base) 58%, transparent)) !important;

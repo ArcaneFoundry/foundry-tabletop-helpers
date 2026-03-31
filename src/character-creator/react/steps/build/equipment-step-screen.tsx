@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import type {
   EquipmentSelection,
@@ -12,6 +12,22 @@ import type {
   EquipmentSourceResolution,
 } from "../../../steps/equipment-flow-utils";
 import { formatCurrencyCp } from "../../../steps/equipment-flow-utils";
+
+const BUILD_HERO_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-hero-image)",
+  borderColor: "var(--cc-build-hero-border)",
+  boxShadow: "var(--cc-build-hero-shadow)",
+};
+const BUILD_PANEL_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
+const BUILD_PANEL_SOFT_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-soft-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
 
 type EquipmentStepViewModel = {
   resolution?: EquipmentFlowResolution;
@@ -52,7 +68,7 @@ export function EquipmentStepScreen({ shellContext, state, controller }: ReactWi
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-        <header className="cc-theme-header cc-theme-header--hero rounded-[1.65rem] px-5 py-5 md:px-6">
+        <header className="rounded-[1.65rem] border px-5 py-5 md:px-6" style={BUILD_HERO_STYLE}>
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl space-y-2">
               <MicroLabel>Build / Equipment</MicroLabel>
@@ -98,7 +114,7 @@ export function EquipmentStepScreen({ shellContext, state, controller }: ReactWi
             </div>
           </div>
 
-          <aside className="cc-theme-panel cc-theme-panel--accent rounded-[1.5rem] p-4 md:p-5">
+          <aside className="rounded-[1.5rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
             <div className="space-y-4">
               <div>
                 <MicroLabel>Provision summary</MicroLabel>
@@ -123,7 +139,7 @@ export function EquipmentStepScreen({ shellContext, state, controller }: ReactWi
                 />
               </div>
 
-              <div className="cc-theme-panel cc-theme-panel--soft rounded-[1.2rem] px-4 py-3">
+              <div className="rounded-[1.2rem] border px-4 py-3" style={BUILD_PANEL_SOFT_STYLE}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <MicroLabel>Current forecast</MicroLabel>
@@ -186,7 +202,7 @@ function ProvisionSourcePanel({
   onSelect: (optionId: string) => void;
 }) {
   return (
-    <section className="cc-theme-panel rounded-[1.45rem] p-4 md:p-5">
+    <section className="rounded-[1.45rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="max-w-2xl">
           <MicroLabel>{title}</MicroLabel>

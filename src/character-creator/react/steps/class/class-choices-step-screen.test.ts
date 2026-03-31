@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("motion/react", async () => {
   const React = await import("react");
   return {
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
     motion: new Proxy({}, {
       get: (_target, tag: string) => React.forwardRef((props: Record<string, unknown>, ref) => {
         const {
@@ -128,7 +129,12 @@ describe("ClassChoicesStepScreen", () => {
       } as never),
     );
 
-    expect(markup).toContain("Selection Summary");
+    expect(markup).not.toContain("Selection Summary");
+    expect(markup).toContain('data-class-hero-banner="true"');
+    expect(markup).toContain("Character Creation");
+    expect(markup).toContain("Choose Your Skills");
+    expect(markup).toContain("Class Flow");
+    expect(markup).toContain("Choose your skills");
     expect(markup).toContain("2/2");
     expect(markup).toContain("Prime Attribute Guidance");
     expect(markup).toContain("Saving Throws");

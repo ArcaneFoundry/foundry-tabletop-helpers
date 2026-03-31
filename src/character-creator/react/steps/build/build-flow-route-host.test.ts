@@ -1,6 +1,8 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { getBuildFlowTransitionKey, isBuildFlowStep } from "./build-flow-route-host";
+import { BuildFlowRouteHost, getBuildFlowTransitionKey, isBuildFlowStep } from "./build-flow-route-host";
 
 describe("build flow route host", () => {
   it("recognizes the mounted build chapter steps", () => {
@@ -20,5 +22,37 @@ describe("build flow route host", () => {
     expect(getBuildFlowTransitionKey("equipment")).toBe("build-flow");
     expect(getBuildFlowTransitionKey("feats")).toBe("feats");
     expect(getBuildFlowTransitionKey(undefined)).toBe("");
+  });
+
+  it("renders the fallback shell with shared build tokens", () => {
+    const markup = renderToStaticMarkup(createElement(BuildFlowRouteHost, {
+      controller: {
+        updateCurrentStepData: () => undefined,
+      },
+      shellContext: {
+        stepContentHtml: "",
+        stepViewModel: {
+          stepTitle: "Build",
+          stepLabel: "Equipment",
+          stepDescription: "Fallback build screen.",
+          derived: {
+            baseGoldCp: 10000,
+            remainingGoldCp: 9400,
+            selectedClassOption: { label: "Wizard" },
+            selectedBackgroundOption: { label: "Sage" },
+          },
+        },
+      },
+      state: {
+        selections: {},
+      },
+      step: {
+        renderMode: "react",
+      },
+    } as never));
+
+    expect(markup).toContain("background-image:var(--cc-build-shell-image)");
+    expect(markup).toContain("background-image:var(--cc-build-panel-image)");
+    expect(markup).not.toContain("cc-theme-panel--soft");
   });
 });

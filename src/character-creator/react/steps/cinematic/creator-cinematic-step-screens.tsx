@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useDeferredValue, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -111,6 +111,34 @@ type ReviewStepViewModel = {
   allComplete: boolean;
   incompleteSectionLabels: string[];
   startingLevel: number;
+};
+
+const FINALIZE_SHELL_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-shell-image)",
+};
+
+const FINALIZE_CARD_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-card-image)",
+};
+
+const FINALIZE_CARD_SOFT_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-card-soft-image)",
+};
+
+const FINALIZE_BUTTON_PRIMARY_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-button-primary-image)",
+};
+
+const FINALIZE_BUTTON_SECONDARY_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-button-secondary-image)",
+};
+
+const FINALIZE_BUTTON_DANGER_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-button-danger-image)",
+};
+
+const FINALIZE_MEDIA_FADE_IMAGE_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-cinematic-finalize-media-fade)",
 };
 
 export function SubclassStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
@@ -634,7 +662,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]">
         <ArcaneScrollPanel className="min-h-0">
           <div className="space-y-5">
-            <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.45rem] p-5">
+            <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.45rem] p-5" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-3">
                   <MicroLabel>Portrait Atelier</MicroLabel>
@@ -675,7 +703,8 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
               <div className="mt-5 flex flex-wrap gap-3">
                 {viewModel.serverAvailable ? (
                   <button
-                    className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-border-accent)_72%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--cc-action-primary-bright)_92%,white_8%),color-mix(in_srgb,var(--cc-action-primary)_88%,var(--cc-accent-bronze)_12%))] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-text-primary)_70%,var(--cc-bg-base)_30%)] shadow-[var(--cc-shadow-panel)] transition hover:translate-y-[-1px] hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="cc-theme-card cc-theme-card--raised rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:var(--cc-text-primary)] transition hover:translate-y-[-1px] hover:brightness-[1.02] disabled:cursor-not-allowed disabled:opacity-70"
+                    style={FINALIZE_BUTTON_PRIMARY_IMAGE_STYLE}
                     disabled={generating}
                     onClick={() => void runGeneration()}
                     type="button"
@@ -685,6 +714,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 ) : null}
                 <button
                   className="cc-theme-card cc-theme-card--soft rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_48%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_84%,var(--cc-surface-accent-soft)_16%)]"
+                  style={FINALIZE_BUTTON_SECONDARY_IMAGE_STYLE}
                   onClick={openUploadPicker}
                   type="button"
                 >
@@ -693,6 +723,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 {viewModel.hasPortrait ? (
                   <button
                     className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-danger)_48%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-danger)_20%,transparent)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-danger)_72%,var(--cc-text-primary)_28%)] transition hover:border-[color:color-mix(in_srgb,var(--cc-danger)_68%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-danger)_28%,transparent)]"
+                    style={FINALIZE_BUTTON_DANGER_IMAGE_STYLE}
                     onClick={clearPortrait}
                     type="button"
                   >
@@ -701,6 +732,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 ) : null}
                 <button
                   className="cc-theme-card cc-theme-card--soft rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_48%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_84%,var(--cc-surface-accent-soft)_16%)]"
+                  style={FINALIZE_BUTTON_SECONDARY_IMAGE_STYLE}
                   onClick={openTokenUploadPicker}
                   type="button"
                 >
@@ -708,6 +740,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 </button>
                 <button
                   className="cc-theme-card cc-theme-card--soft rounded-[1rem] border px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] transition hover:border-[color:color-mix(in_srgb,var(--cc-border-accent)_48%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-bg-surface)_84%,var(--cc-surface-accent-soft)_16%)]"
+                  style={FINALIZE_BUTTON_SECONDARY_IMAGE_STYLE}
                   onClick={usePortraitForToken}
                   type="button"
                 >
@@ -716,6 +749,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 {tokenArtMode === "custom" ? (
                   <button
                     className="rounded-[1rem] border border-[color:color-mix(in_srgb,var(--cc-danger)_48%,transparent)] bg-[color:color-mix(in_srgb,var(--cc-danger)_18%,transparent)] px-5 py-3 font-fth-cc-ui text-[0.74rem] uppercase tracking-[0.18em] text-[color:color-mix(in_srgb,var(--cc-danger)_72%,var(--cc-text-primary)_28%)] transition hover:border-[color:color-mix(in_srgb,var(--cc-danger)_68%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--cc-danger)_24%,transparent)]"
+                    style={FINALIZE_BUTTON_DANGER_IMAGE_STYLE}
                     onClick={clearTokenArt}
                     type="button"
                   >
@@ -725,7 +759,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
               </div>
             </section>
 
-            <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.35rem] p-4">
+            <section className="cc-theme-panel cc-theme-panel--soft rounded-[1.35rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
               <div className="flex items-center justify-between gap-3">
                 <MicroLabel>Generated Portraits</MicroLabel>
                 <div className="cc-theme-body-muted font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.18em]">
@@ -772,13 +806,13 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
               {currentPortrait ? <TokenPill muted>Ready for final review</TokenPill> : null}
             </div>
             {currentPortrait ? (
-              <div className="cc-theme-media-frame overflow-hidden rounded-[1.4rem] border p-3">
+              <div className="cc-theme-media-frame overflow-hidden rounded-[1.4rem] border p-3" style={FINALIZE_CARD_IMAGE_STYLE}>
                 <img alt="Selected portrait" className="aspect-[4/5] w-full rounded-[1rem] object-cover" src={currentPortrait} />
               </div>
             ) : (
               <ArcaneEmptyState message="No portrait is required. You can proceed without binding a likeness, or generate one here before the ritual closes." compact />
             )}
-            <div className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+            <div className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
               <div className="flex items-center justify-between gap-3">
                 <MicroLabel>Token Art</MicroLabel>
                 <TokenPill muted>{tokenArtMode === "custom" ? "Custom token art" : "Mirrors portrait"}</TokenPill>
@@ -787,7 +821,7 @@ export function PortraitStepScreen({ shellContext, state, controller }: ReactWiz
                 The token image defaults to the portrait. Upload a separate square asset only when the tabletop token should differ.
               </p>
               {currentTokenArt ? (
-                <div className="cc-theme-media-frame mt-4 overflow-hidden rounded-[1.2rem] border p-3">
+                <div className="cc-theme-media-frame mt-4 overflow-hidden rounded-[1.2rem] border p-3" style={FINALIZE_CARD_IMAGE_STYLE}>
                   <img alt="Selected token art" className="aspect-square w-full rounded-[0.9rem] object-cover" src={currentTokenArt} />
                 </div>
               ) : (
@@ -860,35 +894,37 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
 
       <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.16fr)_minmax(20rem,0.84fr)]">
         <ArcaneScrollPanel className="min-h-0">
-          <div className="cc-theme-panel cc-theme-panel--accent overflow-hidden rounded-[1.6rem]">
+          <div className="cc-theme-panel cc-theme-panel--soft overflow-hidden rounded-[1.6rem]" style={FINALIZE_SHELL_IMAGE_STYLE}>
             <div className="grid gap-0 xl:grid-cols-[minmax(20rem,0.78fr)_minmax(0,1fr)]">
-              <div className="relative min-h-[20rem] overflow-hidden">
-                <img
-                  alt={characterName || "Character portrait"}
-                  className="h-full w-full object-cover"
-                  src={portraitSection?.img ?? currentPortrait ?? speciesSection?.img ?? heroSection?.img ?? ""}
-                />
-                <div className="cc-theme-media-frame__fade absolute inset-0" />
-                <div className="absolute inset-x-6 bottom-6">
-                  <MicroLabel>Bound Identity</MicroLabel>
-                  <div className="cc-theme-title mt-3 font-fth-cc-display text-[2.4rem] leading-none">
-                    {characterName || "Name Your Artifact"}
+              <div className="p-5">
+                <div className="cc-theme-card cc-theme-card--raised relative min-h-[20rem] overflow-hidden rounded-[1.4rem]">
+                  <img
+                    alt={characterName || "Character portrait"}
+                    className="h-full w-full object-cover"
+                    src={portraitSection?.img ?? currentPortrait ?? speciesSection?.img ?? heroSection?.img ?? ""}
+                  />
+                  <div className="cc-theme-media-frame__fade absolute inset-0 opacity-75" style={FINALIZE_MEDIA_FADE_IMAGE_STYLE} />
+                  <div className="absolute inset-x-6 bottom-6">
+                    <MicroLabel>Bound Identity</MicroLabel>
+                    <div className="cc-theme-title mt-3 font-fth-cc-display text-[2.4rem] leading-none">
+                      {characterName || "Name Your Artifact"}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {[speciesSection?.summary, heroSection?.summary, originSection?.summary].filter(Boolean).map((entry) => (
+                        <TokenPill key={String(entry)}>{String(entry)}</TokenPill>
+                      ))}
+                      {alignment ? <TokenPill>{alignment}</TokenPill> : null}
+                    </div>
+                    <p className="cc-theme-copy mt-4 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6">
+                      This is the name that will appear on the character sheet and in the world. Keep it clear, bold, and easy to
+                      recognize when the ritual closes. Add alignment and backstory here before finalizing the binding.
+                    </p>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {[speciesSection?.summary, heroSection?.summary, originSection?.summary].filter(Boolean).map((entry) => (
-                      <TokenPill key={String(entry)}>{String(entry)}</TokenPill>
-                    ))}
-                    {alignment ? <TokenPill>{alignment}</TokenPill> : null}
-                  </div>
-                  <p className="cc-theme-copy mt-4 max-w-2xl font-fth-cc-body text-[0.96rem] leading-6">
-                    This is the name that will appear on the character sheet and in the world. Keep it clear, bold, and easy to
-                    recognize when the ritual closes. Add alignment and backstory here before finalizing the binding.
-                  </p>
                 </div>
               </div>
 
               <div className="space-y-5 p-6">
-                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
                   <label className="cc-theme-kicker block font-fth-cc-ui text-[0.68rem] uppercase tracking-[0.24em]" htmlFor="review-character-name">
                     Character Name
                   </label>
@@ -901,6 +937,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                     aria-describedby="review-character-name-guidance"
                     data-character-name
                     className="cc-theme-card cc-theme-card--raised mt-4 w-full rounded-[1rem] px-4 py-3 font-fth-cc-display text-[1.35rem] text-[color:var(--cc-text-primary)] outline-none transition focus-visible:border-[#e9c176]/55 focus-visible:ring-2 focus-visible:ring-[#e9c176]/35 focus-visible:ring-offset-0"
+                    style={FINALIZE_CARD_IMAGE_STYLE}
                     onChange={(event) => {
                       const value = event.target.value;
                       setCharacterName(value);
@@ -913,7 +950,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                   />
                 </section>
 
-                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
                   <MicroLabel>Lore Details</MicroLabel>
                   <div className="mt-4 grid gap-4">
                     <div>
@@ -926,6 +963,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                         id="review-alignment"
                         name="alignment"
                         data-lore-alignment
+                        style={FINALIZE_CARD_IMAGE_STYLE}
                         placeholder="Neutral Good, chaotic, lawful, or custom..."
                         value={alignment}
                         onChange={(event) => {
@@ -946,6 +984,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                         id="review-background-story"
                         name="backgroundStory"
                         data-background-story
+                        style={FINALIZE_CARD_IMAGE_STYLE}
                         placeholder="Write a short origin, goals, or personality note..."
                         value={backgroundStory}
                         onChange={(event) => {
@@ -975,7 +1014,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                         <TokenPill muted>{viewModel.hasTokenArt ? "Token art set" : "Token art uses portrait"}</TokenPill>
                       </div>
                     </div>
-                    <div className="cc-theme-media-frame overflow-hidden rounded-[1.2rem] border p-3">
+                    <div className="cc-theme-media-frame overflow-hidden rounded-[1.2rem] border p-3" style={FINALIZE_CARD_IMAGE_STYLE}>
                       {currentTokenArt ? (
                         <img
                           alt="Selected token art"
@@ -990,12 +1029,13 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                 </section>
 
                 {Array.isArray(abilitiesSection?.summary) ? (
-                  <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                  <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
                     <MicroLabel>Core Attributes</MicroLabel>
                     <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                       {(abilitiesSection.summary as Array<{ key: string; score: number; modifier: string }>).map((ability) => (
                         <div
                           className="cc-theme-card cc-theme-card--soft rounded-[1rem] px-4 py-3"
+                          style={FINALIZE_CARD_SOFT_IMAGE_STYLE}
                           key={ability.key}
                         >
                           <div className="cc-theme-kicker font-fth-cc-ui text-[0.66rem] uppercase tracking-[0.2em]">{ability.key}</div>
@@ -1008,11 +1048,11 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                 ) : null}
 
                 {originSummarySection?.selectedGrantGroups?.length ? (
-                  <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4">
+                  <section className="cc-theme-card cc-theme-card--soft rounded-[1.25rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE}>
                     <MicroLabel>Origins</MicroLabel>
                     <div className="mt-3 grid gap-3">
                       {originSummarySection.selectedGrantGroups.map((group) => (
-                        <div className="cc-theme-card cc-theme-card--soft rounded-[1rem] p-4" key={group.id}>
+                        <div className="cc-theme-card cc-theme-card--soft rounded-[1rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE} key={group.id}>
                           <div className="cc-theme-body font-fth-cc-body text-[1rem] font-semibold">{group.title}</div>
                           <div className="mt-3 flex flex-wrap gap-2">
                             {group.entries.map((entry) => <TokenPill key={`${group.id}-${entry}`}>{entry}</TokenPill>)}
@@ -1059,7 +1099,7 @@ export function ReviewStepScreen({ shellContext, state, controller }: ReactWizar
                 <MicroLabel>Build Outcomes</MicroLabel>
                 <div className="grid gap-3">
                   {buildSections.map((section) => (
-                    <div className="cc-theme-card cc-theme-card--soft rounded-[1rem] p-4" key={section.id}>
+                    <div className="cc-theme-card cc-theme-card--soft rounded-[1rem] p-4" style={FINALIZE_CARD_SOFT_IMAGE_STYLE} key={section.id}>
                       <div className="cc-theme-body font-fth-cc-body text-[1rem] font-semibold">{section.label}</div>
                       {typeof section.summary === "string" && section.summary ? (
                         <p className="cc-theme-body-muted mt-2 font-fth-cc-body text-[0.95rem] leading-6">{section.summary}</p>

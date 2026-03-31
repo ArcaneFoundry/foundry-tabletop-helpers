@@ -154,6 +154,37 @@
   --cc-build-feats-shell-shadow: inset 0 1px 0 color-mix(in srgb, var(--cc-text-primary) 6%, transparent), 0 22px 42px color-mix(in srgb, var(--cc-bg-base) 18%, transparent);
   --cc-build-feats-hero-image: var(--cc-surface-hero);
   --cc-build-feats-hero-border: color-mix(in srgb, var(--cc-border-accent) 32%, transparent);
+  --cc-cinematic-finalize-shell-image: var(--cc-surface-panel);
+  --cc-cinematic-finalize-card-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 90%, white 10%),
+    color-mix(in srgb, var(--cc-bg-elevated) 82%, var(--cc-bg-base) 18%)
+  );
+  --cc-cinematic-finalize-card-soft-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 84%, transparent),
+    color-mix(in srgb, var(--cc-bg-elevated) 78%, transparent)
+  );
+  --cc-cinematic-finalize-button-primary-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-action-primary-bright) 24%, var(--cc-bg-surface) 76%),
+    color-mix(in srgb, var(--cc-bg-surface) 88%, var(--cc-surface-accent-soft) 12%)
+  );
+  --cc-cinematic-finalize-button-secondary-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-bg-surface) 88%, white 12%),
+    color-mix(in srgb, var(--cc-bg-elevated) 84%, var(--cc-bg-base) 16%)
+  );
+  --cc-cinematic-finalize-button-danger-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cc-action-danger) 14%, var(--cc-bg-surface) 86%),
+    color-mix(in srgb, var(--cc-action-danger) 18%, var(--cc-bg-elevated) 82%)
+  );
+  --cc-cinematic-finalize-media-fade: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--cc-bg-base) 82%, transparent)
+  );
   --cc-class-footer-button-primary: linear-gradient(
     180deg,
     color-mix(in srgb, var(--cc-action-primary-bright) 78%, white 22%),

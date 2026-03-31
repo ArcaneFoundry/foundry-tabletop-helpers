@@ -70,7 +70,7 @@ function createSteps() {
 }
 
 describe("ClassStepScreen", () => {
-  it("renders the parchment hero banner and fantasy framing on the class step", () => {
+  it("renders the token-backed hero banner and fantasy framing on the class step", () => {
     const markup = renderToStaticMarkup(
       createElement(ClassStepScreen, {
         controller: {
@@ -90,10 +90,12 @@ describe("ClassStepScreen", () => {
     );
 
     expect(markup).toContain('data-class-hero-banner="true"');
+    expect(markup).toContain('data-tone="default"');
+    expect(markup).toContain("cc-class-flow-hero-banner");
     expect(markup).toContain("Character Creation");
     expect(markup).toContain("Choose Your Class");
-    expect(markup).toContain("Step 1");
-    expect(markup).toContain("Class Selection");
-    expect(markup).toContain("Select the class that defines your first steps and unlocks the rest of the build.");
+    expect(markup).toContain("Class Flow");
+    expect(markup).toContain("Choose your class");
+    expect(markup).toContain("Choose the class that sets your hero on the first steps of the build.");
   });
 });

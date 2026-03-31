@@ -123,7 +123,6 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
           <div className="flex flex-wrap items-center gap-2">
             <button
               className="cc-theme-badge cc-theme-badge--muted rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.16em] transition hover:brightness-[1.03]"
-              disabled={remainingPoints <= 0}
               onClick={() => applyQuickAssign("background")}
               type="button"
             >
@@ -132,7 +131,6 @@ export function BackgroundAsiPane({ shellContext, state, controller, prefersRedu
             {viewModel.hasClassRecommendations ? (
               <button
                 className="cc-theme-badge cc-theme-badge--muted rounded-full border px-3 py-1.5 font-fth-cc-ui text-[0.64rem] uppercase tracking-[0.16em] transition hover:brightness-[1.03]"
-                disabled={remainingPoints <= 0}
                 onClick={() => applyQuickAssign("class")}
                 type="button"
               >

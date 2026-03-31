@@ -342,6 +342,9 @@ describe("PortraitStepScreen", () => {
     expect(markup).toContain("cc-theme-hero-shell");
     expect(markup).toContain("cc-theme-badge");
     expect(markup).toContain("cc-theme-card--raised");
+    expect(markup).toContain("var(--cc-cinematic-finalize-card-soft-image)");
+    expect(markup).toContain("var(--cc-cinematic-finalize-button-primary-image)");
+    expect(markup).toContain("var(--cc-cinematic-finalize-button-secondary-image)");
     expect(markup).toContain("Portrait Prompt");
     expect(markup).toContain("Arcane portrait prompt");
     expect(markup).toContain('id="portrait-prompt"');
@@ -401,6 +404,8 @@ describe("PortraitStepScreen", () => {
     expect(markup).toContain("Uploaded likeness");
     expect(markup).toContain("Ready for final review");
     expect(markup).toContain("cc-theme-media-frame");
+    expect(markup).toContain("var(--cc-cinematic-finalize-card-image)");
+    expect(markup).toContain("var(--cc-cinematic-finalize-button-danger-image)");
   });
 
   it("keeps custom token art separate from the portrait preview", () => {
@@ -524,9 +529,15 @@ describe("ReviewStepScreen", () => {
 
     expect(markup).toContain("The Ritual Is Complete");
     expect(markup).toContain("cc-theme-hero-shell");
-    expect(markup).toContain("cc-theme-panel--accent");
+    expect(markup).toContain("cc-theme-panel--soft");
+    expect(markup).toContain("cc-theme-card--raised");
     expect(markup).toContain("cc-theme-card--soft");
     expect(markup).toContain("cc-theme-media-frame__fade");
+    expect(markup).toContain("var(--cc-cinematic-finalize-shell-image)");
+    expect(markup).toContain("var(--cc-cinematic-finalize-card-soft-image)");
+    expect(markup).toContain("var(--cc-cinematic-finalize-card-image)");
+    expect(markup).toContain("var(--cc-cinematic-finalize-media-fade)");
+    expect(markup).not.toContain("cc-theme-panel--accent");
     expect(markup).toContain("2 unresolved");
     expect(markup).toContain("Jump back to revise any card");
     expect(markup).toContain("Character Name");

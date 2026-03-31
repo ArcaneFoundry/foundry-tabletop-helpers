@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "../../../../ui/lib/cn";
 import type {
@@ -22,9 +23,36 @@ type EquipmentShopStepViewModel = {
 };
 
 const EQUIPMENT_LEDGER_STEP_ID = "equipment";
+const EQUIPMENT_SHOP_VIRTUALIZATION_THRESHOLD = 50;
+const EQUIPMENT_SHOP_ROW_HEIGHT_PX = 168;
+const EQUIPMENT_SHOP_OVERSCAN_ROWS = 4;
+const EQUIPMENT_SHOP_INITIAL_VIEWPORT_HEIGHT_PX = 640;
 const LARGE_LIST_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
   containIntrinsicSize: "auto 9.5rem",
+};
+const BUILD_HERO_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-hero-image)",
+  borderColor: "var(--cc-build-hero-border)",
+  boxShadow: "var(--cc-build-hero-shadow)",
+};
+const BUILD_PANEL_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
+const BUILD_PANEL_SOFT_STYLE: CSSProperties = {
+  backgroundImage: "var(--cc-build-panel-soft-image)",
+  borderColor: "var(--cc-build-panel-border)",
+  boxShadow: "var(--cc-build-panel-shadow)",
+};
+
+type EquipmentShopWindow = {
+  enabled: boolean;
+  startIndex: number;
+  endIndex: number;
+  beforeHeight: number;
+  afterHeight: number;
 };
 
 export function mergeEquipmentShopSelection(
@@ -64,6 +92,40 @@ export function updateEquipmentTransactionSelection(
     : { sales: currentMap });
 }
 
+export function computeEquipmentShopWindow(
+  totalItems: number,
+  scrollTop: number,
+  viewportHeight: number,
+): EquipmentShopWindow {
+  if (totalItems <= EQUIPMENT_SHOP_VIRTUALIZATION_THRESHOLD) {
+    return {
+      enabled: false,
+      startIndex: 0,
+      endIndex: totalItems,
+      beforeHeight: 0,
+      afterHeight: 0,
+    };
+  }
+
+  const safeScrollTop = Math.max(0, scrollTop);
+  const safeViewportHeight = Math.max(viewportHeight, EQUIPMENT_SHOP_ROW_HEIGHT_PX);
+  const firstVisibleRow = Math.floor(safeScrollTop / EQUIPMENT_SHOP_ROW_HEIGHT_PX);
+  const visibleRowCount = Math.ceil(safeViewportHeight / EQUIPMENT_SHOP_ROW_HEIGHT_PX);
+  const windowSize = visibleRowCount + (EQUIPMENT_SHOP_OVERSCAN_ROWS * 2);
+  const unclampedStartIndex = Math.max(0, firstVisibleRow - EQUIPMENT_SHOP_OVERSCAN_ROWS);
+  const maxStartIndex = Math.max(0, totalItems - windowSize);
+  const startIndex = Math.min(unclampedStartIndex, maxStartIndex);
+  const endIndex = Math.min(totalItems, startIndex + windowSize);
+
+  return {
+    enabled: true,
+    startIndex,
+    endIndex,
+    beforeHeight: startIndex * EQUIPMENT_SHOP_ROW_HEIGHT_PX,
+    afterHeight: Math.max(0, (totalItems - endIndex) * EQUIPMENT_SHOP_ROW_HEIGHT_PX),
+  };
+}
+
 export function EquipmentShopStepScreen({ shellContext, state, controller }: ReactWizardStepProps) {
   const viewModel = shellContext.stepViewModel as EquipmentShopStepViewModel | undefined;
   if (!viewModel?.resolution) return null;
@@ -100,7 +162,7 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
   return (
     <section className="flex flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-        <header className="cc-theme-header cc-theme-header--hero rounded-[1.65rem] px-5 py-5 md:px-6">
+        <header className="rounded-[1.65rem] border px-5 py-5 md:px-6" style={BUILD_HERO_STYLE}>
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl space-y-2">
               <MicroLabel>Build / Shop</MicroLabel>
@@ -125,7 +187,7 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
 
         <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)]">
           <div className="pr-1">
-            <section className="cc-theme-panel rounded-[1.45rem] p-4 md:p-5">
+            <section className="rounded-[1.45rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-2xl">
                   <MicroLabel>Trade mode</MicroLabel>
@@ -162,12 +224,14 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
                     inventory={viewModel.resolution.shopInventory}
                     purchases={selection.purchases ?? {}}
                     remainingGoldCp={liveDerived.remainingGoldCp}
+                    scrollKey={shopMode}
                     onAdjustQuantity={(uuid, nextQuantity) => updateTransaction("purchase", uuid, nextQuantity)}
                   />
                 ) : (
                   <SellInventoryPanel
                     inventory={sellableInventory}
                     sales={selection.sales ?? {}}
+                    scrollKey={shopMode}
                     onAdjustQuantity={(uuid, nextQuantity) => updateTransaction("sale", uuid, nextQuantity)}
                   />
                 )}
@@ -175,7 +239,7 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
             </section>
           </div>
 
-          <aside className="cc-theme-panel cc-theme-panel--accent rounded-[1.5rem] p-4 md:p-5">
+          <aside className="rounded-[1.5rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
             <div className="space-y-4">
               <div>
                 <MicroLabel>Trade summary</MicroLabel>
@@ -200,7 +264,7 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
                 />
               </div>
 
-              <div className="cc-theme-panel cc-theme-panel--soft rounded-[1.2rem] px-4 py-3">
+              <div className="rounded-[1.2rem] border px-4 py-3" style={BUILD_PANEL_SOFT_STYLE}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <MicroLabel>Remaining gold</MicroLabel>
@@ -266,13 +330,17 @@ function ShopInventoryPanel({
   inventory,
   purchases,
   remainingGoldCp,
+  scrollKey,
   onAdjustQuantity,
 }: {
   inventory: CreatorIndexEntry[];
   purchases: Record<string, number>;
   remainingGoldCp: number;
+  scrollKey: string;
   onAdjustQuantity: (uuid: string, nextQuantity: number) => void;
 }) {
+  const window = useEquipmentShopWindow(inventory.length, scrollKey);
+
   if (inventory.length === 0) {
     return (
       <EmptyPanelCopy>
@@ -281,32 +349,71 @@ function ShopInventoryPanel({
     );
   }
 
-  return (
-    <div className="grid gap-3">
-      {inventory.map((entry) => {
-        const quantity = purchases[entry.uuid] ?? 0;
-        const priceCp = entry.priceCp ?? 0;
-        const canIncrease = priceCp > 0 && remainingGoldCp >= priceCp;
+  if (!window.enabled) {
+    return (
+      <div className="grid gap-3">
+        {inventory.map((entry) => {
+          const quantity = purchases[entry.uuid] ?? 0;
+          const priceCp = entry.priceCp ?? 0;
+          const canIncrease = priceCp > 0 && remainingGoldCp >= priceCp;
 
-        return (
-          <TradeRow
-            actionLabel="Marked to buy"
-            entry={entry}
-            key={entry.uuid}
-            onDecrease={() => onAdjustQuantity(entry.uuid, Math.max(0, quantity - 1))}
-            onIncrease={() => onAdjustQuantity(entry.uuid, quantity + 1)}
-            quantity={quantity}
-            quantityCanIncrease={canIncrease}
-            quantityCanDecrease={quantity > 0}
-            valueLabel={priceCp > 0 ? formatCurrencyCp(priceCp) : "No price"}
-            style={LARGE_LIST_ROW_STYLE}
-          >
-            <TokenPill muted={quantity === 0}>{quantity} selected</TokenPill>
-            {priceCp > 0 ? null : <TokenPill muted>Unavailable to buy</TokenPill>}
-            {!canIncrease && priceCp > 0 ? <TokenPill muted>Insufficient funds</TokenPill> : null}
-          </TradeRow>
-        );
-      })}
+          return (
+            <TradeRow
+              actionLabel="Marked to buy"
+              entry={entry}
+              key={entry.uuid}
+              onDecrease={() => onAdjustQuantity(entry.uuid, Math.max(0, quantity - 1))}
+              onIncrease={() => onAdjustQuantity(entry.uuid, quantity + 1)}
+              quantity={quantity}
+              quantityCanIncrease={canIncrease}
+              quantityCanDecrease={quantity > 0}
+              valueLabel={priceCp > 0 ? formatCurrencyCp(priceCp) : "No price"}
+              style={LARGE_LIST_ROW_STYLE}
+            >
+              <TokenPill muted={quantity === 0}>{quantity} selected</TokenPill>
+              {priceCp > 0 ? null : <TokenPill muted>Unavailable to buy</TokenPill>}
+              {!canIncrease && priceCp > 0 ? <TokenPill muted>Insufficient funds</TokenPill> : null}
+            </TradeRow>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={window.containerRef}
+      className="max-h-[min(38rem,calc(100vh-21rem))] overflow-y-auto overscroll-contain pr-1"
+      style={{ scrollbarGutter: "stable" }}
+    >
+      <div aria-hidden style={{ height: `${window.beforeHeight}px` }} />
+      <div className="grid gap-3">
+        {inventory.slice(window.startIndex, window.endIndex).map((entry) => {
+          const quantity = purchases[entry.uuid] ?? 0;
+          const priceCp = entry.priceCp ?? 0;
+          const canIncrease = priceCp > 0 && remainingGoldCp >= priceCp;
+
+          return (
+            <TradeRow
+              actionLabel="Marked to buy"
+              entry={entry}
+              key={entry.uuid}
+              onDecrease={() => onAdjustQuantity(entry.uuid, Math.max(0, quantity - 1))}
+              onIncrease={() => onAdjustQuantity(entry.uuid, quantity + 1)}
+              quantity={quantity}
+              quantityCanIncrease={canIncrease}
+              quantityCanDecrease={quantity > 0}
+              valueLabel={priceCp > 0 ? formatCurrencyCp(priceCp) : "No price"}
+              style={LARGE_LIST_ROW_STYLE}
+            >
+              <TokenPill muted={quantity === 0}>{quantity} selected</TokenPill>
+              {priceCp > 0 ? null : <TokenPill muted>Unavailable to buy</TokenPill>}
+              {!canIncrease && priceCp > 0 ? <TokenPill muted>Insufficient funds</TokenPill> : null}
+            </TradeRow>
+          );
+        })}
+      </div>
+      <div aria-hidden style={{ height: `${window.afterHeight}px` }} />
     </div>
   );
 }
@@ -314,12 +421,16 @@ function ShopInventoryPanel({
 function SellInventoryPanel({
   inventory,
   sales,
+  scrollKey,
   onAdjustQuantity,
 }: {
   inventory: Array<{ item: DerivedEquipmentItem; priceCp: number }>;
   sales: Record<string, number>;
+  scrollKey: string;
   onAdjustQuantity: (uuid: string, nextQuantity: number) => void;
 }) {
+  const window = useEquipmentShopWindow(inventory.length, scrollKey);
+
   if (inventory.length === 0) {
     return (
       <EmptyPanelCopy>
@@ -328,39 +439,125 @@ function SellInventoryPanel({
     );
   }
 
-  return (
-    <div className="grid gap-3">
-      {inventory.map(({ item, priceCp }) => {
-        const quantity = sales[item.uuid] ?? 0;
-        const maxSellable = item.quantity;
+  if (!window.enabled) {
+    return (
+      <div className="grid gap-3">
+        {inventory.map(({ item, priceCp }) => {
+          const quantity = sales[item.uuid] ?? 0;
+          const maxSellable = item.quantity;
 
-        return (
-          <TradeRow
-            actionLabel="Marked to sell"
-            entry={{
-              uuid: item.uuid,
-              name: item.name,
-              img: item.img ?? "",
-              itemType: item.itemType,
-              priceCp,
-              packLabel: "Current inventory",
-            }}
-            key={item.uuid}
-            onDecrease={() => onAdjustQuantity(item.uuid, Math.max(0, quantity - 1))}
-            onIncrease={() => onAdjustQuantity(item.uuid, Math.min(maxSellable, quantity + 1))}
-            quantity={quantity}
-            quantityCanIncrease={quantity < maxSellable}
-            quantityCanDecrease={quantity > 0}
-            valueLabel={`Recovers ${formatCurrencyCp(priceCp)}`}
-            style={LARGE_LIST_ROW_STYLE}
-          >
-            <TokenPill muted={quantity === 0}>{quantity} marked</TokenPill>
-            <TokenPill muted>Own {item.quantity}</TokenPill>
-          </TradeRow>
-        );
-      })}
+          return (
+            <TradeRow
+              actionLabel="Marked to sell"
+              entry={{
+                uuid: item.uuid,
+                name: item.name,
+                img: item.img ?? "",
+                itemType: item.itemType,
+                priceCp,
+                packLabel: "Current inventory",
+              }}
+              key={item.uuid}
+              onDecrease={() => onAdjustQuantity(item.uuid, Math.max(0, quantity - 1))}
+              onIncrease={() => onAdjustQuantity(item.uuid, Math.min(maxSellable, quantity + 1))}
+              quantity={quantity}
+              quantityCanIncrease={quantity < maxSellable}
+              quantityCanDecrease={quantity > 0}
+              valueLabel={`Recovers ${formatCurrencyCp(priceCp)}`}
+              style={LARGE_LIST_ROW_STYLE}
+            >
+              <TokenPill muted={quantity === 0}>{quantity} marked</TokenPill>
+              <TokenPill muted>Own {item.quantity}</TokenPill>
+            </TradeRow>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={window.containerRef}
+      className="max-h-[min(38rem,calc(100vh-21rem))] overflow-y-auto overscroll-contain pr-1"
+      style={{ scrollbarGutter: "stable" }}
+    >
+      <div aria-hidden style={{ height: `${window.beforeHeight}px` }} />
+      <div className="grid gap-3">
+        {inventory.slice(window.startIndex, window.endIndex).map(({ item, priceCp }) => {
+          const quantity = sales[item.uuid] ?? 0;
+          const maxSellable = item.quantity;
+
+          return (
+            <TradeRow
+              actionLabel="Marked to sell"
+              entry={{
+                uuid: item.uuid,
+                name: item.name,
+                img: item.img ?? "",
+                itemType: item.itemType,
+                priceCp,
+                packLabel: "Current inventory",
+              }}
+              key={item.uuid}
+              onDecrease={() => onAdjustQuantity(item.uuid, Math.max(0, quantity - 1))}
+              onIncrease={() => onAdjustQuantity(item.uuid, Math.min(maxSellable, quantity + 1))}
+              quantity={quantity}
+              quantityCanIncrease={quantity < maxSellable}
+              quantityCanDecrease={quantity > 0}
+              valueLabel={`Recovers ${formatCurrencyCp(priceCp)}`}
+              style={LARGE_LIST_ROW_STYLE}
+            >
+              <TokenPill muted={quantity === 0}>{quantity} marked</TokenPill>
+              <TokenPill muted>Own {item.quantity}</TokenPill>
+            </TradeRow>
+          );
+        })}
+      </div>
+      <div aria-hidden style={{ height: `${window.afterHeight}px` }} />
     </div>
   );
+}
+
+function useEquipmentShopWindow(totalItems: number, scrollKey: string) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [viewportHeight, setViewportHeight] = useState(EQUIPMENT_SHOP_INITIAL_VIEWPORT_HEIGHT_PX);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let frameId = 0;
+    const measure = () => {
+      setViewportHeight(container.clientHeight || EQUIPMENT_SHOP_INITIAL_VIEWPORT_HEIGHT_PX);
+      setScrollTop(container.scrollTop);
+    };
+
+    const queueMeasure = () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(measure);
+    };
+
+    container.scrollTop = 0;
+    measure();
+    container.addEventListener("scroll", queueMeasure, { passive: true });
+
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(queueMeasure)
+      : undefined;
+    resizeObserver?.observe(container);
+
+    return () => {
+      container.removeEventListener("scroll", queueMeasure);
+      resizeObserver?.disconnect();
+      if (frameId) cancelAnimationFrame(frameId);
+    };
+  }, [scrollKey]);
+
+  return {
+    containerRef,
+    ...computeEquipmentShopWindow(totalItems, scrollTop, viewportHeight),
+  };
 }
 
 function TradeRow({
@@ -562,3 +759,9 @@ function EmptyPanelCopy({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+export const __equipmentShopInternals = {
+  computeEquipmentShopWindow,
+  EQUIPMENT_SHOP_VIRTUALIZATION_THRESHOLD,
+  EQUIPMENT_SHOP_ROW_HEIGHT_PX,
+};
