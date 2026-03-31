@@ -71,13 +71,19 @@ describe("asset manager rendering", () => {
     const shell = buildShellHTML(state, { esc });
     const html = buildHTML(state, { esc });
 
+    expect(shell).toContain("am-shell");
+    expect(shell).toContain("am-shell-top");
     expect(shell).toContain("am-toolbar-leading");
+    expect(shell).toContain("am-filter-bar");
     expect(shell).toContain("am-toolbar-group-actions");
     expect(shell).toContain("am-breadcrumbs-label");
     expect(shell).toContain("am-status-primary");
     expect(shell).toContain("am-status-secondary");
 
+    expect(html).toContain("am-shell");
+    expect(html).toContain("am-shell-top");
     expect(html).toContain("am-toolbar-leading");
+    expect(html).toContain("am-filter-bar");
     expect(html).toContain("am-breadcrumbs-track");
     expect(html).toContain("am-content-wrap am-has-preview");
     expect(html).toContain("am-status-primary");

@@ -109,12 +109,39 @@
 .am-root {
   display: flex;
   flex-direction: column;
+  position: relative;
   height: 100%;
   overflow: hidden;
+  box-sizing: border-box;
+  padding: 10px;
   font-family: var(--am-font-body);
   color: var(--am-text-primary);
   user-select: none;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--am-accent) 10%, transparent), transparent 34%),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--am-info) 8%, transparent), transparent 28%),
+    var(--am-shell-image-alt);
+}
+
+.am-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--am-divider);
+  border-radius: 20px;
   background: var(--am-shell-image-alt);
+  box-shadow: var(--am-shadow-panel);
+}
+
+.am-shell-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 10px 0;
+  flex-shrink: 0;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────── */
@@ -123,8 +150,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 12px 12px 10px;
   background: var(--am-shell-image-header);
+  border: 1px solid var(--am-divider-strong);
+  border-radius: 16px;
   border-bottom: 1px solid var(--am-divider-strong);
   flex-shrink: 0;
   box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--am-bg-glass) 35%, transparent);
@@ -204,11 +233,11 @@
   padding: 3px;
   border: 1px solid var(--am-border-soft);
   border-radius: 11px;
-  background: color-mix(in srgb, var(--am-bg-glass) 72%, var(--am-bg-panel));
+  background: color-mix(in srgb, var(--am-bg-glass) 64%, var(--am-bg-panel));
 }
 
 .am-toolbar-group-actions {
-  background: color-mix(in srgb, var(--am-bg-glass) 58%, var(--am-bg-panel));
+  background: color-mix(in srgb, var(--am-bg-glass) 52%, var(--am-bg-panel));
 }
 
 /* ── View toggle pill ────────────────────────────────────── */
@@ -282,11 +311,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px 6px;
-  min-height: 36px;
+  padding: 8px 12px;
+  min-height: 34px;
   flex-shrink: 0;
-  background: var(--am-surface-nav);
-  border-bottom: 1px solid var(--am-divider);
+  margin: 0 2px;
+  background: color-mix(in srgb, var(--am-bg-glass) 56%, var(--am-bg-panel));
+  border: 1px solid var(--am-divider);
+  border-radius: 12px;
 }
 
 .am-breadcrumbs-label {
@@ -780,10 +811,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin: 0 10px 10px;
   padding: 0 12px;
   min-height: 30px;
   background: var(--am-status-image), var(--am-shell-image);
-  border-top: 1px solid var(--am-divider);
+  border: 1px solid var(--am-divider);
+  border-radius: 12px;
   flex-shrink: 0;
   position: relative;
 }
@@ -992,7 +1025,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 280px;
+  width: 296px;
   background: var(--am-shell-image-header);
   border-left: 1px solid var(--am-divider-strong);
   display: flex;
@@ -1341,7 +1374,7 @@
 }
 
 .am-content-wrap.am-has-preview .am-content {
-  margin-right: 280px;
+  margin-right: 296px;
 }
 
 /* ── Drop Overlay ───────────────────────────────────────── */
@@ -1358,7 +1391,7 @@
     radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--am-accent) 12%, transparent) 0%, transparent 70%),
     var(--am-surface-drop);
   border: 2px dashed var(--am-accent);
-  border-radius: 8px;
+  border-radius: 14px;
   pointer-events: none;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -1389,8 +1422,8 @@
 /* ── Upload Queue Panel ─────────────────────────────────── */
 .am-upload-queue {
   position: absolute;
-  bottom: 24px;
-  right: 10px;
+  bottom: 58px;
+  right: 18px;
   width: 300px;
   max-height: 240px;
   background: var(--am-shell-image-header);
@@ -1691,17 +1724,22 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  margin: 0 10px 0;
+  border: 1px solid var(--am-divider);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--am-bg-glass) 40%, var(--am-bg-panel));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--am-bg-glass) 20%, transparent);
 }
 
 /* ── Sidebar ───────────────────────────────────────────── */
 .am-sidebar {
   width: 180px;
   flex-shrink: 0;
-  background: var(--am-shell-image);
+  background: color-mix(in srgb, var(--am-shell-image) 88%, var(--am-bg-base));
   border-right: 1px solid var(--am-divider);
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 0;
+  padding: 10px 0;
   transition: width 0.2s ease-out, opacity 0.2s;
 }
 
