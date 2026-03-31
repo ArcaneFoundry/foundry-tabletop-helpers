@@ -88,7 +88,7 @@ export function SelectionPane<TEntry>({
   if (entries.length === 0) return <>{emptyState}</>;
 
   return (
-    <section className="cc-origin-selection-pane cc-theme-panel cc-theme-panel--soft relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] pb-2 pt-2">
+    <section className="cc-chooser-pane cc-origin-selection-pane cc-theme-panel cc-theme-panel--soft relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] pb-2 pt-2">
       {introMode === "full" ? (
         <div className="cc-origin-selection-pane__intro relative z-[1] mb-5 flex items-end justify-between gap-4 px-2">
           <div className="min-w-0 max-w-[34rem] flex-1" data-origins-selection-copy="true">
@@ -108,11 +108,11 @@ export function SelectionPane<TEntry>({
         </div>
       ) : null}
 
-      <div className="cc-origin-selection-pane__gallery-shell cc-theme-panel cc-theme-panel--accent relative z-[1] w-full min-w-0 rounded-[1.25rem] border shadow-[var(--cc-shadow-panel)]">
-        <div className="cc-origin-selection-pane__gallery-inner w-full min-w-0 px-2">
+      <div className="cc-chooser-pane__gallery-shell cc-origin-selection-pane__gallery-shell cc-theme-panel cc-theme-panel--accent relative z-[1] w-full min-w-0 rounded-[1.25rem] border shadow-[var(--cc-shadow-panel)]">
+        <div className="cc-chooser-pane__gallery-inner cc-origin-selection-pane__gallery-inner w-full min-w-0 px-2">
           <motion.div
             animate={prefersReducedMotion ? undefined : "show"}
-            className="cc-origin-selection-grid grid w-full justify-center gap-4"
+            className="cc-chooser-grid cc-origin-selection-grid grid w-full justify-center gap-4"
             initial={prefersReducedMotion ? false : "hidden"}
             variants={{
               hidden: {},

@@ -48,6 +48,9 @@ describe("ClassSelectionGalleryPane", () => {
     expect(markup).not.toContain("cc-class-selection-pane__gallery-scroll");
     expect(markup).not.toContain("cc-class-selection-pane__gallery-shadow");
     expect(markup).not.toContain("overflow-y-auto");
+    expect(markup).toContain("cc-chooser-pane");
+    expect(markup).toContain("cc-chooser-pane__gallery-shell");
+    expect(markup).toContain("cc-chooser-grid");
     expect(markup).toContain("cc-class-chooser-grid");
     expect(markup).toContain("cc-class-selection-pane__gallery-shell");
     expect(markup.indexOf("cc-class-selection-pane__gallery-shell")).toBeLessThan(markup.indexOf("cc-class-selection-pane__gallery-inner"));

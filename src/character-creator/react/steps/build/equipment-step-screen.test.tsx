@@ -140,6 +140,8 @@ describe("EquipmentStepScreen", () => {
     expect(markup).toContain("background-image:var(--cc-build-hero-image)");
     expect(markup).toContain("background-image:var(--cc-build-panel-image)");
     expect(markup).toContain("background-image:var(--cc-build-panel-soft-image)");
+    expect(markup).toContain("cc-build-choice-layout");
+    expect(markup).toContain("cc-build-choice-layout__rail");
     expect(markup).not.toContain("cc-theme-header--hero");
     expect(markup).not.toContain("cc-theme-panel--accent");
     expect(markup).not.toContain("cc-theme-panel--soft");

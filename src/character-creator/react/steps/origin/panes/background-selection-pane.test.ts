@@ -88,6 +88,9 @@ describe("BackgroundSelectionPane", () => {
     } as never));
 
     expect(markup).toContain("cc-origin-selection-pane");
+    expect(markup).toContain("cc-chooser-pane");
+    expect(markup).toContain("cc-chooser-pane__gallery-shell");
+    expect(markup).toContain("cc-chooser-grid");
     expect(markup).not.toContain("cc-origin-selection-pane__intro");
     expect(markup).toContain("cc-theme-panel--soft");
     expect(markup).toContain("data-origin-gallery-card=\"true\"");

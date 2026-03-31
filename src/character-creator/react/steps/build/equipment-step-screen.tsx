@@ -91,8 +91,8 @@ export function EquipmentStepScreen({ shellContext, state, controller }: ReactWi
           </div>
         </header>
 
-        <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.14fr)_minmax(20rem,0.86fr)]">
-          <div className="pr-1">
+        <div className="cc-build-choice-layout grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.14fr)_minmax(20rem,0.86fr)]">
+          <div className="cc-build-choice-layout__content pr-1">
             <div className="space-y-4">
               <ProvisionSourcePanel
                 description="Select the class-issued pack or take the alternate coin award when that option exists."
@@ -114,7 +114,7 @@ export function EquipmentStepScreen({ shellContext, state, controller }: ReactWi
             </div>
           </div>
 
-          <aside className="rounded-[1.5rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
+          <aside className="cc-build-choice-layout__rail rounded-[1.5rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
             <div className="space-y-4">
               <div>
                 <MicroLabel>Provision summary</MicroLabel>

@@ -771,7 +771,7 @@ function WeaponMasteriesPane({ shellContext, state, controller }: Pick<ReactWiza
   };
 
   return (
-    <div className="cc-class-choice-layout cc-class-choice-layout--weapon-masteries">
+    <div className="cc-class-choice-layout cc-class-choice-layout--with-rail cc-class-choice-layout--weapon-masteries">
       <section
         className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border p-4 shadow-[0_24px_44px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]"
         data-weapon-mastery-options-panel="true"
@@ -896,7 +896,7 @@ function ClassAdvancementChoicePane({ shellContext, state, controller }: Pick<Re
   };
 
   return (
-    <div className="cc-class-choice-layout">
+    <div className="cc-class-choice-layout cc-class-choice-layout--with-rail">
       <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border p-4 shadow-[0_24px_44px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
         <div className="border-b pb-4" style={{ borderColor: "var(--cc-mounted-frame-border)" }}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -1021,7 +1021,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
   };
 
   return (
-    <div className="cc-class-choice-layout">
+    <div className="cc-class-choice-layout cc-class-choice-layout--with-rail">
       <section className="cc-theme-panel cc-class-choice-layout__content-panel flex min-h-0 flex-col rounded-[1.45rem] border p-4 shadow-[0_24px_44px_color-mix(in_srgb,var(--cc-bg-base)_18%,transparent)]" style={CC_MOUNTED_PANEL_STYLE}>
         <div className="cc-class-choice-layout__content-scroll mt-4 flex flex-col px-1 pb-3 pt-2 pr-2">
           <div className="grid gap-4">
@@ -1080,7 +1080,7 @@ function ClassItemChoicesPane({ shellContext, state, controller }: Pick<ReactWiz
         </div>
       </section>
 
-      <aside className="flex min-h-0 flex-col gap-4">
+      <aside className="cc-class-choice-layout__rail flex min-h-0 flex-col gap-4">
         <SelectionSummaryCard
           glow={theme.glow}
           maxCount={totalRequired}

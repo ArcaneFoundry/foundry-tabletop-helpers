@@ -185,8 +185,8 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
           </div>
         </header>
 
-        <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)]">
-          <div className="pr-1">
+        <div className="cc-build-choice-layout grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)]">
+          <div className="cc-build-choice-layout__content pr-1">
             <section className="rounded-[1.45rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-2xl">
@@ -239,7 +239,7 @@ export function EquipmentShopStepScreen({ shellContext, state, controller }: Rea
             </section>
           </div>
 
-          <aside className="rounded-[1.5rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
+          <aside className="cc-build-choice-layout__rail rounded-[1.5rem] border p-4 md:p-5" style={BUILD_PANEL_STYLE}>
             <div className="space-y-4">
               <div>
                 <MicroLabel>Trade summary</MicroLabel>

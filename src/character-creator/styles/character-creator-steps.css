@@ -62,6 +62,24 @@
   margin-inline: auto;
 }
 
+.cc-chooser-pane {
+  padding: 0.8rem;
+  gap: 0.8rem;
+}
+
+.cc-chooser-pane__gallery-shell {
+  padding: 0.4rem;
+}
+
+.cc-chooser-pane__gallery-inner {
+  padding-top: 0.75rem;
+  padding-bottom: 0.35rem;
+}
+
+.cc-chooser-grid {
+  align-items: start;
+}
+
 .cc-class-selection-pane {
   background:
     radial-gradient(circle at 14% 0%, rgba(121, 87, 162, 0.16), transparent 34%),
@@ -95,30 +113,29 @@
     linear-gradient(180deg, rgba(31, 28, 35, 0.88), rgba(16, 16, 21, 0.96));
 }
 
-.cc-class-selection-pane__gallery-inner {
-  padding-top: 1.1rem;
-  padding-bottom: 0.25rem;
-}
-
 .cc-class-chooser-grid {
-  grid-template-columns: minmax(0, 20.9375rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18.75rem), 1fr));
 }
 
 .cc-class-choice-layout {
-  display: flex;
+  display: grid;
   flex: 1 1 auto;
   min-height: 0;
   gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .cc-class-choice-layout__content-panel {
-  order: 2;
   min-width: 0;
 }
 
 .cc-class-choice-layout__rail {
-  order: 1;
   min-width: 0;
+}
+
+.cc-class-choice-layout--with-rail {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.14fr) minmax(19rem, 0.86fr);
 }
 
 .cc-class-choice-layout__content-scroll {
@@ -132,6 +149,15 @@
 
 .cc-class-choice-layout--weapon-masteries .cc-class-choice-layout__rail {
   order: 2;
+}
+
+.cc-build-choice-layout {
+  align-items: start;
+}
+
+.cc-build-choice-layout__content,
+.cc-build-choice-layout__rail {
+  min-width: 0;
 }
 
 .cc-theme-shell {
@@ -444,8 +470,7 @@
     grid-template-columns: repeat(2, minmax(0, 20.9375rem));
   }
 
-  .cc-class-choice-layout {
-    display: grid;
+  .cc-class-choice-layout--with-rail {
     grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.78fr);
   }
 
@@ -502,8 +527,8 @@
     line-height: 1.5;
   }
 
-  .cc-class-choice-layout {
-    flex-direction: column;
+  .cc-class-choice-layout--with-rail {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .cc-class-choice-layout__content-panel {
@@ -2778,12 +2803,22 @@
     grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   }
 
+  .cc-class-choice-layout--with-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .cc-class-detail-expanded__layout {
     grid-template-columns: 220px minmax(0, 1fr);
   }
 
   .cc-class-detail-summary__facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1279px) {
+  .cc-build-choice-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

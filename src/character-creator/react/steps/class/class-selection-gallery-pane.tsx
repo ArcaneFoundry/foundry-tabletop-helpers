@@ -20,20 +20,20 @@ export function ClassSelectionGalleryPane<TEntry>({
 
   return (
     <div
-      className="cc-class-selection-pane cc-theme-panel cc-theme-panel--soft relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] border pb-2 pt-2"
+      className="cc-chooser-pane cc-class-selection-pane cc-theme-panel cc-theme-panel--soft relative isolate flex w-full min-w-0 flex-col rounded-[1.5rem] border pb-2 pt-2"
       style={{ backgroundImage: "var(--cc-class-selection-pane-bg)" }}
     >
       <div
-        className="cc-class-selection-pane__gallery-shell relative z-[1] w-full min-w-0 rounded-[1.25rem] border border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)]"
+        className="cc-chooser-pane__gallery-shell cc-class-selection-pane__gallery-shell relative z-[1] w-full min-w-0 rounded-[1.25rem] border border-[color:color-mix(in_srgb,var(--cc-border-subtle)_92%,transparent)]"
         style={{
           backgroundImage: "var(--cc-class-gallery-shell-bg)",
           boxShadow: "var(--cc-class-gallery-shell-shadow)",
         }}
       >
-        <div className="cc-class-selection-pane__gallery-inner w-full min-w-0 px-2">
+        <div className="cc-chooser-pane__gallery-inner cc-class-selection-pane__gallery-inner w-full min-w-0 px-2">
           <motion.div
             animate={prefersReducedMotion ? undefined : "show"}
-            className="cc-class-chooser-grid grid w-full justify-center gap-4"
+            className="cc-chooser-grid cc-class-chooser-grid grid w-full justify-center gap-4"
             initial={prefersReducedMotion ? false : "hidden"}
             variants={{
               hidden: {},
