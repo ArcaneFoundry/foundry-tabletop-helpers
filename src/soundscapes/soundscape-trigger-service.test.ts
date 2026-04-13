@@ -79,7 +79,7 @@ function setWorld({
   (globalThis as Record<string, unknown>).game = {
     user: { id: "user-1", isGM: true },
     version: "13.0.0",
-    system: { id: "dnd5e", version: "5.3.0" },
+    system: { id: "dnd5e", version: "5.3.1" },
     scenes: makeCollection(() => [currentScene]),
     combat: currentCombat ?? undefined,
     combats: makeCollection(() => (currentCombat ? [currentCombat] : [])),

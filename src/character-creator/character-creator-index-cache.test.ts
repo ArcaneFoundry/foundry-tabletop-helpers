@@ -34,7 +34,7 @@ vi.mock("../types", () => ({
   getGame: vi.fn(() => ({
     modules: new Map([["foundry-tabletop-helpers", { version: "1.0.0" }]]),
     version: "13.0.0",
-    system: { id: "dnd5e", version: "5.3.0" },
+    system: { id: "dnd5e", version: "5.3.1" },
   })),
   isGM: isGMMock,
 }));
@@ -73,7 +73,7 @@ describe("character-creator-index-cache", () => {
       moduleVersion: "1.0.0",
       foundryVersion: "13.0.0",
       systemId: "dnd5e",
-      systemVersion: "5.3.0",
+      systemVersion: "5.3.1",
       packSignature: "all-sources-signature",
       generatedAt: "2026-03-22T12:00:00.000Z",
       packs: {
@@ -101,7 +101,7 @@ describe("character-creator-index-cache", () => {
       moduleVersion: "1.0.0",
       foundryVersion: "13.0.0",
       systemId: "dnd5e",
-      systemVersion: "5.3.0",
+      systemVersion: "5.3.1",
       packSignature: "all-sources-signature",
       generatedAt: "2026-03-22T12:00:00.000Z",
       packs: {
@@ -135,7 +135,7 @@ describe("character-creator-index-cache", () => {
       moduleVersion: "1.0.0",
       foundryVersion: "13.0.0",
       systemId: "dnd5e",
-      systemVersion: "5.3.0",
+      systemVersion: "5.3.1",
       packSignature: "all-sources-signature",
       generatedAt: "2026-03-22T12:00:00.000Z",
       packs: {
@@ -160,7 +160,7 @@ describe("character-creator-index-cache", () => {
       moduleVersion: "1.0.0",
       foundryVersion: "13.0.0",
       systemId: "dnd5e",
-      systemVersion: "5.3.0",
+      systemVersion: "5.3.1",
       packSignature: "items-signature",
       generatedAt: "2026-03-22T12:00:00.000Z",
       packs: {
