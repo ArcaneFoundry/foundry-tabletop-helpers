@@ -63,3 +63,6 @@ temp/
 
 # Local generated design and image work
 output/
+
+# Chrome DevTools MCP isolated profile
+.cache/
