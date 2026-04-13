@@ -6,6 +6,11 @@ import { renderTemplate } from "../../types";
 import { getFoundryReactMount, FoundryReactRenderer } from "../../ui/foundry/react/foundry-react-application";
 import { ensureNativeWindowResizeHandle, type ApplicationV2Like } from "../../ui/foundry/application-v2/window-resize-handle";
 import {
+  attachElementToKioskHost,
+  detachElementFromKioskHost,
+  getKioskWindowOptions,
+} from "../../ui/foundry/application-v2/kiosk-window-service";
+import {
   type ApplicationPositionLike,
   type ApplicationV2PositionLike,
   ensureWindowSizeConstraints,
@@ -35,6 +40,7 @@ import {
   allowOriginFeatChoice,
   allowUnrestrictedBackgroundAsi,
   getAllowedAbilityMethods,
+  ccLaunchInKioskMode,
   getDisabledContentUUIDs,
   getEquipmentMethod,
   getLevel1HpMethod,
@@ -50,11 +56,17 @@ interface RuntimeApplicationBase extends ApplicationV2PositionLike {
   position?: Partial<ApplicationPositionLike> | null;
   render(options?: Record<string, unknown>): void;
   close(options?: unknown): Promise<void>;
+  _insertElement?(element: HTMLElement): void;
+  _removeElement?(element: HTMLElement): void;
   _preparePartContext?(partId: string, context: unknown, options: unknown): Promise<unknown>;
 }
 
 interface RuntimeApplicationClass {
   new (): RuntimeApplicationBase;
+  DEFAULT_OPTIONS?: {
+    window?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
 }
 
 type RuntimeHandlebarsApplicationMixin = (base: RuntimeApplicationClass) => RuntimeApplicationClass;
@@ -82,6 +94,27 @@ const CHARACTER_CREATOR_WINDOW_CONSTRAINTS = {
   maxWidth: 1480,
   minHeight: 560,
 } satisfies WindowSizeConstraints;
+
+function buildCharacterCreatorKioskAppClass(AppClass: RuntimeApplicationClass): RuntimeApplicationClass {
+  class CharacterCreatorKioskApp extends AppClass {
+    static DEFAULT_OPTIONS = {
+      ...AppClass.DEFAULT_OPTIONS,
+      window: {
+        ...getKioskWindowOptions(AppClass.DEFAULT_OPTIONS?.window),
+      },
+    };
+
+    _insertElement(element: HTMLElement): void {
+      attachElementToKioskHost(element, { suppressUi: true });
+    }
+
+    _removeElement(element: HTMLElement): void {
+      detachElementFromKioskHost(element, { suppressUi: true });
+    }
+  }
+
+  return CharacterCreatorKioskApp;
+}
 
 function CharacterCreatorReactView({ controller }: { controller: CharacterCreatorWizardController }) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
@@ -243,8 +276,10 @@ export function buildCharacterCreatorReactAppClass(): void {
 
     async _onRender(_context: Record<string, never>, _options: unknown): Promise<void> {
       const mount = getFoundryReactMount(this.element);
-      ensureNativeWindowResizeHandle(this);
-      ensureWindowSizeConstraints(this, CHARACTER_CREATOR_WINDOW_CONSTRAINTS);
+      if (!ccLaunchInKioskMode()) {
+        ensureNativeWindowResizeHandle(this);
+        ensureWindowSizeConstraints(this, CHARACTER_CREATOR_WINDOW_CONSTRAINTS);
+      }
       if (!mount) return;
 
       const controller = this._ensureController();
@@ -328,8 +363,10 @@ export function openCharacterCreatorWizard(): void {
 
 export const __characterCreatorReactAppInternals = {
   buildWizardShellContext,
+  buildCharacterCreatorKioskAppClass,
 };
 
 function renderReactWizardApp(AppClass: RuntimeApplicationClass): void {
-  new AppClass().render({ force: true });
+  const LaunchAppClass = ccLaunchInKioskMode() ? buildCharacterCreatorKioskAppClass(AppClass) : AppClass;
+  new LaunchAppClass().render({ force: true });
 }

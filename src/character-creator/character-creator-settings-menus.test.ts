@@ -21,6 +21,7 @@ const getLevel1HpMethodMock = vi.fn();
 const setLevel1HpMethodMock = vi.fn(async () => {});
 const ccEnabledMock = vi.fn();
 const ccAutoOpenMock = vi.fn();
+const ccLaunchInKioskModeMock = vi.fn();
 const ccLevelUpEnabledMock = vi.fn();
 const getMaxRerollsMock = vi.fn();
 const setMaxRerollsMock = vi.fn(async () => {});
@@ -49,6 +50,7 @@ vi.mock("./character-creator-settings-accessors", () => ({
   allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
   ccAutoOpen: ccAutoOpenMock,
   ccEnabled: ccEnabledMock,
+  ccLaunchInKioskMode: ccLaunchInKioskModeMock,
   ccLevelUpEnabled: ccLevelUpEnabledMock,
   getAllowedAbilityMethods: getAllowedAbilityMethodsMock,
   getEquipmentMethod: getEquipmentMethodMock,
@@ -79,6 +81,7 @@ vi.mock("./character-creator-settings-shared", () => ({
   CC_SETTINGS: {
     ENABLED: "enabled",
     AUTO_OPEN: "autoOpen",
+    LAUNCH_IN_KIOSK_MODE: "launchInKioskMode",
     LEVEL_UP_ENABLED: "levelUpEnabled",
     ALLOWED_ABILITY_METHODS: "allowedAbilityMethods",
     MAX_REROLLS: "maxRerolls",
@@ -130,6 +133,7 @@ beforeEach(() => {
   getLevel1HpMethodMock.mockReturnValue("max");
   ccEnabledMock.mockReturnValue(true);
   ccAutoOpenMock.mockReturnValue(false);
+  ccLaunchInKioskModeMock.mockReturnValue(true);
   ccLevelUpEnabledMock.mockReturnValue(true);
   getMaxRerollsMock.mockReturnValue(3);
   getPackSourcesMock.mockReturnValue({
@@ -223,6 +227,7 @@ describe("character creator settings menus", () => {
     await expect(form.getData()).resolves.toMatchObject({
       ccEnabled: true,
       ccAutoOpen: false,
+      ccLaunchInKioskMode: true,
       ccLevelUpEnabled: true,
       method_4d6: true,
       method_pointBuy: true,
@@ -240,6 +245,7 @@ describe("character creator settings menus", () => {
     await form._updateObject(new Event("submit"), {
       ccEnabled: true,
       ccAutoOpen: true,
+      ccLaunchInKioskMode: true,
       ccLevelUpEnabled: false,
       method_4d6: false,
       method_pointBuy: false,
@@ -260,6 +266,7 @@ describe("character creator settings menus", () => {
     expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["4d6", "pointBuy", "standardArray"]);
     expect(setMaxRerollsMock).toHaveBeenCalledWith(4.7);
     expect(setStartingLevelMock).toHaveBeenCalledWith(25);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "launchInKioskMode", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowFirearms", true);
@@ -292,6 +299,7 @@ describe("character creator settings menus", () => {
       elements: [
         { name: "ccEnabled", disabled: false, type: "checkbox", checked: true },
         { name: "ccAutoOpen", disabled: false, type: "checkbox", checked: false },
+        { name: "ccLaunchInKioskMode", disabled: false, type: "checkbox", checked: true },
         { name: "ccLevelUpEnabled", disabled: false, type: "checkbox", checked: true },
         { name: "method_4d6", disabled: false, type: "checkbox", checked: false },
         { name: "method_pointBuy", disabled: false, type: "checkbox", checked: false },
@@ -320,6 +328,7 @@ describe("character creator settings menus", () => {
     expect(setAllowedAbilityMethodsMock).toHaveBeenCalledWith(["standardArray"]);
     expect(setMaxRerollsMock).toHaveBeenCalledWith(2.9);
     expect(setStartingLevelMock).toHaveBeenCalledWith(6);
+    expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "launchInKioskMode", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowOriginFeatChoice", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowUnrestrictedBackgroundAsi", true);
     expect(setSettingMock).toHaveBeenCalledWith("foundry-tabletop-helpers", "allowFirearms", true);

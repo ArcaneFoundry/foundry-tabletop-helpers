@@ -11,6 +11,22 @@ const {
   foundryReactUnmountMock,
   ensureNativeWindowResizeHandleMock,
   ensureWindowSizeConstraintsMock,
+  attachElementToKioskHostMock,
+  detachElementFromKioskHostMock,
+  ccLaunchInKioskModeMock,
+  getPackSourcesMock,
+  getDisabledContentUUIDsMock,
+  getAllowedAbilityMethodsMock,
+  getMaxRerollsMock,
+  getStartingLevelMock,
+  allowMulticlassMock,
+  allowFirearmsMock,
+  getEquipmentMethodMock,
+  getLevel1HpMethodMock,
+  allowCustomBackgroundsMock,
+  allowOriginFeatChoiceMock,
+  allowUnrestrictedBackgroundAsiMock,
+  hydrateCharacterCreatorIndexesFromSettingsMock,
 } = vi.hoisted(() => ({
   logWarnMock: vi.fn(),
   logDebugMock: vi.fn(),
@@ -22,6 +38,22 @@ const {
   foundryReactUnmountMock: vi.fn(),
   ensureNativeWindowResizeHandleMock: vi.fn(),
   ensureWindowSizeConstraintsMock: vi.fn(),
+  attachElementToKioskHostMock: vi.fn(),
+  detachElementFromKioskHostMock: vi.fn(),
+  ccLaunchInKioskModeMock: vi.fn(),
+  getPackSourcesMock: vi.fn(),
+  getDisabledContentUUIDsMock: vi.fn(),
+  getAllowedAbilityMethodsMock: vi.fn(),
+  getMaxRerollsMock: vi.fn(),
+  getStartingLevelMock: vi.fn(),
+  allowMulticlassMock: vi.fn(),
+  allowFirearmsMock: vi.fn(),
+  getEquipmentMethodMock: vi.fn(),
+  getLevel1HpMethodMock: vi.fn(),
+  allowCustomBackgroundsMock: vi.fn(),
+  allowOriginFeatChoiceMock: vi.fn(),
+  allowUnrestrictedBackgroundAsiMock: vi.fn(),
+  hydrateCharacterCreatorIndexesFromSettingsMock: vi.fn(),
 }));
 
 vi.mock("../../logger", () => ({
@@ -53,6 +85,36 @@ vi.mock("../../ui/foundry/application-v2/window-resize-handle", () => ({
 
 vi.mock("../../ui/foundry/application-v2/window-size-constraints", () => ({
   ensureWindowSizeConstraints: ensureWindowSizeConstraintsMock,
+}));
+
+vi.mock("../../ui/foundry/application-v2/kiosk-window-service", () => ({
+  attachElementToKioskHost: attachElementToKioskHostMock,
+  detachElementFromKioskHost: detachElementFromKioskHostMock,
+  getKioskWindowOptions: (windowOptions: Record<string, unknown> | undefined) => ({
+    ...(windowOptions ?? {}),
+    frame: false,
+    positioned: false,
+  }),
+}));
+
+vi.mock("../character-creator-settings", () => ({
+  allowCustomBackgrounds: allowCustomBackgroundsMock,
+  allowFirearms: allowFirearmsMock,
+  allowMulticlass: allowMulticlassMock,
+  allowOriginFeatChoice: allowOriginFeatChoiceMock,
+  allowUnrestrictedBackgroundAsi: allowUnrestrictedBackgroundAsiMock,
+  ccLaunchInKioskMode: ccLaunchInKioskModeMock,
+  getAllowedAbilityMethods: getAllowedAbilityMethodsMock,
+  getDisabledContentUUIDs: getDisabledContentUUIDsMock,
+  getEquipmentMethod: getEquipmentMethodMock,
+  getLevel1HpMethod: getLevel1HpMethodMock,
+  getMaxRerolls: getMaxRerollsMock,
+  getPackSources: getPackSourcesMock,
+  getStartingLevel: getStartingLevelMock,
+}));
+
+vi.mock("../character-creator-index-cache", () => ({
+  hydrateCharacterCreatorIndexesFromSettings: hydrateCharacterCreatorIndexesFromSettingsMock,
 }));
 
 class FakeElement {
@@ -129,6 +191,27 @@ beforeEach(() => {
   vi.clearAllMocks();
   FakeBaseApplication.instances = [];
   installFoundryAppClasses();
+  ccLaunchInKioskModeMock.mockReturnValue(false);
+  getPackSourcesMock.mockReturnValue({
+    classes: [],
+    subclasses: [],
+    races: [],
+    backgrounds: [],
+    feats: [],
+    spells: [],
+    items: [],
+  });
+  getDisabledContentUUIDsMock.mockReturnValue([]);
+  getAllowedAbilityMethodsMock.mockReturnValue(["pointBuy"]);
+  getMaxRerollsMock.mockReturnValue(0);
+  getStartingLevelMock.mockReturnValue(1);
+  allowMulticlassMock.mockReturnValue(false);
+  allowFirearmsMock.mockReturnValue(false);
+  getEquipmentMethodMock.mockReturnValue("both");
+  getLevel1HpMethodMock.mockReturnValue("max");
+  allowCustomBackgroundsMock.mockReturnValue(false);
+  allowOriginFeatChoiceMock.mockReturnValue(false);
+  allowUnrestrictedBackgroundAsiMock.mockReturnValue(false);
 
   getFoundryReactMountMock.mockImplementation((root: FakeElement | null | undefined) => {
     return root?.querySelector("[data-fth-react-root]") as HTMLElement | null;
@@ -200,5 +283,72 @@ describe("CharacterCreatorReactApp", () => {
     expect(foundryReactRenderMock).toHaveBeenCalledTimes(2);
     expect(foundryReactRenderMock.mock.calls[0]?.[0]).toBe(mount);
     expect(foundryReactRenderMock.mock.calls[1]?.[0]).toBe(mount);
+  });
+
+  it("launches the wizard in a kiosk wrapper when the setting is enabled", async () => {
+    ccLaunchInKioskModeMock.mockReturnValue(true);
+    const mod = await modPromise;
+
+    mod.buildCharacterCreatorReactAppClass();
+    const AppClass = mod.getCharacterCreatorReactAppClass();
+    expect(AppClass).not.toBeNull();
+
+    const KioskAppClass = mod.__characterCreatorReactAppInternals.buildCharacterCreatorKioskAppClass(
+      AppClass as NonNullable<typeof AppClass>,
+    );
+    const instance = new KioskAppClass() as FakeBaseApplication & {
+      constructor: typeof FakeBaseApplication & {
+        DEFAULT_OPTIONS?: { window?: Record<string, unknown> };
+      };
+      _insertElement(element: HTMLElement): void;
+      _removeElement(element: HTMLElement): void;
+    };
+    const windowOptions = instance.constructor.DEFAULT_OPTIONS?.window;
+    expect(windowOptions?.frame).toBe(false);
+    expect(windowOptions?.positioned).toBe(false);
+    expect(windowOptions?.title).toBe("Character Creation");
+
+    const element = new FakeElement("section") as unknown as HTMLElement;
+    instance?._insertElement(element);
+    instance?._removeElement(element);
+
+    expect(attachElementToKioskHostMock.mock.calls[0]?.[0]).toBe(element);
+    expect(attachElementToKioskHostMock.mock.calls[0]?.[1]).toEqual({ suppressUi: true });
+    expect(detachElementFromKioskHostMock.mock.calls[0]?.[0]).toBe(element);
+    expect(detachElementFromKioskHostMock.mock.calls[0]?.[1]).toEqual({ suppressUi: true });
+  });
+
+  it("skips resize affordances while kiosk mode is active", async () => {
+    ccLaunchInKioskModeMock.mockReturnValue(true);
+    const mod = await modPromise;
+
+    mod.buildCharacterCreatorReactAppClass();
+    const AppClass = mod.getCharacterCreatorReactAppClass();
+    expect(AppClass).not.toBeNull();
+
+    const app = new (AppClass as NonNullable<typeof AppClass>)() as FakeBaseApplication & {
+      _ensureController: () => unknown;
+      _reactRenderer: {
+        render: typeof foundryReactRenderMock;
+        unmount: typeof foundryReactUnmountMock;
+      };
+      _onRender(context: Record<string, never>, options: unknown): Promise<void>;
+    };
+    const root = new FakeElement("div");
+    const mount = new FakeElement("div");
+    root.setQueryResult("[data-fth-react-root]", mount);
+    app.element = root;
+    app._ensureController = vi.fn(() => ({ id: "controller" }));
+    app._reactRenderer = {
+      render: foundryReactRenderMock,
+      unmount: foundryReactUnmountMock,
+    };
+
+    await app._onRender({}, {});
+
+    expect(ensureNativeWindowResizeHandleMock).not.toHaveBeenCalled();
+    expect(ensureWindowSizeConstraintsMock).not.toHaveBeenCalled();
+    expect(foundryReactRenderMock).toHaveBeenCalledTimes(1);
+    expect(foundryReactRenderMock.mock.calls[0]?.[0]).toBe(mount);
   });
 });

@@ -13,7 +13,7 @@ Entries are auto-generated from GitHub Release notes on each tagged release.
 - chore: update phase 4 status notes
 - feat: expand combat monster preview
 - Phase 3: tighten contracts and expand regression coverage (#13)
-- chore: add .superpowers/ and docs/superpowers/ to gitignore
+- chore: expand gitignore coverage for local agent artifacts and planning docs
 - feat(asset-manager): 256px thumbnails, mkdir route, preview pane sizing
 - feat(asset-manager): vault settings UI with configurable optimization presets
 - feat(asset-manager): upload confirmation dialog with per-file presets

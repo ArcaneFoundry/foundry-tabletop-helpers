@@ -18,6 +18,7 @@ export {
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
+  ccLaunchInKioskMode,
   ccLevelUpEnabled,
   getAllowedAbilityMethods,
   getDisabledContentUUIDs,
@@ -60,6 +61,16 @@ export function registerCharacterCreatorSettings(settings: {
       config: false,
       type: Boolean,
       default: true,
+      restricted: true,
+    });
+
+    settings.register(MOD, CC_SETTINGS.LAUNCH_IN_KIOSK_MODE, {
+      name: "Launch Character Creator in Kiosk Mode",
+      hint: "Open the Character Creator as a frameless full-viewport experience that suppresses Foundry UI chrome while it is active.",
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
       restricted: true,
     });
 

@@ -14,6 +14,7 @@ import {
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
+  ccLaunchInKioskMode,
   ccLevelUpEnabled,
   getAllowedAbilityMethods,
   getEquipmentMethod,
@@ -85,6 +86,7 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
         return {
           ccEnabled: ccEnabled(),
           ccAutoOpen: ccAutoOpen(),
+          ccLaunchInKioskMode: ccLaunchInKioskMode(),
           ccLevelUpEnabled: ccLevelUpEnabled(),
           method_4d6: methods.includes("4d6"),
           method_pointBuy: methods.includes("pointBuy"),
@@ -114,6 +116,7 @@ function registerSettingsMenu(settings: SettingsMenuRegistration): void {
         await Promise.all([
           setSetting(MOD, CC_SETTINGS.ENABLED, !!formData.ccEnabled),
           setSetting(MOD, CC_SETTINGS.AUTO_OPEN, !!formData.ccAutoOpen),
+          setSetting(MOD, CC_SETTINGS.LAUNCH_IN_KIOSK_MODE, !!formData.ccLaunchInKioskMode),
           setSetting(MOD, CC_SETTINGS.LEVEL_UP_ENABLED, !!formData.ccLevelUpEnabled),
           setAllowedAbilityMethods(normalizedMethods.methods),
           setMaxRerolls(Number(formData.maxRerolls)),

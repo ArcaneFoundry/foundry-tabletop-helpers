@@ -14,6 +14,12 @@
   </div>
 
   <div class="form-group">
+    <label>Launch in Kiosk Mode</label>
+    <input type="checkbox" name="ccLaunchInKioskMode" {{#if ccLaunchInKioskMode}}checked{{/if}} />
+    <p class="notes">Open Character Creator as a frameless full-viewport experience that temporarily hides the rest of Foundry while the wizard is active.</p>
+  </div>
+
+  <div class="form-group">
     <label>Level-Up Manager</label>
     <input type="checkbox" name="ccLevelUpEnabled" {{#if ccLevelUpEnabled}}checked{{/if}} />
     <p class="notes">Show a level-up button when characters have enough XP to advance.</p>

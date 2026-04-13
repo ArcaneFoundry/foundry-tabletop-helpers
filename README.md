@@ -218,6 +218,12 @@ Current live deployment note for `foundry.digitalframeworks.org`:
 - `npm run ci` - Type-check, test, and build
 - `npm run build:server` - Build the server companion
 - `npm run package:server` - Create the server companion package
+
+## Local guidance
+
+- `docs/codex-playbook.md` — repo-local workflow and porting rules
+- `docs/live-foundry.md` — live server login, deploy, and validation workflow
+- `AGENTS.md` — compact operating entrypoint for Codex
 - `npm run dev` - Rebuild the module on changes
 - `npm run zip` - Build a module zip from `dist/`
 

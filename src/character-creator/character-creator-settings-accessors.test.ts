@@ -8,6 +8,7 @@ import {
   allowMulticlass,
   ccAutoOpen,
   ccEnabled,
+  ccLaunchInKioskMode,
   ccLevelUpEnabled,
   getAllowedAbilityMethods,
   getDisabledContentUUIDs,
@@ -36,6 +37,7 @@ describe("character creator settings accessors", () => {
 
     expect(ccEnabled()).toBe(true);
     expect(ccAutoOpen()).toBe(true);
+    expect(ccLaunchInKioskMode()).toBe(false);
     expect(ccLevelUpEnabled()).toBe(true);
     expect(getStartingLevel()).toBe(1);
     expect(allowMulticlass()).toBe(false);
@@ -56,11 +58,13 @@ describe("character creator settings accessors", () => {
           if (key === CC_SETTINGS.PACK_SOURCES) return '{"classes":["world.classes"],"feats":["world.feats"]}';
           if (key === CC_SETTINGS.DISABLED_CONTENT) return '["Item.A","Item.B"]';
           if (key === CC_SETTINGS.ALLOWED_ABILITY_METHODS) return '["pointBuy"]';
+          if (key === CC_SETTINGS.LAUNCH_IN_KIOSK_MODE) return true;
           return undefined;
         },
       },
     };
 
+    expect(ccLaunchInKioskMode()).toBe(true);
     expect(getPackSources()).toMatchObject({
       classes: ["world.classes"],
       feats: ["world.feats"],

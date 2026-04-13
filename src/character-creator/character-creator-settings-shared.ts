@@ -5,6 +5,7 @@
 export const CC_SETTINGS = {
   ENABLED: "ccEnabled",
   AUTO_OPEN: "ccAutoOpen",
+  LAUNCH_IN_KIOSK_MODE: "ccLaunchInKioskMode",
   LEVEL_UP_ENABLED: "ccLevelUpEnabled",
   PACK_SOURCES: "ccPackSources",
   INDEXED_PACK_CACHE: "ccIndexedPackCache",

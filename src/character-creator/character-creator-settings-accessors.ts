@@ -25,6 +25,10 @@ export function ccAutoOpen(): boolean {
   return getSetting<boolean>(MOD, CC_SETTINGS.AUTO_OPEN) ?? true;
 }
 
+export function ccLaunchInKioskMode(): boolean {
+  return getSetting<boolean>(MOD, CC_SETTINGS.LAUNCH_IN_KIOSK_MODE) ?? false;
+}
+
 export function ccLevelUpEnabled(): boolean {
   return getSetting<boolean>(MOD, CC_SETTINGS.LEVEL_UP_ENABLED) ?? true;
 }

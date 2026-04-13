@@ -59,11 +59,7 @@ temp/
 # Claude Code project config
 .claude/
 
-# Superpowers brainstorm sessions
-.superpowers/
-
 # Design docs (local only)
-docs/superpowers/
 
 # Local generated design and image work
 output/
