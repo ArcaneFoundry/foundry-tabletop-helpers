@@ -22,7 +22,7 @@
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "fvtt-types": "github:League-of-Foundry-Developers/foundry-vtt-types#main",
     "tailwindcss": "^4.2.2",
@@ -35,7 +35,7 @@
     "clsx": "^2.1.1",
     "motion": "^12.37.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "^19.2.5",
     "tailwind-merge": "^3.3.1"
   }
 }
