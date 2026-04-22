@@ -7,4 +7,4 @@ Before any work here, load the `foundry-vtt-workspace` skill from your local ski
 - Canonical skill source: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-vtt-workspace/SKILL.md`
 - Repo-specific detail: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-vtt-workspace/references/repos/foundry-tabletop-helpers.md`
 
-This file is intentionally lightweight. Do not duplicate workflow rules here; runtime routing, adversarial review, and porting guidance all live in the workspace skill.
+This file is intentionally lightweight. Workflow rules live in the workspace skill; keep only repo identity and repo-local pointers here.
