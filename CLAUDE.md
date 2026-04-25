@@ -8,3 +8,8 @@ Before any work here, load the `foundry-vtt-workspace` skill from your local ski
 - Repo-specific detail: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-vtt-workspace/references/repos/foundry-tabletop-helpers.md`
 
 This file is intentionally lightweight. Workflow rules live in the workspace skill; keep only repo identity and repo-local pointers here.
+
+## Outbound migrations
+
+- **Theater of the Mind / scene swapping:** see [`arcane-foundry-stage`](https://github.com/ArcaneFoundry/arcane-foundry-stage).
+  Do not extend ToM behavior in this repo.
