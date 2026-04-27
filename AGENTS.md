@@ -1,10 +1,12 @@
-# Foundry Tabletop Helpers (LEGACY)
+@/Users/johngallego/.codex/RTK.md
 
-Legacy Foundry VTT v13 monolith. Treat this repo as a behavior reference and porting source for the newer v14 repos, not as the default target for new feature work.
+## Repo Identity
 
-Before any work here, load the `foundry-vtt-workspace` skill from your local skills directory.
+Legacy Foundry VTT v13 monolith. Treat this repo as a behavior reference and porting source, not the default target for new product work.
 
-- Canonical skill source: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-vtt-workspace/SKILL.md`
-- Repo-specific detail: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-vtt-workspace/references/repos/foundry-tabletop-helpers.md`
+Before non-trivial work here, load the `foundry-workspace` skill from your local skills directory.
 
-This file is intentionally lightweight. Workflow rules live in the workspace skill; keep only repo identity and repo-local pointers here.
+- Canonical skill source: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-workspace/SKILL.md`
+- Repo-specific detail: `/Users/johngallego/CodeProjects/ai-skills-repository/skills/foundry-workspace/references/repos/foundry-tabletop-helpers.md`
+
+Keep repo-local instructions lightweight; workspace process, tool-loading, verification, and shipping rules live in the skill.
