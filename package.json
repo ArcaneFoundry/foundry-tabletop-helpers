@@ -22,7 +22,7 @@
     "@league-of-foundry-developers/foundry-vtt-types": "^13.346.0-beta.20250812191140",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
-    "@types/react": "^19.2.2",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.2.0",
     "fvtt-types": "github:League-of-Foundry-Developers/foundry-vtt-types#main",
@@ -35,7 +35,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "motion": "^12.37.0",
-    "react": "^19.2.0",
+    "react": "^19.2.5",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.3.1"
   }
