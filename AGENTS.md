@@ -1,14 +1,12 @@
-@/Users/johngallego/.codex/RTK.md
-
-For cross-repo workflow, kiosk contract, design-system rules, FoundryTester accounts, and Foundry/dnd5e source-of-truth, use the `developing-arcane-foundry-vtt-modules` skill (auto-loaded by Claude Code and Codex).
+Repo-internal AGENTS.md. Cross-repo workflow (kiosk contract, design system, live server, FoundryTester seats, Foundry/dnd5e source-of-truth) lives in the **`developing-arcane-foundry-vtt-modules`** skill. Load that skill for anything cross-repo; this file covers what's repo-internal.
 
 ## Status
 
 **Legacy v13 monolith.** This repo targets **Foundry VTT v13** (the rest of the workspace targets v14). Treat it as:
 
-- A **behavior reference** — read to learn how a feature worked before porting
-- A **porting source** — copy logic into the appropriate v14 repo, adapting for Shadow DOM, React-in-Foundry perf rules, and dnd5e current version
-- **Not** a target for new features (except the in-flight Character Creator React migration noted below)
+- A **behavior reference** — read to learn how a feature worked before porting.
+- A **porting source** — copy logic into the appropriate v14 repo, adapting for Shadow DOM, React-in-Foundry perf rules, and dnd5e current version.
+- **Not** a target for new features (except the in-flight Character Creator React migration noted below).
 
 No casual v14 assumptions — v13 Foundry APIs differ meaningfully (ApplicationV1 forms, different FilePicker shape, etc.).
 
@@ -34,24 +32,25 @@ Foundry VTT v13 module for in-person D&D play. Goal: keep Foundry useful at a ph
 | **Combat Command Center** (batch initiative, quick damage/heal/save, monster preview, party summary, rules reference, token health) | Superseded | `arcane-foundry-combat-dashboard` |
 | **Theater of the Mind / scene swapping** | Superseded | `arcane-foundry-stage` |
 | **Server companion** (Sharp image optimization, FFmpeg, thumbnail cache, folder/delete, Gemini portrait generation) | Superseded | `arcane-foundry-companion-server` (Fastify rewrite, stricter auth + traversal guards) |
-| **Live Play Character Sheet** (touch-first, tablet/phone-optimized, HP/rests/conditions/rolls) | **Still canonical here** | No successor yet — this is the only home for the touch-first sheet |
+| **Live Play Character Sheet** (touch-first, tablet/phone-optimized, HP/rests/conditions/rolls) | **Still canonical here** | No successor yet — touch-first sheet only lives here |
 | **Kiosk Mode** (hides Foundry chrome, canvas disable, fullscreen) | **Still canonical here** | No successor yet |
 | **Print And Preview Sheets** (character, NPC, party, encounter sheets; PDF-ready output) | **Still canonical here** | No successor yet |
 | **Reactive Soundscapes** (Soundscape Studio, live trigger support, music programs, ambience, manual moments, Calendaria weather triggers) | **Still canonical here** | No successor yet |
 | **Window Rotation** (90°/180° rotate for shared displays) | **Still canonical here** | No successor yet |
 
-When the user asks "does X exist somewhere?", check the table above before grep-ing the workspace.
+When the user asks "does X exist somewhere?", check the table above before grepping the workspace.
 
 ## Key entry points that are still canonical
 
 For features that haven't been ported, treat this repo's `src/` as authoritative. Top-level directories include:
+
 - Live Play character sheet implementation
 - Reactive Soundscapes (Studio + live controls + trigger system)
 - Print pipeline (character, NPC, party, encounter sheets; smart feature summaries)
 - Window rotation utilities
-- Character Creator (React + Handlebars hybrid, mid-migration — this is the richest source for Origins/Class/Build wizard logic to port into arcane-foundry-character-forge)
+- Character Creator (React + Handlebars hybrid, mid-migration — the richest source for Origins/Class/Build wizard logic to port into arcane-foundry-character-forge)
 
-Use `cymbal` to navigate. The monolith is large; don't spelunk blind.
+The monolith is large; navigate with `cymbal`, not blind spelunking.
 
 ## Public API
 
@@ -67,11 +66,6 @@ rsync -av --delete dist/ root@foundry.digitalframeworks.org:/var/foundrydata/Dat
 ```
 
 The legacy `server-companion/` is packaged separately and is superseded by the standalone `arcane-foundry-companion-server` repo. On the live server it runs as `fth-optimizer.service` pointing at `/opt/fth-optimizer/`, but that binary now comes from the new `arcane-foundry-companion-server` repo.
-
-## Live-check identity
-
-- **Test user:** `FoundryTester-Helpers` (GM). Shared password across all `FoundryTester-*` users — see `references/live-server.md` in the `developing-arcane-foundry-vtt-modules` skill for the full table.
-- **Isolated Chrome profile:** `.cache/chrome-devtools-mcp/profile` via repo-local `.mcp.json`. Gitignored, collision-free with other module repos running in parallel. This repo is a **legacy v13 reference** — live-checks here are rare but the plumbing exists so they don't collide with active repos when they do run.
 
 ## Gotchas
 
@@ -93,3 +87,12 @@ npm run tarball
 npm run build:server
 npm run package:server
 ```
+
+## Live-check identity
+
+- Test user: `FoundryTester-Helpers` (GM). Credentials and full seat table in the skill's `references/live-server.md`.
+- Repo-local Chrome profile under `.cache/chrome-devtools-mcp/profile` via `.mcp.json`. This repo is a legacy reference — live-checks are rare but the plumbing exists so they don't collide with active repos.
+
+## Current state & goals
+
+See `PROJECT-STATUS.md`.
