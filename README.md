@@ -219,6 +219,23 @@ Current live deployment note for `foundry.digitalframeworks.org`:
 - `npm run build:server` - Build the server companion
 - `npm run package:server` - Create the server companion package
 
+### Manual Release
+
+Releases are made locally. GitHub Actions does not build, publish, or deploy
+this module.
+
+1. Update the version in `package.json` before building a release.
+2. Run `npm ci && npm run ci`.
+3. Run `npm run zip` to create `foundry-tabletop-helpers.zip` from `dist/`.
+4. Run `shasum -a 256 foundry-tabletop-helpers.zip` and record the result with
+   the release.
+5. Create the GitHub release and upload `foundry-tabletop-helpers.zip` by hand.
+6. If a live v13 deployment is needed, run `npm run deploy` from a reviewed
+   local checkout, then verify it in Foundry.
+
+The manifest download URL expects the release asset to be named
+`foundry-tabletop-helpers.zip`.
+
 ## Local guidance
 
 - `docs/codex-playbook.md` — repo-local workflow and porting rules

@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to Foundry Tabletop Helpers are documented here.
-Entries are auto-generated from GitHub Release notes on each tagged release.
+Release entries are recorded manually when a maintainer publishes a release.
 
 ---
 
