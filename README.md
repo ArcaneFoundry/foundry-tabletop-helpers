@@ -224,16 +224,31 @@ Current live deployment note for `foundry.digitalframeworks.org`:
 Releases are made locally. GitHub Actions does not build, publish, or deploy
 this module.
 
-1. Update the version in `package.json` before building a release.
-2. Run `npm ci && npm run ci`.
-3. Run `npm run zip` to create `foundry-tabletop-helpers.zip` from `dist/`.
-4. Run `shasum -a 256 foundry-tabletop-helpers.zip` and record the result with
-   the release.
-5. Create the GitHub release and upload `foundry-tabletop-helpers.zip` by hand.
-6. If a live v13 deployment is needed, run `npm run deploy` from a reviewed
+1. Set the release version without creating a tag:
+
+   ```bash
+   npm version --no-git-tag-version <version>
+   ```
+
+2. Update `CHANGELOG.md`, then run `npm ci && npm run ci`.
+3. Copy the generated manifest into the tracked release manifest:
+
+   ```bash
+   cp dist/module.json module.json
+   ```
+
+4. Commit the version, changelog, and root manifest. Push that commit to
+   `main` before creating a tag or GitHub release.
+5. Run `npm run zip`. It deletes the old
+   `foundry-tabletop-helpers.zip` and `.zip.sha256` files, creates a fresh zip
+   from `dist/`, and writes `foundry-tabletop-helpers.zip.sha256`.
+6. Create the tag and GitHub release by hand. Upload both
+   `foundry-tabletop-helpers.zip` and
+   `foundry-tabletop-helpers.zip.sha256`.
+7. If a live v13 deployment is needed, run `npm run deploy` from a reviewed
    local checkout, then verify it in Foundry.
 
-The manifest download URL expects the release asset to be named
+The manifest download URL expects the release archive to be named
 `foundry-tabletop-helpers.zip`.
 
 ## Local guidance

@@ -14,7 +14,7 @@
     "deploy": "bash scripts/deploy.sh",
     "build:server": "cd server-companion && npm run build",
     "package:server": "cd server-companion && npm run package",
-    "zip": "npm run build && cd dist && zip -r ../foundry-tabletop-helpers.zip .",
+    "zip": "rm -f foundry-tabletop-helpers.zip foundry-tabletop-helpers.zip.sha256 && npm run build && cd dist && zip -r ../foundry-tabletop-helpers.zip . && cd .. && shasum -a 256 foundry-tabletop-helpers.zip > foundry-tabletop-helpers.zip.sha256",
     "tarball": "npm run build && mkdir -p build && tar -czvf build/foundry-tabletop-helpers-dev.tar.gz -C dist .",
     "link:foundry": "node scripts/link-foundry.mjs"
   },
